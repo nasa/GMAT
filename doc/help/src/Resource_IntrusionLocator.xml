@@ -1,0 +1,1509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="IntrusionLocator"
+          xmlns="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>IntrusionLocator</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>IntrusionLocator</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>IntrusionLocator</refname>
+
+    <refpurpose>A line-of-sight event locator between a target
+    <guilabel>CelestialBody</guilabel> and an observer
+    <guilabel>Spacecraft</guilabel></refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <note>
+      <para><guilabel>IntrusionLocator</guilabel> is a SPICE-based subsystem
+      that uses a parallel configuration for the solar system and celestial
+      bodies from other GMAT components. For precision applications, care must
+      be taken to ensure that both configurations are consistent. See <link
+      linkend="IntrusionLocator_DataConfiguration">Remarks</link> for
+      details.</para>
+    </note>
+
+    <para>An <guilabel>IntrusionLocator</guilabel> is an event locator used to
+    find line-of-sight events between a <guilabel>Spacecraft</guilabel> and a
+    <guilabel>CelestialBody</guilabel> based on the field of view of an
+    <guilabel>Imager</guilabel> attached to the Spacecraft. By default, a
+    <guilabel>IntrusionLocator</guilabel> generates a text event report
+    listing the beginning and ending times of each line-of-sight event, with
+    intermediate times generated at the selected step size. Each piece of data
+    also contains the coordinates of the target within the user selected
+    coordinate system, the angular diameter, and the illumination of the
+    target. Intrusion location can be performed over the entire propagation
+    interval or over a subinterval, and can optionally adjust for light-time
+    delay and stellar aberration. Intrusion location can be configured to
+    search for times of occultation of other
+    <guilabel>CelestialBody</guilabel> resources that may block line of sight,
+    and can limit intrusion events to a specified minimum illumination for the
+    targets.</para>
+
+    <para>Intrusion location can be performed between one <guilabel>Spacecraft
+    Imager</guilabel> (<guilabel>Observer</guilabel>) and any number of
+    <guilabel>CelestialBody</guilabel> or <guilabel>Spacecraft</guilabel>
+    resources (<guilabel>Targets</guilabel>). Each target-observer pair is
+    searched individually, and results in a separate segment of the resulting
+    report. All pairs must use the same interval and search options; to
+    customize the options per pair, use multiple
+    <guilabel>IntrusionLocator</guilabel> resources.</para>
+
+    <para>Third-body occultation searches can be included by listing a
+    <guilabel>CelestialBody</guilabel> resource in the
+    <guilabel>CentralBody</guilabel> field. Any configured
+    <guilabel>CelestialBody</guilabel> can be used as an occulting body,
+    including user-defined bodies.</para>
+
+    <para>By default, the <guilabel>IntrusionLocator</guilabel> searches the
+    entire interval of propagation of the
+    <guilabel>IntrudingBodies</guilabel>, after applying endpoint light-time
+    adjustments; see <link
+    linkend="IntrusionLocator_SearchInterval">Remarks</link> for details. To
+    search a custom interval, set <guilabel>UseEntireInterval</guilabel> to
+    <literal>False</literal> and set <guilabel>InitialEpoch</guilabel> and
+    <guilabel>FinalEpoch</guilabel> accordingly. Note that these epochs are
+    assumed to be at the observer, and so must be valid when translated to the
+    target via light-time delay and stellar aberration, if configured. If they
+    fall outside the propagation interval of the
+    <guilabel>IntrudingBodies</guilabel>, GMAT will display an error.</para>
+
+    <para>The intrusion locator can optionally adjust for both light-time
+    delay and stellar aberration, using a signal moving in the receive
+    direction (<guilabel>Target to Observer</guilabel>). The light-time
+    direction affects the valid search interval by limiting searches near the
+    end of the interval. See <link
+    linkend="IntrusionLocator_SearchInterval">Remarks</link> for details.
+    Stellar aberration is only applied for the line-of-sight portion of the
+    search; it has no effect during occultation searches.</para>
+
+    <para>The event search is performed at a fixed step through the interval.
+    You can control the step size (in seconds) by setting the
+    <guilabel>StepSize</guilabel> field. An appropriate choice for step size
+    is no greater than half the period of the line-of-sight function—that is,
+    half the orbit period for an elliptical orbit. See <link
+    linkend="IntrusionLocator_SearchAlgorithm">Remarks</link> for
+    details.</para>
+
+    <para>GMAT uses the SPICE library for the fundamental event location
+    algorithm. As such, all celestial body data is loaded from SPICE kernels
+    for this subsystem, rather than GMAT's own
+    <guilabel>CelestialBody</guilabel> shape and orientation configuration.
+    See <link linkend="IntrusionLocator_Remarks">Remarks</link> for
+    details.</para>
+
+    <para>Unless otherwise mentioned, <guilabel>IntrusionLocator</guilabel>
+    fields cannot be set in the mission sequence.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="CelestialBody"/>, <xref linkend="Imager"/>, <xref
+    linkend="Spacecraft"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>CentralBody</guilabel></entry>
+
+            <entry><para>Name of a celestial body that will be checked for
+            intervening between the <guilabel>Imager</guilabel> and the
+            targets, as well as when targets transit this body. When
+            occultations occur, the target does not appear as intruding in the
+            sensor intrusion report.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>A <guilabel>CelestialBody</guilabel> resource (e.g.
+                    <guilabel>Planet</guilabel>,
+                    <guilabel>Asteroid</guilabel>, <guilabel>Moon</guilabel>,
+                    etc.)</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any existing <guilabel>CelestialBody</guilabel>
+                    resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Earth</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Filename</guilabel></entry>
+
+            <entry><para>Name and path of the intrusion report file. This
+            field can be set in the mission sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid file path</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'<replaceable>IntrusionLocator</replaceable>.txt'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>FinalEpoch</guilabel></entry>
+
+            <entry><para>Last epoch to search for intrusions, in the format
+            specified by <guilabel>InputEpochFormat</guilabel>. The epoch must
+            map to a valid epoch in the <guilabel>Spacecraft</guilabel> and
+            target <guilabel>Intruding Body</guilabel> ephemeris interval,
+            including any light time. This field can be set in the mission
+            sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid epoch in available spacecraft ephemeris</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'21545.138'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>ModifiedJulian epoch formats: days</para>
+
+                    <para>Gregorian epoch formats: N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>InitialEpoch</guilabel></entry>
+
+            <entry><para>First epoch to search for intrusions, in the format
+            specified by <guilabel>InputEpochFormat</guilabel>. The epoch must
+            map to a valid epoch in the <guilabel>Spacecraft</guilabel> and
+            target <guilabel>Intruding Body</guilabel> ephemeris interval,
+            including any light time. This field can be set in the mission
+            sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid epoch in available spacecraft ephemeris</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'21545'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>ModifiedJulian epoch formats: days</para>
+
+                    <para>Gregorian epoch formats: N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>InputEpochFormat</guilabel></entry>
+
+            <entry><para>The epoch format to be used by the fields
+            <guilabel>InitialEpoch</guilabel> and
+            <guilabel>FinalEpoch</guilabel>.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>A1ModJulian, TAIModJulian, UTCModJulian,
+                    TTModJulian, TDBModJulian, A1Gregorian, TAIGregorian,
+                    TTGregorian, UTCGregorian, TDBGregorian</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'TAIModJulian'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>IntrudingBodies</guilabel></entry>
+
+            <entry><para>List of <guilabel>CelestialBody</guilabel> and/or
+            <guilabel>Spacecraft</guilabel> resources that are used as targets
+            for the observers listed in the field
+            <guilabel>Sensors</guilabel>. Events where these bodies are seen
+            in the field of view of the <guilabel>Sensors</guilabel> will be
+            reported in the output file. Note that
+            <guilabel>CelestialBody</guilabel> will utilize an ellipsoid shape
+            for intrusion, whereas a <guilabel>Spacecraft</guilabel> will be
+            represented by a point.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>A <guilabel>CelestialBody</guilabel> resource list
+                    (e.g. <guilabel>Planet</guilabel>,
+                    <guilabel>Asteroid</guilabel>, <guilabel>Moon</guilabel>,
+                    etc.)</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any existing <guilabel>CelestialBody</guilabel> or
+                    <guilabel>Spacecraft</guilabel> resources</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MinimumPhase</guilabel></entry>
+
+            <entry><para>Value to set the minimum amount of illumination a
+            target must have to be considered intruding when in the field of
+            view of the <guilabel>Sensors</guilabel>.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>0.0 &lt; <guilabel>MinimumPhase</guilabel> &lt;
+                    1.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'0.0'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportCoordinates</guilabel></entry>
+
+            <entry><para>String to set what coordinate format the intruding
+            bodies are reported in during an intrusion event. The SensorFrame
+            coordinates use the body frame from the
+            <guilabel>Spacecraft</guilabel> field to build a frame for an
+            onboard instrument. The resulting report will utilize this frame.
+            FixedGrid uses the coordinate frame provided from the
+            <guilabel>SpiceGridFrameFile</guilabel> field.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>SensorFrame, FixedGrid</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>SensorFrame</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>RunMode</guilabel></entry>
+
+            <entry><para>Mode of event location execution.
+            <literal>'Automatic'</literal> triggers event location to occur
+            automatically at the end of the run. <literal>'Manual'</literal>
+            limits execution only to the <guilabel>FindEvents</guilabel>
+            command. <literal>'Disabled'</literal> turns off event location
+            entirely.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><literal>Automatic</literal>,
+                    <literal>Manual</literal>,
+                    <literal>Disabled</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'Automatic'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Sensors</guilabel></entry>
+
+            <entry><para>List of <guilabel>Imager</guilabel> resources to be
+            used in checking for intrusions.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>One or more <guilabel>Imager</guilabel>
+                    resources</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any existing <guilabel>Imager</guilabel> resource
+                    attached to the <guilabel>Spacecraft</guilabel> entered in
+                    the <guilabel>Spacecraft</guilabel> field</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Spacecraft</guilabel></entry>
+
+            <entry><para>Name of a <guilabel>Spacecraft</guilabel> that has
+            the desired <guilabel>Imager</guilabel> resources attached to it
+            to be used as observers.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>A <guilabel>Spacecraft</guilabel> resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any existing <guilabel>Spacecraft</guilabel>
+                    resource with at least one <guilabel>Imager</guilabel>
+                    resource attached to it</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SpiceGridFrameFile</guilabel></entry>
+
+            <entry><para>The frame kernel files used when a FixedGrid
+            coordinate frame is selected in the
+            <guilabel>ReportCoordinates</guilabel> field.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid file path and name</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>N/A</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>StepSize</guilabel></entry>
+
+            <entry><para>Time step used in the event locator. See <link
+            linkend="IntrusionLocator_SearchAlgorithm">Remarks</link> for
+            discussion of appropriate values.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><guilabel>StepSize</guilabel> &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>10</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>s</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>UseEntireInterval</guilabel></entry>
+
+            <entry><para>Search the entire available ephemeris interval, after
+            adjusting the end-points for light-time delay as appropriate. See
+            <link linkend="IntrusionLocator_SearchInterval">Remarks</link> for
+            details. This field can be set in the mission
+            sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>UseLightTimeDelay</guilabel></entry>
+
+            <entry><para>Use light-time delay in the event-finding algorithm.
+            The clock is always hosted on the
+            <guibutton>Observer</guibutton>.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>UseStellarAberration</guilabel></entry>
+
+            <entry><para>Use stellar aberration in addition to light-time
+            delay in the event-finding algorithm. Light-time delay must be
+            enabled. Stellar aberration only affects line-of-sight searches,
+            not occultation searches.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>WriteReport</guilabel></entry>
+
+            <entry><para>Write an event report when event location is
+            executed. This field can be set in the mission
+            sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Resource_IntrusionLocator_1.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>The default <guilabel>IntrusionLocator</guilabel> GUI for a new
+    resource is shown above. One <guilabel>Spacecraft</guilabel> can be
+    selected from the <guilabel>Spacecraft</guilabel> drop-down menu, which is
+    populated by all the currently configured <guilabel>Spacecraft</guilabel>
+    in the mission. Next, the <guilabel>Central Body</guilabel> is selected
+    from the drop-down menu populated with all the currently loaded
+    <guilabel>CelestialBody</guilabel> resources.</para>
+
+    <para>The <guilabel>Intruding Bodies</guilabel> checklist is used to set
+    what <guilabel>CelestialBody</guilabel> the sensors will check for
+    intrusion during the mission sequence. Multiple selections can be made.
+    The following <guilabel>Sensors</guilabel> checklist is used to select
+    which sensors to utilize for this <guilabel>IntrusionLocator</guilabel>.
+    Note that these sensors will also need to be attached to the selected
+    <guilabel>Spacecraft's</guilabel> hardware list.</para>
+
+    <para>You can configure the output via <guilabel>Filename</guilabel>,
+    <guilabel>Run Mode</guilabel>, and <guilabel>Write Report</guilabel> near
+    the bottom. If <guilabel>Write Report</guilabel> is enabled, a text report
+    will be written to the file specified in <guilabel>Filename</guilabel>.
+    The search will execute during <guilabel>FindEvents</guilabel> commands
+    (for <guilabel>Manual</guilabel> or <guilabel>Automatic</guilabel> modes)
+    and automatically at the end of the mission (for
+    <guilabel>Automatic</guilabel> mode), depending on the <guilabel>Run
+    Mode</guilabel>.</para>
+
+    <para>You can configure the search interval via the options in the upper
+    right. Uncheck <guilabel>Use Entire Interval</guilabel> to set the search
+    interval manually. See the <link
+    linkend="IntrusionLocator_SearchInterval">Remarks</link> section for
+    considerations when setting the search interval.</para>
+
+    <para>You can control the search algorithm via the options in the bottom
+    right. Configure light-time and stellar aberration via the check boxes
+    next to each.</para>
+
+    <para>To control the fidelity and execution time of the search, set the
+    <guilabel>Step size</guilabel> appropriately. See the <link
+    linkend="IntrusionLocator_Remarks">Remarks</link> section for
+    details.</para>
+
+    <para>To set the minimum phase required to count an object as intruding,
+    set the <guilabel>Minimum Phase</guilabel> appropriately.</para>
+
+    <para>Use the <guilabel>Report Coordinates</guilabel> drop-down menu to
+    select the coordinates used in the output intrusion report. If
+    <guilabel>FixedGrid</guilabel> is selected, the <guilabel>Spice Grid Frame
+    File</guilabel> becomes available to set the frame kernel to be used. This
+    is set by directly entering the full path or using the browse button next
+    to the field.</para>
+  </refsection>
+
+  <refsection xml:id="IntrusionLocator_Remarks">
+    <title>Remarks</title>
+
+    <refsection xml:id="IntrusionLocator_DataConfiguration">
+      <title>Data configuration</title>
+
+      <para>The <guilabel>IntrusionLocator</guilabel> implementation is based
+      on the <link xlink:href="http://naif.jpl.nasa.gov/naif/"
+      xmlns:xlink="http://www.w3.org/1999/xlink">NAIF SPICE toolkit</link>,
+      which uses a different mechanism for environmental data such as
+      celestial body shape and orientation, planetary ephemerides,
+      body-specific frame definitions, and leap seconds. Therefore, it is
+      necessary to maintain two parallel configurations to ensure that the
+      event location results are consistent with GMAT's own propagation and
+      other parameters. The specific data to be maintained is:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Planetary shape and orientation:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GMAT core:
+              <guilabel>CelestialBody</guilabel>.<guilabel>EquatorialRadius</guilabel>,
+              <guilabel>Flattening</guilabel>,
+              <guilabel>SpinAxisRAConstant</guilabel>,
+              <guilabel>SpinAxisRARate</guilabel>, etc.</para>
+            </listitem>
+
+            <listitem>
+              <para>IntrusionLocator:
+              <guilabel>SolarSystem</guilabel>.<guilabel>PCKFilename</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>PlanetarySpiceKernelName</guilabel></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Planetary ephemeris:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GMAT core:
+              <guilabel>SolarSystem</guilabel>.<guilabel>DEFilename</guilabel>,
+              or
+              (<guilabel>SolarSystem</guilabel>.<guilabel>SPKFilename</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>OrbitSpiceKernelName</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>NAIFId</guilabel>)</para>
+            </listitem>
+
+            <listitem>
+              <para>IntrusionLocator:
+              <guilabel>SolarSystem</guilabel>.<guilabel>SPKFilename</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>OrbitSpiceKernelName</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>NAIFId</guilabel></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Body-fixed frame:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GMAT core: built-in</para>
+            </listitem>
+
+            <listitem>
+              <para>IntrusionLocator:
+              <guilabel>CelestialBody</guilabel>.<guilabel>SpiceFrameId</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>FrameSpiceKernelName</guilabel></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Leap seconds:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GMAT core: startup file <literal>LEAP_SECS_FILE</literal>
+              setting</para>
+            </listitem>
+
+            <listitem>
+              <para>IntrusionLocator:
+              <guilabel>SolarSystem</guilabel>.<guilabel>LSKFilename</guilabel></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+
+      <para>See SolarSystem and <link
+      linkend="CelestialBody_ConfiguringForEventLocation">CelestialBody</link>
+      for more details.</para>
+    </refsection>
+
+    <refsection xml:id="IntrusionLocator_SearchInterval">
+      <title>Search interval</title>
+
+      <para>The <guilabel>IntrusionLocator</guilabel> search interval can be
+      specified either as the entire ephemeris interval of the
+      <guilabel>Spacecraft</guilabel>, or as a user-defined interval. If
+      <guilabel>UseEntireInterval</guilabel> is true, the search is performed
+      over the entire ephemeris interval of the
+      <guilabel>Spacecraft</guilabel>, including any gaps or discontinuities.
+      If <guilabel>UseEntireInterval</guilabel> is false, the provided
+      <guilabel>InitialEpoch</guilabel> and <guilabel>FinalEpoch</guilabel>
+      are used to form the search interval directly. The user must ensure than
+      the provided interval results in valid <guilabel>Spacecraft</guilabel>
+      and <guilabel>CelestialBody</guilabel> ephemeris epochs.</para>
+    </refsection>
+
+    <refsection xml:id="IntrusionLocator_RunModes">
+      <title>Run modes</title>
+
+      <para>The <guilabel>IntrusionLocator</guilabel> works in conjunction
+      with the <guilabel>FindEvents</guilabel> command: the
+      <guilabel>IntrusionLocator</guilabel> resource defines the configuration
+      of the event search, and the <guilabel>FindEvents</guilabel> command
+      executes the search at a specific point in the mission sequence. The
+      mode of interaction is defined by
+      <guilabel>IntrusionLocator</guilabel>.<guilabel>RunMode</guilabel>,
+      which has three options:<itemizedlist>
+          <listitem>
+            <para><literal>Automatic</literal>: All
+            <guilabel>FindEvents</guilabel> commands are executed as-is, plus
+            an additional <guilabel>FindEvents</guilabel> is executed
+            automatically at the end of the mission sequence.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>Manual</literal>: All
+            <guilabel>FindEvents</guilabel> commands are executed
+            as-is.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>Disabled</literal>: <guilabel>FindEvents</guilabel>
+            commands are ignored.</para>
+          </listitem>
+        </itemizedlist></para>
+    </refsection>
+
+    <refsection xml:id="IntrusionLocator_SearchAlgorithm">
+      <title>Search algorithm</title>
+
+      <para>The <guilabel>IntrusionLocator</guilabel> uses the NAIF SPICE GF
+      (geometry finder) subsystem to perform event location. Specifically, the
+      following call is used for the search:<itemizedlist>
+          <listitem>
+            <para><literal><link
+            xlink:href="https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gftfov_c.html"
+            xmlns:xlink="http://www.w3.org/1999/xlink">gftfov_c</link></literal>:
+            For intrusion event searches</para>
+          </listitem>
+
+          <listitem>
+            <para><literal><link
+            xlink:href="http://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gfoclt_c.html"
+            xmlns:xlink="http://www.w3.org/1999/xlink">gfoclt_c</link></literal>:
+            For third-body occultation and transit searches</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>These functions implement a fixed-step search method through the
+      interval, with an embedded root-location step if an event is found.
+      <guilabel>StepSize</guilabel> should be set equal to the length of the
+      minimum-duration event to be found, or equal to the length of the
+      minimum-duration gap between events, whichever is smaller. To guarantee
+      location of 10-second intrusions, or 10-second gaps between adjacent
+      intrusions, set <guilabel>StepSize</guilabel> = 10.</para>
+
+      <para>For details, see the reference documentation for the functions
+      listed above.</para>
+    </refsection>
+
+    <refsection xml:id="IntrusionLocator_ReportFormat">
+      <title>Report format</title>
+
+      <para>When <guilabel>WriteReport</guilabel> is enabled, the
+      <guilabel>IntrusionLocator</guilabel> outputs an event report at the end
+      of each search execution. The report contains the following
+      data:<itemizedlist>
+          <listitem>
+            <para>Spacecraft name</para>
+          </listitem>
+
+          <listitem>
+            <para>Sensor name</para>
+          </listitem>
+
+          <listitem>
+            <para>Coordinate System name</para>
+          </listitem>
+
+          <listitem>
+            <para>For each time step during an intrusion event:<itemizedlist>
+                <listitem>
+                  <para>Current time (UTC)</para>
+                </listitem>
+
+                <listitem>
+                  <para>Intruding body name</para>
+                </listitem>
+
+                <listitem>
+                  <para>Angular diameter of intruding body (deg). Note, this
+                  will be zero for a spacecraft target as it is represented by
+                  a point.</para>
+                </listitem>
+
+                <listitem>
+                  <para>"X" coordinate of intruding body in specified
+                  coordinate system (deg). For SensorFrame, this is the angle
+                  in the X direction of the sensor's local coordinate system.
+                  For FixedGrid, this is the EW coordinate.</para>
+                </listitem>
+
+                <listitem>
+                  <para>"Y" coordinate of intruding body in specified
+                  coordinate system (deg). For SensorFrame, this is the angle
+                  in the Y direction of the sensor's local coordinate system.
+                  For FixedGrid this is the NS coordintae.</para>
+                </listitem>
+
+                <listitem>
+                  <para>Intrusion event type (Intrusion, Transit,
+                  Occultation). The full events for intrusions and transits
+                  are shown, while the starts and ends of an occultation are
+                  only shown if they fall within the same intrusion event,
+                  thereby breaking it into two events.</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>The report makes the distinction between an
+      <emphasis>individual</emphasis> event and a <emphasis>total</emphasis>
+      event.<itemizedlist>
+          <listitem>
+            <para>An <emphasis>individual event</emphasis> is a single event
+            where an intruding body is detected within a sensor's field of
+            view. These include intrusion starts, ends, and the events
+            in-between occurring at the provided
+            <guilabel>StepSize</guilabel>.</para>
+          </listitem>
+
+          <listitem>
+            <para>A <emphasis>total event</emphasis> is the entire set of
+            nested individual events. Each start of an intrusion is a new
+            total event. In other words, the number of total events describes
+            the number of times intruding bodies passed into the field of view
+            of the sensors.</para>
+          </listitem>
+        </itemizedlist></para>
+    </refsection>
+
+    <refsection>
+      <title>Event location with SPK propagator</title>
+
+      <para>When using the SPK propagator, you load one or more SPK ephemeris
+      files using the Spacecraft.OrbitSpiceKernelName field. For the purposes
+      of event location, this field causes the appropriate ephemeris files to
+      be loaded automatically on run, and so use of the Propagation command is
+      not necessary. This is an easy way of performing event location on an
+      existing SPK ephemeris file. See the example below.</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Perform a basic intrusion search in LEO:</para>
+
+      <programlisting><code>Create Spacecraft sat
+sat.AddHardware = {camera}
+
+Create ForceModel fm;
+
+Create Propagator prop;
+prop.FM = fm;
+prop.Type = RungeKutta89;
+
+Create Imager camera;
+camera.FieldOfView = cameraFOV;
+camera.DirectionX = 1.0;
+
+Create ConicalFOV cameraFOV;
+cameraFOV.FieldOfViewAngle = 11.50;
+
+Create IntrusionLocator il;
+il.CentralBody = Earth;
+il.Spacecraft = sat;
+il.Sensors = {camera};
+il.IntrudingBodies = {Luna, Sun};
+il.MinimumPhase = 0.6;
+il.StepSize = 30.0;
+il.UseLightTimeDelay = true;
+il.UseStellarAberration = true;
+il.WriteReport = true;
+il.RunMode = Automatic;
+il.UseEntireInterval = true;
+il.Filename = 'ExampleIntrusionReport.txt';
+il.ReportCoordinates = 'FixedGrid';
+il.SpiceGridFrameFile = '../data/hardware/FixedGridFile.tf';
+
+BeginMissionSequence;
+Propagate prop(sat) {sat.ElapsedDays = 60.0};
+</code></programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

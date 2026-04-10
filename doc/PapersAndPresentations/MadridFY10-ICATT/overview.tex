@@ -1,0 +1,73 @@
+\section{System Architecture}
+
+GMAT's System Architecture, described in the GMAT Architectural
+Specification\cite{ArchSpec}, can be broken into three types of components: the
+Model, consisting of all of the elements required for simulating a spacecraft
+mission; the Engine, responsible for managing and connecting together the model
+elements; and interfaces, consisting of the scripting and graphical user
+interfaces, the MATLAB interface, and a simple console based interface.  Users
+interact with GMAT through any of these interfaces to control the engine, and by
+controlling the engine, create a model that simulates specific spacecraft
+missions.
+
+GMAT's architecture was designed so that the elements of the engine simulate
+spacecraft missions by operating on objects through fairly abstract classes.
+Specialization of these classes results in the ability to create objects that
+specialize these abstract interfaces into detailed elements of the spacecraft
+simulation.  In other words, GMAT models a spacecraft mission by specializing
+high level classes into subclasses responsible for numerically simulating
+spacecraft and their environment, orbital computations, and the timeline
+defining the evolution of these elements.  These specialized subclasses are the
+architectural components that a user sees as resources and commands, as
+described earlier in this paper.
+
+While the system contains subclasses that simulate most of the components
+anticipated by the project team, we also recognized from the start that GMAT
+could not contain everything that every user would need.  The philosophy of
+starting from abstract classes defining interfaces that are specialized to meet
+mission needs provides a powerful mechanism for extending these classes through
+subclasses that meet the needs of the user community.  The GMAT development
+team has used this approach repeatedly to add new capabilities to the system.
+
+The user configurable components of GMAT are all derived from a general purpose
+base class, GmatBase, which defines interfaces used throughout the system to
+access common properties of the user classes.  This base class defines a
+framework used by GMAT's engine to manage the objects used when modeling a
+mission.  Classes derived from GmatBase are specialized to model different
+aspects of the mission.  Classes located deeper in the GmatBase class hierarchy
+are, in general, more specialized than those at the higher levels.  Details of
+GMAT's class structure can be found in the GMAT Architectural
+Specification\cite{ArchSpec}, or by running GMAT's source code through the
+Doxygen source code documentation generator\cite{Doxygen}.
+
+These subclasses of GmatBase provide the framework for extension of GMAT's
+capabilities, either through work directly in GMAT's source code, or through
+plug-in modules loaded by GMAT at runtime.  The remaining pages of this article
+explain the design of GMAT's plug-in architecture, and include an overview of a
+simple plug-in available in source form that illustrates the key elements of a
+GMAT plug-in extension.
+
+\section{GMAT Plug-ins}
+
+Builds of GMAT made using development source code after June 25,
+2008 have the ability to load shared libraries at run time and retrieve new user
+objects from these libraries. The approach taken for this capability was built
+on a prototype extension implemented at Thinking Systems in April, 2008 to meet
+specific needs of the LCROSS mission, and documented as an extension to
+GMAT\cite{pluginProp}. The following paragraphs explain how to use the plug-in
+extensions to add new capabilities to GMAT.  A specific example -- the addition
+of a new force for GMAT's force model -- is described in some detail, with
+emphasis on the features necessary for incorporation into GMAT at run time.
+
+GMAT has been extended through the incorporation of new capabilities, loaded at
+run time using shared libraries, that incorporate a variety of features.  These
+libraries, called GMAT plug-ins, have been used to add new optimizers, to
+develop estimation capabilities, to drive proprietary visualization
+elements, and to support ephemeris generation.
+
+We'll begin this section by looking at the steps needed to construct a GMAT
+plug-in. Once these steps have been described, the design of the example plug-in
+code -- a basic solar sail model for GMAT's force model -- is described, along
+with descriptions of the pieces needed to incorporate the new model through the
+plug-in interface.  Finally, we present the steps needed to tell GMAT about the
+new plug-in. 

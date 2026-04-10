@@ -1,0 +1,83 @@
+%
+%   Ex_SGP4ToHighFidelity
+%
+%   Script to demonstrate propagation using multiple propagators, using the 
+%   SPICESGP4 to propagate to Periapsis followed by propagation by a high 
+%   fidelity propagator to the apoapsis.
+%
+%   Released: R2022a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft ExampleSat;
+
+ExampleSat.DateFormat    = UTCGregorian;
+ExampleSat.EphemerisName = '../samples/SupportFiles/Ex_TLE_Propagation_TLE.txt';
+ExampleSat.Id            = 'ExampleSat';
+
+%----------------------------------------
+%---------- Force Models
+%----------------------------------------
+
+Create ForceModel LowEarthProp_ForceModel;
+
+LowEarthProp_ForceModel.CentralBody                      = Earth;
+LowEarthProp_ForceModel.PrimaryBodies                    = {Earth};
+LowEarthProp_ForceModel.PointMasses                      = {Luna, Sun};
+LowEarthProp_ForceModel.SRP                              = On;
+LowEarthProp_ForceModel.RelativisticCorrection           = Off;
+LowEarthProp_ForceModel.ErrorControl                     = RSSStep;
+LowEarthProp_ForceModel.GravityField.Earth.Degree        = 10;
+LowEarthProp_ForceModel.GravityField.Earth.Order         = 10;
+LowEarthProp_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+LowEarthProp_ForceModel.GravityField.Earth.TideModel     = 'None';
+LowEarthProp_ForceModel.Drag.AtmosphereModel             = 'JacchiaRoberts';
+LowEarthProp_ForceModel.Drag.F107                        = 150;
+LowEarthProp_ForceModel.Drag.F107A                       = 150;
+LowEarthProp_ForceModel.Drag.MagneticIndex               = 3;
+LowEarthProp_ForceModel.Drag.F107                        = 150;
+LowEarthProp_ForceModel.Drag.F107A                       = 150;
+LowEarthProp_ForceModel.Drag.MagneticIndex               = 3;
+LowEarthProp_ForceModel.SRP.Flux                         = 1367;
+LowEarthProp_ForceModel.SRP.Nominal_Sun                  = 149597870.691;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator TLEProp;
+TLEProp.Type = SPICESGP4;
+TLEProp.StepSize = 60;
+
+Create Propagator LowEarthProp;
+
+LowEarthProp.FM                       = LowEarthProp_ForceModel;
+LowEarthProp.Type                     = RungeKutta89;
+LowEarthProp.InitialStepSize          = 1;
+LowEarthProp.Accuracy                 = 9.999999999999999e-012;
+LowEarthProp.MinStep                  = 0.001;
+LowEarthProp.MaxStep                  = 1;
+LowEarthProp.MaxStepAttempts          = 50;
+LowEarthProp.StopIfAccuracyIsViolated = true;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create ReportFile rf;
+
+rf.Filename = Ex_R2022a_SGP4ToHighFidelity.txt
+rf.Add      = {ExampleSat.UTCGregorian, ExampleSat.X, ExampleSat.Y, ExampleSat.Z, ExampleSat.VX, ExampleSat.VY, ExampleSat.VZ}
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate TLEProp(ExampleSat) {ExampleSat.Earth.Periapsis};
+Propagate LowEarthProp(ExampleSat) {ExampleSat.Earth.Apoapsis};

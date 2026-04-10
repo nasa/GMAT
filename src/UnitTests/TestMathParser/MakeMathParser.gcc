@@ -1,0 +1,489 @@
+# $Id$
+# Makefile for MathParser unit test
+# 
+#  Copyright (c) 2002-2026 United States Government as represented by the
+#  Administrator of The National Aeronautics and Space Administration.
+#  All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); 
+# You may not use this file except in compliance with the License. 
+# You may obtain a copy of the License at:
+# http://www.apache.org/licenses/LICENSE-2.0 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
+# express or implied.   See the License for the specific language
+# governing permissions and limitations under the License.
+
+# Author: Linda Jun
+# Created: 2012.08.08
+
+include ../BuildEnv.mk
+
+TARGET = TestMathParser.exe
+
+ifeq ($(USE_SPICE),1)
+SPICE_OBJECTS = \
+	       $(GMAT_BASE)/attitude/SpiceAttitude.o \
+          $(GMAT_BASE)/util/SpiceAttitudeKernelReader.o \
+	       $(GMAT_BASE)/util/SpiceInterface.o \
+          $(GMAT_BASE)/util/SpiceOrbitKernelReader.o \
+          $(GMAT_BASE)/util/SpiceKernelReader.o \
+          $(GMAT_BASE)/util/SpiceKernelWriter.o \
+	       $(GMAT_BASE)/util/SpiceOrbitKernelWriter.o
+else
+SPICE_OBJECTS =
+endif
+
+all: $(TARGET)
+clean: archclean
+
+archclean :
+	rm -r -f *.o
+	rm -r -f *.a
+	rm -r -f *~
+	rm -r -f core
+	rm -r -f */core
+	rm -rf $(TARGET)
+
+HEADERS = -I$(GMAT_BASE)/include \
+          -I$(GMAT_BASE)/asset \
+          -I$(GMAT_BASE)/attitude \
+          -I$(GMAT_BASE)/burn \
+          -I$(GMAT_BASE)/command \
+          -I$(GMAT_BASE)/configs \
+          -I$(GMAT_BASE)/executive \
+          -I$(GMAT_BASE)/foundation \
+          -I$(GMAT_BASE)/coordsystem \
+          -I$(GMAT_BASE)/event \
+          -I$(GMAT_BASE)/factory \
+          -I$(GMAT_BASE)/forcemodel \
+          -I$(GMAT_BASE)/function \
+          -I$(GMAT_BASE)/hardware \
+          -I$(GMAT_BASE)/interpolator \
+          -I$(GMAT_BASE)/interpreter \
+          -I$(GMAT_BASE)/math \
+          -I$(GMAT_BASE)/parameter \
+          -I$(GMAT_BASE)/plugin \
+          -I$(GMAT_BASE)/propagator \
+          -I$(GMAT_BASE)/solarsys \
+          -I$(GMAT_BASE)/solver \
+          -I$(GMAT_BASE)/spacecraft \
+          -I$(GMAT_BASE)/stopcond \
+          -I$(GMAT_BASE)/subscriber \
+          -I$(GMAT_BASE)/util \
+          -I$(GMAT_CONSOLE) \
+          -I../Common \
+
+
+OBJECTS = \
+          $(GMAT_BASE)/asset/AssetException.o \
+          $(GMAT_BASE)/asset/BodyFixedPoint.o \
+          $(GMAT_BASE)/asset/GroundStation.o \
+          $(GMAT_BASE)/attitude/Attitude.o \
+          $(GMAT_BASE)/attitude/AttitudeException.o \
+          $(GMAT_BASE)/attitude/CSFixed.o \
+          $(GMAT_BASE)/attitude/Kinematic.o \
+          $(GMAT_BASE)/attitude/Spinner.o \
+          $(GMAT_BASE)/burn/BurnException.o \
+          $(GMAT_BASE)/burn/Burn.o \
+          $(GMAT_BASE)/burn/FiniteBurn.o \
+          $(GMAT_BASE)/burn/ImpulsiveBurn.o \
+          $(GMAT_BASE)/burn/InertialManeuverFrame.o \
+          $(GMAT_BASE)/burn/ManeuverFrameManager.o \
+          $(GMAT_BASE)/burn/ManeuverFrame.o \
+          $(GMAT_BASE)/burn/VnbManeuverFrame.o \
+          $(GMAT_BASE)/command/Achieve.o \
+          $(GMAT_BASE)/command/Assignment.o \
+          $(GMAT_BASE)/command/BeginFiniteBurn.o \
+          $(GMAT_BASE)/command/BeginFunction.o \
+          $(GMAT_BASE)/command/BeginMissionSequence.o \
+          $(GMAT_BASE)/command/BeginScript.o \
+          $(GMAT_BASE)/command/BranchCommand.o \
+          $(GMAT_BASE)/command/CallFunction.o \
+          $(GMAT_BASE)/command/CallGmatFunction.o \
+          $(GMAT_BASE)/command/CommandException.o \
+          $(GMAT_BASE)/command/GmatCommand.o \
+          $(GMAT_BASE)/command/CommandUtil.o \
+          $(GMAT_BASE)/command/ClearPlot.o \
+          $(GMAT_BASE)/command/ConditionalBranch.o \
+          $(GMAT_BASE)/command/Create.o \
+          $(GMAT_BASE)/command/Else.o \
+          $(GMAT_BASE)/command/EndFiniteBurn.o \
+          $(GMAT_BASE)/command/EndFor.o \
+          $(GMAT_BASE)/command/EndFunction.o \
+          $(GMAT_BASE)/command/EndIf.o \
+          $(GMAT_BASE)/command/EndOptimize.o \
+          $(GMAT_BASE)/command/EndScript.o \
+          $(GMAT_BASE)/command/EndTarget.o \
+          $(GMAT_BASE)/command/EndWhile.o \
+          $(GMAT_BASE)/command/For.o \
+          $(GMAT_BASE)/command/Global.o \
+          $(GMAT_BASE)/command/If.o \
+          $(GMAT_BASE)/command/ManageObject.o \
+          $(GMAT_BASE)/command/Maneuver.o \
+          $(GMAT_BASE)/command/MarkPoint.o \
+          $(GMAT_BASE)/command/Minimize.o \
+          $(GMAT_BASE)/command/NonlinearConstraint.o \
+          $(GMAT_BASE)/command/NoOp.o \
+          $(GMAT_BASE)/command/Optimize.o \
+          $(GMAT_BASE)/command/PenDown.o \
+          $(GMAT_BASE)/command/PenUp.o \
+          $(GMAT_BASE)/command/PlotCommand.o \
+          $(GMAT_BASE)/command/Propagate.o \
+          $(GMAT_BASE)/command/PropagationEnabledCommand.o \
+          $(GMAT_BASE)/command/Report.o \
+          $(GMAT_BASE)/command/RunSolver.o \
+          $(GMAT_BASE)/command/Save.o \
+          $(GMAT_BASE)/command/SaveMission.o \
+          $(GMAT_BASE)/command/SolverBranchCommand.o \
+          $(GMAT_BASE)/command/SolverSequenceCommand.o \
+          $(GMAT_BASE)/command/Stop.o \
+          $(GMAT_BASE)/command/Target.o \
+          $(GMAT_BASE)/command/Toggle.o \
+          $(GMAT_BASE)/command/Vary.o \
+          $(GMAT_BASE)/command/While.o \
+          $(GMAT_BASE)/configs/ConfigManager.o \
+          $(GMAT_BASE)/configs/ConfigManagerException.o \
+          $(GMAT_BASE)/coordsystem/AxisSystem.o \
+          $(GMAT_BASE)/coordsystem/BodyFixedAxes.o \
+          $(GMAT_BASE)/coordsystem/BodyInertialAxes.o \
+          $(GMAT_BASE)/coordsystem/CoordinateBase.o \
+          $(GMAT_BASE)/coordsystem/CoordinateConverter.o \
+          $(GMAT_BASE)/coordsystem/CoordinateSystemException.o \
+          $(GMAT_BASE)/coordsystem/CoordinateSystem.o \
+          $(GMAT_BASE)/coordsystem/DynamicAxes.o \
+          $(GMAT_BASE)/coordsystem/EquatorAxes.o \
+          $(GMAT_BASE)/coordsystem/GeocentricSolarEclipticAxes.o \
+          $(GMAT_BASE)/coordsystem/GeocentricSolarMagneticAxes.o \
+          $(GMAT_BASE)/coordsystem/IAUFile.o \
+          $(GMAT_BASE)/coordsystem/ICRFAxes.o \
+          $(GMAT_BASE)/coordsystem/ICRFFile.o \
+          $(GMAT_BASE)/coordsystem/ITRFAxes.o \
+          $(GMAT_BASE)/coordsystem/InertialAxes.o \
+          $(GMAT_BASE)/coordsystem/ItrfCoefficientsFile.o \
+          $(GMAT_BASE)/coordsystem/MeanOfDateAxes.o \
+          $(GMAT_BASE)/coordsystem/MJ2000EcAxes.o \
+          $(GMAT_BASE)/coordsystem/MJ2000EqAxes.o \
+          $(GMAT_BASE)/coordsystem/MODEcAxes.o \
+          $(GMAT_BASE)/coordsystem/MODEqAxes.o \
+          $(GMAT_BASE)/coordsystem/MOEEcAxes.o \
+          $(GMAT_BASE)/coordsystem/MOEEqAxes.o \
+          $(GMAT_BASE)/coordsystem/ObjectReferencedAxes.o \
+          $(GMAT_BASE)/coordsystem/TODEcAxes.o \
+          $(GMAT_BASE)/coordsystem/TODEqAxes.o \
+          $(GMAT_BASE)/coordsystem/TOEEcAxes.o \
+          $(GMAT_BASE)/coordsystem/TOEEqAxes.o \
+          $(GMAT_BASE)/coordsystem/TopocentricAxes.o \
+          $(GMAT_BASE)/coordsystem/TrueOfDateAxes.o \
+          $(GMAT_BASE)/event/Brent.o \
+          $(GMAT_BASE)/event/EventException.o \
+          $(GMAT_BASE)/event/EventFunction.o \
+          $(GMAT_BASE)/event/EventLocator.o \
+          $(GMAT_BASE)/event/LocatedEventTable.o \
+          $(GMAT_BASE)/event/LocatedEvent.o \
+          $(GMAT_BASE)/event/RootFinder.o \
+          $(GMAT_BASE)/executive/Moderator.o \
+          $(GMAT_BASE)/executive/PlotInterface.o \
+          $(GMAT_BASE)/executive/PlotReceiver.o \
+          $(GMAT_BASE)/executive/Publisher.o \
+          $(GMAT_BASE)/executive/PublisherException.o \
+          $(GMAT_BASE)/executive/Sandbox.o \
+          $(GMAT_BASE)/executive/SandboxException.o \
+          $(GMAT_BASE)/factory/AtmosphereFactory.o \
+          $(GMAT_BASE)/factory/AssetFactory.o \
+          $(GMAT_BASE)/factory/AttitudeFactory.o \
+          $(GMAT_BASE)/factory/AxisSystemFactory.o \
+          $(GMAT_BASE)/factory/BurnFactory.o \
+          $(GMAT_BASE)/factory/CalculatedPointFactory.o \
+          $(GMAT_BASE)/factory/CelestialBodyFactory.o \
+          $(GMAT_BASE)/factory/CommandFactory.o \
+          $(GMAT_BASE)/factory/CoordinateSystemFactory.o \
+          $(GMAT_BASE)/factory/FactoryException.o \
+          $(GMAT_BASE)/factory/FactoryManager.o \
+          $(GMAT_BASE)/factory/Factory.o \
+          $(GMAT_BASE)/factory/ODEModelFactory.o \
+          $(GMAT_BASE)/factory/HardwareFactory.o \
+          $(GMAT_BASE)/factory/InterfaceFactory.o \
+          $(GMAT_BASE)/factory/MathFactory.o \
+          $(GMAT_BASE)/factory/ParameterFactory.o \
+          $(GMAT_BASE)/factory/PhysicalModelFactory.o \
+          $(GMAT_BASE)/factory/PropagatorFactory.o \
+          $(GMAT_BASE)/factory/PropSetupFactory.o \
+          $(GMAT_BASE)/factory/SolarSystemFactory.o \
+          $(GMAT_BASE)/factory/SolverFactory.o \
+          $(GMAT_BASE)/factory/SpacecraftFactory.o \
+          $(GMAT_BASE)/factory/StopConditionFactory.o \
+          $(GMAT_BASE)/factory/SubscriberFactory.o \
+          $(GMAT_BASE)/forcemodel/DragForce.o \
+          $(GMAT_BASE)/forcemodel/EventModel.o \
+          $(GMAT_BASE)/forcemodel/FiniteThrust.o \
+          $(GMAT_BASE)/forcemodel/GravityField.o \
+          $(GMAT_BASE)/forcemodel/HarmonicField.o \
+          $(GMAT_BASE)/forcemodel/ODEModelException.o \
+          $(GMAT_BASE)/forcemodel/ODEModel.o \
+          $(GMAT_BASE)/forcemodel/PhysicalModel.o \
+          $(GMAT_BASE)/forcemodel/PointMassForce.o \
+          $(GMAT_BASE)/forcemodel/RelativisticCorrection.o \
+          $(GMAT_BASE)/forcemodel/SolarRadiationPressure.o \
+          $(GMAT_BASE)/forcemodel/harmonic/Harmonic.o \
+          $(GMAT_BASE)/forcemodel/harmonic/HarmonicGravity.o \
+          $(GMAT_BASE)/forcemodel/harmonic/HarmonicGravityCof.o \
+          $(GMAT_BASE)/forcemodel/harmonic/HarmonicGravityGrv.o \
+          $(GMAT_BASE)/foundation/GmatBaseException.o \
+          $(GMAT_BASE)/foundation/GmatBase.o \
+          $(GMAT_BASE)/foundation/Covariance.o \
+          $(GMAT_BASE)/foundation/ElementWrapper.o \
+          $(GMAT_BASE)/foundation/GmatState.o \
+          $(GMAT_BASE)/foundation/ObjectInitializer.o \
+          $(GMAT_BASE)/foundation/SpacePoint.o \
+          $(GMAT_BASE)/foundation/StateManager.o \
+          $(GMAT_BASE)/function/Function.o \
+          $(GMAT_BASE)/function/FunctionException.o \
+          $(GMAT_BASE)/function/FunctionManager.o \
+          $(GMAT_BASE)/hardware/FuelTank.o \
+          $(GMAT_BASE)/hardware/HardwareException.o \
+          $(GMAT_BASE)/hardware/Hardware.o \
+          $(GMAT_BASE)/hardware/Thruster.o \
+          $(GMAT_BASE)/interface/InterfaceException.o \
+          $(GMAT_BASE)/interface/Interface.o \
+          $(GMAT_BASE)/interface/GmatInterface.o \
+          $(GMAT_BASE)/interpolator/InterpolatorException.o \
+          $(GMAT_BASE)/interpolator/Interpolator.o \
+          $(GMAT_BASE)/interpolator/BrentDekkerZero.o \
+          $(GMAT_BASE)/interpolator/CubicSplineInterpolator.o \
+          $(GMAT_BASE)/interpolator/LinearInterpolator.o \
+          $(GMAT_BASE)/interpolator/NotAKnotInterpolator.o \
+          $(GMAT_BASE)/interpolator/LagrangeInterpolator.o \
+          $(GMAT_BASE)/interpreter/Interpreter.o \
+          $(GMAT_BASE)/interpreter/InterpreterException.o \
+          $(GMAT_BASE)/interpreter/MathParser.o \
+          $(GMAT_BASE)/interpreter/MathTree.o \
+          $(GMAT_BASE)/interpreter/ScriptInterpreter.o \
+          $(GMAT_BASE)/interpreter/ScriptReadWriter.o \
+          $(GMAT_BASE)/interpreter/Validator.o \
+          $(GMAT_BASE)/math/Abs.o \
+          $(GMAT_BASE)/math/Acos.o \
+          $(GMAT_BASE)/math/Acosh.o \
+          $(GMAT_BASE)/math/Add.o \
+          $(GMAT_BASE)/math/Asin.o \
+          $(GMAT_BASE)/math/Asinh.o \
+          $(GMAT_BASE)/math/Atan.o \
+          $(GMAT_BASE)/math/Atan2.o \
+          $(GMAT_BASE)/math/Cos.o \
+          $(GMAT_BASE)/math/Cosh.o \
+          $(GMAT_BASE)/math/DegToRad.o \
+          $(GMAT_BASE)/math/Determinant.o \
+          $(GMAT_BASE)/math/Divide.o \
+          $(GMAT_BASE)/math/Exp.o \
+          $(GMAT_BASE)/math/FunctionRunner.o \
+          $(GMAT_BASE)/math/Log.o \
+          $(GMAT_BASE)/math/Log10.o \
+          $(GMAT_BASE)/math/Inverse.o \
+          $(GMAT_BASE)/math/MathElement.o \
+          $(GMAT_BASE)/math/MathException.o \
+          $(GMAT_BASE)/math/MathFunction.o \
+          $(GMAT_BASE)/math/MathNode.o \
+          $(GMAT_BASE)/math/Multiply.o \
+          $(GMAT_BASE)/math/Negate.o \
+          $(GMAT_BASE)/math/Norm.o \
+          $(GMAT_BASE)/math/Power.o \
+          $(GMAT_BASE)/math/RadToDeg.o \
+          $(GMAT_BASE)/math/Sin.o \
+          $(GMAT_BASE)/math/Sinh.o \
+          $(GMAT_BASE)/math/Sqrt.o \
+          $(GMAT_BASE)/math/Subtract.o \
+          $(GMAT_BASE)/math/Tan.o \
+          $(GMAT_BASE)/math/Tanh.o \
+          $(GMAT_BASE)/math/Transpose.o \
+          $(GMAT_BASE)/parameter/AngularParameters.o \
+          $(GMAT_BASE)/parameter/Array.o \
+          $(GMAT_BASE)/parameter/ArrayWrapper.o \
+          $(GMAT_BASE)/parameter/ArrayElementWrapper.o \
+          $(GMAT_BASE)/parameter/AttitudeData.o \
+          $(GMAT_BASE)/parameter/AttitudeParameters.o \
+          $(GMAT_BASE)/parameter/AttitudeReal.o \
+          $(GMAT_BASE)/parameter/AttitudeString.o \
+          $(GMAT_BASE)/parameter/BallisticMassParameters.o \
+          $(GMAT_BASE)/parameter/BallisticMassReal.o \
+          $(GMAT_BASE)/parameter/BooleanWrapper.o \
+          $(GMAT_BASE)/parameter/BplaneData.o \
+          $(GMAT_BASE)/parameter/BplaneParameters.o \
+          $(GMAT_BASE)/parameter/BplaneReal.o \
+          $(GMAT_BASE)/parameter/BurnData.o \
+          $(GMAT_BASE)/parameter/BurnParameters.o \
+          $(GMAT_BASE)/parameter/BurnReal.o \
+          $(GMAT_BASE)/parameter/CartesianParameters.o \
+          $(GMAT_BASE)/parameter/EnvData.o \
+          $(GMAT_BASE)/parameter/EnvParameters.o \
+          $(GMAT_BASE)/parameter/EnvReal.o \
+          $(GMAT_BASE)/parameter/EquinoctialParameters.o \
+          $(GMAT_BASE)/parameter/ExpressionParser.o \
+          $(GMAT_BASE)/parameter/HardwareReal.o \
+          $(GMAT_BASE)/parameter/HardwareParameters.o \
+          $(GMAT_BASE)/parameter/KeplerianParameters.o \
+          $(GMAT_BASE)/parameter/NumberWrapper.o \
+          $(GMAT_BASE)/parameter/ObjectWrapper.o \
+          $(GMAT_BASE)/parameter/ObjectPropertyWrapper.o \
+          $(GMAT_BASE)/parameter/OnOffWrapper.o \
+          $(GMAT_BASE)/parameter/OrbitalParameters.o \
+          $(GMAT_BASE)/parameter/OrbitData.o \
+          $(GMAT_BASE)/parameter/OrbitReal.o \
+          $(GMAT_BASE)/parameter/OrbitRmat33.o \
+          $(GMAT_BASE)/parameter/OrbitRmat66.o \
+          $(GMAT_BASE)/parameter/OrbitRvec6.o \
+          $(GMAT_BASE)/parameter/OrbitStmParameters.o \
+          $(GMAT_BASE)/parameter/ParameterDatabase.o \
+          $(GMAT_BASE)/parameter/ParameterInfo.o \
+          $(GMAT_BASE)/parameter/Parameter.o \
+          $(GMAT_BASE)/parameter/ParameterWrapper.o \
+          $(GMAT_BASE)/parameter/PlanetData.o \
+          $(GMAT_BASE)/parameter/PlanetParameters.o \
+          $(GMAT_BASE)/parameter/PlanetReal.o \
+          $(GMAT_BASE)/parameter/RealVar.o \
+          $(GMAT_BASE)/parameter/RefData.o \
+          $(GMAT_BASE)/parameter/Rmat33Var.o \
+          $(GMAT_BASE)/parameter/Rmat66Var.o \
+          $(GMAT_BASE)/parameter/Rvec6Var.o \
+          $(GMAT_BASE)/parameter/SpacecraftData.o \
+          $(GMAT_BASE)/parameter/SphericalParameters.o \
+          $(GMAT_BASE)/parameter/StringWrapper.o \
+          $(GMAT_BASE)/parameter/StringObjectWrapper.o \
+          $(GMAT_BASE)/parameter/StringVar.o \
+          $(GMAT_BASE)/parameter/TimeData.o \
+          $(GMAT_BASE)/parameter/TimeParameters.o \
+          $(GMAT_BASE)/parameter/TimeReal.o \
+          $(GMAT_BASE)/parameter/TimeString.o \
+          $(GMAT_BASE)/parameter/Variable.o \
+          $(GMAT_BASE)/parameter/VariableWrapper.o \
+          $(GMAT_BASE)/plugin/DynamicLibrary.o \
+          $(GMAT_BASE)/propagator/AdamsBashforthMoulton.o \
+          $(GMAT_BASE)/propagator/DormandElMikkawyPrince68.o \
+          $(GMAT_BASE)/propagator/Integrator.o \
+          $(GMAT_BASE)/propagator/PredictorCorrector.o \
+          $(GMAT_BASE)/propagator/PrinceDormand45.o \
+          $(GMAT_BASE)/propagator/PrinceDormand78.o \
+          $(GMAT_BASE)/propagator/PropagationStateManager.o \
+          $(GMAT_BASE)/propagator/Propagator.o \
+          $(GMAT_BASE)/propagator/PropSetup.o \
+          $(GMAT_BASE)/propagator/RungeKutta89.o \
+          $(GMAT_BASE)/propagator/RungeKuttaFehlberg56.o \
+          $(GMAT_BASE)/propagator/RungeKuttaNystrom.o \
+          $(GMAT_BASE)/propagator/RungeKutta.o \
+          $(GMAT_BASE)/solarsys/Asteroid.o \
+          $(GMAT_BASE)/solarsys/AtmosphereModel.o \
+          $(GMAT_BASE)/solarsys/Barycenter.o \
+          $(GMAT_BASE)/solarsys/CalculatedPoint.o \
+          $(GMAT_BASE)/solarsys/CelestialBody.o \
+          $(GMAT_BASE)/solarsys/Comet.o \
+          $(GMAT_BASE)/solarsys/DeFile.o \
+          $(GMAT_BASE)/solarsys/ExponentialAtmosphere.o \
+          $(GMAT_BASE)/solarsys/JacchiaRobertsAtmosphere.o \
+          $(GMAT_BASE)/solarsys/LibrationPoint.o \
+          $(GMAT_BASE)/solarsys/Moon.o \
+          $(GMAT_BASE)/solarsys/Msise90Atmosphere.o \
+          $(GMAT_BASE)/solarsys/PlanetaryEphemException.o \
+          $(GMAT_BASE)/solarsys/PlanetaryEphem.o \
+          $(GMAT_BASE)/solarsys/Planet.o \
+          $(GMAT_BASE)/solarsys/SimpleExponentialAtmosphere.o \
+          $(GMAT_BASE)/solarsys/SlpFile.o \
+          $(GMAT_BASE)/solarsys/SolarFluxFileReader.o \
+          $(GMAT_BASE)/solarsys/SolarSystemException.o \
+          $(GMAT_BASE)/solarsys/SolarSystem.o \
+          $(GMAT_BASE)/solarsys/SpecialCelestialPoint.o \
+          $(GMAT_BASE)/solarsys/Star.o \
+          $(GMAT_BASE)/solver/Solver.o \
+          $(GMAT_BASE)/solver/DifferentialCorrector.o \
+          $(GMAT_BASE)/solver/Optimizer.o \
+          $(GMAT_BASE)/solver/InternalOptimizer.o \
+          $(GMAT_BASE)/solver/ExternalOptimizer.o \
+          $(GMAT_BASE)/solver/SteepestDescent.o \
+          $(GMAT_BASE)/solver/DerivativeModel.o \
+          $(GMAT_BASE)/solver/Gradient.o \
+          $(GMAT_BASE)/solver/Jacobian.o \
+          $(GMAT_BASE)/solver/LineSearch.o \
+          $(GMAT_BASE)/spacecraft/Formation.o \
+          $(GMAT_BASE)/spacecraft/Spacecraft.o \
+          $(GMAT_BASE)/spacecraft/SpaceObject.o \
+          $(GMAT_BASE)/spacecraft/TextTrajectoryFile.o \
+          $(GMAT_BASE)/stopcond/StopCondition.o \
+          $(GMAT_BASE)/subscriber/EphemerisFile.o \
+          $(GMAT_BASE)/subscriber/MessageWindow.o \
+          $(GMAT_BASE)/subscriber/TextEphemFile.o \
+          $(GMAT_BASE)/subscriber/OrbitPlot.o \
+          $(GMAT_BASE)/subscriber/GroundTrackPlot.o \
+          $(GMAT_BASE)/subscriber/OrbitView.o \
+          $(GMAT_BASE)/subscriber/OwnedPlot.o \
+          $(GMAT_BASE)/subscriber/ReportFile.o \
+          $(GMAT_BASE)/subscriber/Subscriber.o \
+          $(GMAT_BASE)/subscriber/XyPlot.o \
+          $(GMAT_BASE)/util/A1Date.o \
+          $(GMAT_BASE)/util/A1Mjd.o \
+          $(GMAT_BASE)/util/AngleUtil.o \
+          $(GMAT_BASE)/util/AttitudeUtil.o \
+          $(GMAT_BASE)/util/BaseException.o \
+          $(GMAT_BASE)/util/BodyFixedStateConverter.o \
+          $(GMAT_BASE)/util/CalculationUtilities.o \
+          $(GMAT_BASE)/util/Date.o \
+          $(GMAT_BASE)/util/DateUtil.o \
+          $(GMAT_BASE)/util/ElapsedTime.o \
+          $(GMAT_BASE)/util/EopFile.o \
+          $(GMAT_BASE)/util/FileManager.o \
+          $(GMAT_BASE)/util/FileUtil.o \
+          $(GMAT_BASE)/util/Frozen.o \
+          $(GMAT_BASE)/util/GmatGlobal.o \
+          $(GMAT_BASE)/util/GravityFileUtil.o \
+          $(GMAT_BASE)/util/GregorianDate.o \
+          $(GMAT_BASE)/util/LatLonHgt.o \
+          $(GMAT_BASE)/util/LeapSecsFileReader.o \
+          $(GMAT_BASE)/util/Linear.o \
+          $(GMAT_BASE)/util/MemoryTracker.o \
+          $(GMAT_BASE)/util/MessageInterface.o \
+          $(GMAT_BASE)/util/MessageReceiver.o \
+          $(GMAT_BASE)/util/OrbitDesignerTime.o \
+          $(GMAT_BASE)/util/RealUtilities.o \
+          $(GMAT_BASE)/util/RepeatGroundTrack.o \
+          $(GMAT_BASE)/util/RepeatSunSync.o \
+          $(GMAT_BASE)/util/RgbColor.o \
+          $(GMAT_BASE)/util/Rmatrix33.o \
+          $(GMAT_BASE)/util/Rmatrix66.o \
+          $(GMAT_BASE)/util/Rmatrix.o \
+          $(GMAT_BASE)/util/Rvector3.o \
+          $(GMAT_BASE)/util/Rvector6.o \
+          $(GMAT_BASE)/util/Rvector.o \
+          $(GMAT_BASE)/util/StateConversionUtil.o \
+          $(GMAT_BASE)/util/StringTokenizer.o \
+          $(GMAT_BASE)/util/StringUtil.o \
+          $(GMAT_BASE)/util/SunSync.o \
+          $(GMAT_BASE)/util/TextParser.o \
+          $(GMAT_BASE)/util/TimeSystemConverter.o \
+          $(GMAT_BASE)/util/TimeTypes.o \
+          $(GMAT_BASE)/util/UtcDate.o \
+          $(GMAT_PLUGINS)/GmatFunctionPlugin/src/base/factory/GmatFunctionFactory.o \
+          $(GMAT_PLUGINS)/GmatFunctionPlugin/src/base/function/GmatFunction.o \
+          $(GMAT_PLUGINS)/MatlabInterfacePlugin/src/base/function/MatlabFunction.o \
+          $(GMAT_CONSOLE)/ConsoleMessageReceiver.o \
+          $(GMAT_CONSOLE)/ConsoleAppException.o \
+          ../Common/TestOutput.o \
+          ./TestMathParser.o
+
+$(TARGET): $(OBJECTS) $(FORTRAN_OBJECTS) 
+	$(CPP) $(OBJECTS) $(FORTRAN_OBJECTS) $(SPICE_LIBRARIES) \
+	$(FORTRAN_LIB) -o $(TARGET)
+
+FORTRAN_OBJECTS = $(GMAT_BASE)/solarsys/msise90_sub.o
+
+$(OBJECTS) : %.o: %.cpp
+	$(CPP) $(CPPFLAGS) $(HEADERS) -c -o $@ $<
+
+# Specific instructions for the fortran code
+ifeq ($(USE_F2C_VERSION), 0)
+
+$(GMAT_BASE)/solarsys/msise90_sub.o: $(GMAT_BASE)/solarsys/msise90_sub.for
+	$(FORTRAN) -c $(GMAT_BASE)/solarsys/msise90_sub.for -o $(GMAT_BASE)/solarsys/msise90_sub.o $(F77_FLAGS) 
+
+else
+$(GMAT_BASE)/solarsys/msise90_sub.o: $(GMAT_BASE)/solarsys/msise90_sub.for
+	$(C) -c $(GMAT_BASE)/solarsys/msise90_sub.c -o $(GMAT_BASE)/solarsys/msise90_sub.o $(F2C_INCLUDE) $(CFLAGS)
+
+endif

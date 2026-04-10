@@ -1,0 +1,730 @@
+
+\chapter{Optimal Control Functions and Jacobians}
+
+This chapter contains specifications for optimal control functions and their Jacobians.
+
+\subsection{State Transformations and Associated Jacobians}
+Gradient-based numerical optimization algorithms use partial derivatives with respect to the decision vector variables to solve the NLP problem.~The decision vector parameters are often expressed in a different coordinate system, state representation, and central body than optimal control functions requiring states and Jacobians to be converted from decision vector coordinates to function coordinates and vice versa.~In this chapter, the expressions for state transformations and the Jacobian of the state transformations, required to compute optimal control function Jacobians, are formulated and discussed in detail.~The convention for the mathematical notations is described next.~The decision vector expressed in decision vector and function coordinates are respectively $\leftidx{_{\mcS_D}^{\mcF_D}} \mbz_{\mcO_D}$ and $\leftidx{_{\mcS_F}^{\mcF_F}} \mbz_{\mcO_F} $.~Note that the right-subscripts $\mcO_F$ and $\mcO_D$ represent the origins of the coordinate systems (central body) for the optimal control function and decision vectors, respectively.~The optimal control function and decision vectors' coordinate systems are denoted by left-superscripts $\mcF_F$ and $\mcF_D$, respectively.~The left-subscripts $\mcS_F$ and $\mcS_D$ represent the state representation of the optimal control function and decision vectors (e.g. Cartesian, Keplerian), respectively.~Note that translations and rotations are implemented using Cartesian representations, which at times requires a transformation to an intermediate Cartesian representation denoted by $\mcS_C$.~The function that maps the decision vector state representation to the function state representation is denoted by $\mbf^{\mcS_F / \mcS_D}$.~The function $\mbf^{\mcO_F / \mcO_D}$ maps the decision vector's origin to the function vector's origin.~The rotation matrix $\mbf^{\mcO_F / \mcO_D}$ converts the decision vector's reference frame to the function vector's reference frame.~In general, the transformation from decision vector description and coordinate system to the function vector description and coordinate system may be written as,
+%
+\begin{equation}
+\boxed{
+ \mbz^{F} \triangleq  \leftidx{_{\mcS_F}^{\mcF_F}} \mbz_{\mcO_F} = \mbf^{\mcS_F / \mcS_C}\left(\mbf^{\mcF_F / \mcF_D} \left(\mbf^{\mcO_F / \mcO_D}  + \mbf^{\mcS_C / \mcS_D} ( \leftidx{_{\mcS_D}^{\mcF_D}} \mbz_{\mcO_D})  \right)  \right)} \label{Eq:DecToFunTransformation}
+\end{equation}
+%
+In Eq.~(\ref{Eq:DecToFunTransformation}), the nonlinear mapping $\mbf^{\mcS_C / \mcS_D} (\mbz^D)$ converts the decision vector parameters to Cartesian to perform state translations and rotations, $\mbf^{\mcO_F / \mcO_D}$ is the translation from the origin of the decision vector coordinates to the origin of the optimal control function, $\mbf^{\mcF_F / \mcF_D}$ performs the rotation from the decision vector frame to the function frame, and $\mbf^{\mcS_F / \mcS_C}$ transforms the parameters to the state representation required for the function.~The partial derivative of a general optimal control function  $\mbf(\mbz^{F})$ with respect to $\mbz^{D}$ is
+%
+\begin{equation}
+\frac{\partial \mbf(\mbz^{F})}{\partial\mbz^{D}} =
+\frac{\partial \mbf(\mbz^{F})}{\partial\mbz^{F}}\frac{\partial \mbz^{F}}{\partial\mbz^{D}}
+\end{equation}
+%
+The partials $\partial \mbf(\mbz^{F})/\partial\mbz^{F}$ are contained in the subsections later in this chapter for each optimal control function.~We define the following intermediate state transformations to aid in expressing the partial $\partial \mbz^{F}/\partial\mbz^{D}$.
+%
+\begin{equation}
+   \mbz' = \mbf^{\mcS_C / \mcS_D} (\mbz^D) = \leftidx{_{\mcS_C}^{\mcF_D}} \mbz_{\mcO_D}
+\end{equation}
+%
+\begin{equation}
+   \mbz'' = \mbf^{\mcO_F / \mcO_D}  (\mbz')+ \mbf^{\mcS_C / \mcS_D} (\mbz^D) = \mbf^{\mcO_F / \mcO_D}( \mbz') + \mbz' = \leftidx{_{\mcS_C}^{\mcF_D}} \mbz_{\mcO_F}
+\end{equation}
+%
+\begin{equation}
+   \mbz''' = \mbf^{\mcF_F / \mcF_D} \left(\mbf^{\mcO_F / \mcO_D}  + \mbf^{\mcS_C / \mcS_D} (\mbz^D)\right)  =  \mbf^{\mcF_F / \mcF_D}(\mbz'') = \leftidx{_{\mcS_C}^{\mcF_F}} \mbz_{\mcO_F}
+\end{equation}
+%
+Using the intermediate state definitions, the partial $\partial \mbz^{F}/\partial\mbz^{D}$ is
+%
+\begin{equation}
+   \frac{\partial \mbz^{F}}{\partial\mbz^{D}} = \frac{\partial \mbf^{\mcS_F / \mcS_C}(\mbz''')}{\partial\mbz'''}\frac{\partial \mbz'''}{\partial \mbz^D}  \label{Eq:FuncJac_wrtz3}
+\end{equation}
+%
+where we note that $\mbz'''$, $\mbz''$, and $\mbz'$ are by definition expressed in the Cartesian representation and hence partials of state representation transformations with respect to the intermediate variables are partials with respect to the Cartesian representation.~Proceeding with further differentiation of the intermediate states we obtain
+%
+\begin{equation}
+   \frac{\partial \mbz'''}{\partial \mbz^D} =  \frac{\partial \mbf^{\mcF_F / \mcF_D}(\mbz'')}{\partial \mbz''} \frac{\partial \mbz''}{\partial \mbz^D} \label{Eq:FuncJac_2}
+\end{equation}
+%
+where $\frac{\partial \mbf^{\mcF_F / \mcF_D}(\mbz'')}{\partial \mbz'''}$ is the partial $\partial \mbf^{\mcF_F / \mcF_D} / \partial \mbz'''$ evaluated at $\mbz''$.~Substituting Eq.~(\ref{Eq:FuncJac_2}) into Eq.~(\ref{Eq:FuncJac_wrtz3}) we obtain
+%
+\begin{equation}
+   \frac{\partial \mbz^{F}}{\partial\mbz^{D}} = \frac{\partial \mbf^{\mcS_F / \mcS_C}(\mbz''')}{\partial\mbz'''}\frac{\partial \mbf^{\mcF_F / \mcF_D}(\mbz'')}{\partial \mbz''} \frac{\partial \mbz''}{\partial \mbz^D} \label{Eq:FuncJac_intermediate1}
+\end{equation}
+%
+Taking the partial of $\partial \mbz'' / \partial \mbz^D$ and $\partial \mbz' / \partial \mbz^D$ we obtain
+%
+\begin{equation}
+   \frac{\partial \mbz''}{\partial \mbz^D} =  \frac{\partial \mbf^{\mcO_F / \mcO_D}(\mbz')}{\partial \mbz'}\frac{\partial \mbz'}{\partial \mbz^D} + \frac{\partial \mbz'}{\partial \mbz^D} \label{Eq:FuncJac_wrtz2}
+\end{equation}
+%
+and
+\begin{equation}
+   \frac{\partial \mbz'}{\partial \mbz^D} =  \frac{\partial \mbf^{\mcS_C / \mcS_D} (\mbz^D)}{\partial \mbz^D} \label{Eq:FuncJac_wrtz1}
+\end{equation}
+%
+Substituting Eq.~(\ref{Eq:FuncJac_wrtz1}) into Eq.~(\ref{Eq:FuncJac_wrtz2}) and the result into the Eq.~(\ref{Eq:FuncJac_intermediate1}) we arrive at the complete expression for the Jacobian $\partial \mbz^{F} / \partial\mbz^{D}$
+%
+\begin{equation}
+\boxed{
+   \frac{\partial \mbz^{F}}{\partial\mbz^{D}} = \frac{\partial \mbf^{\mcS_F / \mcS_C}(\mbz''')}{\partial\mbz'''}\frac{\partial \mbf^{\mcF_F / \mcF_D}(\mbz'')}{\partial \mbz''} \left(\frac{\partial \mbf^{\mcO_F / \mcO_D}(\mbz')}{\partial \mbz'}  \frac{\partial \mbf^{\mcS_C / \mcS_D} (\mbz^D)}{\partial \mbz^D} + \frac{\partial \mbf^{\mcS_C / \mcS_D} (\mbz^D)}{\partial \mbz^D} \right)} \label{Eq:FuncJac_complete}
+\end{equation}
+%
+Terms such as $\partial \mbf^{\mcS_F / \mbz'''}(\mbz''')/\partial\mbz^{C}$ are the partial derivative of state representation conversions (e.g.~the partial derivatives of the Keplerian elements with respect to the Cartesian elements).~Those derivatives are in general are non-zero, but in the case when the ``from" representation and ``to" representation are the same, such as $\mbf^{\mcS_C / \mcS_C}$, then $\partial \mbf^{\mcS_C / \mcS_C}(\mbz''')/\partial\mbz'''$ is identity.~Partials of the form $\partial \mbf^{\mcF_F / \mcF_D}(\mbz'')/\partial \mbz''$ are the partials of coordinate rotations with respect to decision vector parameters and are zero except for cases when the coordinate rotation is a function of the orbital state such as LVLH and other similar coordinate frames.~The term $\partial \mbf^{\mcO_F / \mcO_D}(\mbz')/ \partial \mbz'$ is the partial of the translation between decision vector and function vector origins and is zero except in the case when a spacecraft is the origin of the coordinate system.~It is important to note that some functions have mixed state representations such as when a function puts constraints on a mixture of spherical and Cartesian parameters.~In that case, the expressions are applied appropriately to the rows of the Jacobian.
+
+The total derivative of a general optimal control function  $\mbf(\mbz^{F})$ with respect to time assuming explicit dependency on time is
+%
+%\begin{equation}
+%\frac{\partial \mbf(\mbz^{F})}{\partial t} =
+%\frac{\partial \mbf(\mbz^{F})}{\partial\mbz^{F}}\frac{\partial \mbz^{F}}{\partial t}
+%\end{equation}
+\begin{equation}
+\frac{\text{d} \mbf(\mbz^{F})}{\text{d} t} =
+\frac{\partial \mbf(\mbz^{F})}{\partial\mbz^{F}}\frac{\text{d} \mbz^{F}}{\text{d} t} + \frac{\partial \mbf(\mbz^{F})}{\partial t}
+\end{equation}
+%
+Using the intermediate state definitions, the partial $\text{d} \mbz^{F}/\text{d} t$ is
+%
+\begin{equation}
+   \frac{\text{d} \mbz^{F}}{\text{d} t} = \frac{\partial \mbf^{\mcS_F / \mcS_C}(\mbz''')}{\partial\mbz'''}\frac{\text{d} \mbz'''}{\text{d} t}  + \frac{\partial \mbz^{F}}{\partial t}
+\end{equation}
+%
+Taking the $\text{d} \mbz''' / \text{d} t$, $\text{d} \mbz'' / \text{d} t$, and $\text{d} \mbz' / \text{d} t$ we obtain
+%
+\begin{equation}
+   \frac{\text{d} \mbz'''}{\text{d} t} =  \frac{\partial \mbf^{\mcF_F / \mcF_D}(\mbz'')}{\partial \mbz''}\frac{\text{d} \mbz''}{\text{d} t} +  \frac{\partial \mbz'''}{\partial t} \label{Eq:FuncJac_dt2_2}
+\end{equation}
+Note that
+\begin{equation}
+   \frac{\text{d} \mbz''}{\text{d} t} =  \frac{\partial \mbf^{\mcO_F / \mcO_D}(\mbz')}{\mbz'}\frac{\text{d} \mbz'}{\text{d} t} + \frac{\partial \mbz'}{\partial t} \label{Eq:FuncJac_wrtz2_2}
+\end{equation}
+%
+\begin{equation}
+   \frac{\text{d} \mbz'}{\text{d} t} = \frac{\partial \mbf^{\mcS_C / \mcS_D}(\mbz^D)}{\partial\mbz^D} \frac{\text{d}\mbz^D}{\text{d} t} + \frac{\partial \mbz^D}{\partial t} \label{Eq:FuncJac_wrtz1_2}
+\end{equation}
+Substituting Eq.~\eqref{Eq:FuncJac_wrtz1_2} into Eq.~\eqref{Eq:FuncJac_wrtz2_2} and the result back into Eq.~\eqref{Eq:FuncJac_dt2_2}, we get,
+\begin{equation}
+\boxed{   \frac{\text{d} \mbz^{F}}{\text{d} t} = \frac{\partial \mbf^{\mcS_F / \mcS_C}(\mbz''')}{\partial\mbz'''}\left(\frac{\partial \mbf^{\mcF_F / \mcF_D}(\mbz'')}{\partial \mbz''}\left(\frac{\partial \mbf^{\mcO_F / \mcO_D}(\mbz')}{\mbz'}\left(\frac{\partial \mbf^{\mcS_C / \mcS_D}(\mbz^D)}{\partial\mbz^D} \frac{\text{d}\mbz^D}{\text{d} t} + \frac{\partial \mbz^D}{\partial t}\right) + \frac{\partial \mbz'}{\partial t}\right)+  \frac{\partial \mbz'''}{\partial t} \right) + \frac{\partial \mbz^{F}}{\partial t}    }
+\end{equation}
+
+%\begin{equation}
+%   \frac{\text{d} \mbz^{F}}{\text{d} t}= \mathbf{0}  \label{Eq:FuncJac_complete2}
+%\end{equation}
+%Therefore, we have,
+%\begin{equation}
+%\boxed{\frac{\text{d} \mbf(\mbz^{F})}{\text{d} t} =  \frac{\partial \mbf(\mbz^{F})}{\partial t}}
+%\end{equation}
+%\input{BoundFunc_PatchedConicFlyby}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Patched Conic Flyby Boundary Constraint}
+The patched conic flyby boundary constraint applies constraints to the end of an incoming phase and the beginning of the outgoing phase.~The constraint applies state continuity to the position, mass, and time at the flyby.~The velocity is constrained such that the turn angle $\delta$ is achievable given user defined bounds on the radius of periapsis, $r_p$.~The incoming state vector is defined as
+\begin{equation}
+   \mathbf{x}(t^-)  =  \mathbf{x}^- =
+ %
+ \begin{bmatrix}
+    \mbr^-\\
+    \mbv^-\\
+ \end{bmatrix}
+\end{equation}
+%
+The outgoing state vector is defined as
+%
+\begin{equation}
+ \mathbf{x}(t^+) =  \mathbf{x}^+=
+ %
+ \begin{bmatrix}
+    \mbr^+\\
+    \mbv^+\\
+ \end{bmatrix}
+\end{equation}
+
+The position and velocity states are specified with respect to the body about which the flyby body $B$ orbits.~The incoming and outgoing $\vinf$ vectors are, respectively
+%
+\begin{equation}
+ \vinf^- = \mbv^- - \mbv_B(t^-)
+\end{equation}
+%
+\begin{equation}
+ \vinf^+ = \mbv^+ - \mbv_B(t^+),
+\end{equation}
+%
+where $\mbv_B(t^+)$ and $\mbv_B(t^-)$ are the velocities of the flyby body with respect to the body about which it orbits at times $t^+$ and $t^-$, respectively.~The turn angle and the radius of periapsis required to achieve the turn angle are computed using
+%
+\begin{equation}
+    \delta = \arccos{{ \left(\frac{\vinf^{-^T} \vinf^{+}}{v_{\infty}^{-}v_{\infty}^{+}}\right)}}
+\end{equation}
+%
+\begin{equation}
+r_p = \frac{\mu}{v_{\infty}^{2}} \left(\frac{1}{\sin{\delta/2}} -1\right),
+\end{equation}
+
+\noindent where $\mu$ is the gravitational parameter of the flyby body.~The flyby boundary constraints are given as follows, where $r_{p_l}$ and $r_{p_u}$ are lower and upper bounds on $r_p$, respectively, and are provided by the user.
+\begin{equation}
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}_{3 \times 1} \\
+   \mathbf{0}_{3 \times 1} \\
+   0 \\
+   0 \\
+   0 \\
+   r_{p_l} \\
+\end{bmatrix}
+%----- Constraint Values
+\leq
+\begin{bmatrix}
+   \mathbf{r}^{+} - \mathbf{r}_B(t^+) \\
+   \mathbf{r}^{-} - \mathbf{r}_B(t^-) \\
+   \| \mathbf{v}_{\infty}^{+}\| - \|\mathbf{v}_{\infty}^{-} \| \\
+   m^{+} - m^{-} \\
+   t^{+} - t^{-} \\
+   r_p \\
+\end{bmatrix}
+%----- Upper Bounds
+\leq
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}_{3 \times 1} \\
+   \mathbf{0}_{3 \times 1} \\
+   0 \\
+   0 \\
+   0 \\
+   r_{p_u} \\
+\end{bmatrix}
+\end{equation}
+
+The Jacobian of the constraint with respect to $\mathbf{x}^-$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial \mathbf{x}^-} =
+\begin{bmatrix}
+   \Zeromat{3 \times 3} & \Zeromat{3 \times 3}  \\
+   \Imat{3 \times 3} & \Zeromat{3 \times 3} \\
+   \Zeromat{1 \times 3} & -\vinfhat^{-^T}  \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3}  \\
+   \Zeromat{1 \times 1} &  \Zeromat{1 \times 3}  \\
+   \Zeromat{1 \times 3} & \partial r_p/ \partial \mbv^-  \\
+\end{bmatrix}
+\end{equation}
+
+The Jacobian of the constraint with respect to $\mathbf{x}^+$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial \mathbf{x}^+} =
+\begin{bmatrix}
+   \Imat{3 \times 3}    & \Zeromat{3 \times 3}   \\
+   \Zeromat{3 \times 3} & \Zeromat{3 \times 3}  \\
+    \Zeromat{1 \times 3} & \vinfhat^{+^T}   \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3}  \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3}  \\
+   \Zeromat{1 \times 3} & \partial r_p/ \partial \mbv^+  \\
+\end{bmatrix}
+\end{equation}
+
+%
+where
+%
+\begin{equation}
+    \frac{\partial r_p}{\partial \mbv^+} = \frac{\partial r_p}{\partial \vinf^+}\frac{\partial \vinf^+}{\partial \mbv^+} =
+    -2 \frac{r_p}{v_{\infty}^+}\vinfhat^{+^T} + \frac{1}{2}\frac{\mu}{v_{\infty}^{+^3}}             \frac{\cot{(\delta/2})}{\sin{(\delta/2)}}
+     \frac{ \left( \vinfhat^{-^T} - \vinfhat^{-^T} \vinfhat^{+} \vinfhat^{+^T} \right)}{\sqrt{1 - \left(\vinfhat^{-^T} \vinfhat^{+}\right)^2}}
+\end{equation}
+%
+\begin{equation}
+    \frac{\partial r_p}{\partial \mbv^-} = \frac{\partial r_p}{\partial \vinf^-}\frac{\partial \vinf^-}{\partial \mbv^-} = \frac{1}{2}\frac{\mu}{v_{\infty}^{+^2} v_{\infty}^{-}} \frac{\cot{(\delta/2})}{\sin{(\delta/2)}}
+     \frac{ \left( \vinfhat^{+^T} - \vinfhat^{+^T} \vinfhat^{-} \vinfhat^{-^T} \right)}{\sqrt{1 - \left(\vinfhat^{-^T} \vinfhat^{+} \right)^2}}
+\end{equation}
+%
+
+The Jacobian with respect to $m^-$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial m^-} = \begin{bmatrix}
+\Zeromat{3 \times 1}\\\Zeromat{3 \times 1}\\0\\-1\\0\\0
+\end{bmatrix}
+\end{equation}
+
+
+The Jacobian with respect to $m^+$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial m^+} = \begin{bmatrix}
+\Zeromat{3 \times 1}\\\Zeromat{3 \times 1}\\0\\1\\0\\0
+\end{bmatrix}
+\end{equation}
+
+Note that the preceding derivatives assume that, in the equation for $r_p$, $v_{\infty}$ is represented by $v_{\infty}^+$, as opposed to $v_{\infty}^-$.~The Jacobian with respect to $t^+$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial t^+} =
+\begin{bmatrix}
+   -\mbv_{B}(t^+)  \\
+   \Zeromat{3 \times 1}   \\
+   \partial v_{\infty}^+ / \partial t^+ \\
+   0  \\
+   1 \\
+   \partial r_p / \partial t^+ \\
+\end{bmatrix}.
+\end{equation}
+
+The Jacobian with respect to $t^-$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial t^-} =
+\begin{bmatrix}
+   \Zeromat{3x1}  \\
+    -\mbv_{B}(t^-)  \\
+   - \partial v_{\infty}^- / \partial t^- \\
+   0  \\
+   -1 \\
+   \partial r_p / \partial t^- \\
+\end{bmatrix},
+\end{equation}
+%
+where
+
+\begin{equation}
+	\pd{v_{\infty}^+}{t^+} = - \vinfhat^{+^T} \mba_B(t^+)
+\end{equation}
+%
+\begin{equation}
+	\pd{v_{\infty}^-}{t^-} = - \vinfhat^{-^T} \mba_B(t^-)
+\end{equation}
+%
+\begin{equation}
+    \frac{\partial r_p}{\partial t^+} = \frac{\partial r_p}{\partial \vinf^+}\frac{\partial \vinf^+}{\partial t^+} =
+    - \left(-2\frac{r_p}{v_{\infty}^+}\vinfhat^{+^T} + \frac{1}{2}\frac{\mu}{v_{\infty}^{+^3}}        \frac{\cot{(\delta/2})}{\sin{(\delta/2)}}
+     \frac{ \left( \vinfhat^{-^T} - \vinfhat^{-^T} \vinfhat^{+} \vinfhat^{+^T} \right)}{\sqrt{1 - \left(\vinfhat^{-^T} \vinfhat^{+}\right)^2}}  \right)\mba_B(t^+)
+\end{equation}
+%
+\begin{equation}
+    \frac{\partial r_p}{\partial t^-} = \frac{\partial r_p}{\partial \vinf^-}\frac{\partial \vinf^-}{\partial t^-} =  -\left( \frac{1}{2}\frac{\mu}{v_{\infty}^{+^2} v_{\infty}^{-}} \frac{\cot{(\delta/2})}{\sin{(\delta/2)}}
+     \frac{ \left( \vinfhat^{+^T} - \vinfhat^{+^T} \vinfhat^{-} \vinfhat^{-^T} \right)}{\sqrt{1 - \left(\vinfhat^{-^T} \vinfhat^{+}\right)^2}}\right)\mba_B(t^-).
+\end{equation}
+%
+The patched conic flyby constraints do not have a control dependency and all partials with respect to control are zero.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Patched Conic Launch Constraints}
+The patched conic launch model uses the method of patched conics to model the state of a launch vehicle, set the launched mass, and ensure that the trajectory sought by the optimizer is within the capability of the given launch vehicle. The launch vehicle's objective is to deliver the payload spacecraft onto a desired launch asymptote, which is described by a right ascension ($RLA$) and declination ($DLA$). Taking the patched conic approximation that the radius of a planet's sphere of influence constitutes infinity, the velocity of the payload spacecraft when exiting/entering a planet's sphere of influence with respect to the velocity of the planet is:
+
+The state of the launch vehicle relative to the planet from which it is launched is given by
+%
+\begin{equation}
+   \mathbf{x}  =
+ %
+ \begin{bmatrix}
+    \mbr\\
+    \mbv\\
+    m\\
+ \end{bmatrix}
+\end{equation}
+%
+and the $\vinf $ vector is computed using
+%
+\begin{equation}
+ \vinf = \mbv - \mbv_E(t).
+\end{equation}
+%
+%\noindent and its Cartesian components are
+%
+%\begin{equation}
+% \vinf =  v_{\infty}\begin{bmatrix}
+%    \cos(RLA)\cos(DLA) \\
+%    \sin(RLA)\cos(DLA) \\
+%    \sin(DLA) \\
+% \end{bmatrix}
+%\end{equation}
+DLA  is computed from the $\vinf$ vector  using
+%
+%\begin{equation}
+%    RLA = \arctan2(v_{\infty_y},v_{\infty_x}).
+%\end{equation}
+%
+and
+%
+\begin{equation}
+    DLA = \arcsin{\frac{v_{\infty_z}}{v_{\infty}}}.
+\end{equation}
+
+
+The injected mass is usually given as a function of $C_3 = v_{\infty}^2$ (a ``$C_3$ curve''). Each $C_3$ curve is only valid for a given launch site, a given launch vehicle, and a range of $DLA$ values. This condition leads to additional constraints.
+
+The position of the launch vehicle at the time of launch, $t_0$, is equal to the position of the center of the launch planet at $t_0$.
+
+\begin{equation}
+    \mbr - \mbr_E(t)= \bold{0} \\
+ \end{equation}
+
+\noindent The DLA must be within the capabilities of the launch vehicle.
+
+\begin{equation}
+    DLA_{lb} \le DLA \le DLA_{ub} \\
+ \end{equation}
+
+\noindent Launch $C_3$ must be within the $C_3$ capabilities of the launch vehicle.
+
+\begin{equation}
+    C_{3\,lb} \le C_3 \le C_{3\,ub} \\
+ \end{equation}
+
+\noindent The maximum mass to orbit for a launch vehicle is modeled by a polynomial in $C_3$ and the mass to orbit in the model must be less than or equal to the maximum mass capability of the launch vehicle at the given $C_3$.
+
+ \begin{equation}
+  m - f_m(C_3) \leq 0 \\
+ \end{equation}
+
+\noindent The launch time, $t_{Lauunch}$, is constrained to lie between user defined bounds $t_L$ and $t_U$.
+
+ Altogether, the patched conic launch constraint vector is:
+
+ %-------------------------------------------------------------%%%%%%%%%%%%%%%%%%%%%%%%%
+ %-------------------------------------------------------------%%%%%%%%%%%%%%%%%%%%%%%%%
+ %-------------------------------------------------------------%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}_{3 \times 1} \\
+   DLA_{lb} \\
+   C_{3\,lb} \\
+   -\infty \\
+   t_{lb} \\
+   \end{bmatrix}
+%----- Constraint Values
+\leq
+\begin{bmatrix}
+  \mbr - \mbr_E(t)\\
+   DLA \\
+   C_3 \\
+   m - f_m(C_3)   \\
+   t_{Launch}\\
+\end{bmatrix}
+%----- Upper Bounds
+\leq
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}_{3 \times 1} \\
+   DLA_{ub} \\
+   C_{3\,ub} \\
+   0\\
+   t_{ub} \\
+   \end{bmatrix}
+\end{equation}
+%
+Note that the upper and lower bounds on DLA and C3, and the coefficients of the $C_3$ polynomial, are user-provided data.
+
+The partials of this constraint vector with respect to the state vector $\bold{x}$ are:
+
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial \mathbf{x}} =
+\left[ \begin{array}{ccc}
+\Imat{3 \times 3} & \bold{0}_{3 \times 3} & \bold{0}_{3 \times 1} \\
+%\bold{0}_{1 \times 3} & \frac{1}{\sqrt{1 - v_{\infty,z}^2}} \left[ \begin{array}{ccc} 0 & 0 & 1 \end{array} \right] & 0 \\
+\bold{0}_{1 \times 3} & \frac{1}{v_{\infty}^2\sqrt{v_\infty^2-v_z^2}}\left[ \begin{array}{ccc} -v_{\infty,x}v_{\infty,z} & -v_{\infty,y}v_{\infty,z}  & v_\infty^2-v_{\infty,z}^2 \end{array} \right] & 0 \\
+%\bold{0}_{1 \times 3} & \frac{\left[ \begin{array}{ccc} -v_{\infty,x}v_{\infty,z} & -v_{\infty,y}v_{\infty,z}  & v_\infty^2-v_{\infty,z}^2 \end{array} \right]}{v_{\infty}^2\sqrt{v_\infty^2-v_z^2}} & 0 \\
+\bold{0}_{1 \times 3} & 2 \bold{v}_{\infty}^T & 0 \\
+\bold{0}_{1 \times 3} & -2 \frac{\partial f_m \left(C_3 \right)}{\partial C_3} \bold{v}_{\infty}^T & 1 \\
+\bold{0}_{1 \times 3} & \bold{0}_{1 \times 3} & 0
+\end{array} \right]
+\end{equation}
+
+The partials with respect to time are:
+
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial t} =
+\begin{bmatrix}
+\bold{0}_{3 \times 1}\\
+0\\
+-2 \mathbf{v}_{\infty}^T \frac{\partial \mathbf{v_E(t)}}{\partial \mathbf{t}}\\
+-2\frac{\partial f_m \left( C_3 \right)}{\partial C_3} \mathbf{v}_{\infty}^T\left[\frac{\partial \mathbf{v_E(t)}}{\partial \mathbf{t}} \right] \\
+1\\
+\end{bmatrix}
+\end{equation}
+
+The function $f_m(C_3)$ is a polynomial curve whose order and coefficients $a_i$ are valid for a specific launch vehicle at a specific launch site. These details are found in the .emtg\_launchvehicleopt model. Explicitly,
+
+\begin{equation}
+f_m(C_3) = \sum_{i=1}^{n}{a_iC_{3}^i}
+\end{equation}
+
+and the associated partial derivative with respect to $C_3$ is
+
+\begin{equation}
+\frac{\partial{f_m(C_3)}}{\partial{C_3}} = \sum_{i=1}^{n}{i a_i C_{3}^{i-1}}
+\end{equation}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Celestial Body Rendezvous}
+The patched conic rendezvous constraint enforces continuity to the position and velocity of the spacecraft and celestial body at either the beginning or end of a phase dependent upon user configuration.  The patched conic rendezvous constraints are shown below where the superscript $+$ or $-$ notation has been omitted.~The functional form of the constraints is identical regardless of the phase point that is constrained (phase start, or phase end).
+%
+\begin{equation}
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}_{3 \times 1} \\
+   \mathbf{0}_{3 \times 1} \\
+\end{bmatrix}
+%----- Constraint Values
+\leq
+\begin{bmatrix}
+   \mathbf{r} - \mathbf{r}_B(t) \\
+   \mathbf{v} - \mathbf{v}_B(t) \\
+
+\end{bmatrix}
+%----- Upper Bounds
+\leq
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}_{3 \times 1} \\
+   \mathbf{0}_{3 \times 1} \\
+\end{bmatrix}.
+\end{equation}
+
+%
+The Jacobian of the constraint with respect to $m$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial m} =
+\mathbf{0}_{6 \times 1}
+\end{equation}
+%
+The Cartesian state Jacobian is given by
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial \mathbf{x}} =
+\Imat{6 \times 6}
+\end{equation}
+%
+The time Jacobian is
+%
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial t} =
+\begin{bmatrix}
+   \displaystyle-\frac{\partial \mbr_B(t)}{\partial t} \\
+   \displaystyle-\frac{\partial \mbv_B(t)}{\partial t} \\
+\end{bmatrix}
+\end{equation}
+%
+
+\subsection{Patched Conic Encounter}
+The patched conic encounter constraint applies constraints to the end of an incoming phase and the beginning of the outgoing phase.~The constraint applies state continuity to the position, mass, and time at the flyby.~The velocity is not constrained.
+%
+\begin{equation}
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}_{3 \times 1} \\
+   \mathbf{0}_{3 \times 1} \\
+   \mathbf{0}_{3 \times 1} \\
+   0 \\
+   0 \\
+\end{bmatrix}
+%----- Constraint Values
+\leq
+\begin{bmatrix}
+   \mathbf{r}^{+} - \mathbf{r}_B(t^+) \\
+   \mathbf{r}^{+} - \mathbf{r}^{-} \\
+   \mathbf{v}^{+} - \mathbf{v}^{-} \\
+   m^{+} - m^{-} \\
+   t^{+} - t^{-} \\
+\end{bmatrix}
+%----- Upper Bounds
+\leq
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}_{3 \times 1} \\
+   \mathbf{0}_{3 \times 1} \\
+   \mathbf{0}_{3 \times 1} \\
+   0 \\
+   0 \\
+\end{bmatrix}
+\end{equation}
+%
+The Cartesian state Jacobians are given by
+%
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial \mathbf{x}^+} =
+\begin{bmatrix}
+   \Imat{3 \times 3}    & \Zeromat{3 \times 3} \\
+   \Imat{3 \times 3}  & \Zeromat{3 \times 3}  \\
+    \Zeromat{3 \times 3} & \Imat{3 \times 3}   \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3} \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3} \\
+\end{bmatrix}
+\end{equation}
+%
+and
+%
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial \mathbf{x}^-} =
+\begin{bmatrix}
+   \Zeromat{3 \times 3} & \Zeromat{3 \times 3} \\
+   -\Imat{3 \times 3} & \Zeromat{3 \times 3}  \\
+    \Zeromat{3 \times 3} & -\Imat{3 \times 3}   \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3} \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3} \\
+\end{bmatrix}.
+\end{equation}
+%
+The mass Jacobians are
+%
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial \mathbf{m}^+} =
+\begin{bmatrix}
+   \Zeromat{3 \times 1}  \\
+   \Zeromat{3 \times 1}  \\
+   \Zeromat{3 \times 1}   \\
+   1 \\
+   0 \\
+\end{bmatrix}
+\end{equation}
+%
+and
+%
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial \mathbf{m}^-} =
+\begin{bmatrix}
+   \Zeromat{3 \times 1}  \\
+   \Zeromat{3 \times 1}  \\
+   \Zeromat{3 \times 1}   \\
+   -1 \\
+   0 \\
+\end{bmatrix}.
+\end{equation}
+%
+The time Jacobians are  TODO FIX THESE.
+%
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial t^+} =
+\begin{bmatrix}
+   -\mbv_{B}(t^+)  \\
+   \Zeromat{3 \times 1}   \\
+   \partial v_{\infty}^+ / \partial t^+ \\
+   0  \\
+   1 \\
+   \partial r_p / \partial t^+ \\
+\end{bmatrix}
+\end{equation}
+%
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial t^-} =
+\begin{bmatrix}
+   \Zeromat{3x1}  \\
+    -\mbv_{B}(t^-)  \\
+   - \partial v_{\infty}^- / \partial t^- \\
+   0  \\
+   -1 \\
+   \partial r_p / \partial t^- \\
+\end{bmatrix}.
+\end{equation}
+
+\subsection{Simple Linkage Constraint}
+The simple linkage constraint applies continuity constraints to time, and state between two phases.~The constraint is
+
+\begin{equation}
+\boldsymbol{c} = \begin{bmatrix}
+c_1\\\boldsymbol{c}_2\\\boldsymbol{c}_3\\c_4
+\end{bmatrix} = \begin{bmatrix}
+t^+ - t^-\\ \boldsymbol{r}^+ - \boldsymbol{r}^- \\ \boldsymbol{v}^+ - \boldsymbol{v}^- \\ m^+ - m^-
+\end{bmatrix}
+\end{equation}
+
+\begin{equation}
+ \boldsymbol{c}_{\text{min}} \leq \boldsymbol{c} \leq \boldsymbol{c}_{\text{max}}
+\end{equation}
+
+\begin{equation}
+\frac{\partial  \boldsymbol{c}}{\partial  \boldsymbol{x}^-} = \begin{bmatrix}
+ \boldsymbol{0}_{1 \times 3} & \boldsymbol{0}_{1 \times 3} \\
+ -\textbf{I}_{3 \times 3}  & \boldsymbol{0}_{3 \times 3} \\
+ \boldsymbol{0}_{3 \times 3} & -\textbf{I}_{3 \times 3}\\
+ \boldsymbol{0}_{1 \times 3} & \boldsymbol{0}_{1 \times 3}
+\end{bmatrix}
+\end{equation}
+
+\begin{equation}
+\frac{\partial  \boldsymbol{c}}{\partial  \boldsymbol{x}^+} = \begin{bmatrix}
+ \boldsymbol{0}_{1 \times 3} & \boldsymbol{0}_{1 \times 3} \\
+ \textbf{I}_{3 \times 3}  & \boldsymbol{0}_{3 \times 3} \\
+ \boldsymbol{0}_{3 \times 3} & \textbf{I}_{3 \times 3}\\
+ \boldsymbol{0}_{1 \times 3} & \boldsymbol{0}_{1 \times 3}
+\end{bmatrix}
+\end{equation}
+
+\begin{equation}
+\frac{\partial  \boldsymbol{c}}{\partial  m^-} = \begin{bmatrix}
+0\\\boldsymbol{0}_{3 \times 1}\\\boldsymbol{0}_{3 \times 1}\\-1
+\end{bmatrix}
+\end{equation}
+
+\begin{equation}
+\frac{\partial  \boldsymbol{c}}{\partial  m^+} = \begin{bmatrix}
+0\\\boldsymbol{0}_{3 \times 1}\\\boldsymbol{0}_{3 \times 1}\\1
+\end{bmatrix}
+\end{equation}
+
+
+\begin{equation}
+\frac{\partial  \boldsymbol{c}}{\partial  t^-} = \begin{bmatrix}
+-1\\\boldsymbol{0}_{3 \times 1}\\\boldsymbol{0}_{3 \times 1}\\0
+\end{bmatrix}
+\end{equation}
+
+\begin{equation}
+\frac{\partial  \boldsymbol{c}}{\partial  t^+} = \begin{bmatrix}
+1\\\boldsymbol{0}_{3 \times 1}\\\boldsymbol{0}_{3 \times 1}\\0
+\end{bmatrix}
+\end{equation}
+
+\subsection{Integrated Flyby Constraint}
+
+The integrated flyby constraint applies a constraint on the position and velocity to ensure that a phase boundary is at perpiapsis and that the periapsis radius satisfies
+user defined bounds.
+
+%
+\begin{equation}
+%----- Lower Bounds
+\begin{bmatrix}
+   0 \\
+   r_{p_l} \\
+\end{bmatrix}
+%----- Constraint Values
+\leq
+\begin{bmatrix}
+   \mathbf{r}^T  \mathbf{v} \\
+   \|\mathbf{r} \|  \\
+\end{bmatrix}
+%----- Upper Bounds
+\leq
+%----- Lower Bounds
+\begin{bmatrix}
+   0 \\
+   r_{p_u} \\
+\end{bmatrix}.
+\end{equation}
+
+%
+The Jacobian of the constraint with respect to $m$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial m} =
+\mathbf{0}_{2 \times 1}
+\end{equation}
+%
+The Cartesian state Jacobian is given by
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial \mathbf{x}} = \begin{bmatrix}
+   \mbr^T & \mbv^T \\
+   \hat{\mbr}^T & \mathbf{0}_{1x3}\\
+\end{bmatrix}.
+\end{equation}
+%
+The time Jacobian is TODO Fix this.
+%
+\begin{equation}
+\frac{\partial \mathbf{c}}{\partial t} = \mathbf{0}_{2 \times 1}
+\end{equation}
+%
+
+

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="BeginScript"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>ScriptEvent</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary>BeginScript</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary>EndScript</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>BeginScript</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+
+
+    <refmiscinfo class="manual">Commands</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>BeginScript</refname>
+
+    <refpurpose>Execute free-form script commands</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Script Syntax</title>
+
+    <synopsis><literal>BeginScript</literal>
+    [<replaceable>script statements</replaceable>]
+    …
+<literal>EndScript</literal></synopsis>
+  </refsynopsisdiv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The <guilabel>BeginScript</guilabel> and
+    <guilabel>EndScript</guilabel> commands (<guilabel>ScriptEvent</guilabel>
+    in the GUI) allow you to write free-form script statements in the mission
+    sequence without the statements being shown as individual commands in the
+    GMAT GUI. This is useful as a way to group and label a complex sequence of
+    statements as one unit, or to write small sequences of script statements
+    when otherwise using the GUI to create the mission sequence. Within the
+    script itself, there is no difference in the execution of statements
+    within a <guilabel>BeginScript</guilabel>/<guilabel>EndScript</guilabel>
+    block and those outside of it.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="ScriptEditor"/></para>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Command_ScriptEvent_Default.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>The <guilabel>ScriptEvent</guilabel> GUI window divides the command
+    into three parts: an initial comment, fixed
+    <guilabel>BeginScript</guilabel> and <guilabel>EndScript</guilabel>
+    commands, and the content of the block itself. The scripting window is a
+    miniature version of the main script editor, and features line numbers,
+    syntax highlighting, code folding, and all of the editing tools available
+    in the full editor. See the <xref linkend="ScriptEditor"/> documentation
+    for more information. The <guilabel>ScriptEvent</guilabel> window performs
+    script syntax validation when changes are applied. Nested
+    <guilabel>BeginScript</guilabel>/<guilabel>EndScript</guilabel> blocks in
+    the script language are collapsed into a single
+    <guilabel>ScriptEvent</guilabel> when loaded into the GUI, and are saved
+    to a single
+    <guilabel>BeginScript</guilabel>/<guilabel>EndScript</guilabel> block when
+    saved to a script.</para>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Perform a calculation inside a
+      <guilabel>BeginScript</guilabel>/<guilabel>EndScript</guilabel> block.
+      When loaded into the GUI, the calculations within the
+      <guilabel>BeginScript</guilabel>/<guilabel>EndScript</guilabel> block
+      will be contained within a single <guilabel>ScriptEvent</guilabel>
+      command.</para>
+
+      <programlisting><code>Create Spacecraft aSat
+Create Propagator aProp
+Create ImpulsiveBurn aBurn
+Create Variable a_init v_init
+Create Variable a_transfer v_transfer_1 v_transfer_2
+Create Variable a_target v_final mu
+Create Variable dv_1 dv_2
+mu = 398600.4415
+a_target = 42164
+
+BeginMissionSequence
+
+% calculate Hohmann burns
+BeginScript
+    a_init = aSat.SMA
+    v_init = aSat.VMAG
+    a_transfer = (a_init + a_target) / 2
+    v_transfer_1 = sqrt(2*mu/a_init - mu/a_transfer)
+    v_transfer_2 = sqrt(2*mu/a_target - mu/a_transfer)
+    v_final = sqrt(mu/a_target)
+    dv_1 = v_transfer_1 - v_init
+    dv_2 = v_final - v_transfer_2
+EndScript
+
+% perform burn 1
+aBurn.Element1 = dv_1
+Maneuver aBurn(aSat)
+
+Propagate aProp(aSat) {aSat.Apoapsis}
+
+% perform burn 2
+aBurn.Element1 = dv_2
+Maneuver aBurn(aSat)
+
+Propagate aProp(aSat) {aSat.ElapsedSecs = aSat.OrbitPeriod}</code></programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

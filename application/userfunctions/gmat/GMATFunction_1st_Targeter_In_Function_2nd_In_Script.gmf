@@ -1,0 +1,42 @@
+
+% Test 2
+function GMATFunction_1st_Targeter_In_Function_2nd_In_Script()
+
+BeginMissionSequence;
+
+Global 'make All subscirbers Global' MAVEN DeepSpace_ForceModel DefaultDC EarthView MainTank MarsView MOI NearEarth_ForceModel NearMars_ForceModel rf3 EphemerisFile1 SolarSystemView TCM;
+
+Target 'Target desired B-plane coordinates' DefaultDC {SolveMode = Solve, ExitMode = SaveAndContinue};
+
+   Propagate 'Prop 3 days' NearEarth(MAVEN) {MAVEN.ElapsedDays = 3};
+	
+   Propagate 'Prop 12 Days to TCM' DeepSpace(MAVEN) {MAVEN.ElapsedDays = 12};
+   Vary 'Vary TCM.V' DefaultDC(TCM.Element1 = 0.0003937696373137754, {Perturbation = 0.00001, Lower = -10e300, Upper = 10e300, MaxStep = 0.002, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary 'Vary TCM.N' DefaultDC(TCM.Element2 = 0.0006042317048292264, {Perturbation = 0.00001, Lower = -10e300, Upper = 10e300, MaxStep = 0.002, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary 'Vary TCM.B' DefaultDC(TCM.Element3 = -0.00006747125433520692, {Perturbation = 0.00001, Lower = -10e300, Upper = 10e300, MaxStep = 0.002, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Maneuver 'Apply TCM' TCM(MAVEN);
+	
+   Propagate 'Prop 280 Days' DeepSpace(MAVEN) {MAVEN.ElapsedDays = 280};
+	
+   Propagate 'Prop to Mars Periapsis' NearMars(MAVEN) {MAVEN.Mars.Periapsis};
+   Achieve 'Achieve BdotT' DefaultDC(MAVEN.MarsInertial.BdotT = 0, {Tolerance = 0.00001});
+   Achieve 'Achieve BdotR' DefaultDC(MAVEN.MarsInertial.BdotR = -7000, {Tolerance = 0.00001});
+EndTarget;  
+
+
+Report rf3 MAVEN.UTCModJulian MAVEN.MarsInertial.X MAVEN.MarsInertial.Y MAVEN.MarsInertial.Z MAVEN.MarsInertial.VX MAVEN.MarsInertial.VY MAVEN.MarsInertial.VZ
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

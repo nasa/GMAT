@@ -1,0 +1,364 @@
+\subsection{The Plug-in Development Process}
+
+GMAT's Plug-in capabilities let developers extend the classes derived from the
+GmatBase class. Instances of these classes are constructed using GMAT's Factory
+subsystem.  Plug-in authors capitalize on this design by creating custom
+factories designed to support the new components that they are adding to the
+system.
+
+A GMAT plug-in is a shared library, linked against a shared library build of
+GMAT's base code, that contains the class code for the new capability, one or
+more supporting Factories for the new components, and a set of three C-style
+interface functions that are accessed by GMAT to load the plug-in.  In the
+following paragraphs,  we describe how to use each of these plug-in interfaces,
+starting from the build requirements for GMAT, proceeding through the
+interface functions and factory requirements, and finishing with the actual new
+component that is being added.  The next section of this document describes a
+sample plug-in which illustrates the process.
+
+\subsection{Preparing GMAT for Plug-in Use}
+
+GMAT plug-ins create classes that are derived from classes in GMAT's base code.
+The plug-in needs to be linked against that code in order to use the
+capabilities of the base classes, and to build the complete derived objects. In
+order to do this, the plug-in library needs to be linked against the base code
+that will be run when GMAT runs.
+
+One option for a plug-in developer when compiling is to build the plug-in
+using all of the required classes as part of the plug-in library. That approach
+makes the plug-in much larger than necessary, and makes the prospect of
+incompatibility between the plug-in and the evolving GMAT codebase likely.  The
+preferred approach to plug-in development is to build GMAT's base code as one or
+more shared libraries.  GMAT's build control file, BuildEnv.mk, has a setting
+for this option.  A developer that is building a plug-in need only add this line
+to the file:
+
+\begin{quote}
+\begin{verbatim}
+SHARED_BASE = 1
+\end{verbatim}
+\end{quote}
+
+\noindent and then clean and build GMAT.  The build process will build the
+base code as a shared library -- named libGmatBase or libGmatBaseNoMatlab,
+depending on the MATLAB build flags -- that can be used for plug-in
+development. Once GMAT has been built this way, the plug-in developer is ready
+to start coding the plug-in.
+
+\subsection{The Plug-in Interface Functions}
+
+GMAT accesses new user classes contained in plug-in libraries by calling three
+methods in the plug-in library: GetFactoryCount(), GetFactoryPointer(), and
+SetMessageReceiver(). GMAT uses these functions as the entry point into the
+plug-in components.  They are defined as follows:
+
+\begin{itemize}
+\item \textbf{Integer GetFactoryCount()}:  This function reports the
+number of Factory classes that are contained in the plug-in.  The current
+implementation of GMAT requires that factories only support a single core type
+because of an implementation limitation in the FactoryManager, so larger
+plug-in libraries may need more than one supporting factory.
+\item \textbf{Factory* GetFactoryPointer(Integer index)}:  This function
+retrieves Factory pointers
+from the plug-in.  Once GMAT knows the number of factories in the library, it
+calls this function to retrieve the contained factories one at a time.
+\item \textbf{void SetMessageReceiver(MessageReceiver* m)}: Messages posted
+in GMAT are all sent to a MessageReceiver.  This optional function is used to
+set the MessageReceiver for a plug-in if the developer incorporated GMAT's base
+code in the plug-in library, rather than linking against a shared library.
+\end{itemize}
+
+%\noindent The code in Section~\ref{sec:InterfaceCode} shows one implementation
+%of these methods.
+
+\subsection{The Custom Factory}
+
+GMAT's Factory subsystem is described in some detail in the Architectural
+Specification\cite{ArchSpec}. GMAT uses this subsystem to create user objects
+that are needed to run a mission.  The class diagram for the subsystem is shown
+in Figure~\ref{fig:FactorySubsystem}.
+
+\begin{figure*}[htb]
+\centering
+%\begin{picture}(180,280)(55,0)\special{psfile= Images/TheFactorySubsystem.ps
+%hscale= 45 vscale= 45 hoffset = -40 voffset = 0}
+%\end{picture}
+\includegraphics*[scale=0.55]{Images/TheFactorySubsystem.ps}
+\caption{\label{fig:FactorySubsystem} The Factory Subsystem}
+\end{figure*}
+%\begin{figure}[tb]
+%\begin{center}
+%%\includegraphics*[bb=0 0 200 147]{Images/TheFactorySubsystem.ps}
+%\includegraphics*[scale=0.28]{Images/TheFactorySubsystem.ps}
+%\caption{\label{fig:FactorySubsystem} The Factory Subsystem}
+%\end{center}
+%\end{figure}
+
+The Factory base class defines the interface used to create user objects.  It includes subclass
+specific interfaces for the core user class types, as can be seen from this portion of the class
+definition:
+\begin{scriptsize}
+\begin{verbatim}
+class GMAT_API Factory
+{
+public:
+   // Return objects as generic type
+   virtual GmatBase* CreateObject(
+         const std::string &ofType,
+         const std::string &withName = "");
+
+   // return objects as specified types
+   virtual SpaceObject*CreateSpacecraft(
+         const std::string &ofType,
+         const std::string &withName = "");
+   virtual Propagator* CreatePropagator(
+         const std::string &ofType,
+         const std::string &withName = "");
+   virtual ForceModel* CreateForceModel(
+         const std::string &ofType,
+         const std::string &withName = "");
+   ...
+\end{verbatim}
+\end{scriptsize}
+
+\noindent When the programmer has decided what type of new component needs to
+be implemented, she creates a new factory that implements the corresponding
+factory method from this group and calls the new component's constructor. Each
+of the factory classes shown in Figure~\ref{fig:FactorySubsystem} is available
+for browsing in the src/base/factory folder of GMAT's source tree, so the
+developer should be able to select an appropriate Factory as a starting point
+for the custom Factory. The sample code includes code for a Factory supporting a
+new PhysicalModel class.
+
+\subsection{The New Feature}
+
+The purpose of all of the support code described above is, of course, the
+implementation of a new user component.  GMAT provides a rich set of classes
+that can be used as a starting point for the new component.  Programmers use
+one of the existing classes as the base class for the new feature.  That
+approach guarantees that GMAT has support for most or all of the plug-in
+component in the core GMAT engine, significantly reducing integration
+efforts.  The next section describes the design and implementation of one such
+component: a custom force used in GMAT's force model.
+
+\section{An Example}
+
+This section presents the design for a complete GMAT plug-in library.  The
+example shown here is a new force for the force model.  The new force used for
+this example is a directed solar radiation pressure force, appropriate for solar
+sailing, as described in Montenbruck and Gill\cite{mg}.  The complete source
+code for this plug-in library, along with make files, is available from the Plug-in
+project on SourceForge\cite{plugins}.
+
+For the purposes of this example, the spacecraft attitude will be used to
+calculate the direction of the normal to the reflecting surface, and thus the
+direction of of the force vector.  More specifically, for this example the
+spacecraft's x-axis, as specified by its attitude, will be treated as the
+normal, $\hat \textbf{n}$, to the surface that the light hits. The spacecraft's
+coefficient of reflectivity, $1 <= C_r <= 2$, determines the amount of light
+that reflects off of the spacecraft; $C_r = 1$ means that all of the incident
+light is absorbed, while $C_r = 2$ means that the light is all reflected.
+
+The following sections define the new force, describe the class used to model
+the force, and then present the code needed to add the new force to GMAT using
+the plug-in architecture.
+
+\subsection{The Physics of the SolarSail Model}
+
+We'll begin by describing the model implemented in the code.  The vector from
+the spacecraft to the Sun, $\mathbf{e}_s$, makes an angle $\theta$ with the surface
+normal $\hat \textbf{n}$.  The absorbed radiation applies a force $\mathbf{f}_a$ directed
+opposite to the sun vector.  The reflected radiation applies a force directed
+anti-parallel to the normal vector, $\hat \textbf{n}$.
+
+The magnitude of each of these forces is equal to the incident radiation
+pressure, $P_r$, multiplied by the incident surface area, $A$, and then adjusted
+to take into account the amount of light reflected or absorbed.  The force for
+absorbed light is given by
+
+\begin{equation}\label{eq:absorbedLight}
+\textbf{F}_{abs} = -(1 - \varepsilon) P_r A \cos(\theta) \hat{\textbf{e}}_s
+\end{equation}
+
+\noindent while that of the reflected light is given by
+
+\begin{equation}\label{eq:reflectedLight}
+\textbf{F}_{ref} = -2 \varepsilon P_r A \cos^2(\theta) \hat{\textbf{n}}
+\end{equation}
+
+\noindent The constant $\varepsilon$ in these equations is the percentage of the
+incident light that is reflected from the surface, and is related to the
+coefficient of reflectivity through the equation
+
+\begin{equation}\label{eq:CrEpsilon}
+C_r = 1 + \varepsilon
+\end{equation}
+
+\noindent Finally, the factor of 2 in equation~\ref{eq:reflectedLight} accounts
+for the reflectance effect of Newton's third law.  The cosine term in this
+equation is squared because the reflected light applies its force exclusively in
+the anti-normal direction; the force components parallel to the reflecting
+surface from the incoming and outgoing light cancel out.
+
+The incident radiation pressure, $P_r$, is a function of the distance from the
+Sun to the spacecraft.  Spacecraft closer to the Sun experience a larger
+incident radiation pressure than those further away.  This effect follows an
+inverse square relationship; if the solar radiation pressure at one astronomical
+unit from the Sun, $R_{AU}$, is written as $P_{AU}$, the radiation pressure at
+an arbitrary distance $r_s$ is given by
+
+\begin{equation}
+P_r = P_{AU} \left(\frac{R_{AU}}{r_s}\right)^2
+\end{equation}
+
+Putting all of these pieces together, the force implemented in this plug-in is
+given by
+
+\begin{equation}
+\textbf{F}_{sail} = -P_r A \cos\theta \{(1 -
+\varepsilon) \hat{\textbf{e}}_s + 2 \varepsilon \cos\theta \hat{\textbf{n}}\}
+\end{equation}
+
+GMAT's equations of motion are expressed in terms of derivatives of the position
+vectors.  That means that the function that models a force in GMAT,
+\texttt{GetDerivatives()}, needs to express the effect of the force in terms of
+an acceleration.  The Spacecraft model contains a reflectivity coefficient,
+$C_r$, which matches the coefficient in equation~\ref{eq:CrEpsilon}. Using
+equation~\ref{eq:CrEpsilon} and the relationship $\textbf{F} = m\textbf{a}$, the
+resulting acceleration is
+
+\begin{equation}
+\textbf{a}_{sail} = -P_r \frac{A}{m} \cos\theta \{(2 -
+C_r) \hat{\textbf{e}}_s + 2 (C_r - 1) \cos\theta \hat{\textbf{n}}\}
+\end{equation}
+
+\noindent This equation is encapsulated in the class, SolarSail, described below.
+
+\subsection{The SolarSail Class}
+
+GMAT's force model classes are all implementations of a base PhysicalModel
+class. The SolarSail plug-in uses many of the features and structures already
+implemented in the SolarRadiationPressure class, one of the members of the force
+model subsystem.  The SolarSail class uses its own factory, implemented as the
+Factory component of the plug-in library.  These additions are shown in the
+ForceModel class hierarchy, shown in Figure~\ref{figure:ForceModelWithSail}.
+
+\begin{figure}[tb]
+\begin{center}
+\includegraphics*[scale=0.35]{Images/ForceModelClassesWithSailPlugin.ps}
+\caption[The Solar Sail Model Components]{\label{figure:ForceModelWithSail} The
+Solar Sail Model Components.  The plug-in components are shown in blue.}
+\end{center}
+\end{figure}
+
+The solar sail force uses many of the same calculations as are performed for
+GMAT's solar radiation pressure model.  For that reason, the SolarSailForce
+class is derived from the SolarRadiationPressure class.  The new class does need
+to implement a different acceleration model, so it overrides the
+GetDerivatives() method to provide accelerations as described above. It also
+provides implementations for the four C++ default methods: the constructor, copy
+constructor, destructor, and assignment operator.  The new force has data
+structures that need to be initialized, so the Initialize() method is overridden
+(and calls the SolarRadiationPressure::Initialize() method internally).  GMAT's
+ForceModel class contains a method, IsUserForce(), which is called to determine
+how to handle scripting for forces added by users.  This method is overridden to
+report the new force as a user force. Finally, the Clone() method is overridden
+so that GMAT can make copies of the new force from a GmatBase pointer.
+
+The full source code for the SolarSailForce class is available from
+SourceForge\cite{plugins} in the trunk/SolarSail folder of the project's
+Subversion repository.
+
+\subsection{The SailFactory and Interface code}
+
+The SailFactory is used to create new instances of the SolarSailForce.  The code
+is identical to many of the core factories found in GMAT's src/base/factory file
+folder.  There are three sections specific to the SolarSailForce: the
+CreatePhysicalModel() method:
+
+\begin{quote}
+\begin{verbatim}
+PhysicalModel* SailFactory::
+   CreatePhysicalModel(
+      const std::string &ofType,
+      const std::string &withName)
+{
+   if (ofType == "SailForce")
+      return new SolarSailForce(
+            withName);
+
+   return NULL;
+}
+\end{verbatim}
+\end{quote}
+
+\noindent and the code in the constructor and copy constructor that populates
+the list of creatable object names.  That code has this form:
+
+\begin{quote}
+\begin{verbatim}
+   if (creatables.empty())
+   {
+      creatables.push_back(
+            "SailForce");
+   }
+\end{verbatim}
+\end{quote}
+
+\noindent The rest of the factory code fills out the required elements: the
+constructors, assignment operator, and destructor, as required in GMAT's coding
+standards\cite{codeStandards}.
+
+The code in the interface functions is nearly as transparent.  There are two
+C-style functions that are used in the plug-in implementation: GetFactoryCount()
+and GetFactoryPointer().  The GetFactoryCount() method returns the number of
+factories in the plug-in -- one (1) for this example.  GetFactoryPointer()
+creates an instance of the SailFactory and returns it to GMAT when it is called
+with an input index of 0 (indicating the first factory in the plug-in), and
+returns NULL for calls with other factory indices.  More complicated plug-in
+libraries use this feature to support multiple factories that are loaded by
+calling GetFactoryPointer for each factory in the library.
+
+Once the code described above is in place, it can be compiled into a shared
+library that meets GMAT's plug-in requirements.  GCC make files for the solar
+sail library plug-in are included in the SourceForge repository, along with a
+configuration file, SolarSailEnv.mk, for each of our supported platforms.  The
+build process compiles the source files into object files, links those object
+files with references to the GMAT base code shared library (libGmatBase or
+libGmatBaseNoMatlab, described above), and produces a shared library compatible
+with your GMAT build.
+
+\subsection{Adding the Plug-in to GMAT}
+
+Once you have built the plug-in library described above, place the resulting
+code in the folder that contains your GMAT executable.  The plug-in will become
+available in GMAT if you add a line to your GMAT startup file identifying the
+library as a plug-in.  The required line looks like this for a plug-in named
+libSolarSail:
+
+\begin{quote}
+\begin{verbatim}
+PLUGIN = libSolarSail
+\end{verbatim}
+\end{quote}
+
+\noindent The actual plug-in file name depends on your operating system -- on
+Windows, the file name would be ``libSolarSail.dll''; on Linux, it would be
+``libSolarSail.so'', and on Mac, ``libSolarSail.dylib''.  GMAT manages the file
+extension internally based on the operating system, so the line in the startup file
+does not explicitly specify the shared library extension.
+
+Once this line is in place in your startup file, GMAT will attempt to load the
+plug-in when it is started.  On success, the capabilities of the plug-in code
+-- in this case, the new solar sail model -- will be available for use from a
+GMAT script.
+
+\subsection{Upcoming Capabilities}
+
+The current plug-in capability provides new components to GMAT's model, along
+with the factory code that GMAT uses in its engine to make that capability
+available through GMAT's scripting language.  At this writing, GMAT does not
+yet have the ability to generate complete user interface elements that extend
+the wxWidgets based graphical user interface.  The plug-in interfaces for that
+capability are currently being designed, and should be ready for use in the
+second quarter of 2010. 

@@ -1,0 +1,2681 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="BatchEstimator"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>BatchEstimator</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary>Orbit Determination</primary>
+
+    <secondary>Batch least squares</secondary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>BatchEstimator</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>BatchEstimator</refname>
+
+    <refpurpose>A batch least squares estimator</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>A batch least squares estimator is a method for obtaining an
+    estimate for a parameter vector, x0, such that a performance index, which
+    is a function of that parameter, J = J(x0), is minimized. For our
+    application, x0 typically includes the spacecraft position and velocity at
+    a specific epoch and the performance index is a weighted sum of the
+    squares of the measurement residuals.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="TrackingFileSet"/>, <xref linkend="RunEstimator"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.0*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>AbsoluteTol</guilabel></entry>
+
+            <entry><para>Absolute Weighted RMS convergence criteria tolerance
+            </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0.001</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DataFilters</guilabel></entry>
+
+            <entry><para>Defines filters to be applied to the data. One or
+            more filters of either type (<guilabel>AcceptFilter</guilabel>,
+            <guilabel>RejectFilter</guilabel>) may be specified. Rules
+            specified by data filters on a <guilabel>BatchEstimator</guilabel>
+            are applied to determine what data is accepted or rejected from
+            the computation of the state update.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Resource array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>User defined instances of
+                    <guilabel>AcceptFilter</guilabel> and
+                    <guilabel>RejectFilter</guilabel> resources</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DataFile</guilabel></entry>
+
+            <entry><para>Path and file name for an output JSON file containing
+            full-precision records of the observations, residuals, and other
+            data from the run. See the <guilabel>Remarks</guilabel> below for
+            a description of the contents of this file.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Unset, or a valid path and file name</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>EstimationEpoch</guilabel></entry>
+
+            <entry><para>Estimation Epoch. This is the epoch associated with
+            the "solve-fors." The only allowed setting is FromParticipants,
+            which defines the estimation epoch to be the current (a priori)
+            epoch of the satellite to be estimated. The user should use a
+            <guilabel>Propagate</guilabel> command to advance the estimated
+            satellite to the desired estimation epoch prior to the
+            <guilabel>RunEstimator</guilabel> command.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>'FromParticipants'</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>'FromParticipants'</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>EstimationEpochFormat</guilabel></entry>
+
+            <entry><para>Estimation Epoch format. This is the desired input
+            format for the <guilabel>EstimationEpoch</guilabel> field.
+            Currently has no functionality. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>'FromParticipants'</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>'FromParticipants'</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>FreezeIteration</guilabel></entry>
+
+            <entry><para>Specifies which iteration to freeze the selection of
+            measurements that are edited out.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>any positive integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>4</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>FreezeMeasurementEditing</guilabel></entry>
+
+            <entry><para>Allows the selection of measurements that are edited
+            out to be frozen.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>true/false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true or false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>false</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ILSEMaximumIterations</guilabel></entry>
+
+            <entry><para>Specifies maximum number of iterations allowed for
+            the inner loop sigma editor (ILSE).</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>any positive integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>15</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ILSEMultiplicativeConstant </guilabel></entry>
+
+            <entry><para>Multiplicative constant used for inner loop sigma
+            editing (ILSE).</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>3.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>InversionAlgorithm</guilabel></entry>
+
+            <entry><para>Algorithm used to invert the normal
+            equations</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Internal, Cholesky, Schur</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>Internal</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MatlabFile</guilabel></entry>
+
+            <entry><para>(Deprecated) File name for the output MATLAB file.
+            Leaving this parameter unset means that no MATLAB file will be
+            generated. A MATLAB data file can only be generated if GMAT is
+            configured for connection to an instance of
+            MATLAB.</para><para>This parameter is deprecated and replaced with
+            the <guilabel>DataFile</guilabel> parameter and JSON output, which
+            does not require MATLAB. The JSON file can be read in MATLAB, see
+            the <guilabel>Remarks</guilabel> below for more
+            details.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any valid file name.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>(unset)</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MaxConsecutiveDivergences</guilabel></entry>
+
+            <entry><para>Specifies maximum number of consecutive diverging
+            iterations allowed before batch estimation processing is
+            stopped</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>any positive integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>3</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MaximumIterations</guilabel></entry>
+
+            <entry><para>Specifies maximum number of iterations allowed for
+            batch estimation.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>any positive integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>15</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Measurements</guilabel></entry>
+
+            <entry><para>Specifies a list of measurements used for batch
+            estimation.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>ObjectArray</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>one or more valid
+                    <guilabel>TrackingFileSet</guilabel> objects</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>empty list</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel> OLSEAdditiveConstant</guilabel></entry>
+
+            <entry><para>Additive constant used for outer loop sigma editing
+            (OLSE). See <guilabel>Behavior of Outer Loop Sigma Editing
+            (OLSE)</guilabel> in the <guilabel>Remarks</guilabel> section for
+            details.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>any real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>OLSEInitialRMSSigma</guilabel></entry>
+
+            <entry><para>Initial predicted root-mean-square value used for
+            outer loop sigma editing (OLSE).</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>3000.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>OLSEMultiplicativeConstant </guilabel></entry>
+
+            <entry><para>Multiplicative constant used for outer loop sigma
+            editing (OLSE).</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>3.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>OLSEUseRMSP</guilabel></entry>
+
+            <entry><para>Flag used to specify editing algorithm used for outer
+            loop sigma editing (OLSE) for iterations after the first. See
+            <guilabel>Behavior of Outer Loop Sigma Editing (OLSE)</guilabel>
+            in the <guilabel>Remarks</guilabel> section for details.
+            </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>true/false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true or false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>true</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Propagator</guilabel></entry>
+
+            <entry><para><guilabel>Propagator</guilabel> object used to
+            advance a spacecraft through time for batch estimation. For
+            estimation runs using multiple spacecraft, separate
+            <guilabel>Propagator</guilabel> fields can be used to identify the
+            propagator for each spacecraft in the estimator's configuration,
+            as described below. See also the example at the end of this
+            section.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Object</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>valid <guilabel>Propagator</guilabel> object
+                    optionally followed by a set of valid
+                    <guilabel>Spacecraft</guilabel> objects</para>
+
+                    <para><emphasis>Propagator</emphasis>, or
+                    <emphasis>{Propagator, Spacecraft[, Spacecraft2,
+                    Spacecraft3, ...]}</emphasis></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>RelativeTol</guilabel></entry>
+
+            <entry><para>Relative Weighted RMS convergence criteria tolerance.
+            </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0.0001</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportFile</guilabel></entry>
+
+            <entry><para>Specifies the name of estimation report
+            file.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>string containing a valid file name</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>'BatchEstimator' + instancename +
+                    '.data'</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportStyle</guilabel></entry>
+
+            <entry><para>Specifies the type of estimation report. The
+            <guilabel>Normal</guilabel> style excludes reporting of
+            observation TAI, partials, and frequency information. Selection of
+            <guilabel>Verbose</guilabel> mode requires the user to assign
+            RUN_MODE = Testing in the GMAT startup file. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Normal, Verbose</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>Normal</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ResetBestRMSIfDiverging</guilabel></entry>
+
+            <entry><para>If set true and the estimation process has diverged,
+            then the Best RMS is reset to the current RMS.
+            </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>true/false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true or false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>false</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ShowAllResiduals</guilabel></entry>
+
+            <entry><para>Allows residuals plots to be
+            shown.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>On/Off</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>On or Off</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>On</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ShowProgress</guilabel></entry>
+
+            <entry><para>Allows detailed output of the batch estimator to be
+            shown in the message window.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>true/false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true or false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>true</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>UseInitialCovariance</guilabel></entry>
+
+            <entry><para>If set true, <emphasis>a priori</emphasis> error
+            covariance term is added to the estimation cost function. This
+            option should be set to true when estimating with an applied
+            <guilabel>Spacecraft.OrbitErrorCovariance</guilabel>,
+            <guilabel>Spacecraft.CdSigma</guilabel>,
+            <guilabel>Spacecraft.CrSigma</guilabel>, or
+            <guilabel>ErrorModel.BiasSigma</guilabel>. See the
+            <guilabel>Remarks</guilabel> section below for some restrictions
+            on the use of this field.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>true/false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true or false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>false</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>UseInnerLoopEditing</guilabel></entry>
+
+            <entry><para>If set true, enables an iterated residual editing
+            procedure to edit measurements predicted to be sigma edited in
+            future iterations. See <guilabel>Behavior of Inner Loop Sigma
+            Editing (ILSE)</guilabel> in the <guilabel>Remarks</guilabel>
+            section for details.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>true/false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true or false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>false</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <note>
+      <para>When configuring a numerical integrator for the batch estimator,
+      you must use the fixed-step option. The <code>ErrorControl</code>
+      parameter of the <guilabel>ForceModel</guilabel> used by the
+      <guilabel>BatchEstimator</guilabel> must be set to '<code>None</code>.'
+      Of course, when using fixed step control, the user must choose a step
+      size that yields the desired accuracy for the chosen orbit regime and
+      force profile. Step size for fixed-step integration is configured on the
+      <guilabel>Propagator.InitialStepSize</guilabel> and
+      <guilabel>Propagator.MaxStep</guilabel> fields. The smaller of the two
+      values assigned to these parameters will be the integration step size.
+      It is usually convenient to set both to the same value, to avoid
+      confusion.</para>
+    </note>
+
+    <refsection>
+      <title>Behavior of Convergence Criteria</title>
+
+      <para>GMAT has four input fields, <guilabel>RelativeTol</guilabel>,
+      <guilabel>AbsoluteTol</guilabel>,
+      <guilabel>MaximumIterations</guilabel>, and
+      <guilabel>MaxConsecutiveDivergences</guilabel> that are used to
+      determine if the estimator has converged after each new iteration.
+      Associated with these input fields are the two convergence tests shown
+      below:</para>
+
+      <para><emphasis role="bold">Absolute Weighted RMS convergence criteria
+      </emphasis></para>
+
+      <para>        Weighted RMScurrent &lt;= AbsoluteTol</para>
+
+      <para><emphasis role="bold">Relative Weighted Root Mean Square (RMS)
+      convergence criteria</emphasis></para>
+
+      <para>        |RMSP – RMSB|/ RMSB &lt;= RelativeTol</para>
+
+      <para>where</para>
+
+      <para>        RMSB = smallest Weighted RMS achieved during the current
+      and previous iterations</para>
+
+      <para>        RMSP = predicted Weighted RMS of next iteration</para>
+
+      <para>Batch estimation is considered to have converged when either or
+      both of the above criteria is met within
+      <guilabel>MaximumIterations</guilabel> iterations or less.</para>
+
+      <para>Batch estimation is considered to have diverged when number of
+      consecutive diverging iterations is equal to or greater than
+      <guilabel>MaxConsecutiveDivergences</guilabel> or the number of
+      iterations exceeds <guilabel>MaximumIterations</guilabel>.</para>
+    </refsection>
+
+    <refsection>
+      <title>Behavior of Outer Loop Sigma Editing (OLSE)</title>
+
+      <para>GMAT has four input fields,
+      <guilabel>OLSEMultiplicativeConstant</guilabel>,
+      <guilabel>OLSEAdditiveConstant</guilabel>,
+      <guilabel>OLSEUseRMSP</guilabel>, and
+      <guilabel>OLSEInitialRMSSigma</guilabel>, that are used to 'edit' (i.e.,
+      reject or throw away) bad measurement data. This editing procedure is
+      done on a per iteration basis. Data that is edited is not used to
+      calculate the state vector estimate for the current iteration but the
+      data is available as a candidate measurement for subsequent iterations.
+      On the first outer loop iteration, data is edited if</para>
+
+      <para>        |Weighted Measurement Residual| &gt;
+      <guilabel>OLSEInitialRMSSigma</guilabel></para>
+
+      <para>where the Weighted Measurement Residual for a single given
+      measurement is given by</para>
+
+      <para>        (O-C)/<guilabel>NoiseSigma</guilabel></para>
+
+      <para>and where <guilabel>NoiseSigma</guilabel> is the input noise (one
+      sigma) for the measurement type associated with the given measurement.
+      On subsequent outer loop iterations, the data is edited if</para>
+
+      <para>        |Weighted Measurement Residual| &gt;
+      <guilabel>OLSEMultiplicativeConstant</guilabel> * RMS +
+      <guilabel>OLSEAdditiveConstan</guilabel>t</para>
+
+      <para>The editing algorithm above depends upon the user input value of
+      <guilabel>OLSEUseRMSP</guilabel>. If <guilabel>OLSEUseRMSP</guilabel> =
+      True, then RMS = <guilabel>WRMSP</guilabel> where
+      <guilabel>WRMSP</guilabel> is the predicted weighted RMS calculated at
+      the end of the previous iteration. Otherwise, If
+      <guilabel>OLSEUseRMSP</guilabel> = False, then RMS =
+      <guilabel>WRMS</guilabel> where <guilabel>WRMS</guilabel> is the actual
+      weighted RMS calculated at the end of the previous iteration. </para>
+
+      <para>In many cases, particularly those where the initial state estimate
+      is poor, the predicted WRMS may be too small and use of the predicted
+      WRMS in the edit process may result in excessive data rejection on
+      subsequent iterations. If you are experiencing difficulty with
+      convergence due to excessive data editing on the second or later
+      iterations, try setting <guilabel>OLSEUseRMSP</guilabel> to
+      False.</para>
+    </refsection>
+
+    <refsection>
+      <title>Behavior of Inner Loop Sigma Editing (ILSE)</title>
+
+      <para>The inner loop, when enabled, runs immediately after each
+      iteration of the outer loop calculates which measurements to edit. The
+      benefit of the inner loop lies in that it can quickly iterate as it does
+      not need to propagate the spacecraft each iteration. Instead, it uses
+      the measurement derivatives to compute a linearized approximation to the
+      next outer loop iteration residuals. This generally increases the amount
+      of data sigma-edited from the run, but the result is that in many cases
+      a solution will require fewer outer loop iterations to converge and may
+      therefore run faster overall.</para>
+
+      <para>GMAT has three input fields,
+      <guilabel>ILSEMaximumIterations</guilabel>,
+      <guilabel>ILSEMultiplicativeConstant</guilabel>, and
+      <guilabel>UseInnerLoopEditing</guilabel>, that are used by the inner
+      loop to predict which measurements will be sigma edited by the following
+      outer loop iteration. On each inner loop iteration, the data is edited
+      if</para>
+
+      <para>        |Predicted Weighted Measurement Residual| &gt;
+      <guilabel>ILSEMultiplicativeConstant</guilabel> * WRMSP</para>
+
+      <para>Where WRMSP is the current iteration residual predicted weighted
+      root mean square. The inner loop editor will always use the WRMSP for
+      data editing, regardless of the setting of
+      <guilabel>OLSEUseRMSP</guilabel>.</para>
+
+      <para>The inner loop converges when the selection of measurements edited
+      exactly match the selection of measurements edited by the previous inner
+      loop iteration. The value of <guilabel>ILSEMaximumIterations</guilabel>
+      also provides an upper-bound on the number of iterations to perform.
+      Like the outer loop, data that is edited is not used to calculate the
+      state vector estimate for the current iteration but the data is
+      available as a candidate measurement for subsequent iterations. The
+      inner loop can only remove measurements from estimation, it does not
+      reintroduce measurements that were previously edited.</para>
+    </refsection>
+
+    <refsection>
+      <title>Behavior of Freezing Measurement Editing</title>
+
+      <para>GMAT has two input fields,
+      <guilabel>FreezeMeasurementEditing</guilabel> and
+      <guilabel>FreezeIteration</guilabel>, that are used to determine if and
+      when to 'freeze' (i.e., no longer change) the selection of measurements
+      which are edited out by the Outer Loop Sigma Editor. Freezing the
+      measurement editing only takes place when
+      <guilabel>FreezeMeasurementEditing</guilabel> is true.</para>
+
+      <para>If freezing is enabled, the selection of measurements to edit is
+      locked after the iteration specified by
+      <guilabel>FreezeIteration</guilabel>. If the value of
+      <guilabel>FreezeIteration</guilabel> is 1, the estimator uses the value
+      of <guilabel>OLSEInitialRMSSigma</guilabel>, as defined above, to
+      determine which measurements are used to calculate the first iteration
+      of the state vector deviation vector. Afterwards, the same measurements
+      edited out by the initial RMS sigma filter are edited out for the
+      remainder of the iterations. If the value of
+      <guilabel>FreezeIteration</guilabel> is 2 or greater, the estimator uses
+      the above defined outer loop sigma editing to determine the state vector
+      deviation vector up to the iteration specified by
+      <guilabel>FreezeIteration</guilabel>, at which point whichever
+      measurements are edited out by the outer loop sigma editor stay edited
+      out for the remainder of the iterations. If inner loop sigma editing is
+      enabled, the measurements edited out by the last iteration of the inner
+      loop sigma editor will also be frozen. Frozen measurements that are
+      edited out will retain the edit flag the outer and inner loop sigma
+      editor used the iteration they were edited out.</para>
+
+      <para>Freezing measurement editing can be useful in situations where a
+      solution takes an excessive number of iterations to converge and latter
+      iterations are only editing a small amount of data. If this is the case,
+      enabling the editing freeze on an appropriate iteration will generally
+      force the solution to converge quickly after reaching the frozen
+      iteration.</para>
+    </refsection>
+
+    <refsection>
+      <title>Propagator Settings</title>
+
+      <para>The <guilabel>BatchEstimator</guilabel> resource has a
+      <guilabel>Propagator</guilabel> field containing the name of the
+      <guilabel>Propagator</guilabel> resource that will be used during the
+      estimation process. The minimum step size, <guilabel>MinStep</guilabel>,
+      of your propagator should always be set to 0.</para>
+
+      <para>The <guilabel>BatchEstimator</guilabel> resource uses the first
+      <guilabel>Propagator</guilabel> identified as the default propagator for
+      spacecraft that are simulated. The user can specify a different
+      <guilabel>Propagator</guilabel> for specific spacecraft using an
+      optional list of spacecraft assigned to other propagator components. An
+      example of this usage is shown the examples below. This capability is
+      also described in more detail in <xref
+      linkend="NavPropagatorConfiguration" xrefstyle="select:title"/></para>
+    </refsection>
+
+    <refsection>
+      <title>Normal Matrix Reduction</title>
+
+      <para>If an estimated state is unobservable, usually due to measurement
+      data editing, the normal matrix will contain a row and column of zeros
+      corresponding to the unobservable state, and will therefore be singular.
+      This can happen in operations if, for example, the user attempts to
+      estimate an observation bias, but all the measurements associated with
+      that bias are sigma-edited out of the solution. This occurrence yields a
+      singular normal matrix along the row and column of the bias state.
+      However, rather than terminating with a matrix inversion error, GMAT
+      will detect this condition and compensate for it by removing the
+      unobservable state from the normal matrix prior to inversion. The
+      unobservable state will be restored after inversion, in case it may
+      become observable on later iterations. When GMAT takes this action, a
+      message will be reported to both the GMAT log file and the batch
+      estimator report file State Information report, which will indicate
+      which state component was removed from the normal matrix prior to
+      inversion.</para>
+    </refsection>
+
+    <refsection xml:id="BatchEstimator_UseInitialCovariance">
+      <title>UseInitialCovariance Restrictions</title>
+
+      <para>As mentioned in the Field spec above, if this field is set to
+      true, then the <emphasis>a priori</emphasis> error covariance term is
+      added to the estimation cost function. For the current GMAT release,
+      there are some restrictions on the use of this field as given
+      below.</para>
+
+      <orderedlist>
+        <listitem>
+          <para>The user must input the <emphasis>a priori</emphasis> orbit
+          state covariance in the EarthMJ200Eq coordinate system.</para>
+        </listitem>
+
+        <listitem>
+          <para>If the user is solving for the Cartesian orbit state, e.g.,
+          Sat.SolveFors = {CartesianState}, then the input <emphasis>a
+          priori</emphasis> orbit state covariance must be in terms of
+          Cartesian elements. Likewise, if the user is solving for the
+          Keplerian orbit state, e.g., Sat.SolveFors = {KeplerianState}, then
+          the input <emphasis>a priori</emphasis> orbit state covariance must
+          be in terms of Keplerian elements.</para>
+        </listitem>
+
+        <listitem>
+          <para>If the user is solving for the Keplerian orbit state, e.g.,
+          Sat.SolveFors = {KeplerianState}, then the input <emphasis>a
+          priori</emphasis> orbit state covariance must be expressed in terms
+          in terms of spacecraft Mean Anomaly (MA) and not True Anomaly (TA).
+          To be more specific, in this situation, the diagonal elements of the
+          6x6 orbit state error covariance are the variance of the SMA (km^2),
+          eccentricity (dimensionless), INC (deg^2), RAAN (deg^2), AOP
+          (deg^2), and MA (deg^2). Note that, in this case, we require the
+          <emphasis>a priori</emphasis> covariance to be input in terms of MA
+          even though, for the current release of GMAT, the associated orbit
+          state can not be set using MA.</para>
+        </listitem>
+      </orderedlist>
+    </refsection>
+
+    <refsection xml:id="BatchEstimator_MatlabFile">
+      <title>Batch Estimator MATLAB Data File</title>
+
+      <note>
+        <para>MATLAB data file output has been deprecated and replaced by the
+        <guilabel>DataFile</guilabel> JSON output file. Those wishing to
+        continue to use MATLAB can load the JSON file in MATLAB using the
+        following code sample.</para>
+
+        <programlisting>str = fileread(json_file_path); 
+bls_data = jsondecode(str);</programlisting>
+      </note>
+
+      <para>If MATLAB is installed and properly configured to interface with
+      GMAT (see <xref linkend="MatlabInterface"/>), the user may generate a
+      mat-file containing useful analysis data from the
+      <guilabel>BatchEstimator</guilabel> run. This option is enabled by
+      specifying a path and filename for the output file on the
+      <guilabel>MatlabFile</guilabel> field of the configured
+      <guilabel>BatchEstimator</guilabel> resource. The file contains three
+      top-level data structures - <guilabel>EstimationConfig</guilabel>,
+      <guilabel>Iteration</guilabel>, and <guilabel>Observed</guilabel>.
+      Except as noted in the tables below, the units for data in the mat-file
+      are the same as those in the BatchEstimator output file; km, km/sec, DSN
+      Range Units, Hz, and degrees.</para>
+
+      <para><guilabel>EstimationConfig</guilabel> contains general information
+      about the estimation run configuration. Contents of the
+      <guilabel>EstimationConfig</guilabel> structure are described in the
+      table below.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>CartesianStateNames</entry>
+
+              <entry>Names of estimated parameters; spacecraft elements names
+              are Cartesian</entry>
+            </row>
+
+            <row>
+              <entry>FinalEpochUTC</entry>
+
+              <entry>A 1x2 column vector containing the measurement end epoch
+              as a MATLAB datenum in the first row and GMAT TAIModJulian in
+              the second row</entry>
+            </row>
+
+            <row>
+              <entry>GravitationalParameter</entry>
+
+              <entry>The gravitational parameter of the primary central body
+              of the run, in km^3/sec^2</entry>
+            </row>
+
+            <row>
+              <entry>InitialEpochUTC</entry>
+
+              <entry>A 1x2 column vector containing the measurement starting
+              epoch as a MATLAB datenum in the first row and GMAT TAIModJulian
+              in the second row</entry>
+            </row>
+
+            <row>
+              <entry>KeplerianStateNames</entry>
+
+              <entry>Names of estimated parameters; spacecraft elements names
+              are Keplerian</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>The <guilabel>Observed</guilabel> structure contains the tracking
+      data observation measurement data. Contents of the
+      <guilabel>Observed</guilabel> structure are described in the table
+      below. When working with the mat-file, it is good to keep in mind that
+      the GMAT output file indexes iterations, observations, and residuals
+      from 0 but MATLAB performs indexing starting with 1.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>DopplerCountInterval</entry>
+
+              <entry>For each Doppler-type measurement, the Doppler counting
+              interval. Set to NaN for other data types.</entry>
+            </row>
+
+            <row>
+              <entry>EpochTAI</entry>
+
+              <entry>The TAI epoch of each measurement. Each member is a
+              column vector where the first row is the epoch as a MATLAB
+              datenum and the second row is the epoch as a GMAT TAIModJulian
+              date.</entry>
+            </row>
+
+            <row>
+              <entry>EpochUTC</entry>
+
+              <entry>The UTC epoch of each measurement. Each member is a
+              column vector where the first row is the epoch as a MATLAB
+              datenum and the second row is the epoch as a GMAT UTCModJulian
+              date.</entry>
+            </row>
+
+            <row>
+              <entry>Frequency</entry>
+
+              <entry>Signal receive frequency in Hertz. Set to NaN for
+              GPS_PosVec data.</entry>
+            </row>
+
+            <row>
+              <entry>Measurement</entry>
+
+              <entry>Observed measurements. For GPS_PosVec, each cell holds a
+              1x3 column vector of X, Y, Z measurements.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementNumber</entry>
+
+              <entry>Measurement record number</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementType</entry>
+
+              <entry>The GMAT observation type name</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementWeight</entry>
+
+              <entry>Measurement weights (1/noise^2). For GPS_PosVec, each
+              cell holds a 1x3 column vector of X, Y, Z weights.</entry>
+            </row>
+
+            <row>
+              <entry>Participants</entry>
+
+              <entry>For each measurement, a cell array whose members are the
+              ID's of the participants in the measurement path</entry>
+            </row>
+
+            <row>
+              <entry>RangeModulo</entry>
+
+              <entry>For each DSN_SeqRange measurement, the range ambiguity
+              interval in Range Units. Set to NaN for other data
+              types.</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>Contents of the <guilabel>Iteration</guilabel> structure are
+      described in the table below. The iteration structure is an array with
+      one element for each iteration performed by the estimator. Each
+      iteration has the following fields. Some fields are not applicable to
+      some measurement types (for example Elevation, Frequency, and
+      FrequencyBand do not apply for GPS_PosVec measurements) and are set to
+      NaN or zero.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>CartesianCorrelation</entry>
+
+              <entry>Cartesian correlation matrix at the end of the iteration.
+              The order of the rows and columns is given by
+              EstimationConfig.CartesianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>CartesianCovariance</entry>
+
+              <entry>Cartesian covariance matrix at the end of the iteration.
+              The order of the rows and columns is given by
+              EstimationConfig.CartesianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>CartesianState</entry>
+
+              <entry>Spacecraft Cartesian elements and other estimated
+              parameters at the end of the iteration. The order of elements
+              matches that given in
+              EstimationConfig.CartesianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>Elevation</entry>
+
+              <entry>Computed elevation in degrees at the measurement epoch.
+              Does not apply (set to 0) for GPS_PosVec data.</entry>
+            </row>
+
+            <row>
+              <entry>IonosphericCorrection</entry>
+
+              <entry>The magnitude of the ionospheric measurement correction.
+              Units are the same as the measurement. See note below regarding
+              media corrections for X/Y angle measurements.</entry>
+            </row>
+
+            <row>
+              <entry>IterationNumber</entry>
+
+              <entry>Numerical iteration count number, starting from 0</entry>
+            </row>
+
+            <row>
+              <entry>KeplerianCorrelation</entry>
+
+              <entry>Keplerian correlation matrix at the end of the iteration.
+              The order of the rows and columns is given by
+              EstimationConfig.KeplerianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>KeplerianCovariance</entry>
+
+              <entry>Keplerian covariance matrix at the end of the iteration.
+              The order of the rows and columns is given by
+              EstimationConfig.KeplerianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>KeplerianState</entry>
+
+              <entry>Spacecraft Keplerian elements and other estimated
+              parameters at the end of the iteration. The order of elements
+              matches that given in
+              EstimationConfig.KeplerianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>Measurement</entry>
+
+              <entry>Computed measurements. For GPS_PosVec, each cell holds a
+              1x3 column vector of X, Y, Z computed measurements.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementEditFlag</entry>
+
+              <entry>The string observation edit flag. 'N' indicates
+              unedited/accepted observations</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementNumber</entry>
+
+              <entry>Measurement record number</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementPartials</entry>
+
+              <entry>A cell array of matrices. Each member is a matrix of the
+              partial derivatives of the measurement with respect to each
+              element of the state. The partials are taken with respect to the
+              element type selected on the Spacecraft
+              <guilabel>SolveFors</guilabel> field. For example, if the user
+              has chosen to estimate the KeplerianState, the partials are with
+              respect to the Keplerian elements. The order of elements matches
+              that given in the EstimationConfig state names. For GPS_PosVec
+              data, each cell holds a 3xN matrix, where N is the number of
+              estimated states. Each row contains the partials with respect to
+              the X, Y, and Z GPS_PosVec measurement in order.</entry>
+            </row>
+
+            <row>
+              <entry>PreviousCartesianState</entry>
+
+              <entry>Spacecraft Cartesian elements and other estimated
+              parameters at the beginning of the iteration. The order of
+              elements matches that given in
+              EstimationConfig.CartesianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>PreviousKeplerianState</entry>
+
+              <entry>Spacecraft Keplerian elements and other estimated
+              parameters at the beginning of the iteration. The order of
+              elements matches that given in
+              EstimationConfig.KeplerianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>Residual</entry>
+
+              <entry>Measurement residuals. For GPS_PosVec, each cell holds a
+              1x3 column vector of X, Y, Z residuals.</entry>
+            </row>
+
+            <row>
+              <entry>TroposphericCorrection</entry>
+
+              <entry>The magnitude of the tropospheric measurement correction.
+              Units are the same as the measurement. See note below regarding
+              media corrections for X/Y angle measurements.</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>Many of the fields in the Iteration and Observations structures
+      are cell arrays. In most cases some simple MATLAB commands are all that
+      are needed to extract the cell array data to arrays for plotting and
+      analysis. The code below shows a few examples.</para>
+
+      <programlisting>% We assume a BatchEstimator mat-file has already been loaded
+
+%   Plot scalar residuals
+
+t = Observed.EpochUTC(1,:);
+y = cell2mat(Iteration(1).Residual);
+
+plot(t, y, 'ko');
+datetick;
+
+%   Plot measurement partials
+
+parts = Iteration(1).MeasurementPartials;
+parts = cat(1, parts{:});
+
+plot(t, parts);
+datetick;
+
+%   Compute WRMS
+
+iter = Iteration(1);
+
+IACC = find(strcmp(iter.MeasurementEditFlag, 'N'));
+
+dy = cell2mat(iter.Residual(IACC));
+w  = diag(cell2mat(Observed.MeasurementWeight(IACC)));
+m  = length(IACC);
+
+wrms = sqrt((1/m) * dy * w * dy');</programlisting>
+
+      <para>Users might find it useful to work with ObsEditFlag or Type as
+      MATLAB categorical arrays. See the MATLAB help for the
+      <literal>categorical</literal> command for more details.</para>
+
+      <para>Working with a MATLAB file containing GPS_PosVec data requires a
+      little more attention. Some examples are shown below.</para>
+
+      <programlisting>% We assume a BatchEstimator mat-file from a GPS_PosVec data 
+% run has already been loaded
+
+%   Plot GPS_PosVec residuals
+
+t = Observed.EpochUTC(1,:);
+y = cell2mat(Iteration(2).Residual);
+
+plot(t, y, '.');
+datetick;
+
+%   Extract partials with respect to the GPS_PosVec 
+%   X-component measurement
+
+parts = Iteration(1).MeasurementPartials;
+parts = cat(3, parts{:});
+
+part_x = parts(1,:,:);
+part_x = squeeze(part_x);
+
+plot(t, part_x);</programlisting>
+    </refsection>
+
+    <refsection xml:id="BatchEstimator_JsonFile">
+      <title>Batch Estimator JSON Data File</title>
+
+      <para>The user may generate a JSON-formatted file containing useful
+      analysis data from the <guilabel>BatchEstimator</guilabel> run. This
+      option is enabled by specifying a path and filename for the output file
+      on the <guilabel>DataFile</guilabel> field of the configured
+      <guilabel>BatchEstimator</guilabel> resource. The contents of this file
+      are described in the tables below.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <thead>
+            <row>
+              <entry align="center">Element</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>CartesianStateNames</entry>
+
+              <entry>Names of all estimated parameters; spacecraft elements
+              names are Cartesian</entry>
+            </row>
+
+            <row>
+              <entry>EstimationEpoch</entry>
+
+              <entry>BLS estimation epoch in UTCGregorian format</entry>
+            </row>
+
+            <row>
+              <entry>InitialState</entry>
+
+              <entry>The full initial (a priori) estimation state, in km and
+              km/sec</entry>
+            </row>
+
+            <row>
+              <entry>KeplerianStateNames</entry>
+
+              <entry>Names of all estimated parameters; spacecraft elements
+              names are Keplerian</entry>
+            </row>
+
+            <row>
+              <entry>Observations</entry>
+
+              <entry>A list of all observations included in the run; details
+              are below</entry>
+            </row>
+
+            <row>
+              <entry>Iterations</entry>
+
+              <entry>A list of data for each iteration in the run, details are
+              below</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>The <guilabel>Observations</guilabel> structure contains the
+      tracking data observation measurement records. Contents of the
+      <guilabel>Observations</guilabel> structure are described in the table
+      below.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Element</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>Epoch</entry>
+
+              <entry>The measurement epoch in UTCGregorian format</entry>
+            </row>
+
+            <row>
+              <entry>Participants</entry>
+
+              <entry>A comma-separated string containing the ID's of the GMAT
+              objects in the measurement path</entry>
+            </row>
+
+            <row>
+              <entry>Type</entry>
+
+              <entry>The GMAT observation type name</entry>
+            </row>
+
+            <row>
+              <entry>Value</entry>
+
+              <entry>Observed measurements; for GPS_PosVec, each record has a
+              list of X, Y, Z measurements. Units are as described in the
+              <link linkend="TrackingDataTypes">tracking data types
+              description.</link></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>Contents of the <guilabel>Iterations</guilabel> list are described
+      in the table below. There is one list element for each iteration
+      performed by the estimator. Each iteration has the following
+      elements.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Element</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>CartesianCovariance</entry>
+
+              <entry>Cartesian covariance matrix at the end of the iteration;
+              the order of the rows and columns is given by
+              CartesianStateNames.</entry>
+            </row>
+
+            <row>
+              <entry>CartesianState</entry>
+
+              <entry>Spacecraft Cartesian elements and other estimated
+              parameters at the end of the iteration; the order of elements is
+              given by CartesianStateNames</entry>
+            </row>
+
+            <row>
+              <entry>ComputedMeasurements</entry>
+
+              <entry>An list of objects containing data for each computed
+              measurement in the iteration; see below for details</entry>
+            </row>
+
+            <row>
+              <entry>KeplerianCovariance</entry>
+
+              <entry>Keplerian covariance matrix at the end of the iteration;
+              the order of elements is given by KeplerianStateNames</entry>
+            </row>
+
+            <row>
+              <entry>KeplerianState</entry>
+
+              <entry>Spacecraft Keplerian elements and other estimated
+              parameters at the end of the iteration; the order of elements is
+              given by KeplerianStateNames</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>Fields of a ComputedMeasurements record are described below. The
+      units for computed measurements and residuals are described in <link
+      linkend="TrackingDataTypes">tracking data types
+      description.</link></para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Element</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>EditFlag</entry>
+
+              <entry>The string observation edit flag; A value of <emphasis
+              role="bold">null</emphasis> indicates unedited/accepted
+              observations</entry>
+            </row>
+
+            <row>
+              <entry>Elevation</entry>
+
+              <entry>Measurement computed elevation in degrees</entry>
+            </row>
+
+            <row>
+              <entry>Epoch</entry>
+
+              <entry>Residual epoch in UTCGregorian format</entry>
+            </row>
+
+            <row>
+              <entry>Participants</entry>
+
+              <entry>A comma-separated string containing the ID's of the GMAT
+              objects in the measurement path</entry>
+            </row>
+
+            <row>
+              <entry>Residual</entry>
+
+              <entry>Measurement residuals; for GPS_PosVec, each records holds
+              a list of X, Y, Z residuals. The units are as described in <link
+              linkend="TrackingDataTypes">tracking data types
+              description.</link></entry>
+            </row>
+
+            <row>
+              <entry>Type</entry>
+
+              <entry>The GMAT observation type name</entry>
+            </row>
+
+            <row>
+              <entry>Value</entry>
+
+              <entry>Computed measurements; for GPS_PosVec, each record holds
+              a list of X, Y, Z computed measurements</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>Data File Media Corrections for X/Y Angle Data</title>
+
+      <para>When formulating computed angle measurements, GMAT applies
+      ionosphere and troposphere corrections as an elevation adjustment to the
+      ground station to spacecraft slant-range vector. All computed angle
+      observables are then derived from the slant-range vector. This process
+      yields the exact correction applied to the Elevation angle, but
+      corrections to other angle measurement types are not directly computed
+      and stored. To provide the user with an estimate of these corrections
+      for X/Y angles, approximate X/Y angle corrections are computed from the
+      elevation correction by an alternate method and stored in the data file.
+      The user should be aware that the media corrections for X/Y data stored
+      in the data file are not exactly consistent with the method used in
+      formulation of the X/Y computed measurement. The differences are less
+      than 1% for elevations greater than 5 degrees, but may be on the order
+      of 100% for elevations below 5 degrees.</para>
+    </refsection>
+
+    <refsection>
+      <title>Interactions</title>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colwidth=".5*"/>
+
+          <colspec colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Resource</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>TrackingFileSet resource</guilabel></entry>
+
+              <entry><para> Must be created in order to tell the
+              <guilabel>BatchEstimator</guilabel> resource which data will be
+              processed</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Propagator resource</guilabel></entry>
+
+              <entry>Used by GMAT to generate the predicted orbit</entry>
+            </row>
+
+            <row>
+              <entry><guilabel>RunEstimator command</guilabel></entry>
+
+              <entry><para> Must use the <guilabel>RunEstimator</guilabel>
+              command to actually process the data defined by the
+              <guilabel>BatchEstimator</guilabel> resource</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Below is an example of a configured batch estimator instance. In
+      this example, <guilabel>estData</guilabel> is an instance of a
+      <guilabel>TrackingFileSet</guilabel> and <guilabel>ODProp</guilabel> is
+      an instance of <guilabel>Propagator</guilabel>.</para>
+
+      <programlisting>Create BatchEstimator bat;
+
+bat.ShowProgress               = true;
+bat.Measurements               = {estData} 
+bat.AbsoluteTol                = 0.000001;
+bat.RelativeTol                = 0.001;
+bat.MaximumIterations          = 10;
+bat.MaxConsecutiveDivergences  = 3;
+bat.Propagator                 = ODProp;
+bat.ShowAllResiduals           = On;
+bat.OLSEInitialRMSSigma        = 3000;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant       = 0;
+bat.UseInnerLoopEditing        = True;
+bat.ILSEMaximumIterations      = 15;
+bat.ILSEMultiplicativeConstant = 3;
+bat.InversionAlgorithm         = 'Internal';
+bat.EstimationEpochFormat      = 'FromParticipants';
+bat.EstimationEpoch            = 'FromParticipants'; 
+bat.ReportStyle                = 'Normal';
+bat.ReportFile                 = 'BatchEstimator_Report.txt';
+
+BeginMissionSequence;</programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>The next example shows how to script multiple propagators on an
+      estimator. This example illustrates the scripting for propagators only,
+      and does not include other object settings. In this example, the TDRS
+      spacecraft are propagated using an ephemeris based SPICE propagator. Any
+      other spacecraft used in the simulator are propagated using the satprop
+      propagator. This example illustrates using ephemeris propagators for the
+      TDRS6 and TDRS10 orbits, but the BatchEstimator Propagator assignment
+      syntax is identical when using independent numerical propagators with
+      force models.</para>
+
+      <programlisting>%Create and Configure Spacecraft
+Create Spacecraft SimSat;
+
+Create Spacecraft TDRS6;
+TDRS6.OrbitSpiceKernelName = {'TDRS6Ephem.bsp'};
+
+Create Spacecraft TDRS10;
+TDRS10.OrbitSpiceKernelName = {'TDRS10Ephem.bsp'};
+
+%   Create and configure the Simulator object
+Create ForceModel FM1
+
+Create Propagator satprop;
+satprop.FM = FM1
+satprop.MinStep = 0
+
+Create Propagator tdrsprop;
+tdrsprop.Type = SPK
+tdrsprop.EpochFormat = 'A1ModJulian';
+tdrsprop.StartEpoch = 'FromSpacecraft';
+
+Create BatchEstimator bat;
+bat.Propagator          = satprop;
+bat.Propagator          = {tdrsprop, TDRS6, TDRS10};
+</programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>For a comprehensive example of reading in measurements and running
+      the estimator, see the <xref
+      linkend="Orbit_Estimation_using_DSN_Range_and_Doppler_Data"/>
+      tutorial.</para>
+    </informalexample>
+  </refsection>
+</refentry>

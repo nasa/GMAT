@@ -1,0 +1,491 @@
+\chapter{Numerical Algorithms} \label{Ch:NumericalAlgorithms}
+
+\section{Lagrange Interpolation}
+
+Below we describe the algorithm used for lagrange interpolation.
+This includes specifying how points  from the known data are chosen
+for interpolation, and how interpolation is performed for multiple
+function values (i.e. position and velocity) at the desired
+interpolation point.
+
+Assume we have $m$ functions to interpolate and that each function
+is known at $\ell$ values of the independent variable $x$ (in
+ephemeris interpolation this is time) as illustrated in
+Table~\ref{Table:InterpolationData}. Given some point, say $x'$, we
+desire the interpolated values of the functions, or $\mathbf{f}'
+\approx \mathbf{P}(x')$ where $P$ is the Lagrange interpolating
+polynomial.
+
+%
+\begin{table}[ht] \centering
+\caption{Example of Data for interpolation}
+ \begin{tabular}{ccccc}  \hline \hline
+         x & $\mathbf{f}_1$ & $\mathbf{f}_2$ & \dots & $\mathbf{f}_m$ \\ \hline
+         $x_1$ & $f_1(x_1)$ &  $f_2(x_1)$ &  \dots & $f_m(x_1)$\\
+         $x_2$ & $f_1(x_2)$ &  $f_2(x_2)$ &  \dots &$f_m(x_2)$\\
+         $x_3$ & $f_1(x_3)$ &  $f_2(x_3)$ &  \dots &$f_m(x_3)$\\
+         $x_4$ & $f_1(x_4)$ &  $f_2(x_4)$ &  \dots &$f_m(x_4)$\\
+         \vdots   & \vdots &   \vdots &  $\ddots$ & \vdots\\
+         $x_{\ell-1}$ & $f_1(x_{\ell-1})$ &  $f_2(x_{\ell-1})$ & \dots & $f_m(x_{\ell-1})$\\
+         $x_{\ell}$ & $f_1(x_\ell)$ &  $f_2(x_\ell)$ & \dots & $f_m(x_\ell)$\\
+         \hline \hline
+         \label{Table:InterpolationData}
+ \end{tabular}
+ \end{table}
+ %
+
+Before proceeding we define the following variables:
+%
+\begin{center}
+    \begin{minipage}[t]{5.0 in}
+        \begin{tabbing}[htbp!]
+            123456 \= dummy line \kill
+            $\mathbf{x}$ \> $m_x$ x 1 Known values of the independent variable (monotonically increasing or decreasing) \\
+            $x'$ \>  Value of independent variable a the required interpolation point\\
+            $\mathbf{f}_i$ \> $m_x$ x $m_f$ Array of dependent variable values for the $i^{th}$ function\\
+            $\mathbf{f}'$ \> 1 x $m_f$ Array of interpolated function values at $x'$\\
+            $n$ \> Order of interpolation \\
+            $m_x$  \>  Number of points in $\mathbf{x}$ and $\mathbf{f}_i$ \\
+            $m_f$  \>  Number of functions to be interpolated \\
+        \end{tabbing}
+    \end{minipage}
+\end{center}
+
+For interpolation to be feasible, several conditions must be
+satisfied.  First, $x'$ must lie between the minimum and maximum
+value of $\mathbf{x}$, or at the boundaries ( otherwise we would be
+extrapolating ):
+%
+\begin{equation}
+     x' \geq \mbox{min}(\mathbf{x})
+\end{equation}
+%
+and
+%
+\begin{equation}
+     x' \leq \mbox{max}(\mathbf{x})
+\end{equation}
+%
+Second, there must be enough data points in points in $\mathbf{x}$
+to support interpolation to the desired order.  If the requested
+interpolation is of order $n$, then we require $n+1$ data points to
+perform the interpolation.  Hence the following criteria must be
+met:
+%
+\begin{equation}
+    m_x \geq n + 1
+\end{equation}
+%
+
+If the requested interpolation is feasible, we must choose the
+subset of $\mathbf{x}$ to use for interpolating the data at $x'$.
+Define $x(q)$ as the $q^{th}$ element of $\mathbf{x}$. Given $x'$,
+we choose $q$ to minimize the difference between $x'$ and the mean
+of $x(q)$ and $x(q + n)$, or:
+%
+\begin{equation}
+    \underset{q}{\mbox{min }} \left| \frac{x(q+n) + x(q)}{2} - x'\right|  \hspace{.3 in} ( q \in 1,2,3,... m_x)
+\end{equation}
+%
+Choosing $q$ in this way places $x'$ as near to the center of the
+interpolation interval as possible.
+
+The standard formula for the Lagrange interpolating polynomial for a
+single function is
+%
+\begin{equation}
+    P(x) =  \sum_{k=1}^n P_j(x) \label{Eq:LagrangeInterp}
+\end{equation}
+%
+where $P_j(x)$ is given by
+%
+\begin{equation}
+   P_j(x) = y_j\prod_{k=1,k \neq j}^n\frac{x - x_j}{x_j - x_k} \label{Eq:LagrangePj}
+\end{equation}
+%
+Lagrange interpolation is an efficient method when interpolating
+multiple data sets available at the same independent variable
+points.  This is due to the fact that the product term in
+Eq.~(\ref{Eq:LagrangePj}) is only a function of the values of the
+independent variables and the desired interpolation point and not on
+the function being interpolated.  As a result, we can evaluate the
+product term one time and use it for many functions (which is what
+is done when interpolating an ephemeris file).  The algorithm for
+implementing Lagrangian interpolation for multiple functions is
+shown below.
+
+\begin{center}
+\begin{minipage}{6 in}
+\begin{small}
+\begin{algorithm}[H]
+
+    \KwIn{$\mathbf{x}, \mathbf{f},x',q,n$}
+    %
+    \KwOut{$\mathbf{f}'$}
+    %
+    $\mathbf{f}' = \mathbf{0}_{(1 \mbox{ x } m_f)}$\;
+    %
+    \For{ i = q to $q+n$}
+    {
+        $\mathbf{prod} = f(i,:)$ \% The $i^{th}$ row of $\mathbf{f}$ \;
+        \For{ $j = q$ to $q+n$}
+        {
+            \If{ $ i \neq j$}
+            {
+            \% The product in Eq.~(\ref{Eq:LagrangePj})\;
+                    $ \mathbf{prod} = \mathbf{prod} \cdot \displaystyle\frac{x' - x(j)}{x(i) - x(j)}$\;
+            }
+        }
+       \% The summation in Eq.~(\ref{Eq:LagrangeInterp})\;
+       $ \mathbf{f}'= \mathbf{f}' + \mathbf{prod}$\;
+    }
+    \hspace{.2 in}
+    %
+    \label{alg:LagrangeInterpolation}\caption{Algorithm for Lagrangian Interpolation}
+    %
+\end{algorithm}
+\end{small}
+\end{minipage}
+\end{center}
+
+
+\section{Quadratic Polynomial Interpolation }
+
+
+We are given three data points defined by a vector of independent
+variables
+%
+\begin{equation}
+     \mathbf{x} = [\hspace{.05 in} x_1 \hspace{.05 in} x_2 \hspace{.05 in}
+     x_3 \hspace{.05
+     in}]^T
+\end{equation}
+%
+and a vector of corresponding dependent variables
+%
+\begin{equation}
+     \mathbf{y} = [\hspace{.05 in} y_1 \hspace{.05 in} y_2 \hspace{.05 in}
+     y_3  \hspace{.05
+     in}]^T
+\end{equation}
+%
+we wish to find a quadratic polynomial that fits the data such that
+%
+\begin{equation}
+   y = Ax^2 + Bx +C
+\end{equation}
+%
+We begin by forming the system of linear equations
+%
+\begin{equation}
+    \left(%
+    \begin{array}{ccc}
+       x_1^2 & x_1 & 1 \\
+       x_2^2 & x_2 & 1 \\
+       x_3^2 & x_3 & 1 \\
+    \end{array}%
+    \right)
+    %
+     \left(%
+    \begin{array}{ccc}
+       A \\
+       B \\
+       C \\
+    \end{array}%
+    \right)
+    =
+     \left(%
+    \begin{array}{ccc}
+       y_1 \\
+       y_2 \\
+       y_3 \\
+    \end{array}%
+    \right)
+\end{equation}
+%
+We can solve for the coefficients using
+%
+\begin{equation}
+    A = \frac{
+    %  Numerator
+    \left|%
+    \begin{array}{ccc}
+       y_1 & x_1 & 1 \\
+       y_2 & x_2 & 1 \\
+       y_3 & x_3 & 1 \\
+    \end{array}%
+    \right|
+    }
+    %  Denominator
+    {    \left|%
+    \begin{array}{ccc}
+       x_1^2 & x_1 & 1 \\
+       x_2^2 & x_2 & 1 \\
+       x_3^2 & x_3 & 1 \\
+    \end{array}%
+    \right|}
+\end{equation}
+%
+\begin{equation}
+    B = \frac{
+    %  Numerator
+    \left|%
+    \begin{array}{ccc}
+     x_1^2 & y_1 & 1 \\
+     x_2^2 & y_2 & 1 \\
+     x_3^2 & y_3 & 1 \\
+    \end{array}%
+    \right|
+    }
+    %  Denominator
+    {    \left|%
+    \begin{array}{ccc}
+       x_1^2 & x_1 & 1 \\
+       x_2^2 & x_2 & 1 \\
+       x_3^2 & x_3 & 1 \\
+    \end{array}%
+    \right|}
+\end{equation}
+%
+\begin{equation}
+    C = y_3 - A x_3^2 - B x_3
+\end{equation}
+
+\section{Cubic Spline (Not-a-Knot) Interpolation }
+
+We are given five data points defined by a vector of independent
+variables
+%
+\begin{equation}
+     \mathbf{x} = [\hspace{.05 in} x_1 \hspace{.05 in} x_2 \hspace{.05 in}
+     x_3 \hspace{.05 in} x_4 \hspace{.05 in} x_5 \hspace{.05
+     in}]^T
+\end{equation}
+%
+and a vector of corresponding dependent variables
+%
+\begin{equation}
+     \mathbf{y} = [\hspace{.05 in} y_1 \hspace{.05 in} y_2 \hspace{.05 in}
+     y_3 \hspace{.05 in} y_4 \hspace{.05 in} y_5 \hspace{.05
+     in}]^T
+\end{equation}
+%
+we wish to find the four cubic polynomials, $i = 1,2,3,4$, such that
+%
+\begin{equation}
+    p_i = a_i(x - x_i)^3 + b_i(x - x_i)^2 + c_i(x - x_i) + d_i
+\end{equation}
+%
+where the values for $x_i$ are known from the inputs.
+
+To calculate the coefficients $a_i$, $b_i$, $c_i$, and $d_i$ we
+start by calculating the eight quantities
+%
+\begin{eqnarray}
+     h_i      &=& x_{i+1} - x_i\\
+     \Delta_i &=& \displaystyle\frac{y_{i+1} - y_i}{h_i}
+\end{eqnarray}
+%
+Next we solve the following system of linear equations
+%
+\begin{equation}
+     \mathbf{A}\mathbf{S} = \mathbf{B}
+\end{equation}
+%
+where the components of $\mathbf{A}$ are given by
+%
+\begin{eqnarray}
+     A_{11} &=& 2h_2 + h_1 \\
+     A_{12} &=& 2h_1 + h_2 \\
+     A_{13} &=& 0 \\
+     A_{21} &=& 0 \\
+     A_{22} &=& h_3 + 2h_4 \\
+     A_{23} &=& 2h_3 + h_4 \\
+     A_{31} &=& \displaystyle\frac{h_2^2}{h_1 + h_2} \\
+     A_{32} &=& \displaystyle\frac{h_1h_2}{( h_1 + h_2 )} + 2( h_2 + h_3 ) + \displaystyle\frac{h_3h_4}{( h_3 + h_4
+     )}\\
+     A_{33} &=& \displaystyle\frac{h_3^2}{h_3 + h_4}
+\end{eqnarray}
+%
+the components of $\mathbf{B}$ are
+%
+\begin{eqnarray}
+    B_{11} &=& 6( \Delta_2 - \Delta_1 )\\
+    B_{21} &=& 6( \Delta_4 - \Delta_3 )\\
+    B_{31} &=& 6( \Delta_3 - \Delta_2 )
+\end{eqnarray}
+%
+and $\mathbf{S} = [\hspace{.05 in} S_1 \hspace{.05 in} S_3
+\hspace{.05 in} S_5 \hspace{.05 in}]^T$. We can solve for the
+components of $\mathbf{S}$ using Cramer's Rule as follows
+%
+\begin{equation}
+    S_1 = \frac{
+    %  Numerator
+    \left|%
+    \begin{array}{ccc}
+       B_{11} & A_{12} & A_{13} \\
+       B_{21} & A_{22} & A_{23} \\
+       B_{31} & A_{32} & A_{33} \\
+    \end{array}%
+    \right|
+    }
+    %  Denominator
+    {\mathbf{| \mathbf{A}|}}
+\end{equation}
+%
+\begin{equation}
+    S_3 = \frac{
+    %  Numerator
+    \left|%
+    \begin{array}{ccc}
+       A_{11} & B_{11} & A_{13} \\
+       A_{21} & B_{21} & A_{23} \\
+       A_{31} & B_{31} & A_{33} \\
+    \end{array}%
+    \right|
+    }
+    %  Denominator
+    {\mathbf{| \mathbf{A}|}}
+\end{equation}
+%
+\begin{equation}
+     S_5 = \frac{B_{31} - A_{31} S_1 - A_{32} S_3}{A_{33}}
+\end{equation}
+%
+Now we can calculate $S_2$ and $S_4$ using
+%
+\begin{equation}
+     S_2 = \frac{ h_2 S_1 + h_1 S_3  }{  h_1 + h_2 };
+\end{equation}
+%
+\begin{equation}
+     S_4 = \frac{ h_4 S_3 + h_3 S_5  }{  h_3 + h_4 };
+\end{equation}
+%
+
+Finally, the coefficients for the $i^{th}$ cubic polynomial are
+given by
+\begin{eqnarray}
+   a_i &=&  \frac{ S_{i+1} - S_i   }{ 6  h_i}\\
+   b_i &=&  \frac{S_i}{2}\\
+   c_i &=&  \frac{ y_{i+1} - y_i  }{ h_i } - \frac{ 2 h_i S_i + h_i S_{i+1} }{  6
+   }\\
+   d_i &=&  y_i
+\end{eqnarray}
+
+
+\section{Root Location using Brent's Method}
+
+NOTE: The implementation used in GMAT's even locators follows the Algorithm
+in Numerical Recipes 3rd edition which slightlyl different than the algorithm presented below.
+
+Brent's\cite{Brent:73} method is a root finding algorithm that takes
+advantage of superlinear convergence properties of the secant method
+and inverse quadratic interpolation, and the robustness of the
+bisection method.  The algorithm is a modification of Dekker's
+method which combines the bisection method and the secant method
+\cite{Dekker:69}.
+
+The algorithm requires as inputs to real numbers that bound the
+desired root.
+
+\begin{tabbing}
+    12345678912345 \= Reynolds number based on length $s$ \kill
+    $f$         \>  Function whose root is desired \\
+    $a$         \>  Initial guess for independent variable ($a$ and $b$ must bound the desired root)\\
+    $b$         \>  Initial guess for independent variable ($a$ and $b$ must bound the desired root) \\
+    $tol$     \>  Convergence tolerance.\\
+    $N$       \> Maximum number of iterations \\
+    $x_o$     \>  Root value\\
+    $i$         \> Number of iterations\\
+    $\epsilon$ \> Machine precision\\
+\end{tabbing}
+
+\begin{center}
+\begin{minipage}{6 in}
+\begin{small}
+\begin{algorithm}[H]
+
+    \KwIn{$f,a,b,tol,N,$}
+    %
+    \KwOut{$x_o,i$}
+    %
+    $f_a = f(a)$; $f_b = f(b)$\;
+    \textbf{if} $f_a \cdot f_b > 0$; error and return; \textbf{end} \;
+    $c = a;$ $f_c = f_a;$ $d = b - a;$ $e = d$\;
+    \If{ $|f_c| \leq |f_b|$}
+    {
+     $a = b;$ $b = c;$ $c = a;$
+    $f_a = f_b;$ $f_b = f_c;$ $f_c = f_a;$
+    }
+    $t = 2\epsilon | b | + tol$\;
+    $m = 0.5(c - b)$ \;
+    $i = 1$\;
+    \While{$ | m | >= t$ and $| f_b | >= t$ and $ i \leq N$}
+        {
+        \eIf{ $|e | \leq t $ or $ |f_a| <  |fb|$}
+          {
+           $d = m$; $ e = m$\;
+          }{
+           $s = f_b/f_a$\;  % line 40
+           \eIf {$ a = c $}
+              {
+              $p = 2.0 \cdot m \cdot s$\;
+              $q = 1.0 - s$\;
+               }
+              {
+                $q = f_a/f_c$; $r = f_b/f_c$\;
+                $p = s(2.0 \cdot m \cdot q (q-r) - (b - a)(r - 1.0))$\;
+                $q = (q - 1.0)(r - 1.0)(s - 1.0)$\;
+                }
+          \eIf{ $p >= 0.0$ }{ %line 60
+            $q = -q$\;
+          }{
+            $p = -p$\;  % line 70
+          }
+        $s = e$\;  % line 80
+        $e = d$\;
+        \eIf {($2 \cdot p < 3.0 \cdot m \cdot q- |t\cdot q|) $ or $ ( p \leq | 0.5 \cdot s\cdot q | )$}
+           {
+            $d = p/q$\;
+         }{
+            $d = m$; $e = m$\;
+         }
+       }
+       $a  = b$; $f_a = f_b$\;
+       \eIf { $|d| \geq  t$ }{
+          $b = b + d$;
+        }
+        {
+        \eIf {$ m \geq 0.0$ }{
+           $ b = b + t$;
+        }{
+           $ b = b - t$;
+         }
+        }
+       $ f_b = f(b)$\;
+        \eIf { ( $f_b > 0.0$ and $f_c > 0$ ) or ( $f_b < 0.0$ and $f_c < 0$ )} {
+            $c = a;$ $f_c = fa;$ $d = b - a;$ $e = d$\;
+            }
+         {
+               \If{ $|f_c| \leq |f_b|$}
+            {
+             $a = b;$ $b = c;$ $c = a;$
+            $f_a = f_b;$ $f_b = f_c;$ $f_c = f_a;$
+            }
+                 }
+        $t = 2\epsilon |b| + tol$; % line 3
+        $m    = 0.5(c - b)$;
+        $ i = i + 1$;
+
+    }
+    $x_o = b$\;
+    \hspace{.2 in}
+    %
+    \label{alg:BrentsMethod}\caption{Brent's Method for Root Finding}
+    %
+\end{algorithm}
+\end{small}
+\end{minipage}
+\end{center}

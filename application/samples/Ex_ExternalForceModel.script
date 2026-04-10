@@ -1,0 +1,115 @@
+%
+%   Ex_ExternalForceModel
+%
+%   Propagate two spacecraft for one day, once using GMAT's internal force model
+%   to simulate a two-body force with solar radiation pressure (SRP) and then
+%   again by calling an external python script to create the same force model.
+%   The script will print the end states from each propagation; they should be
+%   nearly identical.
+%
+%   This script requires proper configuration of the GMAT Python interface and
+%   API. If you don't have the API configured, you can still use the external
+%   force model as long as the GMAT Python interface is configured. See the
+%   Ex_ExternalForceModel_NoAPI sample script.
+%
+%   Note as well that GMAT caches Python code and whenever you make a change to
+%   the external force model Python code you will have to exit and restart GMAT 
+%   for the change to take effect.
+%
+%   Released: R2025a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SatInternal
+
+SatInternal.DateFormat       = UTCGregorian
+SatInternal.Epoch            = '01 Jan 2020 00:00:00.000'
+SatInternal.CoordinateSystem = EarthMJ2000Eq
+SatInternal.DisplayStateType = Cartesian
+SatInternal.X                = 35785.0
+SatInternal.Y                = 0
+SatInternal.Z                = 0
+SatInternal.VX               = 0
+SatInternal.VY               = 3.3374
+SatInternal.VZ               = 0
+SatInternal.DryMass          = 100
+SatInternal.Cd               = 2.25
+SatInternal.Cr               = 1.21
+SatInternal.DragArea         = 40
+SatInternal.SRPArea          = 40
+
+Create Spacecraft SatExternal
+
+SatExternal = SatInternal
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel InternalFM
+
+InternalFM.CentralBody                 = Earth
+InternalFM.PointMasses                 = {Earth}
+InternalFM.Drag                        = None
+InternalFM.SRP                         = On
+InternalFM.SRP.Flux                    = 1367.0
+InternalFM.SRP.Nominal_Sun             = 149597870.691
+InternalFM.ErrorControl                = 'RSSStep'
+
+Create ForceModel ExternalFM
+
+ExternalFM.CentralBody                 = Earth
+ExternalFM.PointMasses                 = {Earth}
+ExternalFM.Drag                        = None
+ExternalFM.SRP                         = Off
+ExternalFM.ErrorControl                = 'RSSStep'
+ExternalFM.External                    = 'SimpleExternalForceModel'
+ExternalFM.DerivativesFunction         = 'GetDerivativesSRP'
+ExternalFM.External.ExcludeOtherForces = True
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator PropInternal
+
+PropInternal.FM                       = InternalFM
+PropInternal.Type                     = RungeKutta89
+PropInternal.InitialStepSize          = 30
+PropInternal.Accuracy                 = 1e-012
+PropInternal.MinStep                  = 1
+PropInternal.MaxStep                  = 300
+PropInternal.MaxStepAttempts          = 50
+PropInternal.StopIfAccuracyIsViolated = False
+
+Create Propagator PropExternal
+
+PropExternal.FM                       = ExternalFM
+PropExternal.Type                     = RungeKutta89
+PropExternal.InitialStepSize          = 30
+PropExternal.Accuracy                 = 1e-012
+PropExternal.MinStep                  = 1
+PropExternal.MaxStep                  = 300
+PropExternal.MaxStepAttempts          = 50
+PropExternal.StopIfAccuracyIsViolated = False
+
+%----------------------------------------
+%---------- Mission sequence
+%----------------------------------------
+BeginMissionSequence
+
+Propagate PropInternal(SatInternal) {SatInternal.ElapsedDays = 1}
+
+Write SatInternal.UTCGregorian ...
+    SatInternal.EarthMJ2000Eq.X SatInternal.EarthMJ2000Eq.Y SatInternal.EarthMJ2000Eq.Z ...
+    SatInternal.EarthMJ2000Eq.VX SatInternal.EarthMJ2000Eq.VY SatInternal.EarthMJ2000Eq.VZ
+
+Propagate PropExternal(SatExternal) {SatExternal.ElapsedDays = 1}
+
+Write SatExternal.UTCGregorian ...
+    SatExternal.EarthMJ2000Eq.X SatExternal.EarthMJ2000Eq.Y SatExternal.EarthMJ2000Eq.Z ...
+    SatExternal.EarthMJ2000Eq.VX SatExternal.EarthMJ2000Eq.VY SatExternal.EarthMJ2000Eq.VZ

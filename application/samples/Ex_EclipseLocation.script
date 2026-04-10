@@ -1,0 +1,130 @@
+%
+%  Ex_EclipseLocation
+%
+%  Use the EclipseLocator resource to determine spacecraft sunlight and shadow 
+%  times.
+%
+%  Released: R2015a
+% 
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft GEOSat;
+GEOSat.NAIFId               = -899;
+GEOSat.NAIFIdReferenceFrame = -8990;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+Create Propagator DefaultProp;
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- EventLocators
+%----------------------------------------
+
+Create EclipseLocator EclipseLocator1;
+
+EclipseLocator1.Spacecraft           = GEOSat;
+EclipseLocator1.Filename             = 'EclipseLocator1.txt';
+EclipseLocator1.OccultingBodies      = {Earth, Luna, Mercury, Venus};
+EclipseLocator1.InputEpochFormat     = 'TAIModJulian';
+EclipseLocator1.InitialEpoch         = '21545';
+EclipseLocator1.StepSize             = 120;
+EclipseLocator1.FinalEpoch           = '21545.138';
+EclipseLocator1.UseLightTimeDelay    = true;
+EclipseLocator1.UseStellarAberration = true;
+EclipseLocator1.WriteReport          = true;
+EclipseLocator1.RunMode              = Automatic;
+EclipseLocator1.UseEntireInterval    = true;
+EclipseLocator1.EclipseTypes         = {'Umbra', 'Penumbra', 'Antumbra'};
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.SolverIterations = All;
+OFI_DefaultOrbitView.UpperLeft        = [ 0 0.1343283582089552 ];
+OFI_DefaultOrbitView.Size             = [ 0.4988235294117647 0.605543710021322 ];
+OFI_DefaultOrbitView.RelativeZOrder   = 106;
+OFI_DefaultOrbitView.Maximized        = false;
+									  
+OFI_DefaultOrbitView.Add              = {GEOSat, Earth, Sun};
+OFI_DefaultOrbitView.View             = {DefaultOrbit_View};
+
+OFI_DefaultOrbitView.CoordinateSystem = EarthFixed;
+OFI_DefaultOrbitView.DrawObject       = [ true true true];
+OFI_DefaultOrbitView.DrawXYPlane      = [ false false false];
+OFI_DefaultOrbitView.DrawLabel        = [ true true true];
+OFI_DefaultOrbitView.DrawGrid         = [ false false false];
+									  
+OFI_DefaultOrbitView.Axes             = On;
+OFI_DefaultOrbitView.XYPlane          = On;
+OFI_DefaultOrbitView.EclipticPlane    = Off;
+OFI_DefaultOrbitView.EnableStars      = On;
+OFI_DefaultOrbitView.StarCount        = 40000;
+OFI_DefaultOrbitView.ShowPlot         = true;
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame           = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation  = On;
+DefaultOrbit_View.SetCurrentLocation  = Off;
+									  
+DefaultOrbit_View.DefaultEye          = [ 0 -90000 0 ]; 
+DefaultOrbit_View.DefaultCenter       = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp           = [ 0 0 1 ];
+
+
+Create GroundTrackPlot DefaultGroundTrackPlot;
+
+DefaultGroundTrackPlot.SolverIterations     = Current;
+DefaultGroundTrackPlot.UpperLeft            = [ 0.4982352941176471 0.1332622601279318 ];
+DefaultGroundTrackPlot.Size                 = [ 0.4988235294117647 0.6066098081023454 ];
+DefaultGroundTrackPlot.RelativeZOrder       = 90;
+DefaultGroundTrackPlot.Maximized            = false;
+DefaultGroundTrackPlot.Add                  = {GEOSat};
+DefaultGroundTrackPlot.DataCollectFrequency = 1;
+DefaultGroundTrackPlot.UpdatePlotFrequency  = 50;
+DefaultGroundTrackPlot.NumPointsToRedraw    = 0;
+DefaultGroundTrackPlot.ShowPlot             = true;
+DefaultGroundTrackPlot.CentralBody          = Earth;
+DefaultGroundTrackPlot.TextureMap           = '../data/graphics/texture/ModifiedBlueMarble.jpg';
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+%  Set up constants, spacecraft config, etc.
+BeginScript 'Config and Init'
+   GEOSat.DateFormat = UTCGregorian;
+   GEOSat.Epoch      = '22 Aug 2015 00:00:00.000';
+   GEOSat.SMA        = 42165.52841001855;
+   GEOSat.ECC        = 0.0001016372703183695;
+   GEOSat.INC        = 28.22038171126684;
+   GEOSat.RAAN       = 152.4975046294811;
+   GEOSat.AOP        = 172.7618673633059;
+   GEOSat.TA         = 242.5561749993354;
+EndScript;
+
+Propagate DefaultProp(GEOSat) {GEOSat.ElapsedDays = 10};
+
+
+
+
+
+
+
+
+
+
+
+

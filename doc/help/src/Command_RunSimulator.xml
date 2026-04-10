@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="RunSimulator"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>RunSimulator</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>RunSimulator</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Commands</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>RunSimulator</refname>
+
+    <refpurpose>Generates simulated navigation measurements</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Script Syntax</title>
+
+    <synopsis>RunSimulator Simulator_InstanceName </synopsis>
+  </refsynopsisdiv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The <guilabel>RunSimulator</guilabel> command generates the
+    simulated measurements specified in the user-provided
+    <guilabel>Simulator</guilabel> resource. An output file, with name
+    specified in the <guilabel>Simulator</guilabel> resource is
+    created.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="Simulator"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <refsection>
+      <title>Content of the Output File for DSN data</title>
+
+      <para>After the <guilabel>RunSimulator</guilabel> command has finished
+      execution, one or more output files, as defined in the specified
+      <guilabel>Simulator</guilabel> object, will be created. Each row of data
+      in an output file contains information about one specific measurement at
+      a given time. The format for a given row of data is described fully in
+      the <xref linkend="TrackingFileSet"/> resource help.</para>
+
+      <para>When you simulate DSN range or Doppler, you can choose whether or
+      not the frequency from the transmitting <guilabel>Ground
+      Station</guilabel> is non-ramped or ramped. If you wish to model ramped
+      data, you must supply an input ramp table. The format of the input ramp
+      table is discussed in the <guilabel><xref
+      linkend="TrackingDataTypes_DsnRampTable"/></guilabel> resource
+      help.</para>
+
+      <para>The table below shows how the values of uplink band, C, M2, and
+      transmit frequency are calculated. The second column shows how the
+      uplink band, which is included in the output file for both range and
+      Doppler measurements, is calculated. For S-band, a “1” is output and for
+      X-band, a “2” is output.</para>
+
+      <para>The output GMAT Measurement Data (GMD) file contains the
+      observable value which is calculated using the equations shown in <xref
+      linkend="TrackingDataTypes"/>. The third column shows how the value of C
+      or M2, which is used to calculate the observation value shown in the GMD
+      file, is calculated. Finally, the fourth column shows how the transmit
+      frequency, which shows up directly in the GMD file (for DSN range but
+      not DSN Doppler) and is also used to calculate the observation value
+      given in the GMD file, is calculated.</para>
+
+      <informaltable pgwide="1">
+        <tgroup cols="4">
+          <colspec align="center" colwidth="107*"/>
+
+          <colspec colwidth="261*"/>
+
+          <colspec colwidth="344*"/>
+
+          <colspec colwidth="288*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Measurement Type</entry>
+
+              <entry align="center">Uplink Band</entry>
+
+              <entry align="center">Value of C (Range) or M2 (Doppler) used to
+              calculate Observation</entry>
+
+              <entry align="center">Transmit freq used to calculate
+              Observation</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><emphasis role="bold">Simulate Range without ramp
+              table</emphasis></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Set based upon transmitter frequency set by user on
+                    the Transmitter.Frequency field. If freq is in [2000-4000]
+                    MHz, then Uplink Band is S-band. If freq is in [7000-8000]
+                    MHz, then Uplink Band is X-band.</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Set based upon Uplink Band result shown in previous
+                    column. C=½ for S-band and 221/1498 for X-band.</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Value of Transponder.TurnAroundRatio has no effect
+                    on C</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para><inlineequation>
+                        <m:math display="inline">
+                          <m:msub>
+                            <m:mi>f</m:mi>
+
+                            <m:mi>T</m:mi>
+                          </m:msub>
+                        </m:math>
+                      </inlineequation>=Transmitter.frequency (This frequency
+                    will be written to the GMD range file)</para>
+                  </listitem>
+                </itemizedlist></entry>
+            </row>
+
+            <row>
+              <entry><emphasis role="bold">Simulate Range with ramp
+              table</emphasis></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Uplink Band in ramp table takes precedence over both
+                    transmitter frequency set by user and transmit frequency
+                    in ramp table.</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Set based upon Uplink Band result shown in previous
+                    column. C=½ for S-band and 221/1498 for X-band.</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Value of Transponder.TurnAroundRatio has no effect
+                    on C</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para><inlineequation>
+                        <m:math display="inline">
+                          <m:msub>
+                            <m:mi>f</m:mi>
+
+                            <m:mi>T</m:mi>
+                          </m:msub>
+                        </m:math>
+                      </inlineequation>=Ramp Table frequency (This frequency
+                    will be written to the GMD range file)</para>
+                  </listitem>
+                </itemizedlist></entry>
+            </row>
+
+            <row>
+              <entry><emphasis role="bold">Simulate Doppler without ramp
+              table</emphasis></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Set based upon transmitter frequency set by user on
+                    the Transmitter.Frequency field. If freq is in [2000-4000]
+                    MHz, then Uplink Band is S-band. If freq is in [7000-8000]
+                    MHz, then Uplink Band is X-band.</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>M2=Transponder.TurnAroundRatio</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para><inlineequation>
+                        <m:math display="inline">
+                          <m:msub>
+                            <m:mi>f</m:mi>
+
+                            <m:mi>T</m:mi>
+                          </m:msub>
+                        </m:math>
+                      </inlineequation>=Transmitter.frequency</para>
+                  </listitem>
+                </itemizedlist></entry>
+            </row>
+
+            <row>
+              <entry><emphasis role="bold">Simulate Doppler with ramp
+              table</emphasis></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Uplink Band in ramp table takes precedence over both
+                    transmitter frequency set by user and transmit frequency
+                    in ramp table.</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Set based upon Uplink Band result shown in previous
+                    column. M2=240/221 for S-band and 880/749 for X
+                    band.</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Value of Transponder.TurnAroundRatio has no effect
+                    on M2</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para><inlineequation>
+                        <m:math display="inline">
+                          <m:msub>
+                            <m:mi>f</m:mi>
+
+                            <m:mi>T</m:mi>
+                          </m:msub>
+                        </m:math>
+                      </inlineequation>=Ramp Table frequency</para>
+                  </listitem>
+                </itemizedlist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>As discussed in the <xref linkend="Transponder"/> Help, for both
+      ramped and non-ramped data, the turn-around ratio set on the
+      <guilabel>Transponder</guilabel> object,
+      <guilabel>Transponder.TurnAroundRatio</guilabel>, will be used to
+      calculate the media corrections needed to determine the value of the
+      simulated range and Doppler measurements.</para>
+    </refsection>
+
+    <refsection>
+      <title>Earth Nutation Update Interval</title>
+
+      <para>For the best consistency between the simulation and estimation
+      processes you should set the Earth nutation update interval to 0 as
+      shown below. It is good general practice to set the Earth nutation
+      update interval to zero for all measurement types.</para>
+
+      <programlisting><code>Earth.NutationUpdateInterval = 0</code></programlisting>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Run simulation.</para>
+
+      <programlisting><code>%Perform a simulation
+
+Create Simulator mySim
+
+BeginMissionSequence 
+RunSimulator mySim</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>For a comprehensive example of running a simulation, see the <xref
+      linkend="Tut_Simulate_DSN_Range_and_Doppler_Data"/> tutorial.</para>
+    </informalexample>
+  </refsection>
+</refentry>

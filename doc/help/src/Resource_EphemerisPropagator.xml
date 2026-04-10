@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="EphemerisPropagator"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>EphemerisPropagator</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>EphemerisPropagator</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Propagator</refname>
+
+    <refpurpose>A propagator that uses SPK ephemeris files</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>An SPK-configured <guilabel>Propagator</guilabel> propagates a
+    spacecraft by interpolating user-provided SPICE kernels. You configure a
+    <guilabel>Propagator</guilabel> to use an SPK kernel by setting the
+    <guilabel>Type</guilabel> field to <guilabel>SPK</guilabel>. SPK kernels
+    and the <guilabel>NAIFId</guilabel> are defined on the
+    <guilabel>Spacecraft</guilabel> Resource. You control propagation,
+    including stopping conditions, using the <guilabel>Propagate</guilabel>
+    command.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="Spacecraft"/>, <xref linkend="Propagate"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.3*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>CentralBody</guilabel></entry>
+
+            <entry><para>The central body of propagation. This field has no
+            affect for SPK propagators.</para> <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Object type</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Celestial body</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Earth</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>EpochFormat</guilabel></entry>
+
+            <entry><para> Only used for an SPK propagator. The format of the
+            epoch contained in the StartEpoch field. </para> <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>A1ModJulian, TAIModJulian, UTCModJulian,
+                    TTModJulian, TDBModJulian, A1Gregorian, TAIGregorian,
+                    TTGregorian, UTCGregorian, TDBGregorian</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>A1ModJulian</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A unless Mod Julian and in that case Modified
+                    Julian Date</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Start Epoch</guilabel></entry>
+
+            <entry><para>Only used for an SPK propagator. The initial epoch of
+            propagation. When an epoch is provided that epoch is used as the
+            initial epoch. When the keyword "FromSpacecraft" is provided, the
+            start epoch is inherited from the spacecraft.</para> <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>"Gregorian: 04 Oct 1957 12:00:00.000 &lt;= Epoch
+                    &lt;= 28 Feb 2100 00:00:00.000 Modified Julian: 6116.0
+                    &lt;= Epoch &lt;= 58127.5 or "FromSpacecraft"</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>21545</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>StepSize</guilabel></entry>
+
+            <entry><para> The step size for an SPK Propagator.</para>
+            <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>300</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Type</guilabel></entry>
+
+            <entry><para>Specifies the integrator or analytic propagator used
+            to model time evolution of spacecraft motion. </para>
+            <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Object type</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>PrinceDormand78, PrinceDormand45,
+                    RungeKutta89,RungeKutta68, RungeKutta56, BulirschStoer,
+                    AdamsBashforthMoulton, SPK</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>RungeKutta89</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Resource_EphemerisPropagator_GUI.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>To configure a <guilabel>Propagator</guilabel> to use SPK files, on
+    the <guilabel>Propagator</guilabel> dialog box, select
+    <guilabel>SPK</guilabel> in the <guilabel>Type</guilabel> menu. There are
+    four fields you can configure for an SPK propagator including
+    <guilabel>StepSize</guilabel>, <guilabel>CentralBody</guilabel>,
+    <guilabel>EpochFormat</guilabel>, and <guilabel>StartEpoch</guilabel>.
+    Note that changing the <guilabel>EpochFormat</guilabel> setting converts
+    the input epoch to the selected format. You can also type
+    <userinput>FromSpacecraft</userinput> into the
+    <guilabel>StartEpoch</guilabel> field and the
+    <guilabel>Propagator</guilabel> will use the epoch of the
+    <guilabel>Spacecraft</guilabel> as the initial propagation epoch.</para>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <para>To use an SPK-configured <guilabel>Propagator</guilabel>, you must
+    specify the SPK kernels and <guilabel>NAIFId</guilabel> on the
+    <guilabel>Spacecraft</guilabel>, configure a
+    <guilabel>Propagator</guilabel> to use SPK files as opposed to numerical
+    methods, and configure the <guilabel>Propagate</guilabel> command to use
+    the configured SPK propagator. The subsections and examples below discuss
+    each of these items in detail.</para>
+
+    <refsection>
+      <title>Configuring Spacecraft SPK Kernels</title>
+
+      <para>To use an SPK-configured <guilabel>Propagator</guilabel>, you must
+      add the SPK kernels to the <guilabel>Spacecraft</guilabel> and define
+      the pacecraft's <guilabel>NAIFId</guilabel>. SPK Kernels for selected
+      spacecraft are available <link
+      xlink:href="http://naif.jpl.nasa.gov/naif/data_archived.html">here.</link>
+      Two sample vehicle spk kernels, (GEOSat.bsp and MoonTransfer.bsp) are
+      distributed with GMAT for example purposes. An example of how to add
+      spacecraft kernels via the script interface is shown below.</para>
+
+      <programlisting><code>Create Spacecraft aSpacecraft
+aSpacecraft.NAIFId               = -123456789
+aSpacecraft.OrbitSpiceKernelName = {'..\data\vehicle\ephem\spk\GEOSat.bsp'}</code></programlisting>
+
+      <para>To add <guilabel>Spacecraft</guilabel> SPK kernals via the
+      GUI:</para>
+
+      <procedure>
+        <step>
+          <para>On the <guilabel>Spacecraft</guilabel> dialog box, click the
+          <guilabel>SPICE</guilabel> tab.</para>
+        </step>
+
+        <step>
+          <para>Under the <guilabel>SPK Files</guilabel> list, click
+          <guilabel>Add</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Browse to locate and select the desired SPK file</para>
+        </step>
+
+        <step>
+          <para>Repeat to add all necessary SPK kernels</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>NAIF ID</guilabel> field, enter the
+          spacecraft integer NAIF id number. Note: For a given mission, each
+          spacecraft should have a unique NAIF ID if the spacecraft are
+          propagated with an SPK propagator.</para>
+        </step>
+      </procedure>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Resource_EphemerisPropagator_GUI_2.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+
+      <para>You can add more than one kernel to a spacecraft as shown via
+      scripting below, where the files GEOSat1.bsp and GEOSat2.bsp are dummy
+      file names used for example purposes only and are not distributed with
+      GMAT. In the script, you can use relative path or absolute path to
+      define the location of an SKP file. Relative paths are defined with
+      respect to the GMAT bin directory of your local installation.</para>
+
+      <programlisting><code>Create Spacecraft aSpacecraft
+aSpacecraft.OrbitSpiceKernelName ={'..\data\vehicle\ephem\spk\GEOSat1.bsp','C:\MyDataFiles\GEOSat2.bsp'}</code></programlisting>
+    </refsection>
+
+    <refsection>
+      <title>Configuring an SPK Propagator</title>
+
+      <para>You can define the <guilabel>StartEpoch</guilabel> of propagation
+      of an SPK-configured <guilabel>Propagator</guilabel> on either the
+      <guilabel>Propagator</guilabel> Resource or inherit the
+      <guilabel>StartEpoch</guilabel> from the
+      <guilabel>Spacecraft</guilabel>. Below is a script snippet that shows
+      how to inherit the <guilabel>StartEpoch</guilabel> from the
+      <guilabel>Spacecraft</guilabel>. To inherit the
+      <guilabel>StartEpoch</guilabel> from the <guilabel>Spacecraft</guilabel>
+      using the GUI</para>
+
+      <procedure>
+        <step>
+          <para>Open the SPK propagator dialog box,</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>StartEpoch</guilabel> field., type
+          <userinput>FromSpacecraft</userinput> or select
+          <guilabel>FromSpacecraft</guilabel> from the drop-down menu</para>
+        </step>
+      </procedure>
+
+      <para>To explicitly define the <guilabel>StartEpoch</guilabel> on the
+      <guilabel>Propagator</guilabel> Resource use the following
+      syntax.</para>
+
+      <programlisting><code>Create Propagator spkProp
+spkProp.EpochFormat = 'UTCGregorian'
+spkProp.StartEpoch  = '22 Jul 2014 11:29:10.811'
+
+Create Propagator spkProp2
+spkProp2.EpochFormat = 'TAIModJulian'
+spkProp2.StartEpoch  = '23466.5'</code></programlisting>
+
+      <para>To configure the step size, use the StepSize field.</para>
+
+      <programlisting><code>Create Propagator spkProp
+spkProp.Type     = SPK
+spkProp.StepSize = 300
+</code></programlisting>
+    </refsection>
+
+    <refsection>
+      <title>Interaction with the Propagate Command</title>
+
+      <para>An SPK-configured <guilabel>Propagator</guilabel> works with the
+      <guilabel>Propagate</guilabel> command in the same way numerical
+      propagators work with the <guilabel>Propagate</guilabel> command with
+      the following exceptions:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>If a <guilabel>Propagate</guilabel> command uses an SPK
+          propagator, then you can only propagate one spacecraft using that
+          propagator. You can however, mix SPK propagators and numeric
+          propagators in a single propagate command.</para>
+        </listitem>
+
+        <listitem>
+          <para>SPK-configured <guilabel>Propagators</guilabel> will not
+          propagate the STM or compute the orbit Jacobian (A matrix).</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>In the example below, we assume a <guilabel>Spacecraft</guilabel>
+      named <guilabel>aSpacecraf</guilabel>t and a
+      <guilabel>Propagator</guilabel> named <guilabel>spkProp</guilabel> have
+      been configured a-priori. An example command to propagate
+      <guilabel>aSpacecraft</guilabel> to Earth Periapsis using
+      <guilabel>spkProp</guilabel> is shown below.</para>
+
+      <programlisting><code>Propagate spkProp(aSpacecraft) {aSpacecraft.Earth.Periapsis}</code></programlisting>
+
+      <para>Below is a script snippet that demonstrates how to propagate
+      backwards using an SPK propagator.</para>
+
+      <programlisting><code>Propagate BackProp spkProp(aSpacecraft) {aSpacecraft.ElapsedDays = -1.5}</code></programlisting>
+    </refsection>
+
+    <refsection>
+      <title>Behavior Near Ephemeris Boundaries</title>
+
+      <para>In general, ephemeris interpolation is less accurate near the
+      boundaries of ephemeris files and we recommend providing ephemeris for
+      significant periods beyond the initial and final epochs of your
+      application for this and other reasons. When propagating near the
+      beginning or end of ephemeris files, the use of the double precision
+      arithmetic may affect results. For example, if an ephemeris file has has
+      an initial epoch TDBModJulian = 21545.00037249916, and you specify the
+      StartEpoch in UTC Gregorian, round off error in time conversions and/or
+      truncation of time using the Gregorian format (only accurate to
+      millisecond) may cause the requested epoch to fall slightly outside of
+      the range provided on the ephemeris file. The best solution is to
+      provide extra ephemeris data to avoid time issues at the boundaries and
+      the more subtle issue of poor interpolation.</para>
+
+      <warning>
+        <para>To locate requested stopping conditions, GMAT needs to bracket
+        the root of the stopping condition function. Then, GMAT uses standard
+        root finding techniques to locate the stopping condition to the
+        requested accuracy. If the requested stopping condition lies at or
+        near the beginning or end of the ephemeris data, then bracketing the
+        stopping condition may not be possible without stepping off the
+        ephemeris file which throw an error and execution will stop. In this
+        case, you must provide more ephemeris data to locate the desired
+        stopping condition.</para>
+      </warning>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Propagate a GEO spacecraft using an SPK-configured
+      <guilabel>Propagator</guilabel>. Define the
+      <guilabel>StartEpoch</guilabel> from the spacecraft. Note: the SPK
+      kernel GEOSat.bsp is distributed with GMAT.</para>
+
+      <programlisting><code>Create Spacecraft aSpacecraft;
+aSpacecraft.UTCGregorian         = '02 Jun 2004 12:00:00.000'
+aSpacecraft.NAIFId               = -123456789
+aSpacecraft.OrbitSpiceKernelName = {'..\data\vehicle\ephem\spk\GEOSat.bsp'}
+
+Create Propagator spkProp
+spkProp.Type        = SPK
+spkProp.StepSize    = 300
+spkProp.CentralBody = Earth
+spkProp.StartEpoch  = FromSpacecraft
+
+Create OrbitView EarthView
+EarthView.Add             = {aSpacecraft, Earth, Luna}
+EarthView.ViewPointVector = [ 30000 -20000 10000 ]
+EarthView.ViewScaleFactor = 2.5
+
+BeginMissionSequence
+Propagate spkProp(aSpacecraft) {aSpacecraft.TA = 90}
+Propagate spkProp(aSpacecraft) {aSpacecraft.ElapsedDays = 2.4}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Simulate a lunar transfer using an SPK-configured
+      <guilabel>Propagator</guilabel>. Define <guilabel>StartEpoch</guilabel>
+      on the <guilabel>Propagator</guilabel>. Note: the SPK kernel
+      MoonTransfer.bsp is distributed with GMAT.</para>
+
+      <programlisting><code>Create Spacecraft aSpacecraft
+aSpacecraft.NAIFId = -123456789
+aSpacecraft.OrbitSpiceKernelName = {'..\data\vehicle\ephem\spk\MoonTransfer.bsp'}
+
+Create Propagator spkProp
+spkProp.Type        = SPK
+spkProp.StepSize    = 300
+spkProp.CentralBody = Earth
+spkProp.EpochFormat = 'UTCGregorian'
+spkProp.StartEpoch  = '22 Jul 2014 11:29:10.811'
+
+Create OrbitView EarthView
+EarthView.Add             = {aSpacecraft, Earth, Luna}
+EarthView.ViewPointVector = [ 30000 -20000 10000 ]
+EarthView.ViewScaleFactor = 30
+
+BeginMissionSequence
+Propagate spkProp(aSpacecraft) {aSpacecraft.ElapsedDays = 12}</code></programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

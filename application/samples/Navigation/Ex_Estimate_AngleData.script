@@ -1,0 +1,264 @@
+%
+%   Ex_Estimate_AngleData
+%
+%   Demonstrate use of new angle measurement types.
+%
+%   Released: R2020a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat          = UTCGregorian;
+SimSat.Epoch               = '08 Jun 2012 00:00:00.000';
+SimSat.CoordinateSystem    = EarthMJ2000Eq;
+SimSat.DisplayStateType    = Cartesian;
+SimSat.X                   = 576.869556
+SimSat.Y                   = -5701.142761
+SimSat.Z                   = -4170.593691
+SimSat.VX                  = -1.76450794
+SimSat.VY                  = 4.18128798
+SimSat.VZ                  = -5.96578986
+SimSat.DryMass             = 850;
+SimSat.Cd                  = 2.2;
+SimSat.Cr                  = 1.8;
+SimSat.DragArea            = 15;
+SimSat.SRPArea             = 15;
+SimSat.Id                  = 'LEOSat';
+SimSat.AddHardware         = {Transponder1, SpacecraftAntenna};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat          = UTCGregorian;
+EstSat.Epoch               = '08 Jun 2012 00:00:00.000';
+EstSat.CoordinateSystem    = EarthMJ2000Eq;
+EstSat.DisplayStateType    = Cartesian;
+EstSat.X                   = 576.8
+EstSat.Y                   = -5701.1
+EstSat.Z                   = -4170.5
+EstSat.VX                  = -1.76451
+EstSat.VY                  = 4.18129
+EstSat.VZ                  = -5.96579
+EstSat.DryMass             = 850;
+EstSat.Cd                  = 2.2;
+EstSat.Cr                  = 1.8;
+EstSat.DragArea            = 15;
+EstSat.SRPArea             = 15;
+EstSat.Id                  = 'LEOSat';
+EstSat.AddHardware         = {Transponder1, SpacecraftAntenna};
+EstSat.SolveFors           = {CartesianState};     
+
+
+%----------------------------------------
+%---------- Spacecraft hardware
+%----------------------------------------
+
+Create Antenna SpacecraftAntenna;
+Create Transponder Transponder1;
+
+Transponder1.PrimaryAntenna  = SpacecraftAntenna;
+Transponder1.HardwareDelay   = 0.00005;
+Transponder1.TurnAroundRatio = '240/221' 
+
+%----------------------------------------
+%---------- GroundStation hardware
+%----------------------------------------
+
+Create Transmitter Transmitter1;
+Create Antenna Antenna1;
+Create Receiver Receiver1;
+
+Transmitter1.PrimaryAntenna = Antenna1;
+Transmitter1.Frequency      = 2067.5;
+Receiver1.PrimaryAntenna    = Antenna1;
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel AzimuthModel;
+
+AzimuthModel.Type         = 'Azimuth';
+AzimuthModel.NoiseSigma   = 0.010;
+AzimuthModel.Bias         = 0.0;
+AzimuthModel.SolveFors    = {};
+
+Create ErrorModel ElevationModel;
+
+ElevationModel.Type       = 'Elevation';
+ElevationModel.NoiseSigma = 0.010;
+ElevationModel.Bias       = 0.0;
+ElevationModel.SolveFors  = {};
+
+Create ErrorModel XEastModel;
+
+XEastModel.Type           = 'XEast';
+XEastModel.NoiseSigma     = 0.005;
+XEastModel.Bias           = 0.0;
+XEastModel.SolveFors      = {};
+
+Create ErrorModel YNorthModel;
+
+YNorthModel.Type          = 'YNorth';
+YNorthModel.NoiseSigma    = 0.005;
+YNorthModel.Bias          = 0.0;
+YNorthModel.SolveFors     = {};
+
+Create ErrorModel XSouthModel;
+
+XSouthModel.Type          = 'XSouth';
+XSouthModel.NoiseSigma    = 0.007;
+XSouthModel.Bias          = 0.0;
+XSouthModel.SolveFors     = {};
+
+Create ErrorModel YEastModel;
+
+YEastModel.Type           = 'YEast';
+YEastModel.NoiseSigma     = 0.007;
+YEastModel.Bias           = 0.0;
+YEastModel.SolveFors      = {};
+
+%----------------------------------------
+%---------- Ground stations
+%----------------------------------------
+
+Create GroundStation GDS;
+
+GDS.CentralBody           = Earth;
+GDS.StateType             = Cartesian;
+GDS.HorizonReference      = Ellipsoid;
+GDS.Location1             = -2353.621251;
+GDS.Location2             = -4641.341542;
+GDS.Location3             =  3677.052370;
+GDS.Id                    = 'GDS';
+GDS.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+GDS.MinimumElevationAngle = 10;
+GDS.ErrorModels           = {AzimuthModel, ElevationModel};
+
+Create GroundStation CAN;
+
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514;
+CAN.Location2             =  2682.281745;
+CAN.Location3             = -3674.570392;
+CAN.Id                    = 'CAN';
+CAN.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+CAN.MinimumElevationAngle = 10.;
+CAN.ErrorModels           = {XEastModel, YNorthModel};
+
+Create GroundStation MAD;
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4849.519988;
+MAD.Location2             = -360.641653;
+MAD.Location3             = 4114.504590;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+MAD.MinimumElevationAngle = 10.;
+MAD.ErrorModels           = {XSouthModel, YEastModel};
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet simData;
+
+simData.AddTrackingConfig       = {{GDS, SimSat, GDS}, 'Azimuth', 'Elevation'};
+simData.AddTrackingConfig       = {{CAN, SimSat, CAN}, 'XEast', 'YNorth'};
+simData.AddTrackingConfig       = {{MAD, SimSat, MAD}, 'XSouth', 'YEast'};
+simData.FileName                = {'Ex_Estimate_AngleData.gmd'};
+simData.RampTable               = {};
+simData.UseLightTime            = True;
+simData.UseRelativityCorrection = False;
+simData.UseETminusTAI           = True;
+simData.AberrationCorrection    = 'AnnualAndDiurnal';
+simData.DataFilters             = {};
+
+Create TrackingFileSet estData;
+
+estData.AddTrackingConfig       = {{GDS, EstSat, GDS}, 'Azimuth', 'Elevation'};
+estData.AddTrackingConfig       = {{CAN, EstSat, CAN}, 'XEast', 'YNorth'};
+estData.AddTrackingConfig       = {{MAD, EstSat, MAD}, 'XSouth', 'YEast'};
+estData.FileName                = {'Ex_Estimate_AngleData.gmd'};
+estData.RampTable               = {};
+estData.UseLightTime            = True;
+estData.UseRelativityCorrection = False;
+estData.UseETminusTAI           = True;
+estData.AberrationCorrection    = 'AnnualAndDiurnal';
+estData.DataFilters             = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel ODProp_ForceModel;
+
+ODProp_ForceModel.CentralBody  = Earth;
+ODProp_ForceModel.PointMasses  = {Earth};
+ODProp_ForceModel.Drag         = None;
+ODProp_ForceModel.SRP          = Off;
+ODProp_ForceModel.ErrorControl = None;
+
+Create Propagator ODProp;
+
+ODProp.FM                      = ODProp_ForceModel;
+ODProp.Type                    = 'RungeKutta89';
+ODProp.InitialStepSize         = 60;
+ODProp.Accuracy                = 1e-13;
+ODProp.MinStep                 = 0;
+ODProp.MaxStep                 = 60;
+ODProp.MaxStepAttempts         = 50;
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator sim;
+
+sim.AddData                    = {simData};
+sim.EpochFormat                = 'UTCGregorian';
+sim.InitialEpoch               = '08 Jun 2012 00:00:00.000';
+sim.FinalEpoch                 = '10 Jun 2012 00:00:00.000';
+sim.MeasurementTimeStep        = 60;
+sim.Propagator                 = ODProp;
+sim.AddNoise                   = On;
+
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create BatchEstimator bat
+
+bat.ShowProgress               = True;
+bat.Measurements               = {estData} 
+bat.AbsoluteTol                = 0.0001;
+bat.RelativeTol                = 0.0001;
+bat.MaximumIterations          = 10;
+bat.MaxConsecutiveDivergences  = 3;
+bat.Propagator                 = ODProp;
+bat.ShowAllResiduals           = On;
+bat.OLSEInitialRMSSigma        = 1000;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant       = 0;
+bat.InversionAlgorithm         = 'Internal';
+bat.ReportStyle                = 'Normal';
+bat.ReportFile                 = 'Ex_Estimate_AngleData.txt';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+SetSeed(3);
+
+RunSimulator sim;
+RunEstimator bat;

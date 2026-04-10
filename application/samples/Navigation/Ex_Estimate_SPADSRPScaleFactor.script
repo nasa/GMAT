@@ -1,0 +1,250 @@
+%
+%   Ex_Estimate_SPADSRPScaleFactor
+%
+%   Solve for the Spacecraft Cartesian state and SPADSRPScaleFactor.
+%
+%   Released: R2020a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat                 = UTCGregorian;
+SimSat.Epoch                      = '10 Jun 2006 00:00:00.000';
+SimSat.CoordinateSystem           = EarthMJ2000Eq;
+SimSat.DisplayStateType           = Cartesian;
+SimSat.X                          = -39010.;
+SimSat.Y                          = -15850.;
+SimSat.Z                          = 1610.;
+SimSat.VX                         = 1.15385;
+SimSat.VY                         = -2.84918;
+SimSat.VZ                         = -0.13314;
+SimSat.DryMass                    = 100;
+SimSat.Cd                         = 2.2;
+SimSat.Cr                         = 1.4;
+SimSat.SPADSRPFile                = '../samples/SupportFiles/One-Wing-Sat.spo';
+SimSat.SPADSRPScaleFactor         = 1.0;
+SimSat.SPADSRPInterpolationMethod = 'Bilinear'
+SimSat.DragArea                   = 15;
+SimSat.SRPArea                    = 15;
+SimSat.Id                         = 'LEOSat';
+SimSat.AddHardware                = {Transponder1, SpacecraftAntenna};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat                 = UTCGregorian;
+EstSat.Epoch                      = '10 Jun 2006 00:00:00.000';
+EstSat.CoordinateSystem           = EarthMJ2000Eq;
+EstSat.DisplayStateType           = Cartesian;
+EstSat.X                          = -39010.;
+EstSat.Y                          = -15850.;
+EstSat.Z                          = 1610.;
+EstSat.VX                         = 1.15385;
+EstSat.VY                         = -2.84918;
+EstSat.VZ                         = -0.13314;
+EstSat.DryMass                    = 100;
+EstSat.Cd                         = 2.2;
+EstSat.Cr                         = 1.4;
+EstSat.SPADSRPFile                = '../samples/SupportFiles/One-Wing-Sat.spo';
+EstSat.SPADSRPScaleFactor         = 1.2;
+EstSat.SPADSRPInterpolationMethod = 'Bilinear'
+EstSat.DragArea                   = 15;
+EstSat.SRPArea                    = 15;
+EstSat.Id                         = 'LEOSat';
+EstSat.AddHardware                = {Transponder1, SpacecraftAntenna};
+EstSat.SolveFors                  = {CartesianState, SPADSRPScaleFactor};
+
+%----------------------------------------
+%---------- Spacecraft hardware
+%----------------------------------------
+
+Create Antenna SpacecraftAntenna;
+Create Transponder Transponder1;
+
+Transponder1.PrimaryAntenna  = SpacecraftAntenna;
+Transponder1.HardwareDelay   = 0.00005;
+Transponder1.TurnAroundRatio = '240/221' 
+
+%----------------------------------------
+%---------- GroundStation hardware
+%----------------------------------------
+
+Create Transmitter Transmitter1;
+Create Antenna GroundAntenna;
+Create Receiver Receiver1;
+
+Transmitter1.PrimaryAntenna = GroundAntenna;
+Transmitter1.Frequency      = 2067.5;
+Receiver1.PrimaryAntenna    = GroundAntenna;
+
+%----------------------------------------
+%---------- Ground stations
+%----------------------------------------
+
+Create GroundStation GDS;
+
+GDS.CentralBody           = Earth;
+GDS.StateType             = Cartesian;
+GDS.HorizonReference      = Ellipsoid;
+GDS.Location1             = -2353.621251;
+GDS.Location2             = -4641.341542;
+GDS.Location3             =  3677.052370;
+GDS.Id                    = 'GDS';
+GDS.AddHardware           = {Transmitter1, Receiver1, GroundAntenna};
+GDS.MinimumElevationAngle = 10;
+GDS.IonosphereModel       = 'None';
+GDS.TroposphereModel      = 'None';
+GDS.ErrorModels           = {SeqRangeModel, TcpModel};
+
+Create GroundStation CAN;
+
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514;
+CAN.Location2             =  2682.281745;
+CAN.Location3             = -3674.570392;
+CAN.Id                    = 'CAN';
+CAN.AddHardware           = {Transmitter1, Receiver1, GroundAntenna};
+CAN.MinimumElevationAngle = 10;
+CAN.IonosphereModel       = 'None';
+CAN.TroposphereModel      = 'None';
+CAN.ErrorModels           = {SeqRangeModel, TcpModel};
+
+
+Create GroundStation MAD; 
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             =  4849.519988;
+MAD.Location2             = -0360.641653;
+MAD.Location3             =  4114.504590;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {Transmitter1, Receiver1, GroundAntenna};
+MAD.MinimumElevationAngle = 10;
+CAN.IonosphereModel       = 'None';
+CAN.TroposphereModel      = 'None';
+MAD.ErrorModels           = {SeqRangeModel, TcpModel};
+
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel TcpModel;
+
+TcpModel.Type            = 'DSN_TCP';
+TcpModel.NoiseSigma      = 0.05;
+TcpModel.Bias            = 0.0;
+TcpModel.SolveFors       = {};
+
+Create ErrorModel SeqRangeModel;
+
+SeqRangeModel.Type       = 'DSN_SeqRange';
+SeqRangeModel.NoiseSigma = 35.;
+SeqRangeModel.Bias       = 0.0;
+SeqRangeModel.SolveFors  = {};
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet simData;
+
+simData.AddTrackingConfig       = {{GDS, SimSat, GDS}, 'DSN_SeqRange', 'DSN_TCP'};
+simData.AddTrackingConfig       = {{CAN, SimSat, CAN}, 'DSN_SeqRange', 'DSN_TCP'};
+simData.AddTrackingConfig       = {{MAD, SimSat, MAD}, 'DSN_SeqRange', 'DSN_TCP'};
+simData.FileName                = {'Ex_Estimate_SPADSRPScaleFactor.gmd'};
+simData.RampTable               = {};
+simData.UseLightTime            = True;
+simData.UseRelativityCorrection = False;
+simData.UseETminusTAI           = False;
+simData.SimRangeModuloConstant  = 67108864;
+simData.SimDopplerCountInterval = 10.;  
+simData.DataFilters             = {};
+
+Create TrackingFileSet estData;
+
+estData.AddTrackingConfig       = {{GDS, EstSat, GDS}, 'DSN_SeqRange', 'DSN_TCP'};
+estData.AddTrackingConfig       = {{CAN, EstSat, CAN}, 'DSN_SeqRange', 'DSN_TCP'};
+estData.AddTrackingConfig       = {{MAD, EstSat, MAD}, 'DSN_SeqRange', 'DSN_TCP'};
+estData.FileName                = {'Ex_Estimate_SPADSRPScaleFactor.gmd'};
+estData.RampTable               = {};
+estData.UseLightTime            = True;
+estData.UseRelativityCorrection = False;
+estData.UseETminusTAI           = False;
+estData.DataFilters             = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+
+FM.CentralBody          = Earth;
+FM.PointMasses          = {Earth};
+FM.Drag                 = None;
+FM.SRP                  = On;
+FM.SRP.SRPModel         = 'SPADFile'
+FM.ErrorControl         = None;
+
+Create Propagator ODProp;
+
+ODProp.FM               = FM;
+ODProp.Type             = 'RungeKutta89';
+ODProp.InitialStepSize  = 60;
+ODProp.Accuracy         = 1e-13;
+ODProp.MinStep          = 0;
+ODProp.MaxStep          = 60;
+ODProp.MaxStepAttempts  = 50;
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator sim;
+
+sim.AddData                    = {simData};
+sim.EpochFormat                = 'UTCGregorian';
+sim.InitialEpoch               = '09 Jun 2006 00:00:00.000';
+sim.FinalEpoch                 = '11 Jun 2006 00:00:00.000';
+sim.MeasurementTimeStep        = 600;
+sim.Propagator                 = ODProp;
+sim.AddNoise                   = On;
+
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create BatchEstimator bat
+
+bat.ShowProgress               = True;
+bat.Measurements               = {estData} 
+bat.AbsoluteTol                = 0.0001;
+bat.RelativeTol                = 0.0001;
+bat.MaximumIterations          = 10;
+bat.MaxConsecutiveDivergences  = 3;
+bat.Propagator                 = ODProp;
+bat.ShowAllResiduals           = On;
+bat.OLSEInitialRMSSigma        = 300;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant       = 0;
+bat.InversionAlgorithm         = 'Internal';
+bat.ReportStyle                = 'Normal';
+bat.ReportFile                 = 'Ex_Estimate_SPADSRPScaleFactor.txt';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+SetSeed(2);
+
+RunSimulator sim;
+RunEstimator bat;

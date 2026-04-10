@@ -1,0 +1,128 @@
+% GMAT script showing station contact between Colorado 
+% Springs and Falconsat-7
+%
+% This version uses the ThinkSys TLE Propagator and EST's 
+% OpenFramesInterface
+%
+% Created: 2020-06-25
+% Author:  D. Conway, Thinking Systems, Inc.
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft FalconSat7;
+FalconSat7.EphemerisName = '../TLE/Active-2020-06-23.txt';
+FalconSat7.Id = 'FALCONSAT-7';
+FalconSat7.DateFormat = 'UTCGregorian';
+FalconSat7.Epoch = '23 Jun 2020 20:40:35.868';
+
+
+%----------------------------------------
+%---------- GroundStations
+%----------------------------------------
+Create GroundStation ColoradoSprings;
+ColoradoSprings.CentralBody = Earth;
+ColoradoSprings.StateType = Spherical;
+ColoradoSprings.HorizonReference = Ellipsoid;
+ColoradoSprings.Location1 = 38.833;
+ColoradoSprings.Location2 = 255.1786;
+ColoradoSprings.Location3 = 1.839;
+
+Create GroundStation WhiteSands;
+WhiteSands.CentralBody           = Earth;
+WhiteSands.StateType             = Spherical;
+WhiteSands.HorizonReference      = Ellipsoid;
+WhiteSands.Location1             = 32.3824;
+WhiteSands.Location2             =  253.5093;
+WhiteSands.Location3             =  1.3;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+Create Propagator TleProp;
+TleProp.Type = TLE;
+TleProp.InitialStepSize = 60;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem SpringsTopo;
+SpringsTopo.Origin = ColoradoSprings;
+SpringsTopo.Axes = Topocentric;
+
+Create CoordinateSystem SandsTopo;
+SandsTopo.Origin = WhiteSands;
+SandsTopo.Axes = Topocentric;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OpenFrames1;
+OpenFrames1.Add = {FalconSat7, ColoradoSprings, WhiteSands, Earth};
+OpenFrames1.CoordinateSystem = EarthFixed;
+OpenFrames1.View = {CoordinateSystemView1}
+
+Create OpenFramesView CoordinateSystemView1;
+CoordinateSystemView1.ViewFrame = CoordinateSystem;
+CoordinateSystemView1.ViewTrajectory = Off;
+CoordinateSystemView1.InertialFrame = Off;
+CoordinateSystemView1.SetDefaultLocation = Off;
+CoordinateSystemView1.SetCurrentLocation = On;
+CoordinateSystemView1.CurrentEye = [ -3100 -10000 10900 ];
+CoordinateSystemView1.CurrentCenter = [ 0 1.818989403545856e-12 0 ];
+CoordinateSystemView1.CurrentUp = [ 0.1072981481318968 0.7171977342910896 0.6885597412971464 ];
+CoordinateSystemView1.FOVy = 45;
+
+Create ReportFile SpringsReport;
+SpringsReport.Filename = 'ColoradoSpringsVisible.txt';
+SpringsReport.ColumnWidth = 26;
+
+Create ReportFile SandsReport;
+SandsReport.Filename = 'WhiteSandsVisible.txt';
+SandsReport.ColumnWidth = 26;
+
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable I CSZ CSXY Azimuth Elevation;
+Create String now format;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+format = 'TAIModJulian';
+[now] = SystemTime(format);
+
+% FalconSat7.Epoch = now;
+
+For I = 1:1:1440;
+   Propagate TleProp(FalconSat7);
+
+   % Colorado Springs visibility
+   CSZ = FalconSat7.SpringsTopo.Z;
+   If CSZ > 0.0
+      CSXY = Sqrt(FalconSat7.SpringsTopo.X^2 + FalconSat7.SpringsTopo.Y^2)
+      Azimuth = Rad2Deg(Atan2(FalconSat7.SpringsTopo.Y, -FalconSat7.SpringsTopo.X))
+      If Azimuth < 0.0
+         Azimuth = 360.0 + Azimuth
+      EndIf
+      Elevation = Rad2Deg(Atan2(CSZ, CSXY))
+      Report SpringsReport FalconSat7.UTCGregorian Azimuth Elevation;
+   EndIf;
+
+   % White Sands visibility
+   CSZ = FalconSat7.SandsTopo.Z;
+   If CSZ > 0.0
+      CSXY = Sqrt(FalconSat7.SandsTopo.X^2 + FalconSat7.SandsTopo.Y^2)
+      Azimuth = Rad2Deg(Atan2(FalconSat7.SandsTopo.Y, -FalconSat7.SandsTopo.X))
+      If Azimuth < 0.0
+         Azimuth = 360.0 + Azimuth
+      EndIf
+      Elevation = Rad2Deg(Atan2(CSZ, CSXY))
+      Report SandsReport FalconSat7.UTCGregorian Azimuth Elevation;
+   EndIf;
+EndFor;

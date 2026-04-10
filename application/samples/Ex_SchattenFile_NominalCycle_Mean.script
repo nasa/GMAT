@@ -1,0 +1,87 @@
+%
+%  Ex_SchattenFile_NominalCycle_Mean
+%
+%  Use Schatten long-term solar predict files with an atmospheric drag model.
+%
+%  Released: R2015a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SPC;
+
+SPC.DateFormat       = UTCGregorian;
+SPC.Epoch            = '15 Jun 2016 12:00:00.000';
+SPC.CoordinateSystem = EarthMJ2000Eq;
+SPC.DisplayStateType = Cartesian;
+SPC.X                = 6728.137;
+SPC.Y                = 0;
+SPC.Z                = 0;
+SPC.VX               = 0;
+SPC.VY               = 4.78097433374032;
+SPC.VZ               = 6.0320883756781;
+SPC.DryMass          = 2000;
+SPC.Cd               = 2.1;
+SPC.Cr               = 1.8;
+SPC.DragArea         = 40;
+SPC.SRPArea          = 35;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel ForcesWithSchatten;
+
+ForcesWithSchatten.CentralBody                      = Earth;
+ForcesWithSchatten.PrimaryBodies                    = {Earth};
+ForcesWithSchatten.SRP                              = Off;
+ForcesWithSchatten.RelativisticCorrection           = Off;
+ForcesWithSchatten.ErrorControl                     = RSSStep;
+ForcesWithSchatten.GravityField.Earth.Degree        = 0;
+ForcesWithSchatten.GravityField.Earth.Order         = 0;
+ForcesWithSchatten.GravityField.Earth.PotentialFile = '../data/gravity/earth/JGM2.cof';
+ForcesWithSchatten.GravityField.Earth.TideModel     = 'None';
+ForcesWithSchatten.Drag.AtmosphereModel             =  NRLMSISE00;
+ForcesWithSchatten.Drag.HistoricWeatherSource       = 'ConstantFluxAndGeoMag';
+ForcesWithSchatten.Drag.PredictedWeatherSource      = 'SchattenFile';
+ForcesWithSchatten.Drag.SchattenFile                = '../data/atmosphere/earth/SchattenPredict.txt';
+ForcesWithSchatten.Drag.SchattenErrorModel          = 'Nominal';
+ForcesWithSchatten.Drag.SchattenTimingModel         = 'NominalCycle';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator PD78;
+PD78.FM = ForcesWithSchatten;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create ReportFile SPC_Report;
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable OutputStepSize i;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+%-----------Begin Propagation and Report Generation--------
+% Propagate based on preset propagation parameters
+% and current stop conditions.
+BeginMissionSequence;
+
+% Output Report file data for each propagation set in the FOR loop
+Report SPC_Report SPC.A1ModJulian SPC.X SPC.Y SPC.Z SPC.VX SPC.VY SPC.VZ;
+For i = 1:288
+  Propagate PD78(SPC) {SPC.ElapsedSecs = 300};
+  Report SPC_Report SPC.A1ModJulian SPC.X SPC.Y SPC.Z SPC.VX SPC.VY SPC.VZ;
+EndFor

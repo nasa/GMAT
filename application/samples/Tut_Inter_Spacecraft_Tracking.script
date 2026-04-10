@@ -1,0 +1,212 @@
+%
+%  Script: Tut_Inter_Spacecraft_Tracking
+%
+%  Script for the "Simulate and Estimate Inter-Spacecraft Tracking" Users Guide 
+%  tutorial.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat
+
+SimSat.DateFormat            = UTCGregorian
+SimSat.Epoch                 = '10 Jun 2010 00:00:00.000'
+SimSat.CoordinateSystem      = EarthMJ2000Eq
+SimSat.DisplayStateType      = Cartesian
+SimSat.X                     =   576.86955
+SimSat.Y                     = -5701.14276
+SimSat.Z                     = -4170.59369
+SimSat.VX                    = -1.76450794
+SimSat.VY                    =  4.18128798
+SimSat.VZ                    = -5.96578986
+SimSat.Id                    = 'ObservedSat'
+
+Create Spacecraft SimTrackSat
+
+SimTrackSat.DateFormat       = UTCGregorian
+SimTrackSat.Epoch            = '10 Jun 2010 00:00:00.000'
+SimTrackSat.CoordinateSystem = EarthMJ2000Eq
+SimTrackSat.DisplayStateType = Cartesian
+SimTrackSat.X                = -36517.051189    
+SimTrackSat.Y                = -21083.129334       
+SimTrackSat.Z                = -0.000000      
+SimTrackSat.VX               = -0.005964       
+SimTrackSat.VY               = 0.010330       
+SimTrackSat.VZ               = 0.267968
+SimTrackSat.Id               = 'TrackSat'
+
+%----------------------------------------
+%---------- Estimator Spacecraft
+%----------------------------------------
+
+Create Spacecraft EstSat
+
+EstSat.DateFormat            = UTCGregorian
+EstSat.Epoch                 = '10 Jun 2010 00:00:00.000'
+EstSat.CoordinateSystem      = EarthMJ2000Eq
+EstSat.DisplayStateType      = Cartesian
+EstSat.X                     = 576.87
+EstSat.Y                     = -5701.14
+EstSat.Z                     = -4170.59
+EstSat.VX                    = -1.764508
+EstSat.VY                    = 4.181288
+EstSat.VZ                    = -5.965790
+EstSat.Id                    = 'ObservedSat'
+EstSat.AddHardware           = {Transponder1, SpacecraftAntenna}
+EstSat.SolveFors             = {CartesianState}
+
+Create Spacecraft EstTrackSat
+
+EstTrackSat.DateFormat       = UTCGregorian
+EstTrackSat.Epoch            = '10 Jun 2010 00:00:00.000'
+EstTrackSat.CoordinateSystem = EarthMJ2000Eq
+EstTrackSat.DisplayStateType = Cartesian
+EstTrackSat.X                = -36517.051189    
+EstTrackSat.Y                = -21083.129334       
+EstTrackSat.Z                = -0.000000      
+EstTrackSat.VX               = -0.005964       
+EstTrackSat.VY               = 0.010330       
+EstTrackSat.VZ               = 0.267968
+EstTrackSat.Id               = 'TrackSat'
+
+
+%----------------------------------------
+%---------- Spacecraft hardware
+%----------------------------------------
+
+Create Antenna SpacecraftAntenna
+Create Transponder HGA
+
+HGA.PrimaryAntenna  = SpacecraftAntenna
+HGA.HardwareDelay   = 1e-06
+HGA.TurnAroundRatio = '880/749'
+
+SimSat.AddHardware  = {HGA, SpacecraftAntenna}
+EstSat.AddHardware  = {HGA, SpacecraftAntenna}
+
+ 
+%----------------------------------------
+%--- Measurement Spacecraft hardware
+%----------------------------------------
+
+Create Transmitter MeasurementTransmitter
+Create Receiver MeasurementReceiver
+
+MeasurementTransmitter.PrimaryAntenna = SpacecraftAntenna
+MeasurementTransmitter.Frequency      = 7200
+MeasurementReceiver.PrimaryAntenna    = SpacecraftAntenna
+
+SimTrackSat.AddHardware = {HGA, SpacecraftAntenna, MeasurementTransmitter, MeasurementReceiver}
+EstTrackSat.AddHardware = {HGA, SpacecraftAntenna, MeasurementTransmitter, MeasurementReceiver}
+
+  
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet simData
+
+simData.AddTrackingConfig       = {{SimTrackSat, SimSat, SimTrackSat}, 'Range', 'RangeRate'}
+simData.FileName                = {'InterSpacecraft_Range_and_RangeRate.gmd'}
+simData.UseLightTime            = True
+simData.UseRelativityCorrection = True
+simData.UseETminusTAI           = True
+simData.SimDopplerCountInterval = 10.
+
+Create TrackingFileSet estData
+
+estData.AddTrackingConfig       = {{EstTrackSat, EstSat, EstTrackSat}, 'Range', 'RangeRate'}
+estData.FileName                = {'InterSpacecraft_Range_and_RangeRate.gmd'}
+estData.UseLightTime            = True
+estData.UseRelativityCorrection = True
+estData.UseETminusTAI           = True
+
+
+%----------------------------------------
+%----- Spacecraft error models
+%----------------------------------------
+
+Create ErrorModel Range
+
+Range.Type           = 'Range'
+Range.NoiseSigma     = 0.010
+Range.Bias           = 0.0
+Range.SolveFors      = {}
+
+Create ErrorModel RangeRate
+
+RangeRate.Type       = 'RangeRate'
+RangeRate.NoiseSigma = 0.000001
+RangeRate.Bias       = 0.0
+RangeRate.SolveFors  = {}
+
+MeasurementReceiver.ErrorModels = {Range, RangeRate}
+
+
+%----------------------------------------
+%------ Propagator and force model
+%----------------------------------------
+
+Create ForceModel FM
+
+FM.CentralBody  = Earth
+FM.PointMasses  = {Earth}
+FM.Drag         = None
+FM.SRP          = Off
+FM.ErrorControl = None
+
+Create Propagator Prop
+
+Prop.FM              = FM
+Prop.Type            = 'RungeKutta56'
+Prop.InitialStepSize = 60
+Prop.Accuracy        = 1e-13
+Prop.MinStep         = 0
+Prop.MaxStep         = 60
+Prop.MaxStepAttempts = 50
+
+ 
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator sim
+
+sim.AddData                    = {simData}
+sim.EpochFormat                = 'UTCGregorian'
+sim.InitialEpoch               = '10 Jun 2010 00:00:00.000'
+sim.FinalEpoch                 = '11 Jun 2010 00:00:00.000'
+sim.MeasurementTimeStep        = 60
+sim.Propagator                 = Prop
+sim.AddNoise                   = On
+
+
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create BatchEstimator bat
+
+bat.ShowProgress               = True
+bat.Measurements               = {estData} 
+bat.AbsoluteTol                = 0.000001
+bat.RelativeTol                = 0.005
+bat.MaximumIterations          = 10
+bat.MaxConsecutiveDivergences  = 3
+bat.Propagator                 = Prop
+bat.ShowAllResiduals           = On
+bat.OLSEInitialRMSSigma        = 3000
+bat.OLSEMultiplicativeConstant = 3
+bat.OLSEAdditiveConstant       = 0
+bat.ReportFile                 = 'InterSpacecraft_Range_and_RangeRate.txt'
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+ 
+RunSimulator sim
+RunEstimator bat

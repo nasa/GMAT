@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="LEOStationKeeping"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>LEO Station Keeping</title>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para><emphasis role="bold"></emphasis>n this tutorial, you will learn how
+    to use the GMAT's control flow and targeting mechanisms to maintain a
+    Low-Earth orbit in the presense of atmosphere drag. For the sake of
+    simulation time, we will make the area-to-mass ratio of the spacecraft
+    large, to make the drag cause a rapid lowering of the orbit semimajor
+    axis. The process used in this script is also useful for generating
+    delta-V estimates for LEO stationkeeping of real-world missions. The basic
+    steps of this tutorial are:</para>
+
+    <procedure>
+      <step>
+        <para>Create and configure the Resourse Tree - configure a spacecraft,
+        impulsive maneuver, propagator, XY plot, and differential
+        corrector.</para>
+      </step>
+
+      <step>
+        <para>Create a conditional loop using a <literal>While</literal>
+        statement , to propagate the mission for 10 days.</para>
+      </step>
+
+      <step>
+        <para>Run the mission (we will call it mission's Part 1)and observe
+        its behavior when using no orbit control strategy.</para>
+      </step>
+
+      <step>
+        <para>Add Part 2 - a control target sequence nested in an <literal>If
+        </literal>statement that executes at altitudes below 342 km (where
+        drag is a serious factor) and keep the altitude above 342 km.</para>
+      </step>
+
+      <step>
+        <para>Run the Part 2 mission; observe the behavior of the orbit
+        altitude with the control strategy implemented in step 4.</para>
+      </step>
+    </procedure>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Resource Tree</title>
+
+    <para>Here we will configure a model of a LEO spacecraft, a propopagator,
+    a maneuver, and an XY plot that we will use to visualize the semi-major
+    axis (SMA) during the control sequence that we will develop in the next
+    section.</para>
+
+    <section>
+      <title>Creating the Spacecraft</title>
+
+      <procedure>
+        <step>
+          <para>In the Resource Tree, right-click DefaultSC, select Rename,
+          change the name to LEOsat.</para>
+        </step>
+
+        <step>
+          <para>Open the LEOsat dialog box/window (for that, right-click
+          --&gt; Open or double left-click on LEOsat) . Set the value in the
+          EpochFormat combo box to UTCGregorian.</para>
+        </step>
+
+        <step>
+          <para>Set the Epoch to 05 Jan 2010 00:00:00.000</para>
+        </step>
+
+        <step>
+          <para>Set the state elements to these values: X = -4083.9 , Y =
+          4691.8 , Z = -2576.7 , VX = -4.252 , VY = -5.509 , VZ =
+          -3.284</para>
+        </step>
+
+        <step>
+          <para>Your LEOsat window should now look like as shown below. If
+          not, make changes as needed. Click OK to save and close.</para>
+        </step>
+      </procedure>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_LEO_LEOsatSpacecraftObject.png"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: LEOsat Spacecraft Object</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+    </section>
+
+    <section>
+      <title>Creating the Propagator</title>
+
+      <procedure>
+        <step>
+          <para>Right-click DefaultProp. Select Rename, and change the name to
+          LEOprop.</para>
+        </step>
+
+        <step>
+          <para>Open LEOprop dialog box.</para>
+        </step>
+
+        <step>
+          <para>In Drag model group box, set the Atmosphere Model to
+          JacchiaRoberts.</para>
+        </step>
+
+        <step>
+          <para>Click Select button to the right of the Point Masses list. Add
+          the Sun and Luna as Point Masses to the right-hand side list. Click
+          OK.</para>
+        </step>
+
+        <step>
+          <para>Check the box Use Solar Radiation Pressure</para>
+        </step>
+
+        <step>
+          <para>Now your LEOprop dialog window should look like the screen
+          capture below. Click OK to save.</para>
+        </step>
+      </procedure>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_LEO_LEOpropPropagatorObject.png"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: LEOprop Propagator Object</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+    </section>
+
+    <section>
+      <title>Creating the DifferentialCorrector and Maneuver</title>
+
+      <para>We will use the default configurations for the maneuver and the
+      differential corrector . Follow these steps:</para>
+
+      <procedure>
+        <step>
+          <para>In the Resource Tree, locate the Solvers folder; expand it if
+          necessary.</para>
+        </step>
+
+        <step>
+          <para>Right-click the Boundary Value Solvers, then Add and select
+          DifferentialCorrector.</para>
+        </step>
+
+        <step>
+          <para>Rename the added corrector as DC.</para>
+        </step>
+
+        <step>
+          <para>In the Burns folder, right-click on DefaultIB, rename it as
+          DeltaV.</para>
+        </step>
+
+        <step>
+          <para>Specify the output: right-click the Output folder, click Add,
+          then XYPlot. Open XYPlot box; click Edit X; replace the item in the
+          right-hand column with A1ModJulian; click OK. Click Edit Y; replace
+          the item in the right-hand column with Altitude; click OK. Your
+          XYPlot box sdhould now look as shown below. Click OK to save
+          it..</para>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center" contentdepth="100%"
+                           fileref="files/images/Tut_LEO_XYPlotCommand.jpeg"
+                           scalefit="1" width="100%"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: XYPlot Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </step>
+      </procedure>
+    </section>
+  </section>
+
+  <section>
+    <title>Configuring the Mission Sequence</title>
+
+    <para>We will implement the mission in two parts. In Part 1 we will set a
+    <literal>While</literal> loop with a propagate sequence, and will
+    configure it to propagate for about 10 days. This will still lack any
+    orbit control strategy - upon running the mission you will see the SMA
+    drop below the allowed value of 342 km. Later in Part 2 a control sequence
+    will be added, to ensure that SMA remains above approximately 342 km.
+    Below is an illustration of the Mission Tree after you have completed Part
+    1. Follow the steps below.</para>
+
+    <procedure>
+      <step>
+        <para>In the Mission Tree, right-click Propagate1, select Insert
+        After, select Control Logic, select While.</para>
+      </step>
+
+      <step>
+        <para>Right-click While1, select Insert After, select Propagate (it
+        will appear as Propagate2). Your Mission Tree should now look as shown
+        below.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_TheMissionTreeStep1.png"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Mission Tree, Part I</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+    </procedure>
+
+    <para>Now we will configure the While1 sequence so that the ElapsedDays of
+    LEOsat are limited to 10 days, and configure the Propagate2 command to
+    take a single propagation step.</para>
+
+    <procedure>
+      <step>
+        <para>Open the Propagate1 command dialog box.</para>
+      </step>
+
+      <step>
+        <para>In the Stopping Conditions group, double-left click the
+        <literal>Parameter</literal> field to select the text
+        <literal>LEOSat.ElapsedSecs</literal>. Delete this text (using the
+        Delete or Backspace key).</para>
+      </step>
+
+      <step>
+        <para>In the Stopping Conditions, double-left click <literal>the
+        Condition</literal> field to select the text <literal>12000</literal>.
+        Delete it.</para>
+      </step>
+
+      <step>
+        <para>Your Propagate1 box should now look like the screen below. Click
+        OK to save and close it.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_Propagate1PropagateCommand.jpeg"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Propagate1 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+
+      <step>
+        <para>Open the While1 dialog box.</para>
+      </step>
+
+      <step>
+        <para>Note that the value in the Left-Hand Side column is already set
+        to <literal>LEOSat.ElapsedDays</literal>, and the conditional operator
+        is set to "&lt;" (less-than). We will leave those fields at this
+        default.</para>
+      </step>
+
+      <step>
+        <para>Change the Right-Hand Side value to10.0.</para>
+      </step>
+
+      <step>
+        <para>Your While1 dialog box should look like the screen below. Click
+        OK to save and close it.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_While1WhileCommand.png"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: While1 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+    </procedure>
+
+    <para>We are now ready to run the first part of the mission and observe
+    the evolution of the LEOsat altitude. Click Run in the Toolbar. A plot
+    should appear looking similar to the illustration below. Notice that the
+    alttitude drops below the allowed value of 342 km. We will address this
+    issue below, in the mission's Part 2, by implementing a relevant control
+    strategy.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_LEO_OutputPart1.png"
+                     scalefit="1" width="100%"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Output Mission Part 1</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <para>Just in case you may want in the future to return to the mission
+    executed in Part 1, this is a good point to save your mission under an
+    appropriate name. In order to avoid confusion, you may want to also save
+    it under the nmae that reflects its becoming the Part 2 mission.</para>
+
+    <para>In Part 2, every time the orbit dips below 342 km, the control
+    strategy that we will set up will perform a Hohmann transfer, increasing
+    the orbit altitude. (We assume that by now you know how to configure a
+    Hohmann transfer in GMAT. (If you want to refresh your knowledge, use the
+    Hohmann Transfer Tutorial.)</para>
+
+    <para>In the Mission Tree, let us add the Part 2 mission sequence</para>
+
+    <procedure>
+      <step>
+        <para>Add an If statement after the Propagate2 Command.</para>
+      </step>
+
+      <step>
+        <para>Add a Target statement inside the If statement</para>
+      </step>
+
+      <step>
+        <para>Add a Vary statement inside Target1.</para>
+      </step>
+
+      <step>
+        <para>Add a Maneuver after Vary1.</para>
+      </step>
+
+      <step>
+        <para>Add an Achieve command after Maneuver1</para>
+      </step>
+
+      <step>
+        <para>Add a Propagate command after Achieve1</para>
+      </step>
+
+      <step>
+        <para>Add a Vary Command after Propagate3</para>
+      </step>
+
+      <step>
+        <para>Add a Maneuver after Vary2</para>
+      </step>
+
+      <step>
+        <para>Add an Achieve after Maneuver2</para>
+      </step>
+    </procedure>
+
+    <para>The figure below illustrates how your Mission Tree should now look
+    like. .</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_LEO_TheMissionTree.png"
+                     scalefit="1" width="100%"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Mission Tree, Part II</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <para>Let us now configure the commands created above, to perform the
+    Hohman transfer control sequence.</para>
+
+    <procedure>
+      <step>
+        <para>Open the If1 command dialog box</para>
+      </step>
+
+      <step>
+        <para>Set the Left Hand Side value to LEOsat.Altitude</para>
+      </step>
+
+      <step>
+        <para>Set the Right Hand Side value to 342. Click OK to save and close
+        the box.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_If1IfCommand.png"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: If1 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+
+      <step>
+        <para>Open the Vary1 Command dialog box .</para>
+      </step>
+
+      <step>
+        <para>Change the IntialValue field to 0.002. Click OK to save.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_Vary1VaryCommand.jpeg"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Vary1 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+
+      <step>
+        <para>Open the Achieve1 Command dialog box.</para>
+      </step>
+
+      <step>
+        <para>Edit the Goal value to LEOsat.Earth.SMA.</para>
+      </step>
+
+      <step>
+        <para>Change the Value to 6734. Click OK to close.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_Achieve1AchieveCommand.jpeg"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Achieve1 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+
+      <step>
+        <para>Open the Propagate3 command dialog box.</para>
+      </step>
+
+      <step>
+        <para>In the Stopping Conditions group, change the
+        <literal>Parameter</literal> field to
+        <literal>LEOSat.Earth.Apoapsis</literal>.</para>
+      </step>
+
+      <step>
+        <para>In the Stopping Conditions group, delete data in the
+        <literal>Condition</literal> field. Your box should now look as shown
+        below. Click OK to save it.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_Propagate3PropagateCommand.jpeg"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Propagate3 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+
+      <step>
+        <para>Open the the Vary2 command dialog box.</para>
+      </step>
+
+      <step>
+        <para>Set Initial Value= 0.001; Perturbation=0.00005;
+        Lower=-9.999999e300; Upper=9.999999e300; Max Step=0.001. Your box
+        should look as shown below. Click OK to save.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_Vary2VaryCommand.jpeg"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Vary2 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+
+      <step>
+        <para>Open the Achieve2 Command dialog box.</para>
+      </step>
+
+      <step>
+        <para>Edit the Goal value to LEOsat.Earth.ECC.</para>
+      </step>
+
+      <step>
+        <para>Set Value=0.0005; Tolerance=0.0001. Your dialog box should now
+        look as shown below. Click OK to close.</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_LEO_Achieve2AchieveCommand.jpeg"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Achieve2 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </step>
+    </procedure>
+  </section>
+
+  <section>
+    <title>Running the Mission</title>
+
+    <para>We are now ready to run our Part 2 mission. Press Run. An XY plot
+    showing the behavior of the spacecraft altitude should appear; in its
+    final form it should look similar to the illustration below. Notice that,
+    with the altitude control sequence now added, the spacecraft initiates an
+    altitude-boosting maneuver every time its altitude dips below the allowed
+    342 km. You may want to save this script now, in case you decide to return
+    to it in the future.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_LEO_OutputPart2.jpeg"
+                     scalefit="1" width="90%"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Output Mission Part 2</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+</section>

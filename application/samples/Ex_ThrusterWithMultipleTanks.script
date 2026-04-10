@@ -1,0 +1,86 @@
+%
+%  Ex_ThrusterWithMultipleTanks
+%
+%  Use a chemical thruster that draws from multiple fuel tanks.
+%
+%  Released: R2016a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+DefaultSC.Tanks     = {ChemicalTank1, ChemicalTank2};
+DefaultSC.Thrusters = {ChemicalThruster1};
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+Create ChemicalTank ChemicalTank1;
+Create ChemicalTank ChemicalTank2;
+
+Create ChemicalThruster ChemicalThruster1;
+ChemicalThruster1.DecrementMass = true;
+
+%  Attach the thruster to two different tanks
+ChemicalThruster1.Tank = {ChemicalTank1, ChemicalTank2};
+
+%  Specify to draw twice as much fuel from Tank 1. 
+ChemicalThruster1.MixRatio = [ 2 1 ];
+
+Create FiniteBurn FiniteBurn1;
+FiniteBurn1.Thrusters = {ChemicalThruster1};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+Create Propagator DefaultProp;
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.Add                 = {DefaultSC, Earth};
+OFI_DefaultOrbitView.View                = {DefaultOrbit_View};
+
+OFI_DefaultOrbitView.DrawObject          = [ true true ];
+OFI_DefaultOrbitView.DrawXYPlane         = [ false false ];
+OFI_DefaultOrbitView.DrawLabel           = [ true true];
+OFI_DefaultOrbitView.DrawGrid            = [ false false];
+
+OFI_DefaultOrbitView.Axes                = On;
+OFI_DefaultOrbitView.XYPlane             = On;
+OFI_DefaultOrbitView.EclipticPlane       = Off;
+OFI_DefaultOrbitView.EnableStars         = On;
+OFI_DefaultOrbitView.StarCount           = 40000;
+OFI_DefaultOrbitView.ShowPlot            = true;
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame           = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation  = On;
+DefaultOrbit_View.SetCurrentLocation  = Off;
+
+DefaultOrbit_View.DefaultEye          = [ 0 0 30000 ];
+DefaultOrbit_View.DefaultCenter       = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp           = [ 1 0 0 ]; 
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+BeginFiniteBurn FiniteBurn1(DefaultSC)
+Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 12000.0};

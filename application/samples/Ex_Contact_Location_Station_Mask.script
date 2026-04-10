@@ -1,0 +1,161 @@
+%
+%   Ex_Contact_Location_Station_Mask
+%
+%   Perform Contact Location, using three different approaches to configuring a 
+%   mask, and creating three types of reports.
+%
+%   Released: R2022a
+%
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Sat
+
+Sat.DateFormat       = UTCGregorian
+Sat.Epoch            = '9 Jan 2010 16:00:00.000'
+Sat.CoordinateSystem = EarthMJ2000Eq
+Sat.DisplayStateType = Keplerian
+Sat.SMA              = 16678.14
+Sat.ECC              = 0.00
+Sat.INC              = 0
+Sat.RAAN             = 0
+Sat.AOP              = 0
+Sat.TA               = 0
+
+
+%----------------------------------------
+%---------- CustomFOV/Mask information
+%----------------------------------------
+
+Create CustomFOV AthMask;
+
+AthMask.Azimuth               = [0.0 90.0  160.0 180.0 201.0 270.0]
+AthMask.Elevation             = [10.0  7.0  9.0  13.0 9.0  7.0];
+AthMask.InterpolationStepSize = 5;
+
+Create CustomFOV MaskFromFile;
+
+MaskFromFile.FOVFileName = '../samples/SupportFiles/Ex_Contact_Location_Station_Mask.txt';
+
+%----------------------------------------
+%---------- HardWare
+%----------------------------------------
+
+Create Antenna AthAnt;
+
+AthAnt.FieldOfView      = AthMask;
+AthAnt.DirectionX 	    = 0;
+AthAnt.DirectionY 		= 0;
+AthAnt.DirectionZ 		= 1;
+AthAnt.SecondDirectionX = -1;
+AthAnt.SecondDirectionY = 0;
+AthAnt.SecondDirectionZ = 0;
+
+
+Create Antenna HreAnt;
+
+HreAnt.FieldOfView      = MaskFromFile;
+HreAnt.DirectionX 		= 0;
+HreAnt.DirectionY 		= 0;
+HreAnt.DirectionZ 		= 1;
+HreAnt.SecondDirectionX = -1;
+HreAnt.SecondDirectionY = 0;
+HreAnt.SecondDirectionZ = 0;
+
+%----------------------------------------
+%---------- GroundStation
+%----------------------------------------
+
+Create GroundStation AthGS;
+AthGS.CentralBody           = Earth;
+AthGS.HorizonReference      = Ellipsoid;
+AthGS.StateType             = Spherical;
+AthGS.Location1             = 33.9519
+AthGS.Location2             = 276.6424
+AthGS.Location3             = 0
+AthGS.AddHardware           = {AthAnt};
+AthGS.Id                    = 'AthGS';
+AthGS.MinimumElevationAngle = 2;
+
+Create GroundStation HreGS;
+HreGS.CentralBody           = Earth;
+HreGS.HorizonReference      = Ellipsoid;
+HreGS.StateType             = Spherical;
+HreGS.Location1             = 50.7753
+HreGS.Location2             = 6.0839
+HreGS.Location3             = 0
+HreGS.AddHardware           = {HreAnt};
+HreGS.Id                    = 'HreGS';
+HreGS.MinimumElevationAngle = 5;
+
+Create GroundStation GSFC;
+GSFC.CentralBody           = Earth;
+GSFC.HorizonReference      = Ellipsoid;
+GSFC.StateType             = Spherical;
+GSFC.Location1             = 38.9949
+GSFC.Location2             = 283.1477
+GSFC.Location3             = 0
+GSFC.Id                    = 'GSFC';
+GSFC.MinimumElevationAngle = 5;
+GSFC.HorizonMaskFileName = '../samples/SupportFiles/Ex_Contact_Location_Station_Mask.txt';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel fm
+
+fm.CentralBody                      = Earth
+fm.PrimaryBodies                    = {Earth}
+fm.GravityField.Earth.PotentialFile = 'JGM2.cof'
+fm.GravityField.Earth.Degree        = 0
+fm.GravityField.Earth.Order         = 0
+fm.GravityField.Earth.TideModel     = 'None'
+fm.Drag.AtmosphereModel             = None
+fm.PointMasses                      = {}
+fm.RelativisticCorrection           = Off
+fm.SRP                              = Off
+fm.ErrorControl                     = None
+
+
+Create Propagator prop
+
+prop.FM   = fm
+prop.Type = RungeKutta89
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create ContactLocator LegacyCL
+
+LegacyCL.Target               = Sat
+LegacyCL.Observers            = {AthGS,HreGS,GSFC}
+LegacyCL.Filename             = 'Ex_Contact_Location_Station_Mask_LegacyFormat.txt'
+
+
+Create ContactLocator AzElRangeCL
+
+AzElRangeCL.Target            = Sat
+AzElRangeCL.Observers         = {AthGS,HreGS,GSFC}
+AzElRangeCL.Filename          = 'Ex_Contact_Location_Station_Mask_AzElRangeFormat.txt'
+AzElRangeCL.IntervalStepSize  = 60
+AzElRangeCL.ReportFormat      = 'AzimuthElevationRangeReport'
+AzElRangeCL.ReportTimeFormat  = 'ISOYD'
+
+
+Create ContactLocator MaxElevationCL
+
+MaxElevationCL.Target         = Sat
+MaxElevationCL.Observers      = {AthGS,HreGS,GSFC}
+MaxElevationCL.Filename       = 'Ex_Contact_Location_Station_Mask_MaxElevationFormat.txt'
+MaxElevationCL.ReportFormat   = 'SiteViewMaxElevationReport'
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Propagate prop(Sat) {Sat.ElapsedDays = 1}

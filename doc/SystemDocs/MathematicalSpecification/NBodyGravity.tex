@@ -1,0 +1,198 @@
+\subsection{$n$-Body Point Mass Gravity}
+In this section, we derive the gravitational acceleration arising from $n$ bodies modelled as point masses. We derive the governing differential equations, as
+well as the Jacobians for position, velocity, mass, and time. 
+
+Let's begin by defining some notation referring to
+Fig.\ref{fig:NBody}. Assume the $j^{\mbox{th}}$ body is the central
+body of integration.
+%
+\begin{figure}[h!]
+\centerline{
+\begin{picture}(100,500)
+\special{psfile= Images/NBodyDiagram.eps hoffset= -135 voffset= -45
+hscale=85 vscale=85} \makebox(-20,585){$\hat{\mathbf{x}}_{I}$}
+\makebox(270,700){$\hat{\mathbf{y}}_{I}$} \makebox(-330,770){$
+\tilde{\mathbf{r}}_{s}$} \makebox(-330,877){$\mathbf{r}$}
+\makebox(-270,900){$\mathbf{r}_{sk}$}
+\makebox(-390,964){$\mathbf{r}_{k}$}
+\makebox(-500,814){$\tilde{\mathbf{r}}_{j}$}
+\makebox(-500,980){Central Body} \makebox(-320,995){$k^{th}$ Body}
+\end{picture}}\vskip -4.0 in  \caption{ N-Body Illustration} \label{fig:NBody}
+\end{figure}
+%
+%
+\begin{itemize}
+   %
+   \item  $\tilde{\mathbf{r}}_s$ is the position of the spacecraft with respect
+   a hypothesized inertial frame.
+   %
+   \item  $\tilde{\mathbf{r}}_j$ is the position of the central body with respect
+   a hypothesized inertial frame.
+   %
+   \item  $\tilde{\mathbf{r}}_k$ is the position of the $k^{th}$ gravitational body with respect
+   a hypothesized inertial frame.
+   %
+   \item  $\mathbf{r}$ is the position of the spacecraft with respect
+   to the central body of integration ($j^{th}$ body).
+   %
+   \item  $\mathbf{r}_k$ is the position of the $k^{th}$ gravitational body with respect
+   to the central body.
+   %
+\end{itemize}
+
+We begin by defining the relative position of the spacecraft
+with respect to the central body.  From inspection of
+Fig.\ref{fig:NBody} we see that
+%
+\begin{equation}
+     \tilde{\mathbf{r}}_j +  \mathbf{r} = \tilde{\mathbf{r}}_s
+\end{equation}
+%
+By reordering and taking the second derivative with respect to time
+we obtain
+%
+\begin{equation}
+     \ddot{\mathbf{r}} = \ddot{\tilde{\mathbf{r}}}_s - \ddot{\tilde{\mathbf{r}}}_j
+     \label{Eq:SCRelativeODE}
+\end{equation}
+%
+We can apply Newton's 2nd Law to the spacecraft and obtain
+%
+\begin{equation}
+     m_s \ddot{\tilde{\mathbf{r}}}_s = \sum_{k=1}^n F_k =
+     G\sum_{k=1}^n \frac{m_s m_k}{\| \mathbf{r}_{k} - \mathbf{r}\|^3} \left(\mathbf{r}_{k} -
+     \mathbf{r}\right)
+\end{equation}
+%
+where $\left(\mathbf{r}_{k} - \mathbf{r}\right)$ is a vector from
+the spacecraft to the $k^{th}$ body, $m_s$ is the mass of the
+spacecraft, and $m_k$ is the mass of the $k^{th}$ body.  We can
+write $\ddot{\tilde{\mathbf{r}}}_s$ as simply
+%
+\begin{equation}
+    \ddot{\tilde{\mathbf{r}}}_s =
+     G\sum_{k=1}^n \frac{m_k}{\| \mathbf{r}_{k} - \mathbf{r}\|^3} \left(\mathbf{r}_{k} -
+     \mathbf{r}\right) \label{Eq:SCInertialODE}
+\end{equation}
+%
+We can apply Newton's 2nd Law to the $j^{th}$ body and obtain
+%
+\begin{equation}
+     m_j \ddot{\tilde{\mathbf{r}}}_j = \frac{G m_s
+     m_j}{r^3}\mathbf{r} +
+     G\sum_{\stackrel{k=1}{k \neq j}}^{n} \frac{m_j m_k}{\| \mathbf{r}_{k}\|^3}\mathbf{r}_{k}
+\end{equation}
+%
+where the first term is the influence of the spacecraft on the
+central body, and the second term is the influence of the $k$ point
+mass gravitational bodies.  We can write
+$\ddot{\tilde{\mathbf{r}}}_j$ as simply
+%
+\begin{equation}
+     \ddot{\tilde{\mathbf{r}}}_j = \frac{G m_s
+     }{r^3}\mathbf{r} +
+     G\sum_{\stackrel{k=1}{k \neq j}}^{n} \frac{ m_k}{\|
+     \mathbf{r}_{k}\|^3}\mathbf{r}_{k} \label{Eq:CentalBodyInertialODE}
+\end{equation}
+%
+Substituting Eq.~(\ref{Eq:SCInertialODE}) and
+(\ref{Eq:CentalBodyInertialODE}) into (\ref{Eq:SCRelativeODE}) we
+get
+%
+\begin{equation}
+     \ddot{\mathbf{r}} =      G\sum_{k=1}^n \frac{m_k}{\| \mathbf{r}_{k} - \mathbf{r}\|^3} \left(\mathbf{r}_{k} -
+     \mathbf{r}\right) - \frac{G m_s
+     }{r^3}\mathbf{r} -
+     G\sum_{\stackrel{k=1}{k \neq j}}^{n} \frac{ m_k}{\|
+     \mathbf{r}_{k}\|^3}\mathbf{r}_{k}
+\end{equation}
+%
+Finally, collecting terms yields
+%
+\begin{equation}
+     \mathbf{\ddot{r}}_{pm} = \underbrace{- \frac{\mu_j
+     }{r^3}\mathbf{r}}_1  +  G \sum_{\stackrel{k=1}{k \neq j}}^{n} m_k\left( \underbrace{\frac{\mathbf{r}_{k} -
+     \mathbf{r}}{\| \mathbf{r}_{k} - \mathbf{r}\|^3}}_2  -
+     \underbrace{
+      \frac{ \mathbf{r}_{k}}{\|
+     \mathbf{r}_{k}\|^3}}_3\right)
+\end{equation}
+%
+We can break down the acceleration in the equation above into three
+physical categories.   The first term is the acceleration on the
+spacecraft due to a point mass central body.   The second type of
+terms are called direct terms.  They account for the force of the
+$k^{th}$ body on the spacecraft.  The third type of terms are called
+indirect.  They account for the force of the $k^{th}$ body on the
+central body.
+
+The force is conservative so velocity and mass partials are zero.
+%
+\begin{equation}
+    \frac{\partial \mathbf{\ddot{r}}_{pm}}{\partial \mathbf{v}}  = \mathbf{0}_{3\times3}
+\end{equation}
+%
+%
+\begin{equation}
+    \frac{\partial \mathbf{\ddot{r}}_{pm}}{\partial m}  = \mathbf{0}_{3\times1}
+\end{equation}
+%
+To determine the partials with respect to position, we can use the vector identity in
+Eq.~(\ref{Eq:vecIDaveca3}) to arrive at
+%
+\begin{equation}
+     \frac{\partial }{\partial \mathbf{r}} \left(- \frac{\mu_j
+     }{r^3}\mathbf{r}\right) =  -\frac{\mu_j}{r^3} \mathbf{I}_3
+     + 3\mu_j\frac{\mathbf{r}\mathbf{r}^T}{r^5}
+\end{equation}
+
+Similarly, applying Eq.~(\ref{Eq:vecIDaveca3}) to the direct terms
+we see that
+%
+\begin{equation}
+     \frac{\partial }{\partial \mathbf{r}} \left( \sum_{\stackrel{k=1}{k \neq j}}^{n} \mu_k \frac{\mathbf{r}_{k} -
+     \mathbf{r}}{\| \mathbf{r}_{k} - \mathbf{r}\|^3}\right) =  -\sum_{\stackrel{k=1}{k \neq j}}^{n}
+     \frac{\mu_k}{\| \mathbf{r}_{k} - \mathbf{r}\|^3}\mathbf{I}_3 + 3\sum_{\stackrel{k=1}{k \neq
+     j}}^{n}\mu_k \left( \frac{\left( \mathbf{r}_{k} - \mathbf{r} \right)\left( \mathbf{r}_{k} -
+     \mathbf{r} \right)^T}{\left( \|\mathbf{r}_{k} - \mathbf{r} \right)\|^5}  \right)
+\end{equation}
+%
+Finally, the derivative of the indirect terms are zero and we have
+%
+\begin{equation}
+   \frac{\partial \mathbf{\ddot{r}}_{pm}}{\partial \mathbf{r}} =  \underbrace{-\frac{\mu_j}{r^3} \mathbf{I}_3
+     + 3\mu_j\frac{\mathbf{r}\mathbf{r}^T}{r^5}}_{ 1 }
+     \underbrace{
+     %
+     -  \sum_{\stackrel{k=1}{k \neq j}}^{n}
+     \frac{\mu_k}{\| \mathbf{r}_{k} - \mathbf{r}\|^3}\mathbf{I}_3 + 3\sum_{\stackrel{k=1}{k \neq
+     j}}^{n} \mu_k \left( \frac{\left( \mathbf{r}_{k} - \mathbf{r} \right)\left( \mathbf{r}_{k} -
+     \mathbf{r} \right)^T}{\left( \|\mathbf{r}_{k} - \mathbf{r} \right)\|^5}  \right)
+       }_{2}
+     %
+\end{equation}
+%
+Combining similar terms we can express the result as
+%
+\begin{equation}
+   \frac{\partial \mathbf{\ddot{r}}_{pm}}{\partial \mathbf{r}} =   -  \left( \frac{\mu_j}{r^3} + \sum_{\stackrel{k=1}{k \neq j}}^{n}
+     \frac{\mu_k}{\| \mathbf{r}_{k} - \mathbf{r}\|^3} \right)\mathbf{I}_3
+     %
+     + 3 \left( \mu_j\frac{\mathbf{r}\mathbf{r}^T}{r^5}
+       + \sum_{\stackrel{k=1}{k \neq
+     j}}^{n} \mu_k \left( \frac{\left( \mathbf{r}_{k} - \mathbf{r} \right)\left( \mathbf{r}_{k} -
+     \mathbf{r} \right)^T}{\left( \|\mathbf{r}_{k} - \mathbf{r} \right)\|^5}
+     \right) \right)
+\end{equation}
+%
+The time Jacobian is 
+%
+\begin{equation}
+    \frac{\partial \mathbf{\ddot{r}}_{pm}}{\partial t} = \sum_{k=1}^{n}\mu_k\left(
+%    
+    \frac{1}{r_{rel}^{3}}\left( \mathbf{I } - 3 \hat{\mathbf{r}}_{rel}\hat{\mathbf{r}}_{rel}^{T}\right)
+%    
+-
+\frac{1}{r_{k}^{3}}\left( \mathbf{I } - 3 \hat{\mathbf{r}}_{k}\hat{\mathbf{r}}_{k}^{T}\right)
+     \right)\mathbf{v}_k
+\end{equation}

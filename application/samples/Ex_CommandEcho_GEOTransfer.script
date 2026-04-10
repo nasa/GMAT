@@ -1,0 +1,194 @@
+%
+%  Ex_CommandEcho_GEOTransfer
+%
+%  Script demonstrating echoing of the executing command to the GMAT message 
+%  window and log file.
+%
+%  General Mission Analysis Tool(GMAT) Script
+%  Created: 2010-09-04 09:04:32
+%
+%  Released: R2018a
+% 
+
+
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft geoSat;
+
+geoSat.DateFormat = TAIModJulian;
+geoSat.Epoch      = '21545';
+geoSat.CoordinateSystem = EarthMJ2000Eq;
+geoSat.DisplayStateType = Keplerian;
+geoSat.SMA  = 6578;
+geoSat.ECC  = 0.001;
+geoSat.INC  = 28.5;
+geoSat.RAAN = 67;
+geoSat.AOP  = 355;
+geoSat.TA   = 250;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+Create ForceModel AllForces;
+
+AllForces.CentralBody   = Earth;
+AllForces.PrimaryBodies = {Earth};
+AllForces.SRP           = On;
+AllForces.ErrorControl  = RSSStep;
+AllForces.GravityField.Earth.Degree = 20;
+AllForces.GravityField.Earth.Order  = 20;
+AllForces.Drag.AtmosphereModel      = MSISE90;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+Create Propagator DefaultProp;
+DefaultProp.FM   = AllForces;
+DefaultProp.Type = PrinceDormand78;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+Create ImpulsiveBurn TOI;
+TOI.CoordinateSystem = Local;
+TOI.Origin           = Earth;
+TOI.Axes             = VNB;
+
+Create ImpulsiveBurn MCC;
+MCC.CoordinateSystem = Local;
+MCC.Origin           = Earth;
+MCC.Axes             = VNB;
+
+Create ImpulsiveBurn MOI;
+MOI.CoordinateSystem = Local;
+MOI.Origin           = Earth;
+MOI.Axes             = VNB;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+Create DifferentialCorrector DC;
+DC.ShowProgress = true;
+DC.ReportStyle  = Normal;
+DC.ReportFile   = 'DifferentialCorrectorDC1.data';
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_InertialView;
+
+OFI_InertialView.SolverIterations    = Current;
+OFI_InertialView.UpperLeft           = [ 0.37 0.006 ];
+OFI_InertialView.Size                = [ 0.57 0.46 ];
+OFI_InertialView.Maximized           = false;
+
+OFI_InertialView.Add                 = {geoSat, Earth};
+OFI_InertialView.View                = {Inertial_View};
+
+OFI_InertialView.CoordinateSystem    = EarthMJ2000Eq;
+OFI_InertialView.DrawObject          = [ true true ];
+OFI_InertialView.DrawXYPlane         = [ false false ];
+OFI_InertialView.DrawLabel           = [ true true ];
+OFI_InertialView.DrawGrid            = [ false false ];
+
+OFI_InertialView.Axes                = On;
+OFI_InertialView.XYPlane             = On;
+OFI_InertialView.EclipticPlane       = Off;
+OFI_InertialView.EnableStars         = On;
+OFI_InertialView.StarCount           = 40000;
+OFI_InertialView.ShowPlot            = true;
+
+Create OpenFramesView Inertial_View;
+
+Inertial_View.ViewFrame              = CoordinateSystem;
+Inertial_View.SetDefaultLocation     = On;
+Inertial_View.SetCurrentLocation     = Off;
+
+Inertial_View.DefaultEye             = [ -90000 -90000 20000 ];
+Inertial_View.DefaultCenter          = [ 0 0 0 ];
+Inertial_View.DefaultUp              = [ 0 0 1 ];
+
+
+Create OpenFramesInterface OFI_FixedView;
+
+OFI_FixedView.SolverIterations    = Current;
+OFI_FixedView.UpperLeft           = [ 0.37 0.49 ];
+OFI_FixedView.Size                = [ 0.57 0.47 ];
+%OFI_FixedView.RelativeZOrder      = 0;
+OFI_FixedView.Maximized           = false;
+
+OFI_FixedView.Add                 = {geoSat, Earth};
+OFI_FixedView.View                = {Fixed_View};
+
+OFI_FixedView.CoordinateSystem    = EarthFixed;
+OFI_FixedView.DrawObject          = [ true true ];
+OFI_FixedView.DrawXYPlane         = [ false false ];
+OFI_FixedView.DrawLabel           = [ true true ];
+OFI_FixedView.DrawGrid            = [ false false ];
+
+OFI_FixedView.Axes                = On;
+OFI_FixedView.XYPlane             = On;
+OFI_FixedView.EclipticPlane       = Off;
+OFI_FixedView.EnableStars         = On;
+OFI_FixedView.StarCount           = 40000;
+OFI_FixedView.ShowPlot            = true;
+
+Create OpenFramesView Fixed_View;
+
+Fixed_View.ViewFrame              = CoordinateSystem;
+Fixed_View.SetDefaultLocation     = On;
+Fixed_View.SetCurrentLocation     = Off;
+
+Fixed_View.DefaultEye             = [ -24000 -60000 0 ];
+Fixed_View.DefaultCenter          = [ 0 0 0 ];
+Fixed_View.DefaultUp              = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable I lowerBound upperBound;
+lowerBound = -119;
+upperBound = -117.5;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop to Z Crossing' DefaultProp(geoSat) {geoSat.Z = 0, StopTolerance = 1e-05};
+
+Target 'Raise Apogee' DC {SolveMode  = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+   Vary 'Vary TOI.V' DC(TOI.Element1 = 1, {Perturbation = .0001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = .5, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Maneuver 'Apply TOI' TOI(geoSat);
+   Propagate 'Prop To Apogee' DefaultProp(geoSat) {geoSat.Apoapsis};
+   Achieve 'Achieve RMAG' DC(geoSat.RMAG = 85000, {Tolerance = .1});
+EndTarget;  % For targeter DC
+
+Propagate 'Prop to Perigee' DefaultProp(geoSat) {geoSat.Earth.Periapsis};
+Propagate 'Prop to Plane Crossing' DefaultProp(geoSat) {geoSat.Z = 0, StopTolerance = 1e-05};
+
+Target 'Change Plane/Perigee' DC {SolveMode = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+   CommandEcho 'Write sequence to message window' On
+   Vary 'Vary MCC.V' DC(MCC.Element1 = 0.1, {Perturbation = .0001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = 0.5, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary 'Vary MCC.N' DC(MCC.Element2 = 0.1, {Perturbation = .0001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = 0.5, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Maneuver 'Apply MCC' MCC(geoSat);
+   Propagate 'Prop to Perigee' DefaultProp(geoSat) {geoSat.Periapsis};
+   Achieve 'Apply INC' DC(geoSat.EarthMJ2000Eq.INC = 2, {Tolerance = .001});
+   CommandEcho 'Stop writing' Off
+   Achieve 'Achieve RMAG' DC(geoSat.RMAG = 42195, {Tolerance = .001});
+EndTarget;  % For targeter DC
+
+Target 'Lower Apogee' DC {SolveMode  = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+   Vary 'Vary MOI.V' DC(MOI.Element1 = -0.1, {Perturbation = .0001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = .1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Maneuver 'Apply MOI' MOI(geoSat);
+   Achieve 'Achieve SMA' DC(geoSat.Earth.SMA = 42166.90, {Tolerance = .001});
+EndTarget;  % For targeter DC
+
+Propagate 'Prop 10 days' DefaultProp(geoSat) {geoSat.ElapsedDays = 10};

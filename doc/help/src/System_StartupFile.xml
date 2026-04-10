@@ -1,0 +1,936 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="StartupFile"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>Startup File</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary><filename>gmat_startup_file.txt</filename></primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Startup File</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">System</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Startup File</refname>
+
+    <refpurpose>The <filename>gmat_startup_file.txt</filename> configuration
+    file</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The GMAT startup file (<filename>gmat_startup_file.txt</filename>)
+    contains basic configuration settings for the GMAT application. This
+    includes the locations of data files and plugins, search paths for
+    user-defined functions, and various options that control execution.</para>
+
+    <para>The startup file must be located in the same location as the GMAT
+    executable, and must be named <filename>gmat_startup_file.txt</filename>.
+    GMAT loads the startup file once during program initialization.</para>
+  </refsection>
+
+  <refsection>
+    <title>File Format</title>
+
+    <refsection>
+      <title>Basic Syntax</title>
+
+      <para>The startup file is a text file containing characters from the
+      7-bit US-ASCII character set. The startup file is case-sensitive.</para>
+
+      <para>Lines are terminated by any of the following ASCII character
+      sequences:<itemizedlist>
+          <listitem>
+            <para>line feed (hex: 0A)</para>
+          </listitem>
+
+          <listitem>
+            <para>carriage return (hex: 0D)</para>
+          </listitem>
+
+          <listitem>
+            <para>carriage return followed by line feed (hex: 0D0A)</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>White space can appear above or below any line and before or after
+      any key or value. The following characters are recognized as white
+      space:<itemizedlist>
+          <listitem>
+            <para>space (hex: 20)</para>
+          </listitem>
+
+          <listitem>
+            <para>horizontal tab (hex: 09)</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>Comments begin with the number sign (“<literal>#</literal>”) and
+      must appear on their own line. Inline comments are not allowed.</para>
+    </refsection>
+
+    <refsection>
+      <title>Setting Properties</title>
+
+      <para>Properties are specified via key-value pairs, with the following
+      syntax:</para>
+
+      <para><code>PROPERTY = VALUE</code></para>
+
+      <para>Properties are one word, with no spaces. Values extend from the
+      first non-whitespace character after the equal sign to the end of the
+      line. At least one whitespace character is required on both sides of the
+      equal sign.</para>
+
+      <para>Properties are named according to the following
+      conventions:<itemizedlist>
+          <listitem>
+            <para>Properties that accept directory paths end with
+            “<literal>_PATH</literal>”.</para>
+          </listitem>
+
+          <listitem>
+            <para>Properties that accept file paths end with
+            “<literal>_FILE</literal>”.</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>The behavior of duplicate property entries is dependent on the
+      individual property. In general:<itemizedlist>
+          <listitem>
+            <para>Multiple <literal>PLUGIN</literal> entries cause GMAT to
+            load each named plugin.</para>
+          </listitem>
+
+          <listitem>
+            <para>Multiple identical <literal>*_FUNCTION_PATH</literal>
+            entries add each path to the search path, starting with the
+            first.</para>
+          </listitem>
+
+          <listitem>
+            <para>Multiple identical <literal>*_FILE</literal> entries are
+            ignored; the last value is used.</para>
+          </listitem>
+        </itemizedlist></para>
+    </refsection>
+
+    <refsection>
+      <title>Accessing Property Values</title>
+
+      <para>The value of any property ending in “_PATH” (including custom
+      ones) can be referenced by other values. To reference a value, include
+      the property name as part of the value. Repeated slash characters are
+      collapsed. For example:<programlisting>ROOT_PATH = ../
+OUTPUT_PATH = ROOT_PATH/output/</programlisting>sets
+      <literal>OUTPUT_PATH</literal> to a value of
+      "<literal>../output/</literal>".</para>
+    </refsection>
+
+    <refsection>
+      <title>File Paths</title>
+
+      <para>Forward slashes and backslashes can be used interchangeably, and
+      can be mixed in a single path. The following three paths are considered
+      identical:<literallayout>data/planetary_ephem/spk/de421.bsp
+data\planetary_ephem\spk\de421.bsp
+data\planetary_ephem/spk\de421.bsp</literallayout></para>
+
+      <para>Absolute paths are passed to the underlying operating system
+      as-is, aside from normalizing the slashes.</para>
+
+      <para>Relative paths are relative to the location of the GMAT
+      executable.</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Properties</title>
+
+    <para>The available properties are shown here, with default values where
+    appropriate.</para>
+
+    <refsection>
+      <title>System</title>
+
+      <variablelist>
+        <?dbfo list-presentation="blocks"?>
+
+        <?dbhtml list-presentation="blocks"?>
+
+        <varlistentry>
+          <term><literal>ROOT_PATH=../</literal></term>
+
+          <listitem>
+            <para>Path to GMAT root directory.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsection>
+
+    <refsection>
+      <title>Plugins</title>
+
+      <variablelist>
+        <?dbfo list-presentation="blocks"?>
+
+        <?dbhtml list-presentation="blocks"?>
+
+        <varlistentry>
+          <term><literal>PLUGIN</literal></term>
+
+          <listitem>
+            <para>Path to plugin library, without extension. Multiple
+            <literal>PLUGIN</literal> properties are allowed, one per
+            plugin.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsection>
+
+    <refsection>
+      <title>User Functions</title>
+
+      <variablelist>
+        <?dbfo list-presentation="blocks"?>
+
+        <?dbhtml list-presentation="blocks"?>
+
+        <varlistentry>
+          <term><literal>GMAT_FUNCTION_PATH</literal></term>
+
+          <listitem>
+            <para>Search path for GMAT function files
+            (<filename>.gmf</filename> files). May occur multiple times to add
+            multiple paths.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>MATLAB_FUNCTION_PATH</literal></term>
+
+          <listitem>
+            <para>Search path for MATLAB function files
+            (<filename>.m</filename> files). May occur multiple times to add
+            multiple paths.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>PYTHON_MODULE_PATH</literal></term>
+
+          <listitem>
+            <para>Search path for Python modules. May occur multiple times to
+            add multiple paths.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsection>
+
+    <refsection>
+      <title>Output</title>
+
+      <variablelist>
+        <?dbfo list-presentation="blocks"?>
+
+        <?dbhtml list-presentation="blocks"?>
+
+        <varlistentry>
+          <term><literal>LOG_FILE=<replaceable>OUTPUT_PATH</replaceable>/GmatLog.txt</literal></term>
+
+          <listitem>
+            <para>Path of application log file</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>MEASUREMENT_PATH=<replaceable>OUTPUT_PATH</replaceable>/</literal></term>
+
+          <listitem>
+            <para>Path of simulated measurement data files. Only used with the
+            <filename>libGmatEstimation</filename> plugin.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>OUTPUT_PATH=../output/</literal></term>
+
+          <listitem>
+            <para>Output directory path for <guilabel>ReportFile</guilabel>
+            resources.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>SCREENSHOT_FILE=<replaceable>OUTPUT_PATH</replaceable>/OUTPUT_PATH</literal></term>
+
+          <listitem>
+            <para>Output path and base filename for screenshots. The base
+            filename is appended with
+            “<literal>_<replaceable>###</replaceable>.png</literal>”, where
+            “<literal><replaceable>###</replaceable></literal>” is a number
+            sequence starting from <literal>001</literal>. If the base
+            filename is missing, it defaults to
+            “<literal>SCREEN_SHOT</literal>”.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>VEHICLE_EPHEM_PATH=<replaceable>OUTPUT_PATH</replaceable>/</literal></term>
+
+          <listitem>
+            <para>Default output directory path for
+            <guilabel>EphemerisFile</guilabel> resources.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsection>
+
+    <refsection>
+      <title>Data Files</title>
+
+      <para>Note this section only discusses the paths that can be set via the
+      startup file. See <emphasis><xref linkend="ConfiguringGmat_DataFiles"
+      xrefstyle="select:title"/></emphasis> or a discussion of file contents
+      of data files that are regularly updated and how to maintain those
+      files.</para>
+
+      <variablelist>
+        <?dbfo list-presentation="blocks"?>
+
+        <?dbhtml list-presentation="blocks"?>
+
+        <varlistentry>
+          <term><literal><replaceable>CELESTIALBODY</replaceable>_POT_PATH=<replaceable>DATA_PATH</replaceable>/gravity/<replaceable>celestialbody</replaceable>/</literal></term>
+
+          <listitem>
+            <para>Search path for gravity potential files for
+            <literal><replaceable>CELESTIALBODY</replaceable></literal>.
+            <literal><replaceable>CELESTIALBODY</replaceable></literal> is the
+            name of any celestial body defined in a given GMAT mission. This
+            property has no default for user-defined celestial bodies.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>ATMOSPHERE_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing atmosphere model data.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>BODY_3D_MODEL_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing CelestialBody 3D model
+            files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>CSSI_FLUX_FILE</literal></term>
+
+          <listitem>
+            <para>Path to default CSSI solar flux file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>DATA_PATH=<replaceable>ROOT_PATH</replaceable>/data/</literal></term>
+
+          <listitem>
+            <para>Path to directory containing data files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>DE405_FILE=<replaceable>DE_PATH</replaceable>/leDE1941.405</literal></term>
+
+          <listitem>
+            <para>Path to DE405 DE-file ephemeris file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>DE421_FILE</literal></term>
+
+          <listitem>
+            <para>Path to DE421 DE-file ephemeris file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>DE424_FILE</literal></term>
+
+          <listitem>
+            <para>Path to DE424 DE-file ephemeris file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>EGM96_FILE=<replaceable>EARTH_POT_PATH</replaceable>/EGM96.cof</literal></term>
+
+          <listitem>
+            <para>Path to EGM-96 Earth gravity potential file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>EOP_FILE</literal></term>
+
+          <listitem>
+            <para>Path to IERS “EOP 08 C04 (IAU1980)” Earth orientation
+            parameters file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>ICRF_FILE</literal></term>
+
+          <listitem>
+            <para>Path to data required for computing rotation matrix from FK5
+            to ICRF (<filename>ICRF_Table.txt</filename>).</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>JGM2_FILE=<replaceable>EARTH_POT_PATH</replaceable>/JGM2.cof</literal></term>
+
+          <listitem>
+            <para>Path to JGM-2 Earth gravity potential file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>JGM3_FILE=<replaceable>EARTH_POT_PATH</replaceable>/JGM3.cof</literal></term>
+
+          <listitem>
+            <para>Path to JGM-3 Earth gravity potential file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>LEAP_SECS_FILE=<replaceable>TIME_PATH</replaceable>/tai-utc.dat</literal></term>
+
+          <listitem>
+            <para>Path to cumulative leap seconds file from <link
+            xlink:href="http://maia.usno.navy.mil"><uri>http://maia.usno.navy.mil</uri></link>.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>LP165P_FILE=<replaceable>LUNA_POT_PATH</replaceable>/LP165P.cof</literal></term>
+
+          <listitem>
+            <para>Path to LP165P Moon gravity potential file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>LSK_FILE</literal></term>
+
+          <listitem>
+            <para>Path to SPICE leap second kernel.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>MARINI_TROPO_FILE</literal></term>
+
+          <listitem>
+            <para>Path to file containing location specific atmospheric data
+            needed for the Marini tropospheric model.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>MARS50C_FILE=<replaceable>MARS_POT_PATH</replaceable>/Mars50c.cof</literal></term>
+
+          <listitem>
+            <para>Path to Mars50c Mars gravity potential file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>MGNP180U_FILE=<replaceable>VENUS_POT_PATH</replaceable>/MGNP180U.cof</literal></term>
+
+          <listitem>
+            <para>Path to MGNP180U Venus gravity potential file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>NUTATION_COEFF_FILE=<replaceable>PLANETARY_COEFF_PATH</replaceable>/NUTATION.DAT</literal></term>
+
+          <listitem>
+            <para>Path to nutation series data for FK5 reduction
+            (<filename>NUTATION.DAT</filename>).</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>PLANETARY_COEFF_PATH=<replaceable>DATA_PATH</replaceable>/planetary_coeff/</literal></term>
+
+          <listitem>
+            <para>Path to directory containing planetary coefficient
+            files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>PLANETARY_EPHEM_DE_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing DE ephemeris files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>PLANETARY_EPHEM_SPK_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing SPICE planetary ephemeris
+            files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>PLANETARY_PCK_FILE</literal></term>
+
+          <listitem>
+            <para>Path to SPICE planetary constants kernel for default
+            celestial bodies.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>PLANETARY_SPK_FILE</literal></term>
+
+          <listitem>
+            <para>Path to SPICE ephemeris kernel for default celestial
+            bodies.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>SCHATTEN_FILE</literal></term>
+
+          <listitem>
+            <para>Path to default Schatten solar flux predict file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>SPACECRAFT_MODEL_FILE</literal></term>
+
+          <listitem>
+            <para>Default spacecraft 3D model file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>SPAD_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing SPAD data files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>SPAD_SRP_FILE</literal></term>
+
+          <listitem>
+            <para>Path to default SPAD SRP model.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>TIME_PATH=<replaceable>DATA_PATH</replaceable>/time/</literal></term>
+
+          <listitem>
+            <para>Path to directory containing leap-second files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>VEHICLE_EPHEM_CCSDS_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing spacecraft CCSDS-OEM ephemeris
+            files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>VEHICLE_EPHEM_SPK_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing spacecraft SPK ephemeris
+            files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>VEHICLE_MODEL_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing 3D spacecraft models.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsection>
+
+    <refsection>
+      <title>Application Files</title>
+
+      <variablelist>
+        <?dbfo list-presentation="blocks"?>
+
+        <?dbhtml list-presentation="blocks"?>
+
+        <varlistentry>
+          <term><literal><replaceable>CELESTIALBODY</replaceable>_TEXTURE_FILE=<replaceable>TEXTURE_PATH</replaceable>/DefaultTextureFile.jpg</literal></term>
+
+          <listitem>
+            <para>Path to texture file for CELESTIALBODY. CELESTIALBODY is the
+            name of any of the built-in celestial bodies in GMAT.
+            DefaultTextureFile is the default texture file defined for that
+            celestial body.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>BORDER_FILE</literal></term>
+
+          <listitem>
+            <para>Path to constellation border catalog.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>CONSTELLATION_FILE=<replaceable>STAR_PATH</replaceable>/inp_Constellation.txt</literal></term>
+
+          <listitem>
+            <para>Path to constellation catalog.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>GUI_CONFIG_PATH=<replaceable>DATA_PATH</replaceable>/gui_config/</literal></term>
+
+          <listitem>
+            <para>Path to directory containing GUI configuration files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>HELP_PATH</literal></term>
+
+          <listitem>
+            <para>Path to directory containing user guide help files.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>HELP_DIRECTORY_FILE</literal></term>
+
+          <listitem>
+            <para>Path to CHM help file, used to navigate user guide contents through the GMAT GUI.</para>
+          </listitem>
+        </varlistentry>
+        
+        <varlistentry>
+          <term><literal>HELP_HTML_FILE</literal></term>
+
+          <listitem>
+            <para>Path to HTML help file, used to open the entire user guide in a browser.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>ICON_PATH=<replaceable>DATA_PATH</replaceable>/graphics/icons/</literal></term>
+
+          <listitem>
+            <para>Path to directory containing application icons.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>MAIN_ICON_FILE</literal></term>
+
+          <listitem>
+            <para>Path to GUI icon.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>PERSONALIZATION_FILE=<replaceable>DATA_PATH</replaceable>/gui_config/MyGmat.ini</literal></term>
+
+          <listitem>
+            <para>Path to GUI configuration and history file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>SPACECRAFT_MODEL_FILE=<replaceable>MODEL_PATH</replaceable>/aura.3ds</literal></term>
+
+          <listitem>
+            <para>Path to default Spacecraft 3D model file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>SPLASH_FILE=<replaceable>SPLASH_PATH</replaceable>/GMATSplashScreen.tif</literal></term>
+
+          <listitem>
+            <para>Path to GUI splash image.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>SPLASH_PATH=<replaceable>DATA_PATH</replaceable>/graphics/splash/</literal></term>
+
+          <listitem>
+            <para>Path to directory containing splash file.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>STAR_FILE=<replaceable>STAR_PATH</replaceable>/inp_StarCatalog.txt</literal></term>
+
+          <listitem>
+            <para>Path to star catalog.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>STAR_PATH=<replaceable>DATA_PATH</replaceable>/graphics/stars/</literal></term>
+
+          <listitem>
+            <para>Path to directory containing star and constellation
+            catalogs.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>TEXTURE_PATH=<replaceable>DATA_PATH</replaceable>/graphics/texture/</literal></term>
+
+          <listitem>
+            <para>Path to directory containing celestial body texture
+            files.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsection>
+
+    <refsection>
+      <title>Program Settings</title>
+
+      <variablelist>
+        <?dbfo list-presentation="blocks"?>
+
+        <?dbhtml list-presentation="blocks"?>
+
+        <varlistentry>
+          <term><literal>MATLAB_APP_PATH</literal></term>
+
+          <listitem>
+            <para>[macOS only] Path to MATLAB app
+            (<filename>.app</filename>).</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>MATLAB_MODE=SHARED</literal></term>
+
+          <listitem>
+            <para>MATLAB interface connection mode. The available options
+            are:<variablelist>
+                <?dbfo list-presentation="blocks"?>
+
+                <?dbhtml list-presentation="blocks"?>
+
+                <varlistentry>
+                  <term><literal>NO_MATLAB</literal></term>
+
+                  <listitem>
+                    <para>Disables the MATLAB interface.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term><literal>SHARED</literal></term>
+
+                  <listitem>
+                    <para>Each GMAT instance shares a single MATLAB
+                    connection. Default.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term><literal>SINGLE</literal></term>
+
+                  <listitem>
+                    <para>Each GMAT instance uses its own MATLAB
+                    connection.</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>WRITE_GMAT_KEYWORD=ON</literal></term>
+
+          <listitem>
+            <para>Write “<literal>GMAT </literal>“ prefix before assignment
+            lines when saving a GMAT script file. Accepted values are
+            <literal>ON</literal> and <literal>OFF</literal>.</para>
+          </listitem>
+        </varlistentry>
+		
+		        <varlistentry>
+          <term><literal>WRITE_PERSONALIZATION_FILE=ON</literal></term>
+
+          <listitem>
+            <para>Write data on window locations and other local configuration settings to 
+			the GMAT.ini file. Setting to OFF avoids issues encountered when simultaneous instances of GMAT try to write to the user config file at the same time, resulting in a system error. Accepted values are
+            <literal>ON</literal> and <literal>OFF</literal>.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsection>
+
+    <refsection>
+      <title>Debug Settings</title>
+
+      <variablelist>
+        <?dbfo list-presentation="blocks"?>
+
+        <?dbhtml list-presentation="blocks"?>
+
+        <varlistentry>
+          <term><literal>DEBUG_FILE_PATH=OFF</literal></term>
+
+          <listitem>
+            <para>Debug file path handling. Accepted values are
+            <literal>ON</literal> and <literal>OFF</literal>.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>DEBUG_MATLAB=OFF</literal></term>
+
+          <listitem>
+            <para>Debug MATLAB Interface connection. Accepted values are
+            <literal>ON</literal> and <literal>OFF</literal>.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>DEBUG_PARAMETERS=OFF</literal></term>
+
+          <listitem>
+            <para>Write table of available parameters to log file on startup.
+            Accepted values are <literal>ON</literal> and
+            <literal>OFF</literal>.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>HIDE_SAVEMISSION=TRUE</literal></term>
+
+          <listitem>
+            <para>Hide the <guilabel>SaveMission</guilabel> command from the
+            GUI. Accepted values are <literal>TRUE</literal> and
+            <literal>FALSE</literal>.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>PLOT_MODE</literal></term>
+
+          <listitem>
+            <para><guilabel>XYPlot</guilabel> window placement mode. The only
+            accepted value is <literal>TILE</literal>, which will cause GMAT
+            to ignore plot window placement fields and tile the
+            windows.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>RUN_MODE</literal></term>
+
+          <listitem>
+            <para>GMAT execution mode. The available options are:<variablelist>
+                <?dbfo list-presentation="blocks"?>
+
+                <?dbhtml list-presentation="blocks"?>
+
+                <varlistentry>
+                  <term><literal>EXIT_AFTER_RUN</literal></term>
+
+                  <listitem>
+                    <para>When GMAT is called with the <option>-r</option> or
+                    <option>--run</option> command-line argument,
+                    automatically exit after the run is finished.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term><literal>TESTING</literal></term>
+
+                  <listitem>
+                    <para>Shows testing options in the GUI.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term><literal>TESTING_NO_PLOTS</literal></term>
+
+                  <listitem>
+                    <para>Same as <literal>TESTING</literal>, but also
+                    disables all graphical output in the GUI.</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>ECHO_COMMANDS</literal></term>
+
+          <listitem>
+            <para>Write commands to log file as they are executed. Accepted
+            values are TRUE and <literal>FALSE</literal>.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><literal>NO_SPLASH</literal></term>
+
+          <listitem>
+            <para>Skip showing the splash screen on GMAT startup. Accepted
+            values are TRUE and <literal>FALSE</literal>.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsection>
+  </refsection>
+</refentry>

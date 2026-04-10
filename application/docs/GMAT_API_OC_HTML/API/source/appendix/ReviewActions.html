@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Review Responses &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Review Responses</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="review-responses">
+<h1>Review Responses<a class="headerlink" href="#review-responses" title="Link to this heading">¶</a></h1>
+<p>The GMAT API was reviewed by interested parties on February 15, 2019.  Five
+RFAs (Request for Action) reports are filed based on this review.  The design
+updates based on these RFAs are summarized here.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>RFA ID</p></th>
+<th class="head"><p>Title</p></th>
+<th class="head"><p>Reporter</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>APIRFA01</p></td>
+<td><p>Unsafe C++ API</p></td>
+<td><p>Joel Parker</p></td>
+</tr>
+<tr class="row-odd"><td><p>APIRFA02</p></td>
+<td><p>Python version compatibility</p></td>
+<td><p>Joel Parker</p></td>
+</tr>
+<tr class="row-even"><td><p>APIRFA03</p></td>
+<td><p>Handling of persistent objects in GMAT
+memory when using the API</p></td>
+<td><p>Jacob Englander</p></td>
+</tr>
+<tr class="row-odd"><td><p>APIRFA04</p></td>
+<td><p>Complexity of “Create” Interface</p></td>
+<td><p>Steve Hughes</p></td>
+</tr>
+<tr class="row-even"><td><p>APIRFA05</p></td>
+<td><p>Rename and simplify the Setup() command</p></td>
+<td><p>Steve Hughes</p></td>
+</tr>
+<tr class="row-odd"><td><p>APIRFA06</p></td>
+<td><p>API Style Guide</p></td>
+<td><p>Steve Hughes</p></td>
+</tr>
+</tbody>
+</table>
+<section id="api-rfa-01-unsafe-c-api">
+<h2>API RFA 01 - Unsafe C++ API<a class="headerlink" href="#api-rfa-01-unsafe-c-api" title="Link to this heading">¶</a></h2>
+<section id="requested-action">
+<h3>Requested action<a class="headerlink" href="#requested-action" title="Link to this heading">¶</a></h3>
+<p>The target languages for the API were presented as including a C++ API, which is
+available “for free” since GMAT is written in C++ natively. But if this is
+intended for end users, the stable “public” API will be interspersed with the
+existing internal-only API, which may cause unintended consequences.</p>
+<p>The team should look into the need for a public-facing C++ API, and if there is
+a straightforward way (e.g. in SWIG) to separate the public “safe” C++ API from
+the internal core version.</p>
+</section>
+<section id="supporting-rationale">
+<h3>Supporting Rationale<a class="headerlink" href="#supporting-rationale" title="Link to this heading">¶</a></h3>
+<p>Users expecting a production-quality safe API in C++ may be confused or misled
+by the availability of unsafe, internal-only calls if the two are mixed. This
+could lead users to inadvertently using unsafe calls, or avoiding the C++ API
+altogether.</p>
+</section>
+<section id="response">
+<h3>Response<a class="headerlink" href="#response" title="Link to this heading">¶</a></h3>
+<p>The “C++ API” for the design is a bit of a misnomer for two reasons.  First,
+SWIG is a tool that wraps C++ code for <strong>other</strong> languages.  As such, there is
+no API product for C++ users.  Second, the typical use case for the API is one
+that follows the procedure</p>
+<ul class="simple">
+<li><p>Open interactive session on the target platform</p></li>
+<li><p>Load GMAT into the active session</p></li>
+<li><p>Build objects (either by hand or by loading a platform specific script)</p></li>
+<li><p>Exercise the objects (either interactively or through platform specific
+scripts)</p></li>
+</ul>
+<p>C++ users will benefit from the new Create() and Initialize() functions provided
+for API users.  These functions automate the object interconnections for GMAT
+components, initially for those targeted by the API use cases, and eventually
+over a much broader range of classes.</p>
+<p>For C++ users, there is no interactive environment like that supplied by Python
+and MATLAB.  C++ works on a “compile and run” paradigm; as such, it does not
+supply a mechanism for the interactive use that makes API functions like the
+GMAT API’s Help() functions useful.  C++ users can call that function, but they
+only see the output after compiling and running the compiled program, making the
+functionality limited at best.  Similarly for the other additions to GMAT for
+the API.  The functionality is generally available, but of limited use when
+working in GMAT’s native C++ language.</p>
+<p>The design document has been updated (see the note in
+<a class="reference internal" href="LessonsLearned.html#lessonslearned"><span class="std std-ref">User Experiences</span></a>), intended to clarify how C++ fits into
+the API.)</p>
+</section>
+</section>
+<section id="api-rfa-02-python-version-compatibility">
+<h2>API RFA 02 - Python version compatibility<a class="headerlink" href="#api-rfa-02-python-version-compatibility" title="Link to this heading">¶</a></h2>
+<section id="id1">
+<h3>Requested action<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>The reliance of the current GMAT API on a specific major.minor version of
+Python is not ideal, as it could lead to extensive configuration issues on the
+user side to match versions when using GMAT, alongside other tools that
+potentially have differing requirements. The team should investigate mitigations
+for this, and confirm that: a) this specific minor-version reliance is
+necessary, b) that the chosen version is the best one, and c) that there are no
+better options that could be selected to enhance ease of configuration.
+Investigating the approach of other Python APIs may help here.</p>
+</section>
+<section id="id2">
+<h3>Supporting Rationale<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>The current GMAT API relies on a specific Python major.minor version as of the
+time of the API release. GMAT will not likely be the only tool being used on
+end-user machines that requires Python, so that specific reliance may cause
+problematic configuration issues. Further, GMAT will have a different release
+schedule from other tools, requiring reconfiguration on each upgrade to make
+sure things don’t get broken. It may result in less adoption of the GMAT API if
+setup is known to be difficult and fragile.</p>
+</section>
+<section id="id3">
+<h3>Response<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>The GMAT Python interface relies on specific Python major/minor versioning.  The
+SWIG documentation distinguishes between Python 2.x and Python 3.x for some
+features, but does not distinguish minor versions.  However, SWIG is generating
+C++ wrapper code which is then compiled and linked.  The issue comes with the
+link step: the shared library links to a specific Python library, which is then
+a dependency for its use.  More about Python binary compatibility can be found
+at <a class="reference external" href="https://docs.python.org/3.7/c-api/stable.html">https://docs.python.org/3.7/c-api/stable.html</a>.</p>
+<p>The API team did try building the current API using the Py_LIMITED_API option
+discussed at the link.  That option is incompatible with the current release of
+SWIG.</p>
+<p>The development team will track this issue during implementation.  If a solution
+is found, it will be implemented and recommended for inclusion with GMAT’s
+Python interface build.  If not, the Python linkage will be made to the same
+library as is used for the GMAT Python interface in order to avoid library
+conflicts.</p>
+</section>
+</section>
+<section id="api-rfa-03-handling-of-persistent-objects-in-gmat-memory-when-using-the-api">
+<h2>API RFA 03 - Handling of persistent objects in GMAT memory when using the API<a class="headerlink" href="#api-rfa-03-handling-of-persistent-objects-in-gmat-memory-when-using-the-api" title="Link to this heading">¶</a></h2>
+<section id="id4">
+<h3>Requested action<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>Potential user actions that might cause memory leaks or other issues as objects
+to go out of scope between GMAT and user code should be explored and tested as
+necessary.</p>
+<p>If I understand correctly from the review, when the user instantiates an object
+in their Python (or MATLAB or C++) workspace, GMAT creates that object and
+passes it by reference to the calling program. My question is, what happens if
+the user deletes that object in their calling program or if it just goes out of
+scope.</p>
+<p>For instance, if the calling program does:</p>
+<div class="literal-block-wrapper docutils container" id="id16">
+<div class="code-block-caption"><span class="caption-text">RFA 03 Example 1</span><a class="headerlink" href="#id16" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">myThing</span> <span class="o">=</span> <span class="n">GMAT</span><span class="o">.</span><span class="n">createThing</span><span class="p">()</span>
+<span class="n">myThing</span><span class="o">.</span><span class="n">doStuff</span><span class="p">()</span>
+<span class="k">del</span> <span class="n">myThing</span>
+</pre></div>
+</div>
+</div>
+<p>The above code will result in the Python object myThing being deleted and
+therefore the reference to GMAT’s Thing is deleted. But what happens to the
+Thing that GMAT created dynamically? Is it deleted when Python’s reference to it
+is deleted? Or does it persist?</p>
+<p>Similarly, suppose you are doing this in a loop</p>
+<div class="literal-block-wrapper docutils container" id="id17">
+<div class="code-block-caption"><span class="caption-text">RFA 03 Example 2</span><a class="headerlink" href="#id17" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="p">(</span><span class="n">some</span> <span class="nb">range</span><span class="p">):</span>
+    <span class="n">myThing</span> <span class="o">=</span> <span class="n">GMAT</span><span class="o">.</span><span class="n">createThing</span><span class="p">()</span>
+    <span class="n">myThing</span><span class="o">.</span><span class="n">doStuff</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>In the above code, myThing is an automatic variable that vanishes as soon as it
+goes out of scope. Since its scope is one particular iteration of the loop,
+myThing will be created and destroyed n times. What happens to the GMAT object
+on the other end of the myThing reference? Does it get deleted, too, or do we
+get n of them in memory? If the latter, is there any way to get rid of them or
+do we have to have the calling program close GMAT and re-open it?</p>
+<p>Does the answer change if the calling program is in C++ vs Python or MATLAB? I
+know that I could create and destroy objects the “right” way by calling into
+GMATbase if I were an expert in the GMAT codebase, but when you create a clean
+C++ API then this issue could come up.</p>
+</section>
+<section id="id5">
+<h3>Supporting Rationale<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>I’m worried about creating a memory leak if the user creates and destroys many
+GMAT objects in the calling program.</p>
+</section>
+<section id="id6">
+<h3>Response<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p>Objects created by SWIG generated code are C++ objects contained inside of a
+target platform wrapper.  By default, these objects are managed using the
+platform’s memory management facilities.  For example, if a constructor for a
+GMAT object is accessed directly from Java, the resulting object wrapper is
+managed in Java.  When the wrapper goes out of scope, the Java garbage collector
+can delete it.  When the wrapper is deleted, it calls the destructor of the
+contained object.  That call can be overridden using a SWIG setting that
+releases object management to the underlying C++ code on an object by object
+basis.</p>
+<p>The GMAT API will manage this setting inside of the Create() function.  Objects
+constructed using the Create() function will me managed inside of the GMAT
+configuration manager.  Repeated calls to Create() for the same named object
+will return the reference/pointer to the object created on the first call, as
+long as that object remains in the configuration.  Memory management for
+objects created using constructor calls outside of the Create() function are the
+responsibility of the platform making the call.</p>
+<p>As with all C/C++ programming, we will need to watch the memory management
+closely as work proceeds, and provide as much support as we can to making it
+transparent to the user when possible, and simple to understand when necessary.</p>
+</section>
+</section>
+<section id="api-rfa-04-complexity-of-create-interface">
+<h2>API RFA 04 - Complexity of “Create” Interface<a class="headerlink" href="#api-rfa-04-complexity-of-create-interface" title="Link to this heading">¶</a></h2>
+<section id="id7">
+<h3>Requested action<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<p>The examples for object initialization were relatively simple:</p>
+<div class="literal-block-wrapper docutils container" id="id18">
+<div class="code-block-caption"><span class="caption-text">RFA 04 Example 1</span><a class="headerlink" href="#id18" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Create</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;EO1&quot;</span><span class="p">)</span>
+<span class="n">Create</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;ECI&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;MJ2000Eq&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In general, there are a lot of special cases where certain data is required
+(for example, if the Coordinate system axes above were “ObjectReferenced”
+instead of “MJ2000Eq” additional information is required on the Primary and
+Secondary bodies.</p>
+<p>The design needs to clarify how required fields for object creation are handled,
+especially when the choice of one setting changes on a model dramatically
+changes what other information is required to configure that model such as when
+a Propagator Type is SPK instead of an integrator.  Additionally,</p>
+<p>The design also needs to clarify how required vs. optional information will be
+handled at object creation.  For example, Spacecraft has numerous settings.  For
+complex objects what will be required at construction, and what will be set via
+“Set()” methods.</p>
+</section>
+<section id="id8">
+<h3>Supporting Rationale<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>The API will be quite difficult to use, and possibly error prone, if the
+complexity of object initialization is not well designed and well documented.</p>
+</section>
+<section id="id9">
+<h3>Response<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p>Object creation is a straigtforward call to the constructor for the object.  The
+Create command is used to make constructor calls and place object management
+under control of the GMAT engine by placing the objects into the configuration
+database.  (See the description of memory management for RFA 3, above).</p>
+<p>The concern here is more about object initialization, performed by the Setup()
+command in the draft document, now renamed Initialize() (see RFA 5, below).  As
+stated in the <a class="reference internal" href="Stuff.html#initialization"><span class="std std-ref">description of that command</span></a>, the object to
+object interconnections are set when Initialize() is called prior to object use.
+Missing elements are identified in the return from that call.</p>
+<p>As the reviewer notes, there is a lot of complexity in some of the GMAT objects.
+Part of the challenge of coding the changes needed for the API is covering that
+complexity.  The development team will concentrate efforts on making high usage
+objects as robust as possible in this regard, with a focus on clear
+configuration messages made to the users for the objects used in the use cases.</p>
+<p>While we will make our best efforts to address the object complexity issues
+during the initial year of development, we expect that we will revisit this
+issue once use case 1 has been implemented, in hopes of refining the strategy
+that addresses it at a larger scope than a case by case approach.</p>
+</section>
+</section>
+<section id="api-rfa-05-rename-and-simplify-the-setup-command">
+<h2>API RFA 05 - Rename and simplify the Setup() command<a class="headerlink" href="#api-rfa-05-rename-and-simplify-the-setup-command" title="Link to this heading">¶</a></h2>
+<section id="id10">
+<h3>Requested action<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<p>The Setup()/initialization process is confusing and possible dangerous because
+omitting the call may result in an undesirable state.   The code example in the
+review was:</p>
+<div class="literal-block-wrapper docutils container" id="id19">
+<div class="code-block-caption"><span class="caption-text">RFA 05 Example 1</span><a class="headerlink" href="#id19" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gmat_py</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">Setup</span><span class="p">(</span><span class="s2">&quot;MyCustomStartupFile.txt&quot;</span><span class="p">)</span>
+<span class="n">csConverter</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">CoordinateConverter</span><span class="p">()</span>
+<span class="n">eci</span>  <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;ECI&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;MJ2000Eq&quot;</span><span class="p">)</span>
+<span class="n">ecef</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;ECEF&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;BodyFixed&quot;</span><span class="p">)</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">Setup</span><span class="p">()</span>
+<span class="n">csConverter</span><span class="o">.</span><span class="n">Convert</span><span class="p">(</span><span class="n">mjd</span><span class="p">,</span> <span class="n">rvIn</span><span class="p">,</span> <span class="n">eci</span><span class="p">,</span> <span class="n">rvOut</span><span class="p">,</span> <span class="n">ecef</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>During the review, it sounded like it is relatively easy to eliminate the first
+call to setup by modifying the import line to contain startup file
+configuration.</p>
+<p>The second call confused a lot of people, and there is concern that forgetting
+to call SetUp() could result in an issue in the configuration that is not
+obvious to the user.   The main confusion is that typically in an API, once an
+object is constructed, it is ready for use.    That is not the case in the
+current design.  It appears the SetUp() call is similar to BeginMissionSequence,
+and is required due to the existing GMAT design.  If that is not correct,
+consider designs that do not require a Setup() call.  If the existing design of
+GMAT requires such a call, consider using a more descriptive set of function
+names and provide a way to create and initialize new objects during execution.
+For example</p>
+<div class="literal-block-wrapper docutils container" id="id20">
+<div class="code-block-caption"><span class="caption-text">RFA 05 Example 1</span><a class="headerlink" href="#id20" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gmat_py</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="n">csConverter</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">CoordinateConverter</span><span class="p">()</span>
+<span class="n">eci</span>  <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;ECI&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;MJ2000Eq&quot;</span><span class="p">)</span>
+
+<span class="n">gmat</span><span class="o">.</span><span class="n">InitializeObjects</span><span class="p">()</span>
+
+<span class="n">csConverter</span><span class="o">.</span><span class="n">Convert</span><span class="p">(</span><span class="n">mjd</span><span class="p">,</span> <span class="n">rvIn</span><span class="p">,</span> <span class="n">eci</span><span class="p">,</span> <span class="n">rvOut</span><span class="p">,</span> <span class="n">ecef</span><span class="p">)</span>
+<span class="o">//</span> <span class="n">Based</span> <span class="n">on</span> <span class="n">previous</span> <span class="n">execution</span><span class="p">,</span> <span class="n">determined</span> <span class="n">we</span> <span class="n">need</span> <span class="n">a</span> <span class="n">new</span> <span class="n">model</span><span class="p">,</span> <span class="n">so</span> <span class="n">create</span>
+<span class="o">//</span> <span class="n">during</span> <span class="n">execution</span> <span class="ow">and</span> <span class="n">use</span><span class="o">.</span> <span class="n">Need</span> <span class="n">to</span> <span class="n">initialize</span> <span class="n">that</span> <span class="nb">object</span> <span class="n">but</span> <span class="n">leave</span> <span class="n">the</span>
+<span class="o">//</span> <span class="n">state</span> <span class="n">of</span> <span class="n">the</span> <span class="n">rest</span> <span class="n">of</span> <span class="n">the</span> <span class="n">objects</span> <span class="n">alone</span><span class="o">.</span>
+<span class="n">ecef</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;ECEF&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;BodyFixed&quot;</span><span class="p">)</span>
+
+<span class="o">//</span> <span class="n">only</span> <span class="n">initialize</span> <span class="n">ecef</span><span class="p">,</span> <span class="n">other</span> <span class="n">objects</span> <span class="n">are</span> <span class="ow">not</span> <span class="n">re</span><span class="o">-</span><span class="n">initialized</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">InitializeObjects</span><span class="p">(</span><span class="n">ecef</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Finally, if an object has not been initialized before use, the API must provide
+that information back to the user (probably as an exception).</p>
+</section>
+<section id="id11">
+<h3>Supporting Rationale<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p>The single biggest concern for users/reviewers was the call to SetUp().
+Existing GMAT design may require a Setup()-like call, but if that is the case,
+care must be taken in the design and documentation should be clear, and user
+errors need to be trapped to avoid un-intended non-obvious failure modes.</p>
+</section>
+<section id="id12">
+<h3>Response<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<p>The originally proposed Setup() command has been renamed Initialize().  Based on
+the work one team member performed after the original design document was
+written, we agree that we can incorporate the core GMAT initialization when we
+load the system into the target platform’s environment, so you’ll see that the
+examples in the design document no longer include that first call.</p>
+<p>The purpose of the Initialize() call is to establish object-to-object
+interconnections, and to validate that the objects are ready for use.  This is
+different from the BeginMissionSequence behavior in GMAT, though.  GMAT has
+a requirement when running a script that all of the scripted components be set
+and that their references also be connected.  In GMAT, this occurs after objects
+are loaded into the GMAT Sandbox.  That step is performed, in the API, using
+the Initialize() command.</p>
+<p>One result of initialization here is the generation of a list of connections
+that were needed but not found.  We may present this as an exception, but may
+present it in a more user friendly format.</p>
+</section>
+</section>
+<section id="api-rfa-06-api-style-guide">
+<h2>API RFA 06 - API Style Guide<a class="headerlink" href="#api-rfa-06-api-style-guide" title="Link to this heading">¶</a></h2>
+<section id="id13">
+<h3>Requested action<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<p>Develop and maintain an API style guide as development progresses.</p>
+</section>
+<section id="id14">
+<h3>Supporting Rationale<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<p>Low-level models and functions in GMAT do not always have a consistent interface
+style between them.  We should ensure as we expose models via the API, that the
+interface style and “wrappers” are consistent between models to make the API
+easy to use.</p>
+</section>
+<section id="id15">
+<h3>Response<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<p>The development team will include a style guide in the user documentation.  A
+placeholder for it has been added to the User’s Guide table of contents.</p>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Review Responses</a><ul>
+<li><a class="reference internal" href="#api-rfa-01-unsafe-c-api">API RFA 01 - Unsafe C++ API</a><ul>
+<li><a class="reference internal" href="#requested-action">Requested action</a></li>
+<li><a class="reference internal" href="#supporting-rationale">Supporting Rationale</a></li>
+<li><a class="reference internal" href="#response">Response</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-rfa-02-python-version-compatibility">API RFA 02 - Python version compatibility</a><ul>
+<li><a class="reference internal" href="#id1">Requested action</a></li>
+<li><a class="reference internal" href="#id2">Supporting Rationale</a></li>
+<li><a class="reference internal" href="#id3">Response</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-rfa-03-handling-of-persistent-objects-in-gmat-memory-when-using-the-api">API RFA 03 - Handling of persistent objects in GMAT memory when using the API</a><ul>
+<li><a class="reference internal" href="#id4">Requested action</a></li>
+<li><a class="reference internal" href="#id5">Supporting Rationale</a></li>
+<li><a class="reference internal" href="#id6">Response</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-rfa-04-complexity-of-create-interface">API RFA 04 - Complexity of “Create” Interface</a><ul>
+<li><a class="reference internal" href="#id7">Requested action</a></li>
+<li><a class="reference internal" href="#id8">Supporting Rationale</a></li>
+<li><a class="reference internal" href="#id9">Response</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-rfa-05-rename-and-simplify-the-setup-command">API RFA 05 - Rename and simplify the Setup() command</a><ul>
+<li><a class="reference internal" href="#id10">Requested action</a></li>
+<li><a class="reference internal" href="#id11">Supporting Rationale</a></li>
+<li><a class="reference internal" href="#id12">Response</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-rfa-06-api-style-guide">API RFA 06 - API Style Guide</a><ul>
+<li><a class="reference internal" href="#id13">Requested action</a></li>
+<li><a class="reference internal" href="#id14">Supporting Rationale</a></li>
+<li><a class="reference internal" href="#id15">Response</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../_sources/API/source/appendix/ReviewActions.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Review Responses</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

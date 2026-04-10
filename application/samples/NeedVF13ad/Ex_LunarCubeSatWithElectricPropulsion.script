@@ -1,0 +1,650 @@
+%
+%  Ex_LunarCubeSatWithElectricPropulsion
+%
+%  Demonstrates the use of an optimizer to perform a low thrust Earth-to-Moon 
+%  transfer and capture. 
+%
+%  Released: R2015a
+%
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+DefaultSC.DateFormat                   = TAIGregorian;
+DefaultSC.Epoch                        = '15 Dec 2017 14:57:17.200';
+DefaultSC.CoordinateSystem             = EarthMJ2000Eq;
+DefaultSC.DisplayStateType             = Cartesian;
+DefaultSC.X                            = -15015.40312811781;
+DefaultSC.Y                            = -23568.97680091111;
+DefaultSC.Z                            = 2241.504923500546;
+DefaultSC.VX                           = -0.485537892208224;
+DefaultSC.VY                           = -5.048763191594085;
+DefaultSC.VZ                           = -0.8799883161637991;
+DefaultSC.DryMass                      = 7;
+DefaultSC.Cd                           = 2.2;
+DefaultSC.Cr                           = 1.8;
+DefaultSC.DragArea                     = 15;
+DefaultSC.SRPArea                      = 1;
+DefaultSC.Tanks                        = {ElectricTank1};
+DefaultSC.Thrusters                    = {ElectricThruster1, MoonThruster};
+DefaultSC.PowerSystem                  = SolarPowerSystem1;
+DefaultSC.NAIFId                       = -123456789;
+DefaultSC.NAIFIdReferenceFrame         = -123456789;
+DefaultSC.OrbitColor                   = Red;
+DefaultSC.TargetColor                  = Teal;
+DefaultSC.OrbitErrorCovariance         = [ 1e+070 0 0 0 0 0 ; 0 1e+070 0 0 0 0 ; 0 0 1e+070 0 0 0 ; 0 0 0 1e+070 0 0 ; 0 0 0 0 1e+070 0 ; 0 0 0 0 0 1e+070 ];
+DefaultSC.CdSigma                      = 1e+070;
+DefaultSC.CrSigma                      = 1e+070;
+DefaultSC.Id                           = 'SatId';
+DefaultSC.Attitude                     = CoordinateSystemFixed;
+DefaultSC.SPADSRPScaleFactor           = 1;
+DefaultSC.ModelFile                    = 'aura.3ds';
+DefaultSC.ModelOffsetX                 = 0;
+DefaultSC.ModelOffsetY                 = 0;
+DefaultSC.ModelOffsetZ                 = 0;
+DefaultSC.ModelRotationX               = 0;
+DefaultSC.ModelRotationY               = 0;
+DefaultSC.ModelRotationZ               = 0;
+DefaultSC.ModelScale                   = 3;
+DefaultSC.AttitudeDisplayStateType     = 'Quaternion';
+DefaultSC.AttitudeRateDisplayStateType = 'AngularVelocity';
+DefaultSC.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+DefaultSC.EulerAngleSequence           = '321';
+
+
+Create Spacecraft initSat;
+
+initSat.DateFormat                   = TAIModJulian;
+initSat.Epoch                        = '21545';
+initSat.CoordinateSystem             = EarthMJ2000Eq;
+initSat.DisplayStateType             = Cartesian;
+initSat.X                            = 7100;
+initSat.Y                            = 0;
+initSat.Z                            = 1300;
+initSat.VX                           = 0;
+initSat.VY                           = 7.35;
+initSat.VZ                           = 1;
+initSat.DryMass                      = 850;
+initSat.Cd                           = 2.2;
+initSat.Cr                           = 1.8;
+initSat.DragArea                     = 15;
+initSat.SRPArea                      = 1;
+initSat.NAIFId                       = -123456789;
+initSat.NAIFIdReferenceFrame         = -123456789;
+initSat.OrbitColor                   = Green;
+initSat.TargetColor                  = LightGray;
+initSat.OrbitErrorCovariance         = [ 1e+070 0 0 0 0 0 ; 0 1e+070 0 0 0 0 ; 0 0 1e+070 0 0 0 ; 0 0 0 1e+070 0 0 ; 0 0 0 0 1e+070 0 ; 0 0 0 0 0 1e+070 ];
+initSat.CdSigma                      = 1e+070;
+initSat.CrSigma                      = 1e+070;
+initSat.Id                           = 'SatId';
+initSat.Attitude                     = CoordinateSystemFixed;
+initSat.SPADSRPScaleFactor           = 1;
+initSat.ModelFile                    = 'aura.3ds';
+initSat.ModelOffsetX                 = 0;
+initSat.ModelOffsetY                 = 0;
+initSat.ModelOffsetZ                 = 0;
+initSat.ModelRotationX               = 0;
+initSat.ModelRotationY               = 0;
+initSat.ModelRotationZ               = 0;
+initSat.ModelScale                   = 3;
+initSat.AttitudeDisplayStateType     = 'Quaternion';
+initSat.AttitudeRateDisplayStateType = 'AngularVelocity';
+initSat.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+initSat.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+Create ElectricTank ElectricTank1;
+
+ElectricTank1.AllowNegativeFuelMass = false;
+ElectricTank1.FuelMass              = 5;
+
+
+Create ElectricThruster ElectricThruster1;
+
+ElectricThruster1.CoordinateSystem   = Local;
+ElectricThruster1.Origin             = Earth;
+ElectricThruster1.Axes               = VNB;
+ElectricThruster1.ThrustDirection1   = -1;
+ElectricThruster1.ThrustDirection2   = 0;
+ElectricThruster1.ThrustDirection3   = 0;
+ElectricThruster1.DutyCycle          = 1;
+ElectricThruster1.ThrustScaleFactor  = 0.9;
+ElectricThruster1.DecrementMass      = false;
+ElectricThruster1.Tank               = {ElectricTank1};
+ElectricThruster1.MixRatio           = [ 1 ];
+ElectricThruster1.GravitationalAccel = 9.810000000000001;
+ElectricThruster1.ThrustModel        = ConstantThrustAndIsp;
+ElectricThruster1.MaximumUsablePower = 7.266;
+ElectricThruster1.MinimumUsablePower = 0.01;
+ElectricThruster1.ThrustCoeff1       = -5.19082;
+ElectricThruster1.ThrustCoeff2       = 2.96519;
+ElectricThruster1.ThrustCoeff3       = -14.4789;
+ElectricThruster1.ThrustCoeff4       = 54.05382;
+ElectricThruster1.ThrustCoeff5       = -0.00100092;
+ElectricThruster1.MassFlowCoeff1     = -0.004776;
+ElectricThruster1.MassFlowCoeff2     = 0.05717;
+ElectricThruster1.MassFlowCoeff3     = -0.09956;
+ElectricThruster1.MassFlowCoeff4     = 0.03211;
+ElectricThruster1.MassFlowCoeff5     = 2.13781;
+ElectricThruster1.FixedEfficiency    = 0.7;
+ElectricThruster1.Isp                = 2800;
+ElectricThruster1.ConstantThrust     = 0.0012;
+
+
+Create ElectricThruster MoonThruster;
+
+MoonThruster.CoordinateSystem   = Local;
+MoonThruster.Origin             = Luna;
+MoonThruster.Axes               = VNB;
+MoonThruster.ThrustDirection1   = -1;
+MoonThruster.ThrustDirection2   = 0;
+MoonThruster.ThrustDirection3   = 0;
+MoonThruster.DutyCycle          = 1;
+MoonThruster.ThrustScaleFactor  = 0.9;
+MoonThruster.DecrementMass      = false;
+MoonThruster.Tank               = {ElectricTank1};
+MoonThruster.MixRatio           = [ 1 ];
+MoonThruster.GravitationalAccel = 9.810000000000001;
+MoonThruster.ThrustModel        = ConstantThrustAndIsp;
+MoonThruster.MaximumUsablePower = 7.266;
+MoonThruster.MinimumUsablePower = 0.01;
+MoonThruster.ThrustCoeff1       = -5.19082;
+MoonThruster.ThrustCoeff2       = 2.96519;
+MoonThruster.ThrustCoeff3       = -14.4789;
+MoonThruster.ThrustCoeff4       = 54.05382;
+MoonThruster.ThrustCoeff5       = -0.00100092;
+MoonThruster.MassFlowCoeff1     = -0.004776;
+MoonThruster.MassFlowCoeff2     = 0.05717;
+MoonThruster.MassFlowCoeff3     = -0.09956;
+MoonThruster.MassFlowCoeff4     = 0.03211;
+MoonThruster.MassFlowCoeff5     = 2.13781;
+MoonThruster.FixedEfficiency    = 0.7;
+MoonThruster.Isp                = 2800;
+MoonThruster.ConstantThrust     = 0.0012;
+
+
+Create SolarPowerSystem SolarPowerSystem1;
+
+SolarPowerSystem1.EpochFormat     = 'UTCGregorian';
+SolarPowerSystem1.InitialEpoch    = ''01 Jan 2000 11:59:28.000'';
+SolarPowerSystem1.InitialMaxPower = 1.2;
+SolarPowerSystem1.AnnualDecayRate = 5;
+SolarPowerSystem1.Margin          = 5;
+SolarPowerSystem1.BusCoeff1       = 0.3;
+SolarPowerSystem1.BusCoeff2       = 0;
+SolarPowerSystem1.BusCoeff3       = 0;
+SolarPowerSystem1.ShadowModel     = 'DualCone';
+SolarPowerSystem1.ShadowBodies    = {'Luna'};
+SolarPowerSystem1.SolarCoeff1     = 1.32077;
+SolarPowerSystem1.SolarCoeff2     = -0.10848;
+SolarPowerSystem1.SolarCoeff3     = -0.11665;
+SolarPowerSystem1.SolarCoeff4     = 0.10843;
+SolarPowerSystem1.SolarCoeff5     = -0.01279;
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp_ForceModel.CentralBody            = Luna;
+DefaultProp_ForceModel.PointMasses            = {Earth, Luna, Sun};
+DefaultProp_ForceModel.Drag                   = None;
+DefaultProp_ForceModel.SRP                    = Off;
+DefaultProp_ForceModel.RelativisticCorrection = Off;
+DefaultProp_ForceModel.ErrorControl           = RSSStep;
+
+
+Create ForceModel LunarProp_ForceModel;
+
+LunarProp_ForceModel.CentralBody                     = Luna;
+LunarProp_ForceModel.PrimaryBodies                   = {Luna};
+LunarProp_ForceModel.PointMasses                     = {Earth, Sun};
+LunarProp_ForceModel.Drag                            = None;
+LunarProp_ForceModel.SRP                             = Off;
+LunarProp_ForceModel.RelativisticCorrection          = Off;
+LunarProp_ForceModel.ErrorControl                    = RSSStep;
+LunarProp_ForceModel.GravityField.Luna.Degree        = 4;
+LunarProp_ForceModel.GravityField.Luna.Order         = 4;
+LunarProp_ForceModel.GravityField.Luna.PotentialFile = 'LP165P.cof';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM                       = DefaultProp_ForceModel;
+DefaultProp.Type                     = RungeKutta89;
+DefaultProp.InitialStepSize          = 60;
+DefaultProp.Accuracy                 = 9.999999999999999e-012;
+DefaultProp.MinStep                  = 0;
+DefaultProp.MaxStep                  = 86400;
+DefaultProp.MaxStepAttempts          = 50;
+DefaultProp.StopIfAccuracyIsViolated = true;
+
+
+Create Propagator LunarProp;
+
+LunarProp.FM                       = LunarProp_ForceModel;
+LunarProp.Type                     = RungeKutta89;
+LunarProp.InitialStepSize          = 60;
+LunarProp.Accuracy                 = 9.999999999999999e-012;
+LunarProp.MinStep                  = 0;
+LunarProp.MaxStep                  = 2700;
+LunarProp.MaxStepAttempts          = 50;
+LunarProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn DefaultIB;
+
+DefaultIB.CoordinateSystem = Local;
+DefaultIB.Origin           = Earth;
+DefaultIB.Axes             = VNB;
+DefaultIB.Element1         = 0;
+DefaultIB.Element2         = 0;
+DefaultIB.Element3         = 0;
+DefaultIB.DecrementMass    = false;
+DefaultIB.Isp              = 300;
+DefaultIB.GravitationalAccel = 9.810000000000001;
+
+Create FiniteBurn FiniteBurn1;
+
+FiniteBurn1.Thrusters              = {ElectricThruster1};
+FiniteBurn1.ThrottleLogicAlgorithm = 'MaxNumberOfThrusters';
+
+
+Create FiniteBurn MoonVNBBurn;
+
+MoonVNBBurn.Thrusters              = {MoonThruster};
+MoonVNBBurn.ThrottleLogicAlgorithm = 'MaxNumberOfThrusters';
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MoonJ2k;
+
+MoonJ2k.Origin = Luna;
+MoonJ2k.Axes   = MJ2000Eq;
+
+
+Create CoordinateSystem CS_ESRotating;
+
+CS_ESRotating.Origin    = Earth;
+CS_ESRotating.Axes      = ObjectReferenced;
+CS_ESRotating.XAxis     = -R;
+CS_ESRotating.ZAxis     = N;
+CS_ESRotating.Primary   = Earth;
+CS_ESRotating.Secondary = Sun;
+
+
+Create CoordinateSystem CS_EMRotating;
+
+CS_EMRotating.Origin    = Earth;
+CS_EMRotating.Axes      = ObjectReferenced;
+CS_EMRotating.XAxis     = R;
+CS_EMRotating.ZAxis     = N;
+CS_EMRotating.Primary   = Earth;
+CS_EMRotating.Secondary = Luna;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC1;
+
+DC1.ShowProgress      = true;
+DC1.ReportStyle       = Normal;
+DC1.ReportFile        = 'DifferentialCorrectorDC1.data';
+DC1.MaximumIterations = 75;
+DC1.DerivativeMethod  = ForwardDifference;
+DC1.Algorithm         = NewtonRaphson;
+
+
+Create VF13ad VF13ad1;
+
+VF13ad1.ShowProgress          = true;
+VF13ad1.ReportStyle           = Normal;
+VF13ad1.ReportFile            = 'VF13adVF13ad1.data';
+VF13ad1.MaximumIterations     = 200;
+VF13ad1.Tolerance             = 1e-005;
+VF13ad1.UseCentralDifferences = false;
+VF13ad1.FeasibilityTolerance  = 0.001;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_MoonInertialView;
+
+OFI_MoonInertialView.SolverIterations = Current;
+OFI_MoonInertialView.UpperLeft        = [ 0.3731117824773414 0.3309659090909091 ];
+OFI_MoonInertialView.Size             = [ 0.4441087613293052 0.65625 ];
+OFI_MoonInertialView.RelativeZOrder   = 1216;
+OFI_MoonInertialView.Maximized        = false;
+
+OFI_MoonInertialView.Add              = {DefaultSC, Luna, Sun, Earth};
+OFI_MoonInertialView.View             = {MoonInertial_View};
+OFI_MoonInertialView.Vector           = {Luna_Sun_Vector, DefaultSC_Sun_Vector, Earth_Sun_Vector}
+
+OFI_MoonInertialView.CoordinateSystem = MoonJ2k;
+OFI_MoonInertialView.DrawObject       = [ true true true true ];
+OFI_MoonInertialView.DrawXYPlane      = [ false false false false];
+OFI_MoonInertialView.DrawLabel        = [ true true true true ];
+OFI_MoonInertialView.DrawGrid         = [ false false false false];
+
+OFI_MoonInertialView.Axes             = On;
+OFI_MoonInertialView.XYPlane          = On;
+OFI_MoonInertialView.EclipticPlane    = Off;
+OFI_MoonInertialView.EnableStars      = On;
+OFI_MoonInertialView.StarCount        = 40000;
+OFI_MoonInertialView.ShowPlot         = true;
+
+Create OpenFramesView MoonInertial_View;
+
+MoonInertial_View.ViewFrame           = CoordinateSystem;
+MoonInertial_View.SetDefaultLocation  = On;
+MoonInertial_View.SetCurrentLocation  = Off;
+
+MoonInertial_View.DefaultEye          = [ 0 0 30000 ];
+MoonInertial_View.DefaultCenter       = [ 0 0 0 ];
+MoonInertial_View.DefaultUp           = [ 1 0 0];
+
+
+Create OpenFramesVector DefaultSC_Sun_Vector;
+
+DefaultSC_Sun_Vector.VectorColor       = [255 255 0];
+DefaultSC_Sun_Vector.SourceObject      = DefaultSC;
+DefaultSC_Sun_Vector.VectorType        = Relative Position;
+DefaultSC_Sun_Vector.DestinationObject = Sun;
+DefaultSC_Sun_Vector.VectorLabel       = 'Sun';
+DefaultSC_Sun_Vector.VectorLengthType  = 'Auto';
+
+Create OpenFramesVector Luna_Sun_Vector;
+
+Luna_Sun_Vector.VectorColor           = [255 255 0];
+Luna_Sun_Vector.SourceObject          = Luna;
+Luna_Sun_Vector.VectorType            = Relative Position;
+Luna_Sun_Vector.DestinationObject     = Sun;
+Luna_Sun_Vector.VectorLabel           = 'Sun';
+Luna_Sun_Vector.VectorLengthType      = 'Auto';
+
+Create OpenFramesVector Earth_Sun_Vector;
+
+Earth_Sun_Vector.VectorColor        = [255 255 0];
+Earth_Sun_Vector.SourceObject       = Earth;
+Earth_Sun_Vector.VectorType         = Relative Position;
+Earth_Sun_Vector.DestinationObject  = Sun;
+Earth_Sun_Vector.VectorLabel        = 'Sun';
+Earth_Sun_Vector.VectorLengthType   = 'Auto';
+
+
+Create OpenFramesInterface OFI_EarthMoonRotatingView;
+
+OFI_EarthMoonRotatingView.SolverIterations = Current;
+OFI_EarthMoonRotatingView.UpperLeft        = [ 0.6351963746223565 0 ];
+OFI_EarthMoonRotatingView.Size             = [ 0.3240181268882175 0.5227272727272727 ];
+OFI_EarthMoonRotatingView.RelativeZOrder   = 1211;
+OFI_EarthMoonRotatingView.Maximized        = false;
+
+OFI_EarthMoonRotatingView.Add              = {DefaultSC, Earth, Sun, Luna};
+OFI_EarthMoonRotatingView.View             = {EarthMoonRotating_View};
+OFI_EarthMoonRotatingView.Vector           = {Luna_Sun_Vector, DefaultSC_Sun_Vector, Earth_Sun_Vector};
+
+OFI_EarthMoonRotatingView.CoordinateSystem = CS_EMRotating;
+OFI_EarthMoonRotatingView.DrawObject       = [ true true true true ];
+OFI_EarthMoonRotatingView.DrawXYPlane      = [ false false false false];
+OFI_EarthMoonRotatingView.DrawLabel        = [ true true true true ];
+OFI_EarthMoonRotatingView.DrawGrid         = [ false false false false];
+
+OFI_EarthMoonRotatingView.Axes             = On;
+OFI_EarthMoonRotatingView.XYPlane          = On;
+OFI_EarthMoonRotatingView.EclipticPlane    = Off;
+OFI_EarthMoonRotatingView.EnableStars      = On;
+OFI_EarthMoonRotatingView.StarCount        = 40000;
+OFI_EarthMoonRotatingView.ShowPlot         = true;
+
+Create OpenFramesView EarthMoonRotating_View;
+
+EarthMoonRotating_View.ViewFrame           = CoordinateSystem;
+EarthMoonRotating_View.SetDefaultLocation  = On;
+EarthMoonRotating_View.SetCurrentLocation  = Off;
+
+EarthMoonRotating_View.DefaultEye          = [ 0 0 1650000 ];
+EarthMoonRotating_View.DefaultCenter       = [ 0 0 0 ];
+EarthMoonRotating_View.DefaultUp           = [ 0 1 0 ];
+
+
+Create OpenFramesInterface OFI_EarthSunRotatingView;
+
+OFI_EarthSunRotatingView.SolverIterations = Current;
+OFI_EarthSunRotatingView.UpperLeft        = [ 0.2530211480362538 0.008522727272727272 ];
+OFI_EarthSunRotatingView.Size             = [ 0.3693353474320242 0.5170454545454546 ];
+OFI_EarthSunRotatingView.RelativeZOrder   = 1206;
+OFI_EarthSunRotatingView.Maximized        = false;
+
+OFI_EarthSunRotatingView.Add              = {DefaultSC, Earth, Sun, Luna};
+OFI_EarthSunRotatingView.View             = {EarthSunRotating_View};
+OFI_EarthSunRotatingView.Vector           = {Luna_Sun_Vector, DefaultSC_Sun_Vector, Earth_Sun_Vector};
+
+OFI_EarthSunRotatingView.CoordinateSystem = CS_ESRotating;
+OFI_EarthSunRotatingView.DrawObject       = [ true true true true ];
+OFI_EarthSunRotatingView.DrawXYPlane      = [ false false false false];
+OFI_EarthSunRotatingView.DrawLabel        = [ true true true true ];
+OFI_EarthSunRotatingView.DrawGrid         = [ false false false false];
+
+OFI_EarthSunRotatingView.Axes             = On;
+OFI_EarthSunRotatingView.XYPlane          = On;
+OFI_EarthSunRotatingView.EclipticPlane    = Off;
+OFI_EarthSunRotatingView.EnableStars      = On;
+OFI_EarthSunRotatingView.StarCount        = 40000;
+OFI_EarthSunRotatingView.ShowPlot         = true;
+
+Create OpenFramesView EarthSunRotating_View;
+
+EarthSunRotating_View.ViewFrame           = CoordinateSystem;
+EarthSunRotating_View.SetDefaultLocation  = On;
+EarthSunRotating_View.SetCurrentLocation  = Off;
+
+EarthSunRotating_View.DefaultEye          = [ 0 0 1500000 ];
+EarthSunRotating_View.DefaultCenter       = [ 0 0 0 ];
+EarthSunRotating_View.DefaultUp           = [ 0 1 0 ];
+
+
+Create XYPlot XYPlot1;
+
+XYPlot1.SolverIterations = Current;
+XYPlot1.UpperLeft        = [ 0.4571252313386798 0.487856388595565 ];
+XYPlot1.Size             = [ 0.3158544108574954 0.4519535374868005 ];
+XYPlot1.RelativeZOrder   = 1441;
+XYPlot1.Maximized        = false;
+XYPlot1.XVariable        = DefaultSC.A1ModJulian;
+XYPlot1.YVariables       = {DefaultSC.SolarPowerSystem1.RequiredBusPower, DefaultSC.SolarPowerSystem1.ThrustPowerAvailable, DefaultSC.SolarPowerSystem1.TotalPowerAvailable};
+XYPlot1.ShowGrid         = true;
+XYPlot1.ShowPlot         = false;
+
+
+Create XYPlot LunarDistance;
+
+LunarDistance.SolverIterations = Current;
+LunarDistance.UpperLeft        = [ 0.5311764705882353 0.6240760295670539 ];
+LunarDistance.Size             = [ 0.3570588235294118 0.3611404435058078 ];
+LunarDistance.RelativeZOrder   = 284;
+LunarDistance.Maximized        = false;
+LunarDistance.XVariable        = DefaultSC.ElapsedDays;
+LunarDistance.YVariables       = {DefaultSC.Luna.RMAG};
+LunarDistance.ShowGrid         = true;
+LunarDistance.ShowPlot         = false;
+
+Create XYPlot EarthRadPer;
+
+EarthRadPer.SolverIterations = Current;
+EarthRadPer.UpperLeft        = [ 0.4583590376310919 0.6219640971488912 ];
+EarthRadPer.Size             = [ 0.2498457742134485 0.3558606124604013 ];
+EarthRadPer.RelativeZOrder   = 2364;
+EarthRadPer.Maximized        = false;
+EarthRadPer.XVariable        = DefaultSC.ElapsedDays;
+EarthRadPer.YVariables       = {DefaultSC.Earth.RadPer};
+EarthRadPer.ShowGrid         = true;
+EarthRadPer.ShowPlot         = false;
+
+Create XYPlot EarthDistance;
+
+EarthDistance.SolverIterations = Current;
+EarthDistance.UpperLeft        = [ 0.2123529411764706 0.6219640971488912 ];
+EarthDistance.Size             = [ 0.3158823529411765 0.3621964097148891 ];
+EarthDistance.RelativeZOrder   = 282;
+EarthDistance.Maximized        = false;
+EarthDistance.XVariable        = DefaultSC.ElapsedDays;
+EarthDistance.YVariables       = {DefaultSC.Earth.RMAG};
+EarthDistance.ShowGrid         = true;
+EarthDistance.ShowPlot         = false;
+
+
+Create ReportFile trajData;
+
+trajData.SolverIterations = Current;
+trajData.UpperLeft        = [ 0.06941176470588235 0.1246040126715945 ];
+trajData.Size             = [ 0.5982352941176471 0.7961985216473073 ];
+trajData.RelativeZOrder   = 722;
+trajData.Maximized        = true;
+trajData.Filename         = 'trajData.txt';
+trajData.Precision        = 16;
+trajData.Add              = {DefaultSC.ElapsedDays, DefaultSC.Earth.RMAG, DefaultSC.Luna.RMAG, DefaultSC.MoonJ2k.INC};
+trajData.WriteHeaders     = false;
+trajData.LeftJustify      = On;
+trajData.ZeroFill         = Off;
+trajData.FixedWidth       = true;
+trajData.Delimiter        = ' ';
+trajData.ColumnWidth      = 23;
+trajData.WriteReport      = true;
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable loopIdx caseIdx burnDuration coastDuration;
+Create String newCase;
+newCase = '================================ New Case ===========================';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+BeginScript 'Global Initializations'
+   initSat = DefaultSC;
+   Toggle OFI_MoonInertialView Off;
+EndScript;
+
+For burnDuration = 1.98:0.02:1.98;
+   BeginScript 'Loop Initializations'
+      DefaultSC = initSat;
+      Report trajData newCase;
+      Report trajData burnDuration;
+   EndScript;
+   Propagate 'Coast for 2 Hours' DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 7200};
+   BeginFiniteBurn FiniteBurn1(DefaultSC);
+   Propagate 'Prop Through Burn' DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = burnDuration, OrbitColor = Red};
+   EndFiniteBurn FiniteBurn1(DefaultSC);
+   Propagate 'Lunar Periapsis' DefaultProp(DefaultSC) {DefaultSC.Luna.Periapsis, OrbitColor = Green};
+   EndFiniteBurn FiniteBurn1(DefaultSC);
+   Propagate 'Earth Apoapsis' DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis, OrbitColor = Green};
+   Propagate 'Earth Periapsis' DefaultProp(DefaultSC) {DefaultSC.Earth.Periapsis, OrbitColor = Green};
+   Propagate 'Earth RMAG = 400000' DefaultProp(DefaultSC) {DefaultSC.Earth.RMAG = 400000, StopTolerance = 1e-005, OrbitColor = Green};
+   Propagate 'Earth Apoapsis' DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis, OrbitColor = Green};
+
+EndFor;
+
+
+Optimize VF13ad1 {SolveMode = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+   
+   Propagate 'Prop One Lunar Period' DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = 27.5, OrbitColor = Green};
+   Propagate 'Prop One Lunar Period' DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = 27.5, OrbitColor = Yellow};
+   Propagate 'Prop One Lunar Period' DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = 22.5, OrbitColor = Blue};
+   
+   Vary VF13ad1(DefaultSC.ElectricThruster1.ThrustDirection1 = -1.299280970675032, {Perturbation = 0.00001, MaxStep = .1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary VF13ad1(DefaultSC.ElectricThruster1.ThrustDirection2 = -0.4280554235300299, {Perturbation = 0.00001, MaxStep = .1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary VF13ad1(DefaultSC.ElectricThruster1.ThrustDirection3 = 0.4481178492180087, {Perturbation = 0.00001, MaxStep = .1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary VF13ad1(burnDuration  = 6.636137800714871, {Perturbation = 0.00001, MaxStep = 0.2, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary VF13ad1(coastDuration = 33.01850097112397, {Perturbation = 0.00001, MaxStep = 0.2, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   
+   BeginFiniteBurn FiniteBurn1(DefaultSC);
+   If burnDuration >= 0
+      Propagate 'Prop Through Burn' DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = burnDuration, OrbitColor = Red};
+   Else
+      Propagate 'Prop Through Burn' BackProp DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = burnDuration, OrbitColor = Red};
+   EndIf;
+   EndFiniteBurn FiniteBurn1(DefaultSC);
+   
+   Propagate 'Coast' DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = coastDuration, OrbitColor = Green};
+   
+   Vary VF13ad1(DefaultSC.MoonThruster.ThrustDirection1 = -0.04815907065338908, {Perturbation = 0.00001, MaxStep = .1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary VF13ad1(DefaultSC.MoonThruster.ThrustDirection2 = -0.3584299631873859, {Perturbation = 0.00001, MaxStep = .1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary VF13ad1(DefaultSC.MoonThruster.ThrustDirection3 = 2.604155402234046, {Perturbation = 0.00001, MaxStep = .1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   
+   BeginFiniteBurn MoonVNBBurn(DefaultSC);
+   Propagate 'Prop One Periselene' DefaultProp(DefaultSC) {DefaultSC.Luna.Periapsis, OrbitColor = Red};
+   EndFiniteBurn MoonVNBBurn(DefaultSC);
+   Report trajData DefaultSC.ElapsedDays DefaultSC.TAIModJulian;
+   
+   %NonlinearConstraint VF13ad1(DefaultSC.Luna.RMAG<=15000);
+   NonlinearConstraint VF13ad1(DefaultSC.Luna.RMAG>=6000);
+   %NonlinearConstraint VF13ad1(DefaultSC.Luna.RMAG>= 1838);
+   NonlinearConstraint VF13ad1(DefaultSC.Luna.C3Energy<=-0.11);
+   NonlinearConstraint VF13ad1(DefaultSC.MoonJ2k.RAAN=250);
+
+EndOptimize;  % For targeter DC1
+
+Toggle OFI_EarthMoonRotatingView Off;
+Toggle OFI_EarthSunRotatingView  Off;
+Toggle OFI_MoonInertialView      On;
+
+DefaultSC.MoonThruster.ThrustDirection1 = -1;
+DefaultSC.MoonThruster.ThrustDirection2 = 0;
+DefaultSC.MoonThruster.ThrustDirection3 = 0;
+BeginFiniteBurn MoonVNBBurn(DefaultSC);
+Propagate 'Prop One Periselene' LunarProp(DefaultSC) {DefaultSC.Luna.TA = 90, OrbitColor = Red};
+Propagate 'Prop One Periselene' LunarProp(DefaultSC) {DefaultSC.Luna.TA = 359, OrbitColor = Red};
+EndFiniteBurn MoonVNBBurn(DefaultSC);
+Propagate 'Prop One Periselene' LunarProp(DefaultSC) {DefaultSC.Luna.TA = 240, StopTolerance = 1e-005, OrbitColor = Green};
+
+For loopIdx = 1:1:20;
+   BeginFiniteBurn MoonVNBBurn(DefaultSC);
+   Propagate 'Prop One Periselene' LunarProp(DefaultSC) {DefaultSC.Luna.TA = 130, OrbitColor = Red};
+   EndFiniteBurn MoonVNBBurn(DefaultSC);
+   Propagate 'Prop One Periselene' LunarProp(DefaultSC) {DefaultSC.Luna.TA = 240, OrbitColor = Green};
+EndFor;
+%Propagate 'Prop One Periselene' LunarProp(DefaultSC) {DefaultSC.ElapsedDays = 20, OrbitColor = Green};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

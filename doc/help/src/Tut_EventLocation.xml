@@ -1,0 +1,846 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="Tut_EventLocation"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Finding Eclipses and Station Contacts</title>
+
+  <variablelist>
+    <varlistentry>
+      <term>Audience</term>
+
+      <listitem>
+        <para>Beginner</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Length</term>
+
+      <listitem>
+        <para>30 minutes</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Prerequisites</term>
+
+      <listitem>
+        <para>Complete <xref linkend="SimpleOrbitTransfer"
+        xrefstyle="select:title"/></para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Script File</term>
+
+      <listitem>
+        <para><filename>Tut_SimpleOrbitTransfer.script</filename></para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>In this tutorial we will modify an existing mission to add eclipse
+    and station contact detection using the
+    <guilabel>EclipseLocator</guilabel> and
+    <guilabel>ContactLocator</guilabel> resources. We will start with the
+    completed Simple Orbit Transfer mission and modify it to add these event
+    reports.</para>
+
+    <para>The basic steps of this tutorial are:</para>
+
+    <procedure>
+      <step>
+        <para>Load the Simple Orbit Transfer mission.</para>
+      </step>
+
+      <step>
+        <para>Configure GMAT for event location.</para>
+      </step>
+
+      <step>
+        <para>Add and configure an <guilabel>EclipseLocator</guilabel> to
+        report eclipses.</para>
+      </step>
+
+      <step>
+        <para>Run the mission and analyze the eclipse report.</para>
+      </step>
+
+      <step>
+        <para>Add and configure a <guilabel>GroundStation</guilabel> and a
+        <guilabel>ContactLocator</guilabel> to report contact times.</para>
+      </step>
+
+      <step>
+        <para>Run the mission and analyze the contact report.</para>
+      </step>
+    </procedure>
+  </section>
+
+  <section>
+    <title>Load the Mission</title>
+
+    <para>For this tutorial, we will start with a preexisting mission created
+    during the Simple Orbit Transfer tutorial. You can either complete that
+    tutorial prior to this one, or you can load the end result directly, as
+    shown below.</para>
+
+    <procedure>
+      <step>
+        <para>Open GMAT.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>Open</guilabel> in the toolbar and navigate to
+        the GMAT <filename>samples</filename> directory.</para>
+      </step>
+
+      <step>
+        <para>Select <filename>Tut_SimpleOrbitTransfer.script</filename> and
+        click <guibutton>Open</guibutton>.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>Run</guilabel> (<inlinemediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="8pt"
+                         fileref="files/images/icons/RunMission.png"
+                         width="1em"/>
+            </imageobject>
+          </inlinemediaobject>) to run the mission.</para>
+      </step>
+    </procedure>
+
+    <para>You should see the following result in the
+    <guilabel>DefaultOrbitView</guilabel> window.</para>
+
+    <figure>
+      <title><guilabel>DefaultOrbitView</guilabel> window</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_EventLocation_1.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+  </section>
+
+  <section>
+    <title>Configure GMAT for Event Location</title>
+
+    <para>GMAT's event location subsystem is based on the <link
+    xlink:href="http://naif.jpl.nasa.gov/naif/">NAIF SPICE library</link>,
+    which uses its own mechanism for configuration of the solar system.
+    Instead of settings specified in GMAT via CelestialBody resources like
+    Earth and Luna, SPICE uses "kernel" files that define similar parameters
+    independently. This is discussed in detail in the <xref
+    linkend="ContactLocator"/> and <xref linkend="EclipseLocator"/>
+    references.</para>
+
+    <para>By default, GMAT offers general consistency between both
+    configurations. But, it's useful to verify that the appropriate parameters
+    are correct, and it's necessary for precise applications.</para>
+
+    <section>
+      <title>Verify SolarSystem Configuration</title>
+
+      <para>First, let's verify that the SolarSystem resource is configured
+      properly for both configurations.</para>
+
+      <procedure>
+        <step>
+          <para>On the <guilabel>Resources</guilabel> tab, double-click the
+          <guilabel>SolarSystem</guilabel> folder. This will display the
+          <guilabel>SolarSystem</guilabel> configuration.</para>
+        </step>
+
+        <step>
+          <para>Scroll to the end of each input box to see the actual
+          filenames being loaded.</para>
+        </step>
+      </procedure>
+
+      <para>You should see a configuration like this:</para>
+
+      <figure>
+        <title>SolarSystem Panel</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_EventLocation_SolarSystem.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <para>Note the following items:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para><guilabel>Ephemeris Source</guilabel>: This is set to use the
+          DE405 planetary ephemeris, the default in GMAT. If you switch to
+          another ephemeris version, the fields below will update
+          accordingly.</para>
+        </listitem>
+
+        <listitem>
+          <para><guilabel>Ephemeris Filename</guilabel>: This is the DE-format
+          ephemeris file used for propagation and parameter calculations in
+          GMAT itself.</para>
+        </listitem>
+
+        <listitem>
+          <para><guilabel>SPK Kernel</guilabel>: This is the SPICE SPK file
+          used for planetary ephemeris for SPK propagation and for event
+          location. Note that this is set consistent with <guilabel>Ephemeris
+          Filename</guilabel> (both DE405)</para>
+        </listitem>
+
+        <listitem>
+          <para><guilabel>Leap Second Kernel</guilabel>: This is the SPICE LSK
+          file used to keep track of leap seconds in the UTC time system for
+          the SPICE subsystem. This is kept consistent with GMAT's internal
+          leap seconds file (tai-utc.dat) specified in the GMAT startup
+          file.</para>
+        </listitem>
+
+        <listitem>
+          <para><guilabel>Planetary Constants Kernel</guilabel>: This is the
+          SPICE PCK file used for default configuration for all the default
+          celestial bodies. This file contains planetary shape and orientation
+          information, similar to but independent from the settings in GMAT's
+          <guilabel>CelestialBody</guilabel> resources
+          (<guilabel>Earth</guilabel>, <guilabel>Luna</guilabel>,
+          etc.).</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>These are already configured correctly, so we don't need to make
+      any changes.</para>
+    </section>
+
+    <section>
+      <title>Configure CelestialBody Resources</title>
+
+      <para>Next, let's configure the Earth model for precise usage with the
+      <guilabel>ContactLocator</guilabel> resource. By default, the Earth size
+      and shape differ by less than 1 m in equatorial and polar radii between
+      the two subsystems But we can make them match exactly by modifying
+      GMAT's <guilabel>Earth</guilabel> properties.</para>
+
+      <procedure>
+        <step>
+          <para>On the <guilabel>Resources</guilabel> tab, expand the
+          <guilabel>SolarSystem</guilabel> folder.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>Earth</guilabel> to display the Earth
+          configuration.</para>
+        </step>
+
+        <step>
+          <para>Note the various configuration options available:<itemizedlist>
+              <listitem>
+                <para><guilabel>Equatorial Radius</guilabel> and
+                <guilabel>Flattening</guilabel> define the Earth shape for
+                GMAT itself. <guilabel>PCK Files</guilabel> lists additional
+                SPICE PCK files to load, in addition to the file shown above
+                in the <guilabel>SolarSystem</guilabel> <guilabel>Planetary
+                Constants Kernel</guilabel> box. In this case, these files
+                provide high-fidelity Earth orientation parameters (EOP)
+                data.</para>
+              </listitem>
+
+              <listitem>
+                <para>On the <guilabel>Orientation</guilabel> tab,
+                <guilabel>Spice Frame Id</guilabel> indicates the Earth-fixed
+                frame to use for the SPICE subsystem, and <guilabel>FK
+                Files</guilabel> provides additional FK files that define the
+                frame. In this case, Earth is using the built-in ITRF93 frame,
+                which is different but very close to GMAT's
+                <guilabel>EarthFixed</guilabel> coordinate system. See the
+                <xref linkend="CoordinateSystem"/> reference for details on
+                that system.</para>
+              </listitem>
+            </itemizedlist></para>
+        </step>
+
+        <step>
+          <para>Set <guilabel>Equatorial Radius</guilabel> to
+          <literal>6378.1366</literal>.</para>
+        </step>
+
+        <step>
+          <para>Set <guilabel>Flattening</guilabel> to
+          <literal>0.00335281310845547</literal>.</para>
+        </step>
+
+        <step>
+          <para>Click <guibutton>OK</guibutton>.</para>
+        </step>
+      </procedure>
+
+      <para>These two values were taken from the pck00010.tpc file referenced
+      in the <guilabel>SolarSystem</guilabel> configuration. Setting them for
+      <guilabel>Earth</guilabel> ensures that the position of the
+      <guilabel>GroundStation</guilabel> we create later will be referenced to
+      the exact same Earth definition throughout the mission. Note that the
+      exact position may still differ between the two based on the different
+      body-fixed frame definition and the different EOP data sources, but this
+      residual difference is small.</para>
+
+      <para>Your Earth panel should look like this after these steps are
+      complete:</para>
+
+      <figure>
+        <title>Earth Panel </title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_EventLocation_Earth.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+  </section>
+
+  <section>
+    <title>Configure and Run the Eclipse Locator</title>
+
+    <para>Now we are ready to search for eclipses in our mission. We do this
+    by creating an EclipseLocator resource that holds the search
+    configuration. Then we can perform a search by running the FindEvents
+    command, but GMAT does this automatically at the end of the mission unless
+    you configure it otherwise. In this case, we will use the automatic
+    option.</para>
+
+    <section>
+      <title>Create and Configure the EclipseLocator</title>
+
+      <para>First we create the <guilabel>EclipseLocator</guilabel>:</para>
+
+      <procedure>
+        <step>
+          <para>On the <guilabel>Resources</guilabel> tab, right-click the
+          <guilabel>Event Locators</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click
+          <guilabel>EclipseLocator</guilabel>.</para>
+        </step>
+      </procedure>
+
+      <para>This will result in a new resource called
+      <guilabel>EclipseLocator1</guilabel>.</para>
+
+      <figure>
+        <title>Location of EclipseLocator</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_EventLocation_CreateEclipseLocator.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <para>Next, we need to configure the new resource for our
+      mission:</para>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>EclipseLocator1</guilabel> to edit the
+          configuration.</para>
+
+          <para>Note the following default settings:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><guilabel>Spacecraft</guilabel> is set to
+              <guilabel>DefaultSC</guilabel>, the name of our
+              spacecraft.</para>
+            </listitem>
+
+            <listitem>
+              <para><guilabel>OccultingBodies</guilabel> is set to
+              <guilabel>Earth</guilabel> and <guilabel>Luna</guilabel>. These
+              are the two bodies that will be searched for eclipses.</para>
+            </listitem>
+
+            <listitem>
+              <para><guilabel>EclipseTypes</guilabel> is set to search for all
+              eclipse types (umbra or total, penumbra or partial, and antumbra
+              or annular)</para>
+            </listitem>
+
+            <listitem>
+              <para><guilabel>Run Mode</guilabel> is set to
+              <guilabel>Automatic</guilabel> mode, which means the eclipse
+              search will be run automatically at the end of the
+              mission.</para>
+            </listitem>
+
+            <listitem>
+              <para><guilabel>Use Entire Interval</guilabel> is checked, so
+              the entire mission time span will be searched.</para>
+            </listitem>
+
+            <listitem>
+              <para>Light-time delay and stellar aberration are both enabled,
+              so eclipse times will be adjusted appropriately.</para>
+            </listitem>
+
+            <listitem>
+              <para><guilabel>Step size</guilabel> is set to 10 s. This is the
+              minimum-duration eclipse (or gap between eclipses) that this
+              locator is guaranteed to find.</para>
+            </listitem>
+          </itemizedlist>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to accept the default settings.
+          They are fine for our purposes.</para>
+        </step>
+      </procedure>
+
+      <para>The final configuration should match the following
+      screenshot.</para>
+
+      <figure>
+        <title>EclipseLocator Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_EventLocation_EclipseLocator.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Run the Mission</title>
+
+      <para>Now it's time to run the mission and look at the results.</para>
+
+      <procedure>
+        <step>
+          <para>Click <guilabel>Run</guilabel> (<inlinemediaobject>
+              <imageobject>
+                <imagedata align="center" contentdepth="8pt"
+                           fileref="files/images/icons/RunMission.png"
+                           width="1em"/>
+              </imageobject>
+            </inlinemediaobject>) to run the mission.</para>
+
+          <para>The eclipse search will take a few seconds. As it progresses,
+          you'll see the following message in the message window at the bottom
+          of the screen:</para>
+
+          <programlisting>Finding events for EclipseLocator EclipseLocator1 ...
+Celestial body properties are provided by SPICE kernels.</programlisting>
+        </step>
+
+        <step>
+          <para>When the run is complete, click the
+          <guilabel>Output</guilabel> tab to view the available output.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>EclipseLocator1</guilabel> to view the
+          eclipse report.</para>
+        </step>
+      </procedure>
+
+      <para>You'll see a report that looks similar to this:<figure>
+          <title>EclipseLocator Report</title>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center" contentdepth="100%"
+                           fileref="files/images/Tut_EventLocation_EclipseReport.png"
+                           scalefit="1" width="100%"/>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </figure></para>
+
+      <para>Three eclipses were found, all part of a single "total" eclipse
+      event totalling about 35 minutes. A total event consists of all adjacent
+      and overlapping portions, such as penumbra eclipses occuring adjacent to
+      umbra eclipses as in this case.</para>
+
+      <procedure>
+        <step>
+          <para>Click <guilabel>Close</guilabel> to close the report. The
+          report text is still available as
+          <filename>EclipseLocator1.txt</filename> in the GMAT
+          <filename>output</filename> folder.</para>
+        </step>
+      </procedure>
+    </section>
+  </section>
+
+  <section>
+    <title>Configure and Run the Contact Locator</title>
+
+    <para>Finding ground station contact times is a very similar process, but
+    we'll use the ContactLocator resource instead. First we need to add a
+    GroundStation, then we can configure the locator to find contact times
+    between it and our spacecraft.</para>
+
+    <section>
+      <title>Create and Configure a Ground Station</title>
+
+      <para>Let's create a ground station that will be in view from the final
+      geostationary orbit. By looking at the DefaultGroundTrack window,
+      our spacecraft is positioned over the Indian Ocean. A ground station in
+      India should be in view. We can choose the Hyderabad facility, which has
+      the following properties:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Latitude: 17.0286 deg</para>
+        </listitem>
+
+        <listitem>
+          <para>Longitude: 78.1883 deg</para>
+        </listitem>
+
+        <listitem>
+          <para>Altitude: 0.541 km</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Let's create this ground station in GMAT:</para>
+
+      <procedure>
+        <step>
+          <para>First, close all graphics and solver windows, to allow full
+          manipulation of resources.</para>
+        </step>
+
+        <step>
+          <para>On the <guilabel>Resources</guilabel> tab, right-click the
+          <guilabel>Ground Station</guilabel> folder and click <guilabel>Add
+          Ground Station</guilabel>. This will create a new resource called
+          <guilabel>GroundStation1</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Rename <guilabel>GroundStation1</guilabel> to
+          <guilabel>Hyderabad</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>Hyderabad</guilabel> to edit its
+          configuration.</para>
+
+          <para>The following values are configured appropriately by default,
+          so we won't change them:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><guilabel>Min. Elevation</guilabel>: This is the minimum
+              elevation angle from the ground station for a valid contact. The
+              current value (7 deg) is appropriate for this case.</para>
+            </listitem>
+
+            <listitem>
+              <para><guilabel>Central Body</guilabel>: Earth is the only
+              allowed value at this time.</para>
+            </listitem>
+          </itemizedlist>
+        </step>
+
+        <step>
+          <para>In the <guilabel>State Type</guilabel> list, select
+          <guilabel>Spherical</guilabel>. This allows input in latitude,
+          longitude, and altitude.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Horizon Reference</guilabel> list, select
+          <guilabel>Ellipsoid</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Latitude</guilabel> box, type
+          <literal>17.0286</literal>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Longitude</guilabel> box, type
+          <literal>78.1883</literal>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Altitude</guilabel> box, type
+          <literal>0.541</literal>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to accept these changes.</para>
+        </step>
+      </procedure>
+
+      <para>The configured <guilabel>GroundStation</guilabel> should look like
+      the following screenshot:</para>
+
+      <figure>
+        <title>GroundStation Panel</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_EventLocation_GroundStation.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <para>If you add the <guilabel>GroundStation</guilabel> to the
+      <guilabel>DefaultGroundTrack</guilabel>, you can see the location
+      visually:</para>
+
+      <figure>
+        <title>Ground Track Plot Window</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_EventLocation_GroundTrackPlot.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Create and Configure the ContactLocator</title>
+
+      <para>Now we can create a ContactLocator that will search for contact
+      times between our spacecraft and the Hyderabad station.</para>
+
+      <procedure>
+        <step>
+          <para>On the <guilabel>Resources</guilabel> tab, right-click the
+          <guilabel>Event Locators</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click
+          <guilabel>ContactLocator</guilabel>. This will create
+          <guilabel>ContactLocator1</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>ContactLocator1</guilabel> to edit the
+          configuration.</para>
+
+          <para>Many of the default values are identical to the
+          <guilabel>EclipseLocator</guilabel>, so we don't need to explain
+          them again. There are a couple new properties that we'll note, but
+          won't change:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><guilabel>Occulting Bodies</guilabel>: These are celestial
+              bodies that GMAT will search for occultations of the line of
+              sight between the spacecraft and the ground station. Since our
+              spacecraft is orbiting the Earth, we don't need to choose any
+              occulting bodies. Note that Earth is considered automatically
+              because it is the central body of the ground station.</para>
+            </listitem>
+
+            <listitem>
+              <para><guilabel>Light-time direction</guilabel>: This is the
+              signal sense of the ground station. You can choose to calculate
+              light-time delay as if the ground station is transmitting, or if
+              it is receiving.</para>
+            </listitem>
+          </itemizedlist>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Observers</guilabel> list, enable
+          <guilabel>Hyderabad</guilabel>. This will cause GMAT to search for
+          contacts to this station.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Step size</guilabel> box, type
+          <literal>600</literal>. Since we're not using third-body
+          occultations, this step size can be increased significantly without
+          missing events. See the <xref linkend="ContactLocator"/>
+          documentation for details.</para>
+        </step>
+
+        <step>
+          <para>Click <guibutton>OK</guibutton> to accept the changes.</para>
+        </step>
+      </procedure>
+
+      <para>When fully configured, the ContactLocator window will look like
+      the following screenshot:</para>
+
+      <figure>
+        <title>ContactLocator Configuration Window</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_EventLocation_ContactLocator.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Run the Mission</title>
+
+      <para>Now it's time to run the mission again and look at these new
+      results.</para>
+
+      <procedure>
+        <step>
+          <para>Click <guilabel>Run</guilabel> (<inlinemediaobject>
+              <imageobject>
+                <imagedata align="center" contentdepth="8pt"
+                           fileref="files/images/icons/RunMission.png"
+                           width="1em"/>
+              </imageobject>
+            </inlinemediaobject>) to run the mission.</para>
+
+          <para>The contact search will take much less time than the eclipse
+          search, since we're using a larger step size. As it progresses,
+          you'll see the following message in the message window at the bottom
+          of the screen:</para>
+
+          <programlisting>Finding events for ContactLocator ContactLocator1 ...
+Celestial body properties are provided by SPICE kernels.</programlisting>
+        </step>
+
+        <step>
+          <para>When the run is complete, click the
+          <guilabel>Output</guilabel> tab to view the available output.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>ContactLocator1</guilabel> to view the
+          report.</para>
+        </step>
+      </procedure>
+
+      <para>You'll see a report that looks similar to this:</para>
+
+      <figure>
+        <title>ContactLocator Report</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_EventLocation_ContactReport.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <para>Notice that two contact intervals were found: one about 6 minutes
+      long at the very beginning of the mission (it starts at the Spacecraft's
+      initial epoch), and a second one about 29 hours long, starting once it
+      gets into geosynchronous orbit and extending to the end of the
+      simulation.</para>
+
+      <procedure>
+        <step>
+          <para>Click <guilabel>Close</guilabel> to close the report. The
+          report text is still available as
+          <filename>ContactLocator1.txt</filename> in the GMAT
+          <filename>output</filename> folder.</para>
+        </step>
+      </procedure>
+    </section>
+  </section>
+
+  <section>
+    <title>Further Exercises</title>
+
+    <para>To expand on this tutorial, try the following exercise:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>For a mission like this, you probably will want ground station
+        coverage during both maneuvers. Try the following steps to make sure
+        the coverage is adequate:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Change the colors of the <guilabel>Propagate</guilabel>
+            commands, so you can see visually where the burns are
+            located.</para>
+          </listitem>
+
+          <listitem>
+            <para>Add <guilabel>GroundStation</guilabel> resources near the
+            locations of the burns on the ground track.</para>
+          </listitem>
+
+          <listitem>
+            <para>Confirm the burn epochs in the <guilabel>Command
+            Summary</guilabel> for each <guilabel>Maneuver</guilabel>
+            command.</para>
+          </listitem>
+
+          <listitem>
+            <para>Confirm in the contact report that these times occur during
+            a contact interval.</para>
+          </listitem>
+
+          <listitem>
+            <para>Check the eclipse report, too: you may not want to perform a
+            maneuver during an eclipse!</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+    </itemizedlist>
+
+    <para>This tutorial shows you the basics of adding eclipse and station
+    contact location to your mission. These resources have a lot of power, and
+    there are many different ways to use them. Consult the <xref
+    linkend="ContactLocator"/> and <xref linkend="EclipseLocator"/>
+    documentation for details.</para>
+  </section>
+</chapter>

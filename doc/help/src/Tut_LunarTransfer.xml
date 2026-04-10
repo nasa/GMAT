@@ -1,0 +1,1068 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="LunarTransfer"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Lunar Transfer</title>
+
+  <section>
+    <title>Objective and Overview</title>
+	
+	<note>
+      <para>One of the most common problems in space mission design is to
+      transfer from one circular orbit to another circular,coplanar orbit.
+      Circular, coplanar transfers are used to raise low-Earth orbits that
+      have degraded due to the effects of atmospheric drag. They are also used
+      to transfer from a low-Earth orbit to a Geosychronouse orbit and to send
+      spacecraft to Mars. There is a well known sequence of maneuvers, called
+      the Hohmann transfer, that performs a circular, coplanar transfer using
+      the least possible amount of fuel. A Hohmann transfer employs two
+      maneuvers. The first maneuver raises the orbital apogee (or lowers
+      orbital perigee) to the desired altitude and places the spacecraft in an
+      elliptical transfer orbit. At the apogee (or perigee) of the elliptical
+      transfer orbit, a second maneuver is applied to circularize the
+      orbit</para>
+    </note>
+
+    <para>The primary goal of this mission is for you to learn how to create
+    and propagate a transfer trajectory from a LEO (Low Earth Orbit) to a
+    lunar orbit. Given the capabilities of GMAT, you will also learn how to
+    solve for several initially unknown variables and apply them to give your
+    spacecraft a more efficient path to the moon.</para>
+
+    <para>Download the script file: <link
+    xlink:href="scripts/LunarTransferTutorials.script">LunarTransferTutorial.script</link></para>
+
+    <section>
+      <title>Prerequisites</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Basic understanding of Hohmann Transfer trajectories</para>
+        </listitem>
+
+        <listitem>
+          <para>Tutorials:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><link linkend="CreatingandPropagatingaSpacecraft">Creating
+              and Propagating a Spacecraft</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="DesigningaHohmannTransfer">Designing a
+              Hohmann Transfer</link></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Mission Description</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Objective: Target a lunar transfer trajectory with several
+          initially undetermined variables and achieve a given altitude for a
+          lunar propagation.</para>
+        </listitem>
+
+        <listitem>
+          <para>Assume:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Launch site is Kennedy Space Center (INC = 28.5°)</para>
+            </listitem>
+
+            <listitem>
+              <para>Parking orbit altitude is 185 km (SMA = 6555 km)</para>
+            </listitem>
+
+            <listitem>
+              <para>Parking orbit is nearly circular (ECC = 0.001)</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Find:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>RAAN</para>
+            </listitem>
+
+            <listitem>
+              <para>AOP</para>
+            </listitem>
+
+            <listitem>
+              <para>ΔV</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Resource, Mission, and Output Trees</title>
+
+      <informaltable colsep="0" frame="none">
+        <tgroup cols="3">
+		<colspec colname='c1'/>
+		<colspec colname='c2'/>
+		<colspec colname='c3'/>
+          <tbody>
+            <row>
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: Lunar Transfer Resource, Mission, and
+                    Output Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_LunarTransfer_LunarTransferResourceMissionandOutputTrees1.jpeg"></imagedata>
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></entry>
+
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: Lunar Transfer Resource, Mission, and
+                    Output Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_LunarTransfer_LunarTransferResourceMissionandOutputTrees2.jpeg"></imagedata>
+                    </imageobject>
+
+                  </mediaobject>
+                </screenshot></entry>
+
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: Lunar Transfer Resource, Mission, and
+                    Output Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_LunarTransfer_LunarTransferResourceMissionandOutputTrees3.jpeg"></imagedata>
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></entry>
+            </row>
+			<row>
+				<entry namest="c1" nameend="c3" align='center'>Figure: Lunar Transfer Resource, Mission, and
+                      Output Trees</entry>
+			</row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Resource Tree</title>
+
+    <para>For this tutorial, two spacecraft, two impulsive burns, and three
+    undetermined variables are needed in order to propagate a viable lunar
+    transfer trajectory to a lunar orbit. To realistically account for the
+    varying gravitational fields of the sun, earth, and moon, three
+    propagators are required. Two OpenGL plots are needed to see how the
+    spacecraft and its trajectory would look from an arbitrary point of view
+    in space. Finally, an earth-lunar and lunar coordinate system should be
+    used to allow for an easier interpretation of how the spacecraft is
+    positioned once the moon is the primary body of its propagation.</para>
+
+    <section>
+      <title>Objects Required</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft: InitSat and Sat</para>
+        </listitem>
+
+        <listitem>
+          <para>Impulsive Burns: TOI (Transfer Orbit Insertion) and LOI (Lunar
+          Orbit Insertion)</para>
+        </listitem>
+
+        <listitem>
+          <para>Propagators: EarthOnlyProp, NearEarthProp, and
+          NearMoonProp</para>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports: EarthOGL and EarthMoonOGL</para>
+        </listitem>
+
+        <listitem>
+          <para>Variables/Arrays/Strings: RAAN, AOP, and ΔV</para>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems: EarthToMoon and LunaFixed</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Creating and Modifying Objects</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add a spacecraft to the resource tree and name it
+              Sat</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the epoch format to UTCGregorian</para>
+            </listitem>
+
+            <listitem>
+              <para>Use Keplerian as the State Type for the coordinate
+              system</para>
+            </listitem>
+
+            <listitem>
+              <para>See Assumptions to modify spacecraft element
+              properties</para>
+            </listitem>
+
+            <listitem>
+              <para>Clone Sat and rename it InitSat</para>
+            </listitem>
+          </itemizedlist>
+
+
+          <screenshot>
+            <info>
+              <title>Figure: Sat Spacecraft Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_LunarTransfer_SatSpacecraftObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: Sat Spacecraft Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Propagators</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>EarthOnly:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Include only a heliocentric pointmass</para>
+                </listitem>
+              </itemizedlist>
+
+
+              <screenshot>
+                <info>
+                  <title>Figure: NearEarthProp Propagator Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_LunarTransfer_NearEarthPropPropagatorObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: NearEarthProp Propagator Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>NearEarthProp:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Include heliocentric and lunar point masses</para>
+                </listitem>
+              </itemizedlist>
+
+            </listitem>
+
+            <listitem>
+              <para>NearMoonProp:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Use the moon as the only Primary Body</para>
+                </listitem>
+
+                <listitem>
+                  <para>Change the gravity model to LP-165 with a degree and
+                  order of 4</para>
+                </listitem>
+
+                <listitem>
+                  <para>Include geocentric and heliocentric point
+                  masses</para>
+                </listitem>
+              </itemizedlist>
+
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Burns</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>TOI:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Change V to be 2 km/s</para>
+                </listitem>
+              </itemizedlist>
+
+
+              <screenshot>
+                <info>
+                  <title>Figure: TOI Impulsive Burn Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_LunarTransfer_TOIImpulsiveBurnObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: TOI Impulsive Burn Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>LOI:</para>
+
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Variables/Arrays/Strings</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add three variables to the resource tree and name them
+              RAAN, AOP, and ΔV</para>
+            </listitem>
+
+            <listitem>
+              <para>Set each equal to zero and to the Sat spacecraft</para>
+            </listitem>
+          </itemizedlist>
+
+
+          <screenshot>
+            <info>
+              <title>Figure: RAAN Variable Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_LunarTransfer_RAANVariableObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: RAAN Variable Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add a new system to the resource tree and rename it
+              EarthToMoon</para>
+            </listitem>
+
+            <listitem>
+              <para>Change the origin to be the moon</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the Axes Type to ObjectReferenced</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the moon to be the primary body and the earth to be
+              the secondary body</para>
+            </listitem>
+          </itemizedlist>
+
+
+          <screenshot>
+            <info>
+              <title>Figure: EarthMoonRot Coordinate System Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_LunarTransfer_EarthMoonRotCoordinateSystemObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: EarthMoonRot Coordinate System Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>EarthOGL:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add Luna to the Selected Celestial Objects
+                  field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use a View Scale Factor of 15</para>
+                </listitem>
+
+                <listitem>
+                  <para>Select X as View Up Definition Axis</para>
+                </listitem>
+              </itemizedlist>
+
+
+              <screenshot>
+                <info>
+                  <title>Figure: EarthOGL OpenGL Plot Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_LunarTransfer_EarthOGLOpenGLPlotObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: EarthOGL OpenGL Plot Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>EarthMoonOGL:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add Luna to the Selected Celestial Objects
+                  field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Change the coordinate system in the View Definition
+                  and View Up Definition group boxes to be EarthToMoon</para>
+                </listitem>
+
+                <listitem>
+                  <para>Select Luna as the View Point Reference and View
+                  Direction body from those drop down menus</para>
+                </listitem>
+              </itemizedlist>
+
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Mission Sequence</title>
+
+    <para>This mission calls three targeting sequences to accomplish the
+    mission, which are explained below. The goal of the mission is to vary
+    three unknowns, achieve them, and successfully transfer into a lunar,
+    polar, circular orbit. To achieve a polar orbit we will use what is known
+    as B-Plane Targeting to define how we want the orbit to be oriented.
+    Setting the BdotT variable to zero says our spacecraft will orbit over the
+    lunar poles. If the orbit was to be equatorial we would simply replace
+    BdotT with a BdotR of zero. (Note: If the dot product of B and T vectors
+    is unfamiliar to you, Analytical Graphics Inc., makers of STK, has a good
+    website
+	<link xlink:href="https://www.analyticalgraphics.com/resources/help/stk613/helpSystem/extfile/gator/eq-bplane.htm">explaining</link>
+    it).</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>The Target 1 Sequence solves for three specified variables (in
+        this case RAAN, AOP, and ΔV) by appling the first impulsive burn to
+        get the spacecraft to exit its parking orbit and enter a lunar
+        transfer trajectory. The spacecraft is told to propagate from the
+        parking orbit's apoapsis to initiate the sequence.</para>
+      </listitem>
+
+      <listitem>
+        <para>The Target 2 Sequence calls the values achieved in Target 1 to
+        use them as a good initial guess to converge onto a viable lunar
+        transfer trajectory, which is why we needed a second spacecraft.
+        InitSat uses those achieved values and sets them equal to three new
+        Vary commands. These new commands wish to achieve a lunar altitude and
+        BdotT, calling for a definite type of lunar orbit. Also, in order to
+        make things more realistic, two Propagates are added to slowly
+        progress from one dominant gravitational field into another when
+        approaching the moon.</para>
+      </listitem>
+
+      <listitem>
+        <para>The Target 3 Sequence utilizes the second impulsive burn to slow
+        the spacecraft in its velocity direction to achieve a circular
+        eccentricity, and a polar, lunar orbit. This sequence states occurs at
+        lunar apoapsis.</para>
+      </listitem>
+    </itemizedlist>
+
+    <section>
+      <title>Creating and Modifying Sequences</title>
+
+      <section>
+        <title>Target 1 Sequence</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Target 1:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Vary 1:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the first Variable to Element1 using the TOI
+                    impulsive burn</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Initial Value parameter equal to 3.15
+                    km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Lower (Limit) to be 3.05 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Upper (Limit) to 3.25 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Change the Max Step to 0.01 km/s</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Vary 2:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the second Variable to AOP</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Use an Initial Value of 0°</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Change the Perturbation field to 0.2</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Change the Max Step to 15°</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Vary 3:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the third Variable to RAAN</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Initial Value equal to 320°</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Change the Perturbation to 0.2</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Change the Max Step to 15°</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Maneuver 1: utilize the TOI impulsive burn</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate 1: set the Stopping Condition parameter to
+                earth's apoapsis</para>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 1:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Goal:</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Highlight Sat in Object List menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Select the EarthToMoon coordinate system from
+                        the drop down menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Add X to the Selected Value(s) field</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Change the Value field to be 16000 km</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 2:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Goal:</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Highlight Sat in Object List menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Select the MarsMJ2000Eq coordinate system from
+                        the drop down menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Add Y in to the Selected Value(s) field</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Change the Value field to be 0 km</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 3:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Goal:</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Highlight Sat in Object List menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Select the MarsMJ2000Eq coordinate system from
+                        the drop down menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Add Z in to the Selected Value(s) field</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Change the Value field to be 0 km</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+
+        <screenshot>
+          <info>
+            <title>Figure: Target1 Target Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_LunarTransfer_Target1TargetCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Target1 Target Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Vary1 Vary Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_LunarTransfer_Vary1VaryCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Vary1 Vary Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Maneuver1 Maneuver Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_LunarTransfer_Maneuver1ManeuverCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Maneuver1 Maneuver Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Propagate1 Propagate Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_LEO_Propagate1PropagateCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Propagate1 Propagate Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Achieve1 Achieve Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center" fileref="files/images/Tut_LunarTransfer_Achieve1AchieveCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Achieve1 Achieve Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <itemizedlist>
+          <listitem>
+            <para>Equation 1: set Sat.RAAN = RAAN</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation 2: set Sat.AOP = AOP</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation 3: set Sat = InitSat</para>
+          </listitem>
+        </itemizedlist>
+
+
+        <screenshot>
+          <info>
+            <title>Figure: Equation1 Equation Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_LunarTransfer_Equation1EquationCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Equation1 Equation Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>Target 2 Sequence</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Target 2:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Vary 4:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the first Variable to Element 1 using TOI
+                    impulsive burn</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Initial Value to TOI.Element1</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Vary 5:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the second Variable to AOP</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Initial Value to AOP</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Vary 6:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the third Variable to RAAN</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Initial Value to RAAN</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Maneuver 2: utilize the TOI impulsive burn</para>
+              </listitem>
+
+              <listitem>
+                <para>Set the stopping condition parameter to be 2 days for
+                Sat in Propagate 2</para>
+              </listitem>
+
+              <listitem>
+                <para>Set the stopping condition parameter to be lunar
+                periapsis in Propagate 3</para>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 4:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Goal:</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Use Lunar altitude</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Set the Altitude to 300 km</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Use a Tolerance of 1.0 km</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 5:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Define the Goal as BdotT using the EarthToMoon
+                    coordinate system</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Use a BdotT of 0.0 km</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Use a Tolerance of 1.0 km</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+      </section>
+
+      <section>
+        <title>Target 3 Sequence</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Target 3:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Vary 7:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the Variable to V using LOI impulsive
+                    burn</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Use an Initial Value of - 0.5 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Lower (Limit) to be - 4 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the (Limit) to be 3.14 km/s</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Maneuver 3: utilize the LOI impulsive burn</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate 4: change the Stopping Condition parameter to
+                be lunar apoapsis</para>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 6:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Change the Goal to reach a lunar eccentricity</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Change the eccentricity Value to be equal to
+                    zero</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+      </section>
+    </section>
+  </section>
+
+  <section>
+    <title>Running the Mission</title>
+
+    <para>You have now configured the mission, and it is time to run it and
+    see the results. First, save the changes you've made and then click the
+    green arrow on the tool bar to run the mission. The screen capture below
+    summarizes what you should see after correctly completing this
+    tutorial.</para>
+
+    <screenshot>
+      <info>
+        <title>Figure: Output</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_LunarTransfer_Output.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Output</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+</section>

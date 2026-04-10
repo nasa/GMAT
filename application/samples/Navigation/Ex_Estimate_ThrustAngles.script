@@ -1,0 +1,217 @@
+%
+%   Ex_Estimate_ThrustAngles
+%
+%   Solve for thrust angles (off-pointing) and thrust scale factor (performance
+%   scale error) for a finite burn.
+%
+%   Released: R2022a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat          = UTCGregorian;
+SimSat.Epoch               = '01 Jan 2000 00:00:00.000';
+SimSat.CoordinateSystem    = EarthMJ2000Eq;
+SimSat.DisplayStateType    = Cartesian;
+SimSat.X                   =  576.869
+SimSat.Y                   = -5701.142
+SimSat.Z                   = -4170.593   
+SimSat.VX                  = -1.764507
+SimSat.VY                  = 4.181288
+SimSat.VZ                  =  -5.965789
+SimSat.DryMass             = 850;
+SimSat.Cd                  = 2.2;
+SimSat.Cr                  = 1.8;
+SimSat.DragArea            = 15;
+SimSat.SRPArea             = 15;
+SimSat.Id                  = 'LEOSat';
+SimSat.AddHardware         = {GpsReceiver, GpsAntenna};
+SimSat.Tanks               = {SimPropTank};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat          = UTCGregorian;
+EstSat.Epoch               = '01 Jan 2000 00:00:00.000';
+EstSat.CoordinateSystem    = EarthMJ2000Eq;
+EstSat.DisplayStateType    = Cartesian;
+EstSat.X                   =  576.0
+EstSat.Y                   = -5701.0
+EstSat.Z                   = -4170.0
+EstSat.VX                  = -1.7645 
+EstSat.VY                  = 4.1813
+EstSat.VZ                  =  -5.9658
+EstSat.DryMass             = 850;
+EstSat.Cd                  = 2.2;
+EstSat.Cr                  = 1.8;
+EstSat.DragArea            = 15;
+EstSat.SRPArea             = 15;
+EstSat.Id                  = 'LEOSat';
+EstSat.AddHardware         = {GpsReceiver, GpsAntenna};
+EstSat.Tanks               = {EstPropTank};
+EstSat.SolveFors           = {CartesianState};     
+
+%----------------------------------------
+%---------- Spacecraft hardware
+%----------------------------------------
+
+Create Antenna GpsAntenna;
+Create Receiver GpsReceiver;
+
+GpsReceiver.PrimaryAntenna = GpsAntenna;
+GpsReceiver.Id             = 800;
+GpsReceiver.ErrorModels    = {PosVecModel}
+
+Create ErrorModel PosVecModel;
+ 
+PosVecModel.Type       = 'GPS_PosVec'
+PosVecModel.NoiseSigma = 0.002;
+
+Create ChemicalTank SimPropTank EstPropTank;
+
+SimPropTank.FuelMass      = 200;
+SimPropTank.PressureModel = PressureRegulated;
+
+EstPropTank.FuelMass      = 200;
+EstPropTank.PressureModel = PressureRegulated;
+
+
+%----------------------------------------
+%-------- Tracking data selection
+%----------------------------------------
+
+Create TrackingFileSet SimMeas;
+
+SimMeas.FileName                  = {'Ex_Estimate_ThrustAngles.gmd'};
+SimMeas.AddTrackingConfig         = {{SimSat.GpsReceiver}, 'GPS_PosVec'};
+SimMeas.RampTable                 = {};
+SimMeas.UseLightTime              = True;
+SimMeas.UseRelativityCorrection   = False;
+SimMeas.UseETminusTAI             = True;
+SimMeas.DataFilters               = {};
+
+Create TrackingFileSet EstMeas;
+
+EstMeas.FileName                  = {'Ex_Estimate_ThrustAngles.gmd'};
+EstMeas.AddTrackingConfig         = {{EstSat.GpsReceiver}, 'GPS_PosVec'};
+EstMeas.RampTable                 = {};
+EstMeas.UseLightTime              = True;
+EstMeas.UseRelativityCorrection   = False;
+EstMeas.UseETminusTAI             = True;
+EstMeas.DataFilters               = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+
+FM.CentralBody  = Earth;
+FM.PointMasses  = {Earth};
+FM.Drag         = None;
+FM.SRP          = Off;
+FM.ErrorControl = None;
+
+Create Propagator Prop;
+
+Prop.FM              = FM;
+Prop.Type            = 'RungeKutta89';
+Prop.InitialStepSize = 60;
+Prop.Accuracy        = 1e-13;
+Prop.MinStep         = 0;
+Prop.MaxStep         = 60;
+Prop.MaxStepAttempts = 50;
+
+%
+%   Thrust modeling
+%
+%   Here we introduce in the simulation an off-pointing of (3.0, -2.0) degrees 
+%   and a performance error of -10% (scale factor = 0.90). 
+%
+
+
+Create ThrustSegment ThrustSegmentCold;  
+
+ThrustSegmentCold.ThrustScaleFactor           = 0.9
+ThrustSegmentCold.MassSource                  = {SimPropTank}
+ThrustSegmentCold.ApplyThrustScaleToMassFlow  = False
+ThrustSegmentCold.ThrustAngleConstraintVector = [ 0 0 1 ]
+ThrustSegmentCold.ThrustAngle1                = [  3.0 ];
+ThrustSegmentCold.ThrustAngle2                = [ -2.0 ];
+
+Create ThrustHistoryFile SimThrustHistoryFile
+
+SimThrustHistoryFile.AddThrustSegment = {ThrustSegmentCold}   
+SimThrustHistoryFile.FileName         = '../SupportFiles/Thrust_Sim.thf'
+
+%
+%   For estimation, we assume no errors and try to solve for the 
+%   simulated values.
+%
+
+Create ThrustSegment ThrustSegmentNominal;
+
+ThrustSegmentNominal.ThrustScaleFactor           = 1.0
+ThrustSegmentNominal.ApplyThrustScaleToMassFlow  = False
+ThrustSegmentNominal.MassSource                  = {EstPropTank}
+ThrustSegmentNominal.ThrustAngleConstraintVector = [ 0 0 1 ]
+ThrustSegmentNominal.ThrustAngle1                = [ 0.0 ];
+ThrustSegmentNominal.ThrustAngle2                = [ 0.0 ];
+ThrustSegmentNominal.SolveFors                   = {ThrustAngle1, ThrustAngle2, ThrustScaleFactor};  
+
+Create ThrustHistoryFile EstThrustHistoryFile
+
+EstThrustHistoryFile.AddThrustSegment = {ThrustSegmentNominal}  
+EstThrustHistoryFile.FileName         = '../SupportFiles/Thrust_Est.thf'
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator Sim;
+
+Sim.AddData             = {SimMeas};
+Sim.EpochFormat         = 'UTCGregorian';
+Sim.InitialEpoch        = '01 Jan 2000 00:00:00.000';
+Sim.FinalEpoch          = '02 Jan 2000 00:00:00.000';
+Sim.MeasurementTimeStep = 60;
+Sim.Propagator          = Prop;
+Sim.AddNoise            = On;
+
+ 
+%----------------------------------------
+%---------- Configure BLS
+%----------------------------------------
+
+Create BatchEstimator BLS
+
+BLS.ShowProgress               = True;
+BLS.ShowAllResiduals           = True
+BLS.Measurements               = {EstMeas};
+BLS.RelativeTol                = 0.005
+BLS.OLSEMultiplicativeConstant = 3;
+BLS.OLSEAdditiveConstant       = 0;
+BLS.MaximumIterations          = 10;
+BLS.Propagator                 = Prop;
+BLS.OLSEInitialRMSSigma        = 10000
+BLS.UseInitialCovariance       = False
+BLS.OLSEUseRMSP                = False
+BLS.ReportFile                 = 'Ex_Estimate_ThrustAngles.txt';
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence
+
+BeginFileThrust SimThrustHistoryFile(SimSat);
+RunSimulator Sim;
+EndFileThrust SimThrustHistoryFile(SimSat);
+
+BeginFileThrust EstThrustHistoryFile(EstSat);
+RunEstimator BLS;
+EndFileThrust EstThrustHistoryFile(EstSat);

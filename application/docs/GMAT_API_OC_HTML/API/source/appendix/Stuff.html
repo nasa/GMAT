@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>GMAT Code Updates &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GMAT Code Updates</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="gmat-code-updates">
+<h1>GMAT Code Updates<a class="headerlink" href="#gmat-code-updates" title="Link to this heading">¶</a></h1>
+<p>The GMAT source code was written to be fast and to meet the needs of analysts
+modeling spacecraft guidance, navigation and control.  The code includes
+functions used to set up mission simulations through a set of interfaces that
+require that users know the underlying data structures in the code.  API users
+do not necessarily have that knowledge, nor do they have a graphical user interface
+to guide them through setup for the components accessed using the API.  Several
+code elements presented here are designed for integration into the base class for user
+components to meet these needs, adding functionality to the GmatBase class used
+for simulation components in GMAT, to facilitate API usage.</p>
+<section id="setfield-and-getfield">
+<h2>SetField() and GetField()<a class="headerlink" href="#setfield-and-getfield" title="Link to this heading">¶</a></h2>
+<p>Parameter settings on GMAT objects are made through type specific methods with
+names like SetStringParameter(), SetRealParameter(), etc.  API users can use
+those methods.  A second set of methods, SetField(), will be added to the code
+to adapt user objects to less strongly typed interfaces.  The SetField() methods
+are overloaded to adapt to multiple types of input data.  The method checks the
+type for the field that being set, and sets it accordingly.</p>
+<span id="fieldsetters"></span><table class="docutils align-default" id="id1">
+<caption><span class="caption-text">The Field Setting Methods, with Examples for a Spacecraft Named sat</span><a class="headerlink" href="#id1" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 25.0%" />
+<col style="width: 45.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Method Signature</p></th>
+<th class="head"><p>Example</p></th>
+<th class="head"><p>Parameter Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>bool SetField(name, value)</p></td>
+<td><p>sat.SetField(“X”, 7100.0)</p></td>
+<td><p>name is the field name used in GMAT scripting</p>
+<p>value is the value that is set</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>bool SetField(id, value)</p></td>
+<td><p><em>% Spacecraft.X has ID 13</em></p>
+<p>sat.SetField(13, 7100.0)</p>
+</td>
+<td><p>id is the id of the field in GMAT’s object</p>
+<p>value is the value that is set</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The SetField() method takes either a field name or an integer ID value to
+identify the field to be set, and a string, integer, real number, or Boolean
+value as the new field setting.  On success, the call to SetField() returns true.
+If the value passed to the SetField() method is incompatible with the data
+structure that is being set, or if the field is not a supported field on the
+object, the method returns a false boolean value.</p>
+<p>Parameter settings on GMAT objects are accessed through type specific methods with
+names like GetStringParameter(), GetRealParameter(), etc.  API users can use
+those methods.  A second set of methods, GetField(), have been added to the code
+to adapt user objects to less strongly typed interfaces.  The GetField() methods
+return a string containing the value of the field.  The API users then convert
+that string into the form needed for their code.</p>
+<span id="fieldaccessors"></span><table class="docutils align-default" id="id2">
+<caption><span class="caption-text">The Field Access Methods, with Examples for a Spacecraft Named sat</span><a class="headerlink" href="#id2" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 30.0%" />
+<col style="width: 45.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Method Signature</p></th>
+<th class="head"><p>Example</p></th>
+<th class="head"><p>Parameter Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>string GetField(name)</p></td>
+<td><p>sat.GetField(“X”)</p></td>
+<td><p><em>name</em> is the field name used in GMAT scripting</p></td>
+</tr>
+<tr class="row-odd"><td><p>string GetField(id)</p></td>
+<td><p>sat.GetField(13)</p></td>
+<td><p><em>id</em> is the ID of the field in GMAT’s object</p></td>
+</tr>
+<tr class="row-even"><td><p>real GetNumber(name)</p></td>
+<td><p>sat.GetNumber(“X”)</p></td>
+<td><p><em>name</em> is the field name used in GMAT scripting</p></td>
+</tr>
+<tr class="row-odd"><td><p>real GetNumber(id)</p></td>
+<td><p>sat.GetNumber(13)</p></td>
+<td><p><em>id</em> is the ID of the field in GMAT’s object</p></td>
+</tr>
+</tbody>
+</table>
+<p>The GetField() method takes either a field name or an integer ID value to
+identify the field to be retrieved.  On success, the current field value is
+returned in a string.  If the field is not a supported field on the object, the
+method returns an empty string.</p>
+<p>The GetNumber() method returns numerical data as a real number rather than as a
+string.  If the field is not a numerical field on the object, the method reports
+an empty exception that identifies the type of the field.</p>
+</section>
+<section id="object-help">
+<h2>Object help<a class="headerlink" href="#object-help" title="Link to this heading">¶</a></h2>
+<p>Objects created in the API support a help function that is used to retrieve
+information about the settings available for the object, along with other
+information provided in the object’s class.</p>
+<p>API users retrieve help for created objects by calling the Help() method on the
+object.  For example, a call to the Help() method for an ImpulsiveBurn object,
+IB, returns the following data <em>(Note: this is a mock-up of the data returned)</em>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">IB</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">ImpulsiveBurn</span><span class="p">(</span><span class="s2">&quot;Impulse1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">IB</span><span class="o">.</span><span class="n">Help</span><span class="p">())</span>
+
+<span class="go">Impulse1 is an ImpulsiveBurn object with 9 Fields:</span>
+
+<span class="go">   CoordinateSystem     Type: Object   Value: Local</span>
+<span class="go">   Origin               Type: Object   Value: Earth;</span>
+<span class="go">   Axes                 Type: Enum     Value: VNB;</span>
+<span class="go">   Element1             Type: Real     Value: 25;</span>
+<span class="go">   Element2             Type: Real     Value: 0;</span>
+<span class="go">   Element3             Type: Real     Value: 0;</span>
+<span class="go">   DecrementMass        Type: Boolean  Value: false;</span>
+<span class="go">   Isp                  Type: Real     Value: 300;</span>
+<span class="go">   GravitationalAccel   Type: Real     Value: 9.81;</span>
+</pre></div>
+</div>
+<p>GMAT programmers may provide additional help for specific objects on a case by
+case basis by overriding the Help() method.  The API Help command calls into the
+object’s Help() method when an object is passed to it, producing the same
+output.  In other words, the output from IB.Help() is the same as the output
+from gmat.Help(IB).</p>
+</section>
+</section>
+<section id="api-support-functions">
+<h1>API Support Functions<a class="headerlink" href="#api-support-functions" title="Link to this heading">¶</a></h1>
+<p>API users can work directly with GMAT objects, setting interobject
+connections and initializing objects to prepare them for use.  However, much of
+the GMAT object model is built on composite objects, consisting of a core
+component that uses other GMAT components to jointly complete a task.  In many
+cases, it is easy to miss making connections that are made automatically in the
+GMAT engine, leading to confusion about the component usage.  The API includes
+helper functions that ease the burden of GMAT internal connections for users of
+typical components.</p>
+<p><code class="xref std std-numref docutils literal notranslate"><span class="pre">APIHelpFunctions</span></code> provides a list of functions supplied as part of the
+GMAT API that help work with GMAT components without the need for detailed
+understanding of the GMAT code base.  These functions work with the GMAT
+engine, hiding the engine functionality from the user while providing services
+that the user would otherwise need to code by hand with objects built with the
+API.  Each function is described briefly below.</p>
+<span id="apihelpfunctions"></span><table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Helper Functions in the GMAT API</span><a class="headerlink" href="#id3" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 27.0%" />
+<col style="width: 53.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Function</p></th>
+<th class="head"><p>Options</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Initialize()</p></td>
+<td></td>
+<td><p>Initializes GMAT objects and establishes object to object
+connections.  This command is reentrant.  Subsequent calls
+reconnect objects and continue the process of preparing
+the system for use.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Status()</p></td>
+<td></td>
+<td><p>Returns a string reporting any known configuration issues.
+Users call this function if the Initialize() call reported
+an issue.</p></td>
+</tr>
+<tr class="row-even"><td><p>Create()</p></td>
+<td><p>ObjectType,
+ObjectName</p></td>
+<td><p>Creates an object of the input type, with the input name.
+The created object is then managed inside of the API.</p></td>
+</tr>
+<tr class="row-odd"><td><p>ShowObjects()</p></td>
+<td></td>
+<td><p>Lists all of the named objects that exist in the current
+run.</p></td>
+</tr>
+<tr class="row-even"><td><p>ShowClasses()</p></td>
+<td><p>Category</p></td>
+<td><p>Lists all of the creatable object types of the selected
+category.  Example: ShowClasses(“Propagator”) lists all
+of the propagators available for creation.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Clear()</p></td>
+<td><p>ObjectName</p></td>
+<td><p>Clears the GMAT engine by deleting all of the user created
+components managed in the API.</p>
+<p>Selecting an object by name in the call to Clear()
+results in deletion of that objects, leaving the other
+objects available for use.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p>Help()</p></td>
+<td><p>Topic</p></td>
+<td><p>Shows the API help.  Top level help is displayed if no
+topic is selected.  The top level help includes a list of
+topics for the system.  If the user enters a topic, the
+corresponding help is displayed.</p></td>
+</tr>
+</tbody>
+</table>
+<p id="initialization"><strong>Initialize</strong>  The Initialize() function is used to initialize GMAT objects.
+Each call to Initialize() generates a pass through the GMAT objects constructed
+using the Create() command, setting the inter-object connections that can be set
+and tracking any issues that prevent component use.  The function returns true
+if the initialization succeeded, and false, along with a list of encountered
+issues, if there were problems.</p>
+<p><strong>Status</strong> The Status() method returns a list of issues found when the
+Initialize() method was called.  If there are no known issues, the call to
+Status reports the number of managed objects in the current run.</p>
+<p><strong>Create</strong>  The Create() function is used to create objects that are managed
+inside of the GMAT engine running under the API, including components exposed
+to the API from plugin libraries.  All named objects created using the Create()
+method are built through the GMAT Moderator and passed to the GMAT
+ConfigurationManager singleton.  These actions are invisible to the API user,
+and provide the mechanism used to manage objects in the API.</p>
+<p><strong>ShowObjects</strong>  The ShowObjects() function is used to show a list of all
+objects managed in the API.  Note that objects created through direct calls to a
+class’s constructor rather than through the Create() command are not managed in
+the API, and will not be part of the returned list.</p>
+<p><strong>ShowClasses</strong>  The ShowClasses() function is used to list all of the available
+classes of objects available for creation is an input category.</p>
+<p><strong>Clear</strong>  The Clear() function is used to clear the configuration of
+created objects.  When an object name is included as a parameter in the
+function call, all other objects will remain available for use.</p>
+<p><strong>Help</strong>  The Help() function is used to get help from inside of the API.</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">GMAT Code Updates</a><ul>
+<li><a class="reference internal" href="#setfield-and-getfield">SetField() and GetField()</a></li>
+<li><a class="reference internal" href="#object-help">Object help</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-support-functions">API Support Functions</a></li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../_sources/API/source/appendix/Stuff.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GMAT Code Updates</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

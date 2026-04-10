@@ -1,0 +1,96 @@
+%
+%  Ex_STKEphemPropagation
+%
+%  Propagate an orbit from a pregenerated STK ephemeris file.
+%
+%  Released: R2017a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft STKSat;
+
+STKSat.DateFormat    = UTCGregorian;
+STKSat.Epoch         = '01 Jan 2000 12:00:00.000';
+STKSat.EphemerisName = '../data/vehicle/ephem/stk/SampleSTKEphem.e';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator STKProp;
+
+STKProp.Type        = STK;
+STKProp.StepSize    = 60;
+STKProp.CentralBody = Earth;
+STKProp.EpochFormat = 'A1ModJulian';
+STKProp.StartEpoch  = 'FromSpacecraft';
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_OrbitView1;
+
+OFI_OrbitView1.SolverIterations = Current;
+OFI_OrbitView1.UpperLeft        = [ 0 0 ];
+OFI_OrbitView1.Size             = [ 0 0 ];
+OFI_OrbitView1.RelativeZOrder   = 0;
+OFI_OrbitView1.Maximized        = false;
+
+OFI_OrbitView1.Add              = {STKSat, Earth};
+OFI_OrbitView1.View             = {Orbit_View};
+
+OFI_OrbitView1.DrawObject       = [ true true ];
+OFI_OrbitView1.DrawXYPlane      = [ false false ];
+OFI_OrbitView1.DrawLabel        = [ true true ];
+OFI_OrbitView1.DrawGrid         = [ false false ];
+
+OFI_OrbitView1.Axes             = On;
+OFI_OrbitView1.XYPlane          = On;
+OFI_OrbitView1.EclipticPlane    = Off;
+OFI_OrbitView1.EnableStars      = On;
+OFI_OrbitView1.StarCount        = 40000;
+OFI_OrbitView1.ShowPlot         = true;
+
+
+Create OpenFramesView Orbit_View;
+
+Orbit_View.ViewFrame            = CoordinateSystem;
+Orbit_View.SetDefaultLocation   = On;
+Orbit_View.SetCurrentLocation   = Off;
+							    
+Orbit_View.DefaultEye           = [ 0 0 30000 ];
+Orbit_View.DefaultCenter        = [ 0 0 0 ];
+Orbit_View.DefaultUp            = [ 1 0 0 ];  
+
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+
+Create Array initialState[6,1] finalState[6,1];
+
+%----------------------------------------
+% Miscellaneous variables.
+%----------------------------------------
+
+Create String initialEpoch finalEpoch;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+[initialEpoch, initialState, finalEpoch, finalState] = GetEphemStates('STK', STKSat, 'UTCGregorian', EarthMJ2000Eq);
+
+STKSat.UTCGregorian = initialEpoch;
+
+While STKSat.ElapsedDays <= 1
+      
+   Propagate STKProp(STKSat);
+
+EndWhile;

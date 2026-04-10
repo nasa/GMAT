@@ -1,0 +1,63 @@
+% Default configuration script for the GMAT-ODTBX interface
+
+% General Mission Analysis Tool(GMAT) Script
+% Created: 2011-05-10 02:13:14
+
+% GMAT: General Mission Analysis Tool
+%
+% Copyright (c) 2002-2026 United States Government as represented by the
+% Administrator of the National Aeronautics and Space Administration.
+% All Rights Reserved.
+%
+% Licensed under the Apache License, Version 2.0 (the "License"); 
+% You may not use this file except in compliance with the License. 
+% You may obtain a copy of the License at:
+% http://www.apache.org/licenses/LICENSE-2.0 
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
+% express or implied.   See the License for the specific language
+% governing permissions and limitations under the License.
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft DefaultSC;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+GMAT DefaultProp_ForceModel.CentralBody = Earth;
+GMAT DefaultProp_ForceModel.PointMasses = {Earth, Jupiter};
+GMAT DefaultProp_ForceModel.Drag = None;
+GMAT DefaultProp_ForceModel.SRP = Off;
+
+Create ForceModel fm;
+GMAT fm.CentralBody = Earth;
+GMAT fm.PointMasses = {Earth, Sun, Luna};
+GMAT fm.Drag = None;
+GMAT fm.SRP = On;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+GMAT DefaultProp.FM = DefaultProp_ForceModel;
+GMAT DefaultProp.Type = RungeKutta89;
+GMAT DefaultProp.InitialStepSize = 60;
+
+Create Propagator Prop;
+GMAT Prop.FM = fm;
+GMAT Prop.Type = RungeKutta89;
+GMAT Prop.InitialStepSize = 60;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+%PrepareMissionSequence;
+Propagate DefaultProp(DefaultSC, 'AMatrix');
+Propagate Prop(DefaultSC, 'AMatrix');

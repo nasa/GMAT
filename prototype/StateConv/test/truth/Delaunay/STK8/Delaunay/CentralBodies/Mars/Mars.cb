@@ -1,0 +1,101 @@
+
+BEGIN CentralBody
+
+    Name            Mars
+    
+      FuncCbInit      MarsInit
+	  FuncCbFree      PlanetFree
+	  FuncCbLoad      PlanetLoad
+	  FuncCbSave      PlanetSave
+	  FuncCbCopy      PlanetCopy
+      FuncCbSet      PlanetSet
+
+      Prefix          Planeto
+
+      ShortDescription    Planet Mars
+      Description         Planet Mars
+
+      Type            Planet
+
+BEGIN          AstroDefinition
+
+# value from GMM2B.grv
+#     Gm                  4.28283719012840e+13
+      Gm                  4.28283142580670e+13
+      
+# Because Phobos and Deimos are so small compared to Mars,
+# it is not worth distinguishing between planetary and system Gm
+# values.  By not setting SystemGm, the value used for the System
+# will come from the Gm value of Mars above.
+#
+# However, if you wish to include a specific value, modify and uncomment the line below
+#     SystemGm            4.28283719012840e+13
+      
+      RefDistance         3.39700000000000e+006
+      MinRadius           3.37500000000000e+006
+      MinAltitude        -8.00000000000000e+003
+      MaxAltitude         2.60000000000000e+004
+
+      GravityModel		  GMM2B
+      
+# To reset the values to those used previous to STK 6.2,
+# uncomment the following lines
+#	  Gm				  4.28282868534000e+013
+#	  GravityModel		  ZonalsToJ4
+
+      Shape      OblateSpheroid
+      MajorAxis      3.39700000000000e+006
+      MinorAxis      3.37500000000000e+006
+
+      ParentName          Sun
+
+        PathGenerator       Astrogator
+        PathGenerator       GreatArc
+        PathGenerator       J2Perturbation
+        PathGenerator       J4Perturbation
+        PathGenerator       Rocket
+        PathGenerator       StkExternal
+        PathGenerator       TwoBody
+	  PathGenerator	    SimpleAscent
+	  PathGenerator       SPICE
+	  PathGenerator       HoldCBIPosition
+	  PathGenerator       HoldCBFPosition
+	  PathGenerator	    HPOP
+
+    CoordSystem Fixed               0 0 0
+    CoordSystem Inertial            1 1 0 1 2451545.0
+    CoordSystem J2000               21 1 0 1 2451545.0
+
+END          AstroDefinition
+
+BEGIN 	SpinData
+
+	RotationDefinitionFile		MarsAttitude2000.rot
+
+END 			SpinData
+
+BEGIN               EphemerisData
+
+# NOTE: currently the ephemeris source is set to use the JPL DE 405 file
+#		which actually locates the barycenter, not the planet center
+#
+#		To instead use SPICE, comment out the following line and uncomment the JplSpice line
+
+	EphemerisSource              JplDE
+#	EphemerisSource              JplSpice
+
+# NOTE: if you are using SPICE, you may choose to use the planet center (499) or barycenter (4)
+
+	JplSpiceId                   499
+#	JplSpiceId                   4
+	ApplyTDTtoTDBCorrectionForDE     No
+
+END					EphemerisData
+
+BEGIN	Mars
+
+END     Mars
+
+    ReadOnly            Yes
+
+END CentralBody

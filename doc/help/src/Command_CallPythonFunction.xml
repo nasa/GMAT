@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="CallPythonFunction"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>CallPythonFunction</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>CallPythonFunction</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Commands</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>CallPythonFunction</refname>
+
+    <refpurpose>Call a Python function</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Script Syntax</title>
+
+    <synopsis>
+<literal>Python.</literal><replaceable>PythonModule</replaceable><literal>.</literal><replaceable>PythonFunction</replaceable><literal>()</literal>
+<literal>Python.</literal><replaceable>PythonModule</replaceable><literal>.</literal><replaceable>PythonFunction</replaceable><literal>(</literal><replaceable>input_argument</replaceable>[<literal>,</literal> <replaceable>input_argument</replaceable>]...<literal>)</literal>
+<literal>[</literal><replaceable>output_argument</replaceable>[<literal>,</literal> <replaceable>output_argument</replaceable>]...<literal>]</literal> <literal>=</literal> <literal>Python.</literal><replaceable>PythonModule</replaceable><literal>.</literal><replaceable>PythonFunction</replaceable>
+<literal>[</literal><replaceable>output_argument</replaceable>[<literal>,</literal> <replaceable>output_argument</replaceable>]...<literal>]</literal> <literal>=</literal> <literal>Python.</literal><replaceable>PythonModule</replaceable><literal>.</literal><replaceable>PythonFunction</replaceable><literal>(</literal><replaceable>input_argument</replaceable>[<literal>,</literal> <replaceable>input_argument</replaceable>]...<literal>)</literal></synopsis>
+  </refsynopsisdiv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>GMAT provides a special command that allows you to call a function
+    written in the Python language. In the GUI, this is the 
+    <guilabel>CallPythonFunction</guilabel> command.</para>
+
+    <para>In the syntax description, the preface <guilabel>Python</guilabel> is 
+    a keyword used to tell GMAT that the scripting is calling into the Python 
+    system.  The <guilabel>PythonModule</guilabel> identifies a Python file, 
+    with the name PythonModule.py, containing the function that is to be called.  
+     <guilabel>PythonFunction</guilabel> is the function that is called inside 
+     of that file.  Arguments can be passed into and returned from the
+    function, following the guidelines described below. See <xref
+    linkend="CallPythonFunction_Remarks" xrefstyle="select:title"/> for
+    details.</para>
+
+    <para>When a Python function is called, GMAT loads the Python engine in the 
+    background. This functionality requires that a compatible installation of 
+    Python be properly installed and configured on your system.  Once GMAT has
+    loaded the engine, it remains in memory until GMAT is closed.</para>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Command_CallPythonFunction_GUI.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>The <guilabel>CallPythonFunction</guilabel> GUI provides a single 
+    text entry field used to enter the Python function as a line of script.</para>
+
+    <para>The syntax for the CallPythonFunction is as described in the Script 
+    Syntax section above.  GMAT's Python interface accepts Variables, Strings, 
+    numerical object parameters, and one dimensional arrays as input parameters.  
+    It returns Variables, Arrays, and Strings, either as a single value or as a collection of 
+    values.  The interface calls into Python scripts, identified by the 
+    PythonModule field, that define the function to be accessed.  The receiving 
+    function is responsible for validating the inputs, based on the type 
+    conversions described in the Remarks below.</para>
+
+    <para>When the user accepts the entries on the panel, GMAT does not perform 
+    any validation of input or output arguments. This validation is performed 
+    when the mission is run, after Python has been started.</para>
+  </refsection>
+
+  <refsection xml:id="CallPythonFunction_Remarks">
+    <title>Remarks</title>
+
+    <para>The input arguments (<replaceable>input_argument</replaceable>
+    values in the syntax description) can be any of the following types:
+    <itemizedlist>
+        <listitem>
+          <para>resource parameter of real number type (e.g.
+          <guilabel><replaceable>Spacecraft</replaceable>.X</guilabel>)</para>
+        </listitem>
+
+        <listitem>
+          <para>resource parameter of string type (e.g.
+          <guilabel><replaceable>Spacecraft</replaceable>.UTCGregorian</guilabel>)</para>
+        </listitem>
+
+        <listitem>
+          <para>One dimensional <guilabel>Array</guilabel>, <guilabel>String</guilabel>, or
+          <guilabel>Variable</guilabel> resource</para>
+        </listitem>
+
+        <listitem>
+          <para><guilabel>Array</guilabel> resource element</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>The output arguments (<replaceable>output_argument</replaceable>
+    values in the syntax description) can be any of the following types:
+    <itemizedlist>
+
+        <listitem>
+          <para><guilabel>Array</guilabel>, <guilabel>String</guilabel>, or
+          <guilabel>Variable</guilabel> resource</para>
+        </listitem>
+
+      </itemizedlist></para>
+
+    <para>Data type conversion is performed for the following data types when
+    values are passed between Python and GMAT. When data is passed from GMAT
+    to Python as input arguments, the following conversions occur.</para>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth=".5*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>GMAT</entry>
+            <entry>Python</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><para>real number (e.g. <guilabel>Spacecraft.X</guilabel>,
+            <guilabel>Variable</guilabel>, <guilabel>Array</guilabel> element)
+            </para></entry>
+
+            <entry><para>float</para></entry>
+          </row>
+
+          <row>
+            <entry><para>string (e.g.
+            <guilabel><replaceable>Spacecraft</replaceable>.UTCGregorian</guilabel>,
+            <guilabel>String</guilabel> resource) </para></entry>
+
+            <entry><para>str</para></entry>
+          </row>
+
+          <row>
+            <entry><para><guilabel>Array</guilabel> resource </para></entry>
+            <entry><para>memoryview</para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+
+    <para>When data is passed from Python to GMAT as output arguments, the
+    following conversions occur.</para>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth=".5*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Python</entry>
+
+            <entry>GMAT</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><para>str</para></entry>
+            <entry><para>String</para></entry>
+          </row>
+
+          <row>
+            <entry><para>float</para></entry>
+            <entry><para>real number</para></entry>
+          </row>
+
+          <row>
+            <entry><para>float array </para></entry>
+            <entry><para>Array resource</para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Call a simple Python function:</para>
+
+      <programlisting><code>Create Variable x y
+
+BeginMissionSequence
+
+x = 1
+y = Python.MyMath.sinh(x)</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Call a multiple input and output Python function:</para>
+
+      <programlisting><code>Create Spacecraft aSat
+Create ImpulsiveBurn aBurn
+Create Propagator aProp
+
+Create Variable a_target mu dv1 dv2
+mu = 398600.4415
+
+BeginMissionSequence
+
+% calculate burns for circular Hohmann transfer (example)
+[dv1, dv2] = Python.MyOrbitFunctions.CalcHohmann(aSat.SMA, a_target, mu)
+
+% perform first maneuver
+aBurn.Element1 = dv1
+Maneuver aBurn(aSat)
+
+% propagate to apoapsis
+Propagate aProp(aSat) {aSat.Apoapsis}
+
+% perform second burn
+aBurn.Element1 = dv2
+Maneuver aBurn(aSat)</code>
+    </programlisting>
+    </informalexample>
+
+  </refsection>
+</refentry>

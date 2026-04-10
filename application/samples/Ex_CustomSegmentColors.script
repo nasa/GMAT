@@ -1,0 +1,107 @@
+%
+%  Ex_CustomSegmentColors
+%
+%  Specify different colors for different trajectory segments in 3-D views.
+%
+%  Released: R2014a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TOI;
+
+TOI.CoordinateSystem = Local;
+TOI.Origin           = Earth;
+TOI.Axes             = VNB;
+
+
+Create ImpulsiveBurn GOI;
+
+GOI.CoordinateSystem = Local;
+GOI.Origin           = Earth;
+GOI.Axes             = VNB;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View  
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.SolverIterations     = Current;
+OFI_EarthView.Add                  = {Earth, DefaultSC};
+OFI_EarthView.View                 = {Earth_View};
+
+OFI_EarthView.CoordinateSystem     = EarthMJ2000Eq;
+OFI_EarthView.DrawObject           = [ true true];
+OFI_EarthView.DrawXYPlane          = [ false false ];
+OFI_EarthView.DrawLabel            = [ true true ];
+OFI_EarthView.DrawGrid             = [ false false ];
+
+OFI_EarthView.Axes                 = On;
+OFI_EarthView.XYPlane              = On;
+OFI_EarthView.EclipticPlane        = Off;
+OFI_EarthView.EnableStars          = On;
+OFI_EarthView.StarCount            = 40000;
+OFI_EarthView.ShowPlot             = true;
+
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame                = CoordinateSystem;
+Earth_View.SetDefaultLocation       = On;
+Earth_View.SetCurrentLocation       = Off;
+    
+Earth_View.DefaultEye               = [ 120000 0 0  ];
+Earth_View.DefaultCenter            = [ 0 0 0 ];
+Earth_View.DefaultUp                = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+DefaultSC.OrbitColor = 'Green'
+Propagate 'Prop to Perigee' DefaultProp(DefaultSC) {DefaultSC.Periapsis};
+
+% Burn in the velocity direction to reach an alternate Apoapsis point
+Target 'Raise and Circularize' DC {SolveMode = Solve, ExitMode = DiscardAndContinue};
+   Vary 'Vary TOI.V' DC(TOI.Element1 = 0.5, {Perturbation = 0.0001, Lower = 0, Upper = 3.14159, MaxStep = 0.2});
+   Maneuver 'Apply TOI' TOI(DefaultSC);
+   Propagate 'Prop to Apogee' DefaultProp(DefaultSC) {DefaultSC.Apoapsis,OrbitColor = [255 0 0]};
+   Achieve 'Achieve RMAG' DC(DefaultSC.Earth.RMAG = 42165, {Tolerance = 0.1});
+   Vary 'Vary GOI.V' DC(GOI.Element1 = 0.5, {Perturbation = 0.0001, Lower = 0, Upper = 3.14159, MaxStep = 0.2});
+   Maneuver 'Apply GOI' GOI(DefaultSC);
+   Achieve 'Achieve ECC' DC(DefaultSC.ECC = 0, {Tolerance = 0.1});
+EndTarget;  % For targeter DC
+DefaultSC.OrbitColor = 'Blue'
+Propagate 'Prop 1 Day' DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 86400};

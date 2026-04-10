@@ -1,0 +1,211 @@
+%
+%  Script: Tut_Orbit_Estimation_using_DSN_Range_and_Doppler_Data
+%
+%  Script for the "Orbit Estimation using DSN Range and Doppler Data" Users 
+%  Guide tutorial.
+%
+
+
+
+%-----------------------------------------------------------------------------------------
+%%  Create and configure the spacecraft, spacecraft transponder, and related parameters 
+%-----------------------------------------------------------------------------------------
+
+%  Create the Sun-centered J2000 frame.
+
+Create CoordinateSystem SunMJ2000Eq;
+
+SunMJ2000Eq.Origin = Sun;
+SunMJ2000Eq.Axes   = MJ2000Eq;
+
+%----------------------------------------------------------
+%  Specify the satellite orbit and the satellite parameters
+%----------------------------------------------------------
+Create Spacecraft Sat;
+
+Sat.DateFormat       = UTCGregorian;
+Sat.CoordinateSystem = SunMJ2000Eq;
+Sat.DisplayStateType = Cartesian;
+Sat.Epoch            = 19 Aug 2015 00:00:00.000;
+Sat.X                = -126544963
+Sat.Y                = 61978518 
+Sat.Z                = 24133225 
+Sat.VX               = -13.789
+Sat.VY               = -24.673
+Sat.VZ               = -10.662
+Sat.Id               = 11111;
+Sat.AddHardware      = {HGA, SatTransponder};
+Sat.SolveFors        = {CartesianState};
+
+%----------------------------------------------------------
+%   Spacecraft electronics. 
+%----------------------------------------------------------
+Create Antenna HGA;
+Create Transponder SatTransponder;
+
+SatTransponder.PrimaryAntenna  = HGA;
+SatTransponder.HardwareDelay   = 1e-06;     %in seconds
+SatTransponder.TurnAroundRatio = '880/749';
+
+%-----------------------------------------------------------------------------------------
+%%      Create and configure the Ground Station and related parameters
+%-----------------------------------------------------------------------------------------
+
+%  Ground Station electronics. 
+
+Create Antenna DSNAntenna GDSAntenna MADAntenna;
+Create Transmitter DSNTransmitter GDSTransmitter MADTransmitter;
+Create Receiver DSNReceiver GDSReceiver MADReceiver;
+
+DSNTransmitter.Frequency      = 7200;   %MHz.
+DSNTransmitter.PrimaryAntenna = DSNAntenna;
+DSNReceiver.PrimaryAntenna    = DSNAntenna;
+
+GDSTransmitter.Frequency      = 7200;   %MHz.
+GDSTransmitter.PrimaryAntenna = GDSAntenna;
+GDSReceiver.PrimaryAntenna    = GDSAntenna;
+
+MADTransmitter.Frequency      = 7200;   %MHz.
+MADTransmitter.PrimaryAntenna = MADAntenna;
+MADReceiver.PrimaryAntenna    = MADAntenna;
+
+
+%   Create Ground station and associated error models
+
+Create GroundStation CAN;
+
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514
+CAN.Location2             = 2682.281745
+CAN.Location3             =  -3674.570392
+CAN.Id                    = 22222;
+CAN.AddHardware           = {DSNTransmitter, DSNAntenna, DSNReceiver};
+CAN.MinimumElevationAngle = 7.0;
+CAN.IonosphereModel       = 'IRI2007';
+CAN.TroposphereModel      = 'HopfieldSaastamoinen';
+
+Create GroundStation GDS; 
+ 
+GDS.CentralBody           = Earth;
+GDS.StateType             = Cartesian;
+GDS.HorizonReference      = Ellipsoid;
+GDS.Location1             = -2353.621251;
+GDS.Location2             = -4641.341542;
+GDS.Location3             = 3677.052370;
+GDS.Id                    = '33333';
+GDS.AddHardware           = {GDSTransmitter, GDSAntenna, GDSReceiver};
+GDS.MinimumElevationAngle = 7.0;
+GDS.IonosphereModel       = 'IRI2007';
+GDS.TroposphereModel      = 'HopfieldSaastamoinen';
+
+Create GroundStation MAD;  
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4849.519988;
+MAD.Location2             = -360.641653;
+MAD.Location3             = 4114.504590;
+MAD.Id                    = '44444';
+MAD.AddHardware           = {MADTransmitter, MADAntenna, MADReceiver};
+MAD.MinimumElevationAngle = 7.0;
+MAD.IonosphereModel       = 'IRI2007';
+MAD.TroposphereModel      = 'HopfieldSaastamoinen';
+
+
+Create ErrorModel DSNrange;
+
+DSNrange.Type         = 'DSN_SeqRange';
+DSNrange.NoiseSigma   = 10.63;
+DSNrange.Bias         = 0.0;
+
+
+Create ErrorModel DSNdoppler;
+
+DSNdoppler.Type       = 'DSN_TCP';
+DSNdoppler.NoiseSigma = 0.0282;
+DSNdoppler.Bias       = 0.0;
+
+CAN.ErrorModels = {DSNrange, DSNdoppler};
+GDS.ErrorModels = {DSNrange, DSNdoppler};
+MAD.ErrorModels = {DSNrange, DSNdoppler};
+
+%-----------------------------------------------------------------------------------------
+%%  Define the types of measurements to be simulated
+%-----------------------------------------------------------------------------------------
+
+Create TrackingFileSet DSNsimData;
+
+DSNsimData.AddTrackingConfig = {{CAN, Sat, CAN}, 'DSN_SeqRange'};   
+DSNsimData.AddTrackingConfig = {{CAN, Sat, CAN},'DSN_TCP'}; 
+DSNsimData.AddTrackingConfig = {{GDS, Sat, GDS}, 'DSN_SeqRange'};   
+DSNsimData.AddTrackingConfig = {{GDS, Sat, GDS},'DSN_TCP'};
+DSNsimData.AddTrackingConfig = {{MAD, Sat, MAD}, 'DSN_SeqRange'};   
+DSNsimData.AddTrackingConfig = {{MAD, Sat, MAD},'DSN_TCP'};
+
+                   
+DSNsimData.FileName                 = {'../samples/SupportFiles/Simulate DSN Range and Doppler Data 3 weeks.gmd'};
+DSNsimData.RampTable                = {'../samples/SupportFiles/Simulate DSN Range and Doppler Data 3 weeks.rmp'};
+DSNsimData.UseLightTime             = true;
+DSNsimData.UseRelativityCorrection  = true;
+DSNsimData.UseETminusTAI            = true;
+
+%-----------------------------------------------------------------------------------------
+%%   Create and configure Force model and propagator.
+%-----------------------------------------------------------------------------------------
+
+Create ForceModel Fm;
+Create Propagator Prop;
+
+Fm.CentralBody              = Sun;
+Fm.PointMasses              = {Sun, Earth, Luna, Mars, Saturn, ...
+                               Uranus, Mercury, Venus, Jupiter};
+Fm.SRP                      = On;
+Fm.RelativisticCorrection   = On;
+Fm.ErrorControl             = None;
+Prop.FM                     = Fm;
+Prop.MinStep                = 0;
+
+%-----------------------------------------------------------------------------------------
+%%      Create and configure Batch Estimator object
+%-----------------------------------------------------------------------------------------
+
+Create BatchEstimator bat
+
+bat.ShowProgress               = true;
+bat.ReportStyle                = Normal;
+bat.ReportFile                 = 'Orbit Estimation using DSN Range and Doppler Data.report';
+bat.Measurements               = {DSNsimData} 
+bat.AbsoluteTol                = 0.001;
+bat.RelativeTol                = 0.0001;
+bat.MaximumIterations          = 10
+bat.MaxConsecutiveDivergences  = 3;
+bat.Propagator                 = Prop;
+bat.ShowAllResiduals           = On;
+bat.OLSEInitialRMSSigma        = 10000;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant       = 0;
+bat.EstimationEpochFormat      = 'FromParticipants'; 
+bat.InversionAlgorithm         = 'Internal';              
+bat.DataFile                   = 'Orbit Estimation using DSN Range and Doppler Data.json'
+
+%-----------------------------------------------------------------------------------------
+%%      Run the mission 
+%-----------------------------------------------------------------------------------------
+
+Create Variable PosError VelError
+
+Create ReportFile rf
+
+rf.Filename     = Estimation_Error.report
+rf.WriteHeaders = false
+
+BeginMissionSequence
+ 
+RunEstimator bat
+
+PosError = sqrt (  (Sat.SunMJ2000Eq.X - -126544968 )^2 + (Sat.SunMJ2000Eq.Y - 61978514)^2 + (Sat.SunMJ2000Eq.Z - 24133221)^2 )
+VelError = sqrt (  (Sat.SunMJ2000Eq.VX - -13.789)^2  + (Sat.SunMJ2000Eq.VY - -24.673)^2  + (Sat.SunMJ2000Eq.VZ - -10.662)^2 )
+Report rf PosError VelError

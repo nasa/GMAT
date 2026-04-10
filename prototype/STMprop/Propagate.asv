@@ -1,0 +1,61 @@
+
+
+global SolarSystem jd_ref
+clear Orbit1 Orbit2 Phi1 Phi2
+
+
+% --------------------------------------
+%  Initialize the solar system
+% --------------------------------------
+InitSolarSystem;
+
+% --------------------------------------
+%  Initialize the force model
+% --------------------------------------
+ForceModel = InitForceModel(ForceModel); 
+
+% --------------------------------------
+%          Define the Initial State
+% --------------------------------------
+X0v  = [MMSRef.X MMSRef.Y MMSRef.Z MMSRef.VX MMSRef.VY MMSRef.VZ ]';
+X0   = [X0v; sqrmat2vec(eye(6))];
+datevec = datestr2vec(MMSRef.Epoch)
+jd_utc = ut2jd(datevec);
+
+
+% --------------------------------------
+%          Perform the Propagation
+% --------------------------------------
+[t1,X1] = ode78_FM('dynfunc', 0, TOF, X0, 1e-11 , [], [], ForceModel); 
+for i = 1:size(t1,1)
+    Phi1(1:6,1:6,i) = vec2sqrmat(X1(i,7:42)');
+    Orbit1(i,:)     = X1(i,1:6);
+end
+
+
+%  ------ Orbit 2
+dx      = [.0131 .01111 .0011 0 0 0 ]';
+X0      = X0v + dx;
+X0      = [X0; sqrmat2vec(eye(6))];
+[t2,X2] = ode78_FM('dynfunc', 0, TOF, X0, 1e-11 , [], [], ForceModel); 
+
+for i = 1:size(t2,1)
+    Phi2(1:6,1:6,i) = vec2sqrmat(X2(i,7:42)');
+    Orbit2(i,:)     = X2(i,1:6);
+end
+
+%  ------ Orbit 1
+n1 = size(Orbit1,1);
+n2 = size(Orbit2,1);
+xl1 = Orbit1(n1,:);
+xl2 = Orbit2(n2,:);
+xl1'
+xl2'
+exact  = ((xl2 - xl1)')'
+approx = (Phi1(:,:,n1)*dx)'
+(exact - approx)'
+
+
+
+
+%  

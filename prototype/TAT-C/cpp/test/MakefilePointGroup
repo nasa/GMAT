@@ -1,0 +1,110 @@
+# Project:        Collocation
+# Created by:     Wendy Shoan
+# Date:           2016.05.05
+
+
+# Define macros for locations
+BASE_ROOT = ..
+TEST_ROOT = .
+BINDIR = $(TEST_ROOT)/bin
+EXECUTABLE = $(BINDIR)/TestPointGroup
+
+TEST_FLAGS = -DUSE_64_BIT_LONGS -D__CONSOLE_APP__
+## TEST_FLAGS = -DUSE_64_BIT_LONGS -D__DEBUG__ -D__CONSOLE_APP__
+
+OPTIMIZATIONS = -O3 -funroll-loops
+
+# Define macros for the needed includes
+HEADERS =   -I. \
+            -I$(BASE_ROOT)/src \
+            -I$(BASE_ROOT)/GMATsrc/include \
+            -I$(BASE_ROOT)/GMATsrc/util \
+            -I$(BASE_ROOT)/GMATsrc/console
+            
+DRIVER = TestPointGroup.o
+            
+OBJECTS = \
+    $(BASE_ROOT)/src/Earth.o \
+    $(BASE_ROOT)/src/ConicalSensor.o \
+    $(BASE_ROOT)/src/KeyValueStatistics.o \
+    $(BASE_ROOT)/src/OrbitState.o \
+    $(BASE_ROOT)/src/PointGroup.o \
+    $(BASE_ROOT)/src/Propagator.o \
+    $(BASE_ROOT)/src/Sensor.o \
+    $(BASE_ROOT)/src/Spacecraft.o \
+    $(BASE_ROOT)/src/VisibilityReport.o \
+    $(BASE_ROOT)/src/VisiblePOIReport.o \
+    $(BASE_ROOT)/src/AbsoluteDate.o \
+    $(BASE_ROOT)/src/TATCException.o \
+    $(BASE_ROOT)/GMATsrc/console/ConsoleMessageReceiver.o \
+    $(BASE_ROOT)/GMATsrc/console/ConsoleAppException.o \
+    $(BASE_ROOT)/GMATsrc/util/A1Date.o \
+    $(BASE_ROOT)/GMATsrc/util/A1Mjd.o \
+    $(BASE_ROOT)/GMATsrc/util/BaseException.o \
+    $(BASE_ROOT)/GMATsrc/util/BodyFixedStateConverter.o \
+    $(BASE_ROOT)/GMATsrc/util/Date.o \
+    $(BASE_ROOT)/GMATsrc/util/DateUtil.o \
+    $(BASE_ROOT)/GMATsrc/util/ElapsedTime.o \
+    $(BASE_ROOT)/GMATsrc/util/EopFile.o \
+    $(BASE_ROOT)/GMATsrc/util/FileManager.o \
+    $(BASE_ROOT)/GMATsrc/util/FileUtil.o \
+    $(BASE_ROOT)/GMATsrc/util/GmatGlobal.o \
+    $(BASE_ROOT)/GMATsrc/util/GregorianDate.o \
+    $(BASE_ROOT)/GMATsrc/util/LeapSecsFileReader.o \
+    $(BASE_ROOT)/GMATsrc/util/Linear.o \
+    $(BASE_ROOT)/GMATsrc/util/MessageInterface.o \
+    $(BASE_ROOT)/GMATsrc/util/MessageReceiver.o \
+    $(BASE_ROOT)/GMATsrc/util/RandomNumber.o \
+    $(BASE_ROOT)/GMATsrc/util/RealUtilities.o \
+    $(BASE_ROOT)/GMATsrc/util/Rmatrix.o \
+    $(BASE_ROOT)/GMATsrc/util/Rmatrix33.o \
+    $(BASE_ROOT)/GMATsrc/util/Rmatrix66.o \
+    $(BASE_ROOT)/GMATsrc/util/Rvector.o \
+    $(BASE_ROOT)/GMATsrc/util/Rvector3.o \
+    $(BASE_ROOT)/GMATsrc/util/Rvector6.o \
+    $(BASE_ROOT)/GMATsrc/util/StateConversionUtil.o \
+    $(BASE_ROOT)/GMATsrc/util/StringTokenizer.o \
+    $(BASE_ROOT)/GMATsrc/util/StringUtil.o \
+    $(BASE_ROOT)/GMATsrc/util/TimeSystemConverter.o \
+    $(BASE_ROOT)/GMATsrc/util/TimeTypes.o \
+    $(BASE_ROOT)/GMATsrc/util/UtcDate.o \
+
+#    $(BASE_ROOT)/src/CoverageChecker.o \
+# $(BASE_ROOT)/src/PointGroup.o \
+# $(BASE_ROOT)/src/Propagator.o \
+
+
+CPPFLAGS = $(HEADERS) $(OPTIMIZATIONS) $(TESTFLAGS) -Wall
+CPP = g++
+
+# Link specific flags
+LINK_FLAGS =  /usr/lib/libstdc++.6.dylib \
+               -headerpad_max_install_names \
+               -lm -v 
+
+# Object modules for library
+$(DRIVER): %.o: %.cpp
+	$(CPP) $(CPPFLAGS) $(HEADERS) -c -o $@ $<
+
+$(OBJECTS): %.o: %.cpp %.hpp
+	$(CPP) $(CPPFLAGS) $(HEADERS) -c -o $@ $<
+
+#
+# Default suffix rule
+.SUFFIXES: .o .cpp
+
+
+# Target definitions
+#
+all: $(EXECUTABLE)
+
+$(EXECUTABLE): $(DRIVER) $(OBJECTS)
+	@if [ ! -x $(BINDIR) ]; then mkdir $(BINDIR); fi 
+	$(CPP) $(CPPFLAGS) $(LINK_FLAGS) $(DRIVER) $(OBJECTS) -o $@
+	@chmod -R 755 $(BINDIR)
+
+clean:
+	rm -f $(DRIVER) $(OBJECTS) core
+
+bare: clean
+	rm -f $(EXECUTABLE) 

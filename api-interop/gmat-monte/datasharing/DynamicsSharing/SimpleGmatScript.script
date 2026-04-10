@@ -1,0 +1,115 @@
+%General Mission Analysis Tool(GMAT) Script
+%Created: 2015-10-04 12:37:06
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+% -------------------------------------------------------------------------
+% --------------------------- Create Objects ------------------------------
+% -------------------------------------------------------------------------
+
+%----------------------------Create the Spacecraft----------------------
+% Create Sat and define its orbit
+Create Spacecraft Sat;
+GMAT Sat.DateFormat = UTCGregorian;
+GMAT Sat.Epoch = '01 Jan 2020 00:00:00.000';
+GMAT Sat.CoordinateSystem = EarthMJ2000Eq;
+GMAT Sat.DisplayStateType = Cartesian;
+GMAT Sat.X   = 35785.0;
+GMAT Sat.Y   = 0;
+GMAT Sat.Z   = 0;
+GMAT Sat.VX  = 0;
+GMAT Sat.VY  = 3.3374;
+GMAT Sat.VZ  = 0;
+GMAT Sat.DryMass = 100;
+GMAT Sat.Cd = 2.25;
+GMAT Sat.Cr = 1.21;
+GMAT Sat.DragArea = 4;
+GMAT Sat.SRPArea = 4;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+%  Define Force Model 
+Create ForceModel MyForce;
+GMAT MyForce.CentralBody = Earth;
+GMAT MyForce.PrimaryBodies = {Earth};
+GMAT MyForce.Drag = None;
+GMAT MyForce.SRP = Off;
+GMAT MyForce.RelativisticCorrection = Off;
+GMAT MyForce.ErrorControl = RSSStep;
+GMAT MyForce.GravityField.Earth.Degree = 0;
+GMAT MyForce.GravityField.Earth.Order = 0;
+GMAT MyForce.GravityField.Earth.PotentialFile = 'JGM2.cof';
+GMAT MyForce.GravityField.Earth.TideModel = 'None';
+GMAT MyForce.External = getExternalMonteForces;
+%GMAT MyForce.External = SimpleExternalForceModel;
+GMAT MyForce.External.ExcludeOtherForces = true;
+%GMAT MyForce.External.EntryPoint = CustomEntryExample;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+% Create propgator 
+Create Propagator EarthProp;
+GMAT EarthProp.FM = MyForce;
+GMAT EarthProp.Type = PrinceDormand78;
+GMAT EarthProp.InitialStepSize = 30;
+GMAT EarthProp.Accuracy = 1e-012;
+GMAT EarthProp.MinStep = 1;
+GMAT EarthProp.MaxStep = 30;
+GMAT EarthProp.MaxStepAttempts = 50;
+GMAT EarthProp.StopIfAccuracyIsViolated = false;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OrbitView GLPlot;
+GMAT GLPlot.SolverIterations = Current;
+GMAT GLPlot.UpperLeft = [ 0.00411764705882353 0 ];
+GMAT GLPlot.Size = [ 0.7994117647058824 0.850132625994695 ];
+GMAT GLPlot.RelativeZOrder = 290;
+GMAT GLPlot.Maximized = false;
+GMAT GLPlot.Add = {Sat, Earth};
+GMAT GLPlot.CoordinateSystem = EarthMJ2000Eq;
+GMAT GLPlot.DrawObject = [ true true ];
+GMAT GLPlot.DataCollectFrequency = 1;
+GMAT GLPlot.UpdatePlotFrequency = 50;
+GMAT GLPlot.NumPointsToRedraw = 0;
+GMAT GLPlot.ShowPlot = true;
+GMAT GLPlot.ShowLabels = true;
+GMAT GLPlot.ViewPointReference = Earth;
+GMAT GLPlot.ViewPointVector = [ -10000 -15000 3000 ];
+GMAT GLPlot.ViewDirection = Earth;
+GMAT GLPlot.ViewScaleFactor = 1.4;
+GMAT GLPlot.ViewUpCoordinateSystem = EarthMJ2000Eq;
+GMAT GLPlot.ViewUpAxis = Z;
+GMAT GLPlot.EclipticPlane = Off;
+GMAT GLPlot.XYPlane = On;
+GMAT GLPlot.WireFrame = Off;
+GMAT GLPlot.Axes = On;
+GMAT GLPlot.Grid = Off;
+GMAT GLPlot.SunLine = Off;
+GMAT GLPlot.UseInitialView = On;
+GMAT GLPlot.StarCount = 7000;
+GMAT GLPlot.EnableStars = On;
+GMAT GLPlot.EnableConstellations = On;
+
+Create ReportFile GEO_Report
+GMAT GEO_Report.Filename = SimpleReport.txt;
+GMAT GEO_Report.ColumnWidth = 20;
+GMAT GEO_Report.Add={Sat.X, Sat.Y, Sat.Z, Sat.VX, Sat.VY, Sat.VZ}
+
+% -------------------------------------------------------------------------
+% ---------------------------  Begin Mission Sequence ---------------------
+% -------------------------------------------------------------------------
+BeginMissionSequence;
+
+%Propagate using EarthProp propagator
+Propagate 'Prop' EarthProp(Sat) {Sat.ElapsedSecs = 864};
+Write Sat.X Sat.Y Sat.Z Sat.VX Sat.VY Sat.VZ

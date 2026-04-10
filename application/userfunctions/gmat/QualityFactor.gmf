@@ -1,0 +1,146 @@
+function [QF, sideLength1, sideLength2, sideLength3, sideLength4, sideLength5, sideLength6] = QualityFactor(MMS1, MMS2, MMS3, MMS4, FormSize)
+
+%   QualityFactor calculates the MMS formation quality factor given a set of input spacecraft
+%   and the desired formation scale size. 
+%
+%   Object       Object Type     Units      Dimens.    Description
+% -----------------------------------------------------------------------------------
+%   MMS1         Spacecraft      N/A        N/A       Spacecraft1 
+%   MMS2         Spacecraft      N/A        N/A       Spacecraft2
+%   MMS3         Spacecraft      N/A        N/A       Spacecraft3
+%   MMS4         Spacecraft      N/A        N/A       Spacecraft4
+%   FormSize     Variable        Km         1x1       The desired formation scale size
+%   QF           Variable        None       1x1       The quality factor for the relative geometry
+%                                                     of the MMS formation
+%   sideLength1  Variable        Km         1x1       Sidelengths of current Formation
+%   sideLength2  Variable        Km         1x1       Sidelengths of current Formation
+%   sideLength3  Variable        Km         1x1       Sidelengths of current Formation
+%   sideLength4  Variable        Km         1x1       Sidelengths of current Formation
+%   sideLength5  Variable        Km         1x1       Sidelengths of current Formation
+%   sideLength6  Variable        Km         1x1       Sidelengths of current Formation
+
+
+%----- Create Arrays
+Create Array posVec1[3,1] posVec2[3,1] posVec3[3,1] posVec4[3,1]; % Position vectors of all input spacecraft
+Create Array relPosVec1[3,1] relPosVec2[3,1] relPosVec3[3,1]; % Relative position vectors
+Create Array relPosVec4[3,1] relPosVec5[3,1] relPosVec6[3,1];
+Create Array rp2_cross_rp3[3,1] prod[1,1]; 
+
+
+%----- Create Variables
+Create Variable sideLength1 sideLength2 sideLength3 sideLength4 sideLength5 sideLength6; % Side Lengths in [ km ]
+Create Variable volumeActual volumeDesired; % Volumes [ km^3 ]
+Create Variable QFvol QFsize QF; % [ Unitless ]
+Create Variable avgL; % Average SideLength [ km ]
+Create Variable sizeConstant1 sizeConstant2 sizeConstant3 sizeConstant4; 
+
+
+BeginMissionSequence;
+
+%----- Define position vectors of spacecraft
+posVec1(1, 1) = MMS1.X;
+posVec1(2, 1) = MMS1.Y;
+posVec1(3, 1) = MMS1.Z;
+posVec2(1, 1) = MMS2.X;
+posVec2(2, 1) = MMS2.Y;
+posVec2(3, 1) = MMS2.Z;
+posVec3(1, 1) = MMS3.X;
+posVec3(2, 1) = MMS3.Y;
+posVec3(3, 1) = MMS3.Z;
+posVec4(1, 1) = MMS4.X;
+posVec4(2, 1) = MMS4.Y;
+posVec4(3, 1) = MMS4.Z;
+
+
+%----- Define size constants for size portion of the quality factor
+If FormSize == 10;
+	sizeConstant1 = 4;
+	sizeConstant2 = 6;
+	sizeConstant3 = 18;
+	sizeConstant4 = 24;
+EndIf;
+
+If FormSize == 25;
+    sizeConstant1 = 15;
+    sizeConstant2 = 20;
+    sizeConstant3 = 35;
+    sizeConstant4 = 40;
+EndIf;
+
+If FormSize == 60;
+    sizeConstant1 = 45;
+    sizeConstant2 = 50;
+    sizeConstant3 = 75;
+    sizeConstant4 = 80;
+EndIf;
+
+If FormSize == 160;
+    sizeConstant1 = 135;
+    sizeConstant2 = 140;
+    sizeConstant3 = 190;
+    sizeConstant4 = 210;
+EndIf;
+
+If FormSize == 400;
+    sizeConstant1 = 250;
+    sizeConstant2 = 300;
+    sizeConstant3 = 550;
+    sizeConstant4 = 600;
+EndIf;
+
+
+%----- Calculate relative position data
+relPosVec1 = posVec1 - posVec2;
+relPosVec2 = posVec1 - posVec3;
+relPosVec3 = posVec1 - posVec4;
+relPosVec4 = posVec2 - posVec3;
+relPosVec5 = posVec2 - posVec4;
+relPosVec6 = posVec3 - posVec4;
+
+
+%----- Calculate the side lengths
+sideLength1 = norm(relPosVec1);
+sideLength2 = norm(relPosVec2);
+sideLength3 = norm(relPosVec3);
+sideLength4 = norm(relPosVec4);
+sideLength5 = norm(relPosVec5);
+sideLength6 = norm(relPosVec6);
+
+
+%----- Calculate actual volume
+rp2_cross_rp3(1,1) = relPosVec2(2,1)*relPosVec3(3,1)-relPosVec2(3,1)*relPosVec3(2,1);
+rp2_cross_rp3(2,1) = relPosVec2(3,1)*relPosVec3(1,1)-relPosVec2(1,1)*relPosVec3(3,1);
+rp2_cross_rp3(3,1) = relPosVec2(1,1)*relPosVec3(2,1)-relPosVec2(2,1)*relPosVec3(1,1);
+prod(1,1)          = relPosVec1(1,1)*rp2_cross_rp3(1,1) + relPosVec1(2,1)*rp2_cross_rp3(2,1) + relPosVec1(3,1)*rp2_cross_rp3(3,1);
+volumeActual       = norm(prod)/6;
+
+
+%----- Average Side Length and ideal volume
+avgL          = (sideLength1 + sideLength2 + sideLength3 + sideLength4 + sideLength5 + sideLength6) / 6;
+volumeDesired = sqrt(2)/12*avgL^3;
+
+
+%----- QFvol, the volume portion of the quality factor
+QFvol = volumeActual/volumeDesired;
+
+
+%----- QFsize, the size portion of the quality factor
+If avgL < sizeConstant1
+   QFsize = 0;
+EndIf;
+If sizeConstant1 <= avgL & avgL <= sizeConstant2
+   QFsize = (avgL-sizeConstant1)^2*(avgL+sizeConstant1-2*sizeConstant2)^2/(sizeConstant2-sizeConstant1)^4;
+EndIf;
+If sizeConstant2 <= avgL & avgL <= sizeConstant3
+   QFsize = 1;
+EndIf;
+If sizeConstant3 <= avgL & avgL <= sizeConstant4
+   QFsize = (avgL - sizeConstant4)^2*(avgL - 2*sizeConstant3+sizeConstant4)^2/(sizeConstant4-sizeConstant3)^4;
+EndIf;
+If avgL > sizeConstant4
+   QFsize = 0;
+EndIf;
+
+
+%-----  The total quality factor
+QF = QFvol*QFsize;

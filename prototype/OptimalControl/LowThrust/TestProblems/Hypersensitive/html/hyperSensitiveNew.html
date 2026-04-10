@@ -1,0 +1,331 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>hyperSensitiveNew</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-06-12"><meta name="DC.source" content="hyperSensitiveNew.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">=====  Intializations</a></li><li><a href="#2">=====  Define the phase and trajectory properties</a></li><li><a href="#3">=====  Initialize the trajectory and phases and get ready for run</a></li><li><a href="#4">=====  Initialize the optimizer and execute the problem</a></li><li><a href="#5">=====  Plot/analyze the results</a></li></ul></div><h2>=====  Intializations<a name="1"></a></h2><pre class="codeinput">clc; clearvars;
+<span class="keyword">global</span> iGfun jGvar traj igrid
+</pre><h2>=====  Define the phase and trajectory properties<a name="2"></a></h2><pre class="codeinput"><span class="comment">%  Set Time Properties</span>
+phase1                         = Phase;
+phase1.meshIntervalFractions   = linspace(-1,1,10+1).';
+phase1.meshIntervalNumPoints   = ones(10,1)*10;
+phase1.meshIntervalFractions   = [ -1 -0.5 0 0.5 1]
+phase1.meshIntervalNumPoints   = [20 4 4 20]';
+phase1.initialEpoch            = 0;
+phase1.finalEpoch              = 50;
+phase1.initialTimeLowerBound   = 0;
+phase1.initialTimeUpperBound   = 0;
+phase1.finalTimeLowerBound     = 50;
+phase1.finalTimeUpperBound     = 50;
+
+<span class="comment">%  Set state and control properties</span>
+phase1.numStates               = 1;
+phase1.initialGuessMode        = <span class="string">'LinearNoControl'</span>;
+phase1.initialGuessState       = 1;
+phase1.initialGuessEpoch       = 0;
+phase1.finalGuessState         = 1;
+phase1.finalGuessEpoch         = 1;
+phase1.initialStateLowerBound  = 1;
+phase1.initialStateUppperBound = 1;
+phase1.finalStateLowerBound    = 1;
+phase1.finalStateUpperBound    = 1;
+phase1.stateLowerBound         = -50;
+phase1.stateUpperBound         = 50;
+phase1.dynamicsFunction        = <span class="string">'hyperSensitiveDynamics'</span>;
+phase1.numControls             = 1;
+phase1.controlUpperBound       = 50;
+phase1.controlLowerBound       = -50;
+
+<span class="comment">%  set cost function properties</span>
+traj                           = Trajectory();
+traj.costFunction              = <span class="string">'hyperSensitiveCost'</span>
+traj.costLowerBound            = 0;
+traj.costUpperBound            = Inf;
+</pre><h2>=====  Initialize the trajectory and phases and get ready for run<a name="3"></a></h2><pre class="codeinput"><span class="comment">% Determine the sparsity pattern for the combined</span>
+<span class="comment">% cost function and constraint Jacobian</span>
+traj.phaseList = {phase1};
+traj.Initialize();
+
+<span class="comment">%  Set the bounds on the Decision Variables</span>
+zmax = traj.decisionVecUpperBound;
+zmin = traj.decisionVecLowerBound;
+
+<span class="comment">% Set the bounds on the NLP constraints</span>
+Fmin = traj.allConLowerBound;
+Fmax = traj.allConUpperBound;
+z0   = traj.decisionVector;
+</pre><h2>=====  Initialize the optimizer and execute the problem<a name="4"></a></h2><pre class="codeinput">SetUpSNOPT;
+[z,F,xmul,Fmul,info,xstate,Fstate,ns,ninf,sinf,mincw,miniw,minrw]<span class="keyword">...</span>
+    = snsolve(z0,zmin,zmax,zmul,zstate,Fmin,Fmax,Fmul,Fstate,<span class="keyword">...</span>
+              ObjAdd,ObjRow,AA,iAfun,jAvar,iGfun,jGvar,userfun);
+
+load(<span class="string">'origSolution.mat'</span>)
+<span class="keyword">if</span> length(z) == length(zTruth)
+   norm(z - zTruth)
+<span class="keyword">end</span>
+</pre><h2>=====  Plot/analyze the results<a name="5"></a></h2><p>Extract the state and control from the decision vector z. Remember that the state is approximated at the LGR points plus the final point, while the control is only approximated at only the LGR points.</p><pre class="codeinput">NLGR = traj.phaseList{1}.numRadauPoints;
+tau = traj.phaseList{1}.radauPoints;
+nstates = traj.phaseList{1}.numStates;
+ncontrols = traj.phaseList{1}.numControls;
+w   = traj.phaseList{1}.radauWeights;
+D   = traj.phaseList{1}.radauDiffMatrix;
+
+x = z(1:NLGR+1);
+u = z((NLGR+1)+1:(NLGR+1)+NLGR);
+t0 = z(end-1);
+tf = z(end);
+t = (tf-t0)*(tau+1)/2+t0;
+tLGR = t(1:end-1);
+<span class="comment">%-----------------------------------------------------------------%</span>
+<span class="comment">% Extract the Lagrange multipliers corresponding                  %</span>
+<span class="comment">% the defect constraints.                                         %</span>
+<span class="comment">%-----------------------------------------------------------------%</span>
+multipliersDefects = Fmul(2:nstates*NLGR+1);
+multipliersDefects = reshape(multipliersDefects,NLGR,nstates);
+<span class="comment">%-----------------------------------------------------------------%</span>
+<span class="comment">% Compute the costates at the LGR points via transformation       %</span>
+<span class="comment">%-----------------------------------------------------------------%</span>
+costateLGR = inv(diag(w))*multipliersDefects;
+<span class="comment">%-----------------------------------------------------------------%</span>
+<span class="comment">% Compute the costate at the tau=+1 via transformation            %</span>
+<span class="comment">%-----------------------------------------------------------------%</span>
+costateF = D(:,end).'*multipliersDefects;
+<span class="comment">%-----------------------------------------------------------------%</span>
+<span class="comment">% Now assemble the costates into a single matrix                  %</span>
+<span class="comment">%-----------------------------------------------------------------%</span>
+costate = [costateLGR; costateF];
+lamx = costate;
+
+figure(1);
+subplot(2,2,1);
+plot(x,lamx,<span class="string">'-o'</span>); hold <span class="string">on</span>;
+xlabel(<span class="string">'x'</span>);
+ylabel(<span class="string">'\lambda_x'</span>);
+set(gca,<span class="string">'FontName'</span>,<span class="string">'Times'</span>,<span class="string">'FontSize'</span>,18);
+grid <span class="string">on</span>;
+
+subplot(2,2,2);
+plot(t,x,<span class="string">'-o'</span>); hold <span class="string">on</span>;
+xlabel(<span class="string">'time'</span>);
+ylabel(<span class="string">'x(t)'</span>);
+set(gca,<span class="string">'FontName'</span>,<span class="string">'Times'</span>,<span class="string">'FontSize'</span>,18);
+grid <span class="string">on</span>;
+
+subplot(2,2,3);
+plot(t,lamx,<span class="string">'-o'</span>); hold <span class="string">on</span>;
+xlabel(<span class="string">'time'</span>);
+ylabel(<span class="string">'\lambda_x(t)'</span>);
+set(gca,<span class="string">'FontName'</span>,<span class="string">'Times'</span>,<span class="string">'FontSize'</span>,18);
+grid <span class="string">on</span>;
+
+subplot(2,2,4);
+plot(tLGR,u,<span class="string">'-o'</span>); hold <span class="string">on</span>; grid <span class="string">on</span>;
+xlabel(<span class="string">'t'</span>);
+ylabel(<span class="string">'u(t)'</span>);
+set(gca,<span class="string">'FontName'</span>,<span class="string">'Times'</span>,<span class="string">'FontSize'</span>,18);
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% =====  Intializations
+clc; clearvars; 
+global iGfun jGvar traj igrid
+
+%% =====  Define the phase and trajectory properties
+
+%  Set Time Properties
+phase1                         = Phase;
+phase1.meshIntervalFractions   = linspace(-1,1,10+1).';
+phase1.meshIntervalNumPoints   = ones(10,1)*10;
+phase1.meshIntervalFractions   = [ -1 -0.5 0 0.5 1]                
+phase1.meshIntervalNumPoints   = [20 4 4 20]';
+phase1.initialEpoch            = 0;
+phase1.finalEpoch              = 50;
+phase1.initialTimeLowerBound   = 0;
+phase1.initialTimeUpperBound   = 0;
+phase1.finalTimeLowerBound     = 50;
+phase1.finalTimeUpperBound     = 50;
+
+%  Set state and control properties
+phase1.numStates               = 1;
+phase1.initialGuessMode        = 'LinearNoControl';
+phase1.initialGuessState       = 1;
+phase1.initialGuessEpoch       = 0;
+phase1.finalGuessState         = 1;
+phase1.finalGuessEpoch         = 1;
+phase1.initialStateLowerBound  = 1;
+phase1.initialStateUppperBound = 1;
+phase1.finalStateLowerBound    = 1;
+phase1.finalStateUpperBound    = 1;
+phase1.stateLowerBound         = -50;
+phase1.stateUpperBound         = 50;
+phase1.dynamicsFunction        = 'hyperSensitiveDynamics';
+phase1.numControls             = 1;
+phase1.controlUpperBound       = 50;
+phase1.controlLowerBound       = -50;
+
+%  set cost function properties
+traj                           = Trajectory();
+traj.costFunction              = 'hyperSensitiveCost'
+traj.costLowerBound            = 0;
+traj.costUpperBound            = Inf;
+
+%% =====  Initialize the trajectory and phases and get ready for run
+
+
+% Determine the sparsity pattern for the combined 
+% cost function and constraint Jacobian
+traj.phaseList = {phase1};
+traj.Initialize();
+
+%  Set the bounds on the Decision Variables
+zmax = traj.decisionVecUpperBound;
+zmin = traj.decisionVecLowerBound;
+
+% Set the bounds on the NLP constraints
+Fmin = traj.allConLowerBound;
+Fmax = traj.allConUpperBound;
+z0   = traj.decisionVector;
+
+%% =====  Initialize the optimizer and execute the problem
+SetUpSNOPT;
+[z,F,xmul,Fmul,info,xstate,Fstate,ns,ninf,sinf,mincw,miniw,minrw]...
+    = snsolve(z0,zmin,zmax,zmul,zstate,Fmin,Fmax,Fmul,Fstate,...
+              ObjAdd,ObjRow,AA,iAfun,jAvar,iGfun,jGvar,userfun);
+          
+load('origSolution.mat')
+if length(z) == length(zTruth)
+   norm(z - zTruth)
+end
+
+%% =====  Plot/analyze the results
+% Extract the state and control from the decision vector z.
+% Remember that the state is approximated at the LGR points
+% plus the final point, while the control is only approximated 
+% at only the LGR points.
+NLGR = traj.phaseList{1}.numRadauPoints;
+tau = traj.phaseList{1}.radauPoints;
+nstates = traj.phaseList{1}.numStates;
+ncontrols = traj.phaseList{1}.numControls;
+w   = traj.phaseList{1}.radauWeights;
+D   = traj.phaseList{1}.radauDiffMatrix;
+
+x = z(1:NLGR+1);
+u = z((NLGR+1)+1:(NLGR+1)+NLGR);
+t0 = z(end-1);
+tf = z(end);
+t = (tf-t0)*(tau+1)/2+t0;
+tLGR = t(1:end-1);
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-%
+% Extract the Lagrange multipliers corresponding                  %
+% the defect constraints.                                         %
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-%
+multipliersDefects = Fmul(2:nstates*NLGR+1);
+multipliersDefects = reshape(multipliersDefects,NLGR,nstates);
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-%
+% Compute the costates at the LGR points via transformation       %
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-%
+costateLGR = inv(diag(w))*multipliersDefects;
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-%
+% Compute the costate at the tau=+1 via transformation            %
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-%
+costateF = D(:,end).'*multipliersDefects;                                                                                                   
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-%                                                                         
+% Now assemble the costates into a single matrix                  %                                                                         
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-%
+costate = [costateLGR; costateF];    
+lamx = costate;
+
+figure(1);
+subplot(2,2,1);
+plot(x,lamx,'-o'); hold on;
+xlabel('x');
+ylabel('\lambda_x');
+set(gca,'FontName','Times','FontSize',18);
+grid on;
+
+subplot(2,2,2);
+plot(t,x,'-o'); hold on;
+xlabel('time');
+ylabel('x(t)');
+set(gca,'FontName','Times','FontSize',18);
+grid on;
+
+subplot(2,2,3);
+plot(t,lamx,'-o'); hold on;
+xlabel('time');
+ylabel('\lambda_x(t)');
+set(gca,'FontName','Times','FontSize',18);
+grid on;
+
+subplot(2,2,4);
+plot(tLGR,u,'-o'); hold on; grid on;
+xlabel('t');
+ylabel('u(t)');
+set(gca,'FontName','Times','FontSize',18);
+
+
+
+##### SOURCE END #####
+--></body></html>

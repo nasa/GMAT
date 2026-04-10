@@ -1,0 +1,361 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="ReportingData"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Reporting Data</title>
+
+  <para>GMAT provides several ways to report mission data (such as altitude or
+  ΔV values) to plain text files. GMAT can report data at each integration
+  time step in the mission or at specific mission events, such as periapsis
+  passage. The report functionality is controlled via the
+  <guilabel>ReportFile</guilabel> resource and the <guilabel
+  role="bold">Report</guilabel> and <guilabel role="bold">Toggle</guilabel>
+  commands.</para>
+
+  <section>
+    <title>Reporting Data During Propagation</title>
+
+    <para>You can report data at each integration step in the mission sequence
+    by creating a <classname>ReportFile</classname> resource and adding data
+    to it. Starting from the default mission:</para>
+
+    <orderedlist spacing="compact">
+      <listitem>
+        <para>In the <guilabel>Resources</guilabel> tree, right-click the
+        <guilabel>Output</guilabel> folder, point to <guilabel>Add</guilabel>,
+        and click <guilabel>ReportFile</guilabel>.</para>
+      </listitem>
+
+      <listitem>
+        <para>Double-click <guilabel>ReportFile1</guilabel> to open its
+        properties window.</para>
+      </listitem>
+
+      <listitem>
+        <para>In the <guilabel>Parameter List</guilabel> area, click
+        <guilabel>Edit</guilabel>.</para>
+      </listitem>
+
+      <listitem>
+        <para>In the <guilabel>Selected Value(s)</guilabel> list, click
+        <guilabel>DefaultSC.EarthMJ2000.X</guilabel> and click
+        <guilabel>&lt;-</guilabel> to remove it from the list.</para>
+      </listitem>
+
+      <listitem>
+        <para>In the <guilabel>Object Properties</guilabel> list, click
+        <guilabel>Altitude</guilabel> and click <guilabel>-&gt;</guilabel> to
+        add it to the <guilabel>Selected Value(s)</guilabel> list.</para>
+      </listitem>
+
+      <listitem>
+        <para>Add <guilabel>DefaultSC.A1ModJulian</guilabel> to the
+        <guilabel>Selected Value(s)</guilabel> list if it doesn’t already
+        exist.</para>
+      </listitem>
+
+      <listitem>
+        <para>Click <guilabel>OK</guilabel>, then in the <guilabel>ReportFile
+        - ReportFile1</guilabel> window, click <guilabel>OK</guilabel>
+        again.</para>
+      </listitem>
+
+      <listitem>
+        <para>Click <guilabel>Run</guilabel> (<subscript><inlinemediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="8pt"
+                         fileref="files/images/icons/RunMission.png"
+                         width="1em"></imagedata>
+            </imageobject>
+          </inlinemediaobject></subscript>). To view the generated report, on
+        the <guilabel>Output</guilabel> tree, double-click
+        <guilabel>ReportFile1</guilabel>.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>The script for the report data configured above is shown
+    below.</para>
+
+    <programlisting>Create ReportFile ReportFile1
+ReportFile1.Add = {DefaultSC.A1ModJulian, DefaultSC.Earth.Altitude}</programlisting>
+  </section>
+
+  <section>
+    <title>Reporting Data at a Specific Mission Event</title>
+
+    <para>You can report data to a <classname>ReportFile</classname> at a
+    specific time (for example, at orbit apoapsis) using the
+    <function>Report</function> command. Starting from the default mission,
+    first configure the <classname>ReportFile</classname> resource:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Resources</guilabel> tree, right-click on the
+        <guilabel>Output</guilabel> folder, point to <guilabel>Add</guilabel>,
+        and click <guilabel>ReportFile</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Output</guilabel> folder, double-click
+        <guilabel>ReportFile1</guilabel> to edit its properties.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Parameter List</guilabel> area, click
+        <guibutton>Edit</guibutton>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Selected Values</guilabel> list, click
+        <guilabel>DefaultSC.EarthMJ2000Eq.X</guilabel> and click
+        <guibutton>&lt;-</guibutton> to remove it from the list.</para>
+      </step>
+
+      <step>
+        <para>Remove <guilabel>DefaultSC.A1ModJulian</guilabel> from the
+        <guilabel>Selected Value(s)</guilabel> list in the same way.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>OK</guilabel> to close the
+        <guilabel>ParameterSelectDialog</guilabel> window and click
+        <guilabel>OK</guilabel> again to close the
+        <guilabel>ReportFile1</guilabel> window.</para>
+      </step>
+    </procedure>
+
+    <para>Now configure the <function>Propagate1</function> command to
+    propagate to orbit apoapsis:</para>
+
+    <procedure>
+      <step>
+        <para>Click the <guilabel>Mission</guilabel> tab to display the
+        <guilabel>Mission</guilabel> tree.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Mission</guilabel> tree, double-click
+        <guilabel>Propagate1</guilabel> to edit its properties.</para>
+      </step>
+
+      <step>
+        <para>Under <guilabel>Stopping Conditions</guilabel>, click the
+        <guibutton>...</guibutton> button to the left of
+        <guilabel>DefaultSC.ElapsedSecs</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Object Properties</guilabel> list, click
+        <guilabel>Apoapsis</guilabel>, then click the
+        <guibutton>-&gt;</guibutton> button to add it to the
+        <guilabel>Selected Value(s)</guilabel> list.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>OK</guilabel> to close the
+        <guilabel>ParameterSelectDialog</guilabel> window, then click
+        <guilabel>OK</guilabel> again to close the
+        <guilabel>Propagate1</guilabel> window.</para>
+      </step>
+    </procedure>
+
+    <para>Finally, add a <function>Report</function> command:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Mission</guilabel> tree, right-click
+        <guilabel>Propagate1</guilabel>, point to <guilabel>Insert
+        After</guilabel>, and click <guilabel>Report</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Double-click <guilabel>Report1</guilabel> to edit its
+        properties, then click the <guilabel>View</guilabel> button.</para>
+      </step>
+
+      <step>
+        <para>Click the <guibutton>&lt;=</guibutton> button to remove all
+        items from the <guilabel>Selected Value(s)</guilabel> list.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Object Properties</guilabel> list, click
+        <guilabel>TA</guilabel>, then click the <guilabel>-&gt;</guilabel>
+        button to add it to the <guilabel>Selected Value(s)</guilabel>
+        list.</para>
+      </step>
+
+      <step>
+        <para>Add <guilabel>Altitude</guilabel> to the <guilabel>Selected
+        Value(s)</guilabel> list in the same way.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>OK</guilabel> to close the
+        <guilabel>ParameterSelectDialog</guilabel> window, then click
+        <guilabel>OK</guilabel> to close the <guilabel>Report1</guilabel>
+        window.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>Run</guilabel> (<subscript><inlinemediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="8pt"
+                         fileref="files/images/icons/RunMission.png"
+                         width="1em"></imagedata>
+            </imageobject>
+          </inlinemediaobject></subscript>) to run the mission.</para>
+      </step>
+
+      <step>
+        <para>Click the <guilabel>Output</guilabel> tab to show the
+        <guilabel>Output</guilabel> tree.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Reports</guilabel> folder, double-click
+        <guilabel>ReportFile1</guilabel> to see the requested data.</para>
+      </step>
+    </procedure>
+
+    <para>The script for the report data configured above is shown
+    below.</para>
+
+    <programlisting>Create ReportFile ReportFile1
+
+BeginMissionSequence
+
+Propagate DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis}
+Report ReportFile1 DefaultSC.Earth.TA DefaultSC.Earth.Altitude</programlisting>
+  </section>
+
+  <section>
+    <title>Creating a CCSDS Ephemeris File</title>
+
+    <para>The CCSDS Orbit Ephemeris Message (OEM) is a standardized text-based
+    ephemeris format. In GMAT, you can easily create an OEM file with your
+    desired interpolation order and data frequency. Starting from the default
+    mission:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Resources</guilabel> tree, right-click the
+        <guilabel>Output</guilabel> folder, point to <guimenu>Add</guimenu>,
+        and click <guimenuitem>EphemerisFile</guimenuitem>. A new resource
+        called <guilabel>EphemerisFile1</guilabel> appears in the tree.</para>
+      </step>
+
+      <step>
+        <para>Double-click <guilabel>EphemerisFile1</guilabel> to open
+        it.</para>
+      </step>
+
+      <step>
+        <para>Make sure that in the <guilabel>File Format</guilabel> list,
+        <guilabel>CCSDS-OEM</guilabel> is selected.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>Ok</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>Run</guilabel> (<subscript><inlinemediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="8pt"
+                         fileref="files/images/icons/RunMission.png"
+                         width="1em"></imagedata>
+            </imageobject>
+          </inlinemediaobject></subscript>). The OEM file will be written to
+        a file named <filename>EphemerisFile1.eph</filename> in GMAT's output
+        folder. By default, this folder is
+        <filename><replaceable>&lt;GMAT&gt;</replaceable>/output</filename>,
+        where <filename><replaceable>&lt;GMAT&gt;</replaceable></filename> is
+        the path to your GMAT installation.</para>
+      </step>
+    </procedure>
+    
+    <para>The script for the resource configured above is shown
+    below.</para>
+
+    <programlisting>Create EphemerisFile EphemerisFile1
+EphemerisFile1.Spacecraft = DefaultSC
+EphemerisFile1.Filename = 'EphemerisFile1.eph'
+EphemerisFile1.FileFormat = CCSDS-OEM
+EphemerisFile1.EpochFormat = UTCGregorian
+EphemerisFile1.InitialEpoch = InitialSpacecraftEpoch
+EphemerisFile1.FinalEpoch = FinalSpacecraftEpoch
+EphemerisFile1.StepSize = IntegratorSteps
+EphemerisFile1.InterpolationOrder = 7
+EphemerisFile1.CoordinateSystem = EarthMJ2000Eq</programlisting>
+  </section>
+
+  <section>
+    <title>Creating an SPK Ephemeris File</title>
+
+    <para>An SPK ephemeris is a binary file format used by the SPICE Toolkit
+    created by NAIF. GMAT can write spacecraft state information to this
+    format using your desired interpolation order and data frequency. Starting
+    from the default mission:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Resources</guilabel> tree, right-click the
+        <guilabel>Output</guilabel> folder, point to <guimenu>Add</guimenu>,
+        and click <guimenuitem>EphemerisFile</guimenuitem>. A new resource
+        called <guilabel>EphemerisFile1</guilabel> appears in the tree.</para>
+      </step>
+
+      <step>
+        <para>Double-click <guilabel>EphemerisFile1</guilabel> to open
+        it.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>File Format</guilabel> list, click
+        <guilabel>SPK</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>File Name</guilabel> box, replace the default
+        value with <userinput>EphemerisFile1.bsp</userinput>. An SPK ephemeris
+        requires the <filename>.bsp</filename> extension.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>Ok</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>Run</guilabel> (<subscript><inlinemediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="8pt"
+                         fileref="files/images/icons/RunMission.png"
+                         width="1em"></imagedata>
+            </imageobject>
+          </inlinemediaobject></subscript>). The SPK file will be written to
+        a file named <filename>EphemerisFile1.bsp</filename> in GMAT's output
+        folder.</para>
+      </step>
+    </procedure>
+    
+    <para>The script for the resource configured above is shown
+    below.</para>
+
+    <programlisting>Create EphemerisFile EphemerisFile1
+EphemerisFile1.Spacecraft = DefaultSC
+EphemerisFile1.Filename = 'EphemerisFile1.bsp'
+EphemerisFile1.FileFormat = SPK
+EphemerisFile1.EpochFormat = UTCGregorian
+EphemerisFile1.InitialEpoch = InitialSpacecraftEpoch
+EphemerisFile1.FinalEpoch = FinalSpacecraftEpoch
+EphemerisFile1.StepSize = IntegratorSteps
+EphemerisFile1.InterpolationOrder = 7
+EphemerisFile1.CoordinateSystem = EarthMJ2000Eq</programlisting>
+  </section>
+</chapter>

@@ -1,0 +1,229 @@
+
+To solve OD problems in GMAT, a user will have to create and
+configure many objects that model physical components involved in
+the measurement process such as spacecraft, receivers, clocks,
+transmitters and celestial objects to name a few.  A user will also
+have to configure measurement models, provide truth data or define
+simulation parameters, and configure numerical solvers to determine
+the best state estimate. Below we discuss how the user will provide
+these and other types of information to define and solve OD problems
+in GMAT.  In a sense, this portion of the document is a  short
+user's guide  written before developing the software. This approach
+is useful in several ways: it defines how a user will interact with
+GMAT and allows analysts to provide feedback on the interfaces
+before the system is written, and it gives some insight into various
+designs for the the underlying software architecture.
+
+We begin this chapter with a high level view of OD from the
+perspective of a user who needs to apply GMAT to orbit
+determination. We provide a categorization of models and algorithms
+that a user will have control over and explain the overall
+philosophy of the user interface in GMAT.  The high level
+categorization explains where in the GMAT script and GUI a user
+would need to go to set various types of information such as
+dynamics models, process noise parameters, and measurement models to
+name a few.  Next, we provide a detailed view of the primary objects
+and commands required for orbit determination in GMAT.  These
+sections go into detail on what fields are on each objects, and what
+commands would be employed for different types of analysis.
+
+\section{Overview and Philosophy}
+
+To uniquely define an orbit determination problem, a user must often
+provide hundreds of pieces of information ranging from clock drift
+parameters, process noise characteristics, spacecraft physical
+properties, ground station properties, and atmospheric modelling
+parameters to name just a few. This section explains how these
+pieces of information will be organized in GMAT and the philosophy
+behind the organization of the data.  The goal is to provide an
+intuitive interface for orbit determination analysis and explain
+where a user would go to set different types of data, and why the
+choices have been made.
+
+To explain the organization of models and data, we present several
+levels of detail into the organization of data and models for orbit
+determination applications.  The first level view all models and
+data into six categories and explains how these groups interact in
+the estimation process.  These high level categories are:
+measurement participants, measurements, estimators, dynamics models,
+commands, and output.  Here we present which types of data are set
+on each object and model. For example, you learn where clock bias
+information is located and where process noise information is
+located.   The second level view we present a simple estimation
+example using the proposed script language and walk you through each
+step to set up a batch least squares problem for a spacecraft and
+one ground station.  Finally, we present a reference section that
+describes all field names and settings contained in the five
+categories. For example, in the reference section, you learn the
+script syntax to set process noise parameters, and the different
+process noise models that are available.
+
+Let's begin with a introductory user perspective on to the primary
+system components used in orbit determination.
+
+\subsection{Introduction to System Components and Philosophy}
+
+In GMAT, the objects and models used for orbit determination
+applications can be categorized into 6 groups:  measurement
+participants, measurements, dynamics models, estimators, commands,
+and output.  Below we describe each of these groups and the
+philosophy and functionality for each category in turn.  Fig.~
+\ref{Fig:ODOrganization} shows a listing of each category with a
+list of objects in models in each category.  Items in bold are
+objects in GMAT that can be created using the \st{Create} command.
+For example, you can create a clock named ``GPSClock" by using the
+lines \st{Create Clock GPSClock}. Items that appear in italics in
+Fig.~\ref{Fig:ODOrganization} are setttings and models available on
+the object below which they appear.  For example, on a receiver, you
+can set attenuation and bore site parameters.   Let's now look at
+measurement participants in more detail.\\
+
+\begin{figure}[htbp!]
+    \begin{center}
+    \begin{picture}(270,350)
+    \special{psfile=ODOrganization.eps
+    hscale= 85 vscale= 85 hoffset = -130 voffset = -340}
+    \end{picture}
+    \end{center}
+    \vspace{0.2 in}
+    \label{Fig:ODOrganization}
+    \caption{Intermediate Level View: Objects and Commands Data and Settings }
+\end{figure}
+
+
+%\begin{figure}[htbp!]
+%    \begin{center}
+%    \begin{picture}(270,150)
+%    \special{psfile=ODObjects.eps
+%    hscale= 85 vscale= 85 hoffset = -130 voffset = -440}
+%    \end{picture}
+%    \end{center}
+%    \vspace{0.2 in}
+%    \label{Fig:ODObjects}
+%    \caption{High Level View: Objects and Commands for OD Applications }
+%\end{figure}
+
+
+\textit{Measurement Participants}\\
+
+Measurement participants are modles of physical objects that
+``participate" in the process of creating a measured quantity that
+is related to the spacecraft state.  Examples of measurement
+participants include spacecraft, ground stations, celestial objects.
+Measurement particpants can be actively or passively involved in the
+measurement process. In the case of celestial navigation, a star may
+serve as a passive participant.  In the a two-way range measurement,
+the participants may be a ground station and a spacecraft.
+
+In GMAT, measurement participants are created and configured
+separately from measurement models (which are discussed below).  For
+example, if a user requires a Doppler measurement between say Hubble
+and Canberra, they first configure a spacecraft to model Hubble, and
+then they configure a ground station to model Canberra. Once the
+Hubble and Canberra objects are configured, the user creates a
+measurement object and configures it to create a Doppler measurement
+between Hubble and Canberra.  The philosophy is that measurement
+participants exist independently from the measurement process, e.g.,
+a spacecraft exists and advances in time even when measurements are
+not being taken.  In this way, the separation of measurement
+participants and measurements is similar to what happens in the real
+applications.\\
+
+\textit{Measurements}\\
+
+In orbit determination, observed quantities used in the estimation
+process are measurements of some property of electromagnetic wave
+propagation among participants in the measurement process.
+\cite{GTDS:89}  GMAT contains many types of measurements as shown in
+Fig. \ref{Fig:ODOrganization} including Ground Station, TDRSS, GPS,
+Celestial Object and Crosslink measurements.  An orbit determination
+analyst may want to process simulated measurements to determine the
+achievable accuracy for a given set of measurements and tracking
+data schedule.  Operationally, analysts use observed measurement
+values to generate best estimates for the spacecraft state. In GMAT,
+a measurement object supports all of these functions by the
+providing the following data:  observed measurement values (whether
+they are read from a file or simulated), the computed (or expected)
+value of the measurement, and the measurement partial derivatives.
+
+Measurement objects are quite complex as a large amount of
+user-provided data is required to perform the functions described
+above.  For observations, you must provide GMAT with the file
+format, name, and location.  When there is more data on a file than
+you wish to process, you must provide data editing criteria and
+information on which measurement types to include.  For computation
+of the expected value you must provide the model with participants
+for the measurements and a propagator to use to advance the state of
+the participants.  Finally, for simulated data you must provide an
+participants and a propagator along with measurement error models
+such as bias and noise.\\
+
+\textit{Estimators}\\
+
+GMAT contains several estimators including batch, sequential, and
+initial orbit determination solvers.  These algorithms solve for a
+state estimate by processing measurements generated by measurement
+objects configured by the user.  Hence, you must provide a list of
+all measurements to include in a particular estimation run.  In
+addition, the solver object is where the user specifies which
+parameters are to be treated as solve-for and consider quantities.
+Further data that is provided on the solver object is shown in Fig.
+\ref{Fig:ODOrganization} and includes process noise parameters and
+convergence tolerances to name a few.
+
+\subsection{Intermediate Level View of System Components}
+
+
+%To configure a measurement model, the measurement participants must
+%be created and appropriately configured.   Fields on the Measurement
+%Model object allow the user to define many different types of
+%measurements given the specified list of participants.   If observed
+%measurements are available from a standard file format, the user
+%configures the measurement Model to read data from the desired file.
+%In this case, the user must set object Ids on the measuement
+%participants to match the Ids on the measurement file.  GMAT uses
+%the file format and measurement Ids to determine how computed values
+%are to be calculated.
+%
+
+
+\verbatiminput{GSMeasurement.script}
+\verbatiminput{BatchLeastSquares.script}
+\verbatiminput{ExtendedKalmanFilter.script}
+
+%Estimators
+%
+%The third component required for an estimation problem is a solver.
+%The user will have many solvers to choose from including but not
+%limited to
+%
+%?   Initial orbit determination ?   Batch (least squares, other) ?
+%Filters (SRIF, EKF, UKF)
+%
+%In GMAT the solver is a relatively simple object compared to the
+%measurement model and the measurement  participants.  The job of the
+%solver is to query configured measurement models for the observed
+%and computed values  and the partial derivatives  and use this
+%information  to generate state estimates.  Hence,  the estimator in
+%GMAT knows little about the details of the measurement model
+%computations or the configurations of the participants.
+%
+%A sample script segment for a BatchLeastSquare he user will specify
+%the SolveFor and Consider parameters on the estimator, along with
+%what measurements they would like the solver to process.
+%
+%%Create BatchLeastSquares BLSE BLSI.Measurements = BLSI.Propagator =
+%%BLSE.SolveFor = BLSE.Consider = BLSE.SolutionEpoch =
+%%BLSE.AbsoluteConvergenceTol = BLSE.Propagator =
+%%
+%%Create ExtendedKalmanFilter EKF EKF.Measurements = EKF.Propagator =
+%%EKF.SolveFor = EKF.Consider = EKF.SolutionEpoch = EKF.Propagator =
+%%EKF.ProcessNoiseModel = EKF.Smoothing = Dynamics Models
+%
+%Dynamics Models ?   Participant dynamics ?   Variational equations ?
+%Process Noise
+%
+%Commands and Application Control
+%
+%Application Control Modes ?   RunEstimator ?   SimulateData ?
+%RunEstimatorSequence

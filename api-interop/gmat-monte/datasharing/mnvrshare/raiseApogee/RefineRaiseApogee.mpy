@@ -1,0 +1,182 @@
+# File: RefineRaiseApogee.mpy
+#
+# Steps 1 and 2 of the Ephemeris Sharing Example 
+
+# Load a basic set of libraries to use 
+import Monte as M
+import mpy.io.data as defaultData
+import mpy.traj.force.grav.basic as basicGrav
+from mpy.units import *
+
+import MonteUI.setup as ui
+
+from ShowTrajectories import *
+from load_gmat import *
+
+import cristo
+
+#################################################
+# Monte In Control
+#################################################
+
+scName1 = "DefaultSC"
+scNAIFId1 = -421
+
+# Load planetary ephemeris de405 from default data
+boa = defaultData.load( "ephem/planet/de405" )
+
+# Build the gravity nodes connecting the spacecraft to the gravitational
+# bodies we want active.
+# basicGrav.add( boa, scName1, [ "Sun", "Earth", "Moon" ], harmonics = [ "Earth" ] )
+basicGrav.add( boa, scName1, [ "Sun", "Earth", "Moon" ] )
+
+# Define an initial state of a spacecraft using Cartesian elements
+state = M.State(
+   boa, scName1, 'Earth',
+   M.Cartesian.x( 7100 * km ), 
+   M.Cartesian.y( 0 * km ),
+   M.Cartesian.z( 1300 * km ),
+   M.Cartesian.dx( 0 * km/sec ), 
+   M.Cartesian.dy( 7.35 * km/sec ),
+   M.Cartesian.dz( 1 * km/sec )
+   )
+
+# Define which forces will act on the spacecraft during propagation.
+forces = [
+   M.GravityForce( boa, scName1 ),
+   #'Finite Burn',
+   ]
+
+# Set up the beginning and end times for our scenario.
+beginTime = M.Epoch( "23-JUL-2014 20:48:50 UTC" )
+endTime = M.Epoch( "24-AUG-2014 20:48:50 UTC" )
+
+# Add the initial state to the "IntegState"
+integState = M.IntegState(
+   boa,         # Model database used in integration
+   beginTime,   # Start time
+   endTime,     # End time
+   [],          # Events to trigger integration end (none)
+   scName1,      # Spacecraft name
+   'Earth',     # Center body
+   'EME2000',   # Input frame
+   'EME2000',   # Integration frame
+   state,       # State initial conditions
+   forces,      # Forces which act on state
+   False,       # Integrate only partial derivatives (false)
+   [],          # Parameters to be used in partial derivative calculations (none)
+   []           # Partials tolerance scale factors (allows different partial
+                # derivatives to have different integration tolerances, none)
+   )
+
+# Add state to our propagation manager "IntegSetup"
+integ = M.IntegSetup( boa )
+integ.add( integState )
+
+# Set up the propagator.
+prop = M.DivaPropagator( boa, "DIVA", integ )
+
+prop.create( boa, beginTime, endTime )
+
+# -------------------------------
+# Display the starting trajectory
+# -------------------------------
+theSats = [scName1]
+ShowTrajectory(boa, theSats, beginTime, endTime, False)
+
+# -------------------------------
+# Write SPK
+# -------------------------------
+SpiceName.bodyInsert( scNAIFId1, scName1 )
+EphemName1 = scName1 + ".bsp"
+cristo.convert( boa, EphemName1 )
+
+#################################################
+# GMAT Takes Over
+#################################################
+ScriptName = "RaiseApogee.script"
+EphemName2 = "./RaiseApogeeAfterManeuver.bsp"
+import os
+EphemName1Full = os.path.join(os.getcwd(), EphemName1)
+
+print("Starting GMAT !!!!!!!!!!!!!!!!!!")
+
+gmat.LoadScript(ScriptName)
+sat = gmat.GetObject("DefaultSC")
+sat.SetField("OrbitSpiceKernelName", EphemName1Full)
+ephem = gmat.GetObject("EphemWithLOI")
+ephem.SetField("Filename", EphemName2)
+gmat.RunScript()
+
+spacecraft = gmat.GetRuntimeObject("DefaultSC")
+
+# Get the targeted maneuver data for use in Monte
+thruster = spacecraft.GetRefObjectArray("Thrusters")[0]
+thrust = thruster.GetNumber("C1")
+
+mfr = gmat.GetRuntimeObject("MFR")
+MassFlow = mfr.GetNumber("Value")
+print("MFR: ", MassFlow)
+
+br = gmat.GetRuntimeObject("BurnDuration")
+BurnDuration = br.GetNumber("Value")
+print ("BurnDuration: ", BurnDuration)
+
+timeConverter = gmat.TimeSystemConverter.Instance()
+utcMJ = gmat.GetRuntimeObject("burnEpoch")
+epoch = utcMJ.GetNumber("Value")
+print("Epoch: ", epoch)
+utcGregorian = timeConverter.ConvertMjdToGregorian(epoch) + " UTC"
+
+print("GMAT Maneuver ", thrust, " newtons at date ", utcGregorian)
+
+burnStart = timeConverter.ConvertMjdToGregorian(epoch - BurnDuration  /86400.0) + " UTC"
+
+print("Start the burn at ", burnStart, " (", abs(BurnDuration), " sec before ", utcGregorian, ")")
+
+
+#################################################
+# Monte Takes Over
+#################################################
+  
+boa.load( EphemName2 )
+
+v = VelocityDir( TrajQuery( boa, scName1, "Moon" ) )
+v2000 = v.unit( utcGregorian, "EME2000" )
+
+print("Burn direction: ", v2000)
+
+
+# Finite LOI
+ui.NewFiniteBurn(
+    boa,
+    Body = scName1,
+    Name = 'LOI',
+    Start = utcGregorian,
+    Stop = BurnDuration * sec,
+    Frame = 'EME2000',
+    Direction = ui.NewFixedDir(
+        boa,
+        Frame = "EME2000",
+        Unit = v2000,
+      ),
+    Force = [ thrust * N ],
+    MassFlow = [ MassFlow * kg/sec ],
+    )
+
+ 
+# -------------------------------
+# Display the GMAT trajectory
+# -------------------------------
+theSats = [scName1]
+
+# Set up the critical times for our scenario.
+beginTime = M.Epoch( "24-JUL-2014 01:00:00 UTC" )
+maneuverTime = M.Epoch( burnStart )
+endTime = M.Epoch( "02-AUG-2014 12:00:00 UTC" )
+
+# Show the trajectory up to the maneuver
+ShowTrajectory(boa, theSats, beginTime, maneuverTime, True)
+
+# Now propagate through the burn and up to the end time
+ 

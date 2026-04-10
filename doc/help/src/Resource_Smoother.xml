@@ -1,0 +1,917 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="Smoother"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>Smoother</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary>Orbit Determination</primary>
+
+    <secondary>Smoother</secondary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Smoother</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Smoother</refname>
+
+    <refpurpose>A backwards filter yielding an improved estimate of states
+    through weighted combination of forward and reverse sequential
+    estimation.</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>A fixed-interval backward-running sequential estimator utilizing the
+    Fraser-Potter algorithm for fusion of forward and reverse estimated
+    states.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="ExtendedKalmanFilter"/>, <xref linkend="RunSmoother"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colwidth="1.0*"/>
+
+        <colspec colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>AddPredictToMatlabFile</guilabel></entry>
+
+            <entry><para>Set to True to include the data from the Smoother
+            prediction span in the MATLAB file. Predicted data is only
+            generated if <guilabel>PredictTimeSpan</guilabel> is non-zero.
+            Setting this parameter to True will add the predicted states,
+            covariance, process noise, and state transition matrix to the
+            Smoother MATLAB data file.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>True/False</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>True or False</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>False</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DelayRectifyTimeSpan</guilabel></entry>
+
+            <entry><para>Defines a period of time, beginning from warm start
+            or initialization, for which the reference trajectory is generated
+            from the a-priori or initial state. As always, any measurements
+            are used to update the estimated state, but the measurements will
+            not be applied to the reference trajectory used for linearization.
+            After the delay rectify time span has elapsed, the a-priori state
+            is discarded, and the current filter estimated state is used as
+            the reference trajectory for linearization, in accordance with
+            normal operation of an extended Kalman filter. </para><para>This
+            parameter applies to the backward filter when using the
+            Fraser-Potter smoothing algorithm. A similar parameter exists for
+            the forward filter on the
+            <guilabel>ExtendedKalmanFilter</guilabel> resource. See the
+            Remarks below for further notes on this
+            parameter.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Seconds</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Filter</guilabel></entry>
+
+            <entry><para>The forward-run <guilabel>Filter</guilabel> instance
+            containing the states and covariances to process in the
+            smoother.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>User defined instance of an
+                    <guilabel>ExtendedKalmanFilter</guilabel> resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MatlabFile</guilabel></entry>
+
+            <entry><para>File name for the output MATLAB data file. Leaving
+            this parameter unset means that no MATLAB file will be generated.
+            </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>String containing a valid file name.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MeasDeweightingCoefficient</guilabel></entry>
+
+            <entry><para>Coefficient used for Measurement Underweighting for
+            the backward propagating EKF used by the smoother. Using the
+            default value, Measurement Underweighting is effectively turned
+            off. We use Lear’s Measurement Underweighting method described by
+            Eq. (4.36) in Reference 1. See the Remarks for the
+            <guilabel>ExtendedKalmanFilter</guilabel> resource for additional
+            details. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MeasDeweightingSigmaThreshold</guilabel></entry>
+
+            <entry><para>1-sigma RSS position threshold used for Measurement
+            Underweighting processing. Measurement Underweighting is only
+            performed if the 1-sigma RSS position threshold, derived from the
+            error covariance matrix, is greater than this threshold AND the
+            <guilabel>MeasDeweightingCoefficient</guilabel> is greater than 0.
+            </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>km</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>PredictTimeSpan</guilabel></entry>
+
+            <entry><para>Time span in seconds for the smoother ephemeris
+            prediction after processing the last
+            measurement.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Seconds</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportFile</guilabel></entry>
+
+            <entry><para>Smoother output report file name.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>String containing a valid file name</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>'Smoother' + instancename +
+                    '.data'</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportStyle</guilabel></entry>
+
+            <entry><para>Specifies the level of report output from the
+            smoother. If Normal mode is selected, only the smoother report
+            file is generated. If Verbose mode is selected, an additional
+            output report file will be generated from the smoother backward
+            filter run. Selection of Verbose mode requires the user to assign
+            RUN_MODE = Testing in the GMAT startup file. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Normal, Verbose</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>Normal</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <refsection>
+      <title>Fraser-Potter Smoother</title>
+
+      <para>The <guilabel>Smoother</guilabel> resource implements a
+      Fraser-Potter (FP) fixed-interval smoother as described in Reference 1
+      and Reference 2. The FP smoother first runs a filter backward (from the
+      latest to earliest measurement) over the same span as the filter
+      "forward" run. The backward filter initial state is set to the forward
+      filter final state. The backward filter initial covariance is set to the
+      diagonal elements of the forward filter end covariance, with the
+      position and velocity variances multiplied by a scale factor of 1e+10
+      and other estimated parameter variances multiplied by a factor of 1e+4.
+      The off-diagonal elements of the backward filter initial covariance are
+      zeroed out. The smoother estimate at each time or measurement update is
+      formulated as a weighted linear combination of the forward filter and
+      backward smoother estimates. See the references for further mathematical
+      details.</para>
+
+      <para>The inflation of the backwards filter initial covariance makes it
+      susceptible to divergence and other numerical errors during its
+      convergence span. If the smoother fails, it is strongly recommended to
+      attempt another smoother run with
+      <guilabel>DelayRecitfyTimeSpan</guilabel> set to a time span that would
+      normally allow the filter to converge. In Normal mode, the smoother
+      output report file does not include the results of the backward filter
+      pass, but you can set the Smoother <guilabel>ReportStyle</guilabel> to
+      <guilabel>Verbose</guilabel> (requires setting RUN_MODE = TESTING in
+      gmat_startup_file.txt) to produce a report of the backward filter run to
+      assist troubleshooting.</para>
+    </refsection>
+
+    <refsection>
+      <title>Navigation Requires Use of Fixed Step Numerical
+      Integration</title>
+
+      <para>GMAT navigation requires use of fixed stepped propagation. The
+      <guilabel>ExtendedKalmanFilter</guilabel> resource has a
+      <guilabel>Propagator</guilabel> field containing the name of the
+      <guilabel>Propagator</guilabel> resource that will be used during the
+      estimation process. As shown in the <guilabel>Note</guilabel> below,
+      there are some hard restrictions on the choice of error control
+      specified for the <guilabel>ForceModel</guilabel> resource associated
+      with your propagator.</para>
+
+      <note>
+        <para>The <guilabel>ErrorControl</guilabel> parameter specified for
+        the <guilabel>ForceModel</guilabel> resource associated with the
+        <guilabel>ExtendedKalmanFilter</guilabel>
+        <guilabel>Propagator</guilabel> must be set to '<code>None</code>.' Of
+        course, when using fixed step control, the user must choose a step
+        size, as given by the <guilabel>Propagator</guilabel>
+        <guilabel>InitialStepSize</guilabel> field, for the chosen orbit
+        regime and force profile, that yields the desired accuracy.</para>
+      </note>
+    </refsection>
+
+    <refsection>
+      <title>Smoother MATLAB Data File</title>
+
+      <para>If MATLAB is installed and properly configured to interface with
+      GMAT (see <xref linkend="MatlabInterface"/>), the user may generate a
+      mat-file containing useful analysis data from the
+      <guilabel>Smoother</guilabel> run. This option is enabled by specifying
+      a path and filename for the output file on the
+      <guilabel>MatlabFile</guilabel> field of the configured
+      <guilabel>Smoother</guilabel> resource. Except as noted in the tables
+      below, the units for data in the mat-file are the same as those in the
+      Smoother output file; seconds, km, km/sec, DSN Range Units, Hz, and
+      degrees.</para>
+
+      <para>The Smoother MATLAB file <guilabel>EstimationConfig</guilabel>,
+      and <guilabel>Observed</guilabel> structures are identical to those from
+      the Filter resource and are described in the Filter resource
+      documentation (see <xref linkend="ExtendedKalmanFilter_MatlabFile"/>).
+      The output from the smoother backward filter run is stored in the
+      <guilabel>BackwardComputed</guilabel> and
+      <guilabel>BackwardFilter</guilabel> structures of the smoother output
+      file. These have the same structure and contents as the
+      <guilabel>Computed</guilabel> and <guilabel>Filter</guilabel> structures
+      in the forward filter MATLAB file, and again are described in the Filter
+      resource documentation.</para>
+
+      <para>The smoother MATLAB file <guilabel>Computed</guilabel> structure
+      differs slightly from its Filter counterpart. Contents of the
+      smoother<guilabel> Computed</guilabel> structure are described in the
+      table below.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>Elevation</entry>
+
+              <entry>Computed elevation in degrees at the measurement epoch.
+              Does not apply (set to 0) for GPS_PosVec data.</entry>
+            </row>
+
+            <row>
+              <entry>IonosphericCorrection</entry>
+
+              <entry>The magnitude of the ionospheric measurement correction.
+              Units are the same as the measurement. See note below regarding
+              media corrections for X/Y angle measurements.</entry>
+            </row>
+
+            <row>
+              <entry>Measurement</entry>
+
+              <entry>Computed measurements. For GPS_PosVec, each cell holds a
+              1x3 column vector of X, Y, Z computed measurements.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementEditFlag</entry>
+
+              <entry>The string observation edit flag. 'N' indicates
+              unedited/accepted observations.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementNumber</entry>
+
+              <entry>Measurement record number.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementPartials</entry>
+
+              <entry>A cell array of matrices. Each member is a matrix of the
+              partial derivatives of the measurement with respect to each
+              element of the state. The partials are taken with respect to the
+              element type selected on the Spacecraft
+              <guilabel>SolveFors</guilabel> field. For example, if the user
+              has chosen to estimate the KeplerianState, the partials are with
+              respect to the Keplerian elements. The order of elements matches
+              that given in the EstimationConfig state names. For GPS_PosVec
+              data, each cell holds a 3xN matrix, where N is the number of
+              estimated states. Each row contains the partials with respect to
+              the X, Y, and Z GPS_PosVec measurement in order.</entry>
+            </row>
+
+            <row>
+              <entry>PreUpdateCovariance</entry>
+
+              <entry>Smoother state covariance prior to measurement
+              update.</entry>
+            </row>
+
+            <row>
+              <entry>PreUpdateCovarianceVNB</entry>
+
+              <entry>Smoother state covariance prior to measurement update, in
+              the VNB reference frame.</entry>
+            </row>
+
+            <row>
+              <entry>Residual</entry>
+
+              <entry>Smoother state residual prior to measurement
+              update.</entry>
+            </row>
+
+            <row>
+              <entry>PreUpdateState</entry>
+
+              <entry>Smoother state prior to measurement update.</entry>
+            </row>
+
+            <row>
+              <entry>ScaledResidual</entry>
+
+              <entry>A unitless value representing the raw residual divided by
+              the sum of state noise (appropriately transformed) and
+              measurement noise. Schematically, Scaled Residual = Raw Residual
+              / (HPH' + R).</entry>
+            </row>
+
+            <row>
+              <entry>TroposphericCorrection</entry>
+
+              <entry>The magnitude of the tropospheric measurement correction.
+              Units are the same as the measurement. See note below regarding
+              media corrections for X/Y angle measurements.</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>Contents of the <guilabel>Smoother</guilabel> structure are
+      described in the table below.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>Covariance</entry>
+
+              <entry>The smoother state covariance (Cartesian), after the
+              measurement or time update.</entry>
+            </row>
+
+            <row>
+              <entry>CovarianceVNB</entry>
+
+              <entry>The smoother state covariance (VNB coordinates), after
+              the measurement or time update.</entry>
+            </row>
+
+            <row>
+              <entry>EpochTAI</entry>
+
+              <entry>The TAI epoch of each smoother record. Each member is a
+              column vector where the first row is the epoch as a MATLAB
+              datenum and the second row is the epoch as a GMAT TAIModJulian
+              date.</entry>
+            </row>
+
+            <row>
+              <entry>EpochUTC</entry>
+
+              <entry>The UTC epoch of each smoother record. Each member is a
+              column vector where the first row is the epoch as a MATLAB
+              datenum and the second row is the epoch as a GMAT UTCModJulian
+              date.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementNumber</entry>
+
+              <entry>Measurement record number. Set to NaN for initial or time
+              update steps.</entry>
+            </row>
+
+            <row>
+              <entry>State</entry>
+
+              <entry>Smoother state after the measurement or time
+              update.</entry>
+            </row>
+
+            <row>
+              <entry>UpdateType</entry>
+
+              <entry>Filter update mode (Initial, Time, or
+              Measurement).</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Below is an example of a configured <guilabel>Smoother</guilabel>
+      instance. In this example, <guilabel>EKF</guilabel> is an instance of an
+      <guilabel>ExtendedKalmanFilter</guilabel>.</para>
+
+      <programlisting>Create Smoother SMO;
+
+SMO.Filter          = EKF;
+SMO.PredictTimeSpan = 86400.;
+SMO.ReportFile      = 'smoother_run.txt';
+SMO.MatlabFile      = 'smoother_run.mat';
+
+BeginMissionSequence;
+
+RunSmoother SMO;
+</programlisting>
+    </informalexample>
+  </refsection>
+
+  <refsection>
+    <title>References</title>
+
+    <orderedlist>
+      <listitem>
+        <para>Carpenter, Russell and Chris D'Souza. <emphasis>Navigation
+        Filter Best Practices</emphasis>. Technical Report TP-2018-219822,
+        NASA, April 2018.</para>
+      </listitem>
+
+      <listitem>
+        <para>D. C. Fraser and J. E. Potter, "The Optimum Linear Smoother as a
+        Combination of Two Optimum Linear Filters", <emphasis>IEEE Trans.
+        Automat. Contr.</emphasis>, vol. AC-14, no. 4, pp. 387-390, Aug.
+        1969.</para>
+      </listitem>
+    </orderedlist>
+  </refsection>
+</refentry>

@@ -1,0 +1,109 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{tabularx}
+\author{Darrel J. Conway\\Thinking Systems, Inc.}
+\title{Comparison of Options for GMAT's C-Interface  }
+\begin{document}
+\maketitle
+\abstract{This document compares approaches to building GMAT's C-Interface.}
+
+\section{Introduction}
+
+Whatever.  The goal here is the table below.
+
+\section{Notes}
+
+Below there is a table stating what I know so far.  This is basically notes while looking at the options.  Other notes:
+
+\begin{itemize}
+\item Another group looking to use C++ in MATLAB and Python produced this report:\\ http://verdandi.gforge.inria.fr/doc/high\_level\_interface.pdf
+\item This URL looks interesting and pertinent:  http://undocumentedmatlab.com/
+\end{itemize}
+
+\noindent Open questions/comments:
+
+\begin{itemize}
+\item Is this project misnamed?  Most of the approaches we discuss are really Java interface issues, not C interface.  It seems to me that C only enters as an intermediary.  (I think we do want a C interface.  But if the goal is really to talk to MATLAB, Java seems the most natural approach.)
+\item Java calls in MATLAB are straightforward.  You add path data to the MATLAB Java path, and then call into the .jar or .class files.  JNI/JNA calls are a bit more convoluted because MATLAB needs to be able to find the associated shared libraries.
+\item For what it's worth, I'm becoming more and more convinced that we do want Python support along with MATLAB support.  That seems to point to a native C interface to me, and postprocessing (swig or something like it) to get the further hooks.
+\end{itemize}
+
+\newcolumntype{Y}{>{\small\raggedright\arraybackslash}X}
+\newcolumntype{Z}{>{\small\raggedright\arraybackslash}X}
+\begin{tabularx}{\linewidth}{|l|>{\setlength\hsize{0.8\hsize}}Y|>{\setlength\hsize{1.2\hsize}}Z|}
+\hline 
+\textbf{Tool} & \textbf{URL} & \textbf{Notes} \\ 
+\hline 
+loadlibrary &  &\begin{itemize}
+\item Method prototyped last year for propagation proof of principle
+\item Requires C wrappers for GMAT classes
+\item Interface changes inside of GMAT will ripple through the interface code, and need hand coding to adapt
+\end{itemize}\\
+\hline 
+MEX & www.mathworks.com & \begin{itemize}
+\item Requires specific MEX function access to each exposed piece of code.
+\item Interface changes inside of GMAT will ripple through the MEXFunction code, and need hand coding to adapt
+\end{itemize}\\
+\hline 
+JNI & docs.oracle.com/javase/7/docs/ technotes/guides/jni/index.html & \begin{itemize}
+\item Supports classes
+\item Has the reputation of being cumbersome to use and error prone.
+\end{itemize} \\ 
+\hline 
+swig & www.swig.org & \begin{itemize}\item There is a lot of chatter on SWIG-MATLAB interconnections, but not a lot of information about how well/if it works.  One interesting project is SwigMatlabPlus
+\item SwigMatlabPlus doesn't seem to be available anymore -- or will take some work to track down.  The link (http://alumni.media.mit.edu/ {\textasciitilde}sbasu/code/swigmatlabplus/) does not include the source, and other links on the developer's web site at MIT are broken.  It is Windows/Visual C++ specific.
+\item Requires a custom .i file to specify what the interface exposes
+\item swig builds JNI files and java files used to interface into Java, along with (at least one) .c file to link into the shared library.
+\item A note from the swig manual:  
+``If you are going to use optimisations turned on with gcc (for example -O2), ensure you also compile with -fno-strict-aliasing. The GCC optimisations have become more aggressive from gcc-4.0 onwards and will result in code that fails with strict aliasing optimisations turned on. See the C/C++ to Java typemaps section for more details.''
+\end{itemize}\\ 
+\hline 
+\end{tabularx} 
+
+\begin{tabularx}{\linewidth}{|l|>{\setlength\hsize{0.8\hsize}}Y|>{\setlength\hsize{1.2\hsize}}Z|}
+\hline 
+\textbf{Tool} & \textbf{URL} & \textbf{Notes} \\ 
+\hline 
+JNA & jna.java.net/ & \begin{itemize}
+\item Provides C access, so no direct class support.
+\item Allows for -- and requires -- an independent API definition through Java classes
+\end{itemize} \\ 
+\hline 
+%JMI & undocumentedmatlab.com/blog/ jmi-java-to-matlab-interface/ & \begin{itemize}
+%\item The Java to MATLAB intefcae -- calling MATLAB from Java
+%\end{itemize} \\ 
+%\hline 
+BridJ / JNAerator & //code.google.com/p/bridj/ & \begin{itemize}
+\item Appears to be pretty young.  Will it survive?
+\item Notes from the website:
+
+\textbf{Key features}
+\begin{itemize}
+\item Dynamic C / C++ / COM interop : call C++ methods, create C++ objects (and subclass C++ classes from Java !)
+\item You never need to compile any native code : we deal with the cross-compilation hassle for you once and for all in BridJ ! (works on Windows, Linux, MacOS X, Solaris, Android...)
+\item Full JNAerator support : stay away from C / C++ headers !
+\item Small library size (~ 600 kB all included)
+\item Straightforward type mappings with good use of generics 
+\end{itemize}
+\item Untested
+\end{itemize} \\ 
+\hline 
+.NET &  &\begin{itemize}
+\item Basically windows specific
+\item May be feasible via mono (www.mono-project.com); downloaded and installed on Linux in AZ, but so far untested.
+\end{itemize} \\
+\hline 
+COM &  & \begin{itemize}
+\item Windows specific
+\item COM interfaces are a bit old school, and have been replaced in large part by .NET.
+\end{itemize}\\ 
+\hline 
+TCP/IP &  &  \\ 
+\hline 
+\end{tabularx} 
+
+\end{document}

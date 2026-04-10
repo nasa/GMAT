@@ -1,0 +1,60 @@
+%  Script Mission - Optimization Example
+%
+%  This script demonstrates how to use an Optimize sequence
+
+
+%-----------------------------------------------------------------
+%---------------------- Create Spacecraft ------------------------
+%-----------------------------------------------------------------
+Create Spacecraft Sat;
+GMAT Sat.DisplayStateType = Cartesian;
+
+%-----------------------------------------------------------------
+%-----------------Create and Setup the Optimizer------------------
+%-----------------------------------------------------------------
+Create VF13ad SQPfmincon
+
+
+%-----------------------------------------------------------------
+%-----------------Create Variable and Arrays ---------------------
+%-----------------------------------------------------------------
+Create Variable X1 X2 F G
+
+%-----------------------------------------------------------------
+%------------------------------OutPut-----------------------------
+%-----------------------------------------------------------------
+
+Create ReportFile Data;
+GMAT Data.Filename = Ex_AlgebraicOptimization.report;
+GMAT Data.Precision = 16;
+GMAT Data.WriteHeaders = Off;
+GMAT Data.ColumnWidth = 20;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-----------------------------------------------------------------
+%----------------- Run the Optimization Loop ---------------------
+%-----------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+BeginMissionSequence
+Optimize SQPfmincon;
+
+    %  Vary the independent variables
+    Vary SQPfmincon( X1 = 0  , { Upper = 10, Lower = -10 } );
+    Vary SQPfmincon( X2 = 0  , { Upper = 10, Lower = -10 } );
+   
+    %  The cost function and Minimize command
+    GMAT F =  ( X1 - 2 )^2 + ( X2 - 2 )^2 
+    Minimize SQPfmincon(F);
+
+    %  Calculate constraint and use NonLinearConstraint command
+    %   ( yes, the equation below is actually a linear constraint, were 
+    %     testing functionality with this test)
+    %  The constraint is to require the solution to lie above the line defined by X2 = -X1 + 6
+    %  or X2 >= -X1 + 6;
+    GMAT G =  X2 + X1;
+    NonlinearConstraint SQPfmincon( G = 8 );
+
+EndOptimize;
+
+Report Data F G
+Report Data X1 X2

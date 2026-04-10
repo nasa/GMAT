@@ -1,0 +1,152 @@
+\chapter{Graphics} \label{Ch:Graphics}
+
+\section{Ground Track Plotting}
+
+A ground track plot displays spherical latitude and longitude over a Poincare (unwrapped cylinder) projection of a body's surface geography. The algormithm used to generate a ground track plot ensures that line wrapping at the plot boundaries is handled correctly, and that when wrapping occurs, the plot is interpolated to the plot boundary.
+
+Longitude is computed by converting position and velocity of the object to the body fixed system of the ground track plot central body.  Define $x$, $y$, and $z$ as the body fixed coordinates of the object.   The longitude is calculated using
+%
+\begin{equation}
+     \lambda =  atan2(y,x)
+\end{equation}
+%
+and the latitude is calculate using
+%
+\begin{equation}
+     \phi = asin{\frac{z}{r}}
+\end{equation}
+%
+where
+%
+\begin{equation}
+    r = \sqrt{x^2 + y^2 + z^2}
+\end{equation}
+
+There are three special cases to consider when plotting a new point on a ground track: (1) the new point wraps off the right-hand side of the plot, (2) the new point wraps off the left-had side of the plot, and (3) the new point does not wrap off either plot boundary.  When wrapping oocurs as in cases (1) and (2), the plot algorithm must perform  "Pen Up" and "Pen Down" commands to avoid connecting points on opposite ends of the plot with a spurious straight line.  Secondly, when wrapping occurs, the system must interpolate the line segments to plot boundaries. 
+
+The test to determine the case depends  upon whether the object is moving clockwise or counterclockwise in the body fixed system of the ground track plot central body.    The orbit direction is determined by evaluating the z component of orbit angular momentum expressed in the body fixed system.  Define a variable $d$ that is positive for clockwise motion in the body fixed system (the spacecraft is moving to the right on a ground track plot), and negative for counterclockwise motion. (spacecraft is moving to the left on  a ground track plot), and 0 for no motion.   The variable $d$ is computed as follows
+%
+\begin{equation}
+   d = sign(x \dot{y} - \dot{x}y)
+\end{equation}
+%
+%
+\begin{equation}
+    m = \frac{\phi_i -\phi_{i-1}}{\lambda_i - \lambda_{i-1}}
+\end{equation}
+
+\begin{center}
+\begin{minipage}{6 in}
+\begin{small}
+\begin{algorithm}[H]
+
+    \KwIn{$\lambda_i,\lambda_{i-1},\phi_i,\phi_{i-1},d_i,d_{i-1}$}
+    %
+    \KwOut{Updated Ground Track Plot}
+    $m\lambda_i^+ = mod(\lambda_i,2 \pi)$\;
+    $m\lambda_{i-1}^+ = mod(\lambda_{i-1},2 \pi)$\;
+    $m\lambda_i^- = mod(\lambda_i,-2 \pi)$\;
+    $m\lambda_{i-1}^- = mod(\lambda_{i-1},-2 \pi)$\;
+\% New point wraps off RHS border\;
+  \uIf{ $ d_i = d_{i-1} = 1 $ \mbox{And} $m\lambda_{i-1}^+ < \pi $ \mbox{And} $m\lambda_i^+ > \pi$}
+          {
+           
+           $m = \displaystyle\frac{\phi_i - \phi_{i-1}}{m\lambda_i^+ - m\lambda_{i-1}^+}$\;
+           $\phi_b = m (\pi - m\lambda_i^+) + \phi_i$\;
+           Plot line segment from ($\lambda_{i-1},\phi_{i-1}$) to ($\pi,\phi_b$)\;
+           Plot line segment from ($-\pi,\phi_b$) to ($\lambda_i,\phi_i$)\;
+          }{
+          \% New point wraps off LHS border\;
+  \uElseIf {$ d_i = d_{i-1} = -1 $ \mbox{And} $m\lambda_i^- < -\pi $ \mbox{And} $m\lambda_{i-1}^- > -\pi$}
+              {
+           
+           $m = \displaystyle\frac{\phi_i - \phi_{i-1}}{m\lambda_i^- - m\lambda_{i-1}^- }$\;
+           $\phi_b = m (-\pi - m\lambda_i^-) + \phi_i$\;
+           Plot line segment from ($\lambda_{i-1},\phi_{i-1}$) to ($-\pi,\phi_b$)\;
+           Plot line segment from ($\pi,\phi_b$) to ($\lambda_i,\phi_i$)\;
+               }
+               \% New does not wrap off plot border \;
+  \Else 
+           {
+                Plot line segment from ($\lambda_{i-1},\phi_{i-1}$) to ($\lambda_i,\phi_i$)\;
+            }
+    }    
+    \hspace{.2 in}
+    %
+    \label{alg:GroundTrackAlgorithm}\caption{Algorithm for Updating A Ground Track Plot}
+    %
+\end{algorithm}
+\end{small}
+\end{minipage}
+\end{center}
+
+\section{Footprint and Limb Computation}
+
+\subsection{Overview}
+
+Computing an instrument footprint or the Earth Limb as viewed from a spacecraft involves essentially three related problems: (1) Determining the intersection of a given line with a given ellipsoid, (2) determination of a line tangent to a known ellipsoid, and (3) determining how to select the points along the footprint or limb curve to provide a smooth plot in the graphics.    These problems are related and discussed in order below starting with the problem of computing the intersection of a line and an ellipsoid.
+
+\subsection{Intersection of Line and Ellipsoid}
+
+Begin by defining a ray $\boldsymbol{\ell}$ such that
+%
+\begin{equation}
+    \boldsymbol{\ell} = \mathbf{p} + \alpha\hat{\mathbf{d}} \label{Eq:RayParametrization}
+\end{equation}
+%
+where $\mathbf{p}$ (in this context the usually location of a spacecraft) is the the starting location of ray $\boldsymbol{\ell}$, $\hat{\mathbf{d}}$ is the unit vector in the direction of the ray, and $\alpha$ is the distance from coordinates $\mathbf{p}$ in the direction.  The equation for a tri-axial ellipoid is defined as
+%
+\begin{equation}
+  \frac{x^2}{R_x^2} + \frac{y^2}{R_y^2} + \frac{z^2}{R_z^2} - 1 = 0 \label{Eq:TriAxialEllipsoid}
+\end{equation}
+%
+where $R_x$, $R_y$, and $R_z$ are the ellipsoid radii in the $x$, $y$, and $z$ directions respectively.
+For simplicity of notation, we'll assume all coordinates such $x$, $y$, and $z$, and ray $\boldsymbol\ell$ are 
+expressed in the body coordinates of the ellipsoid.
+%
+Subtituting Eq.~(\ref{Eq:RayParametrization}) into Eq.~(\ref{Eq:TriAxialEllipsoid}) results in
+%
+\begin{equation}
+    \frac{\boldsymbol{\ell}^T \hat{\mathbf{i}}}{R_x^2} + \frac{\boldsymbol{\ell}^T \hat{\mathbf{j}}}{R_y^2} 
+    + \frac{\boldsymbol{\ell}^T \hat{\mathbf{k}}}{R_z^2} - 1 = 0 \label{Eq:EllipseSimltaneous}
+\end{equation}
+%
+where $\hat{\mathbf{i}}$, $\hat{\mathbf{i}}$, and $\hat{\mathbf{i}}$ are unit vectors in the $x$, $y$, and $z$ directions respectively.  Define $\alpha^*$ as the value of $\alpha$ that simulteoulsy satisfies both the equation for ray $\boldsymbol{\ell}$ and the equation for the triaxial ellipoid.  Expanding Eq.~(\ref{Eq:EllipseSimltaneous}) and grouping terms by powers of $\alpha^*$ yields
+%
+\begin{equation}
+    \alpha^{*2}\left( \frac{d_x^2}{R_x^2} + \frac{d_y^2}{R_y^2} + \frac{d_z^2}{R_z^2} \right) +
+    2\alpha^{*}\left( \frac{d_x p_x}{R_x^2} + \frac{d_y p_y}{R_y^2} + \frac{d_z p_z}{R_z^2} \right)+
+    \left( \frac{p_x^2}{R_x^2} + \frac{p_y^2}{R_y^2} + \frac{p_z^2}{R_z^2} - 1\right) = 0
+\end{equation}
+%
+This is a quadratic equation and the solution is 
+%
+\begin{equation}
+    \alpha^* = \frac{-B \pm \sqrt{B^2 - 4 A C}}{2A}\label{Eq:Quadratic}
+\end{equation}
+%
+where 
+%
+\begin{eqnarray}
+    A &=& \left( \frac{d_x^2}{R_x^2} + \frac{d_y^2}{R_y^2} + \frac{d_z^2}{R_z^2} \right)\\
+    B &=& 2\left( \frac{d_x p_x}{R_x^2} + \frac{d_y p_y}{R_y^2} + \frac{d_z p_z}{R_z^2} \right)\\
+    C &=& \left( \frac{p_x^2}{R_x^2} + \frac{p_y^2}{R_y^2} + \frac{p_z^2}{R_z^2} - 1\right) 
+\end{eqnarray}
+%
+There are three physical types of solutions for $\alpha^*$ given by Eq.~(\ref{Eq:Quadratic}).  If $(B^2 - 4 A C) < 0$ then ray $\boldsymbol\ell$ does not intersect
+the ellipoid.  If $(B^2 - 4 A C) = 0$ then ray $\boldsymbol\ell$ is tangent to the ellipsoid (we'll revisit this relation when computing the limb curve). In this case,
+%
+\begin{equation}
+    \boldsymbol{\ell}^* = \mathbf{p} -\frac{B}{2A}\hat{\mathbf{d}} 
+\end{equation}
+%
+Finally, if $(B^2 - 4 A C) > 0$ then ray $\boldsymbol\ell$ intersects the ellipsoid
+at two locations.  For graphics purposes, we require the smaller value of $\alpha^*$ given by Eq.~(\ref{Eq:Quadratic}). If we define $\boldsymbol\alpha^*$ as a vector containing the two solutions for $\alpha$ corresponding to the two intersection points, then, the equation for the nearest intersection point, $\boldsymbol{\ell}^*$ is given by
+%
+\begin{equation}
+    \boldsymbol{\ell}^* = \mathbf{p} + min(\boldsymbol\alpha^*)\hat{\mathbf{d}} 
+\end{equation}
+
+\subsection{Determining the Limb Region}
+
+\subsection{Selecting Points for Accurate Graphics}

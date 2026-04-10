@@ -1,0 +1,222 @@
+%
+%  Ex_MathInScript
+%
+%  Perform various algebraic calculations in GMAT script.
+%
+%  This script demonstrates the orbit state conversion from 
+%  cartesian to keplerian using in line math and GMAT's internal
+%  state conversion methods. Both methods use the GMAT Math specs
+%  and should result in nearly identical solutions.
+%
+%  SPH Comments: I only implemented the conversion for elliptic 
+%  inclined orbits, as described in the math spec. 
+%
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+%  Create a s/c
+Create Spacecraft Sat;
+
+Sat.DateFormat       = TAIModJulian;
+Sat.Epoch            = '21545';
+Sat.CoordinateSystem = EarthMJ2000Eq;
+Sat.DisplayStateType = Cartesian;
+Sat.X                = 7100;
+Sat.Y                = 0;
+Sat.Z                = 1300;
+Sat.VX               = 0;
+Sat.VY               = 7.35;
+Sat.VZ               = 1;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel Propagator1_ForceModel;
+
+Create Propagator Prop;
+
+Prop.FM                       = Propagator1_ForceModel;
+Prop.Type                     = RungeKutta89;
+Prop.InitialStepSize          = 60;
+Prop.Accuracy                 = 9.999999999999999e-012;
+Prop.MinStep                  = 0.001;
+Prop.MaxStep                  = 2700;
+Prop.MaxStepAttempts          = 50;
+Prop.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+
+Create Array rv[3,1] vv[3,1] hv[3,1] ev[3,1] nv[3,1];
+
+%   Create variables and arrays that are needed in calculations
+Create Variable SMA ECC INC AOP RAAN TA h r v n;
+Create Variable Energy rdotv mu ndote edotr x y z vx vy;
+Create Variable vz pi2 d2r SMAError ECCError INCError RAANError AOPError TAError;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create XYPlot SMAvsTimeINT;
+
+SMAvsTimeINT.SolverIterations     = Current;
+SMAvsTimeINT.UpperLeft            = [ 0.2877358490566038 0.008816120906801008 ];
+SMAvsTimeINT.Size                 = [ 0.3490566037735849 0.4534005037783375 ];
+SMAvsTimeINT.RelativeZOrder       = 454;
+SMAvsTimeINT.XVariable            = Sat.TAIModJulian;
+SMAvsTimeINT.YVariables           = {Sat.SMA};
+SMAvsTimeINT.ShowGrid             = true;
+SMAvsTimeINT.ShowPlot             = true;
+
+Create XYPlot SMAvsTimeScript;
+
+SMAvsTimeScript.SolverIterations  = Current;
+SMAvsTimeScript.UpperLeft         = [ 0.289622641509434 0.464735516372796 ];
+SMAvsTimeScript.Size              = [ 0.3490566037735849 0.4534005037783375 ];
+SMAvsTimeScript.RelativeZOrder    = 452;
+SMAvsTimeScript.XVariable         = Sat.TAIModJulian;
+SMAvsTimeScript.YVariables        = {SMA};
+SMAvsTimeScript.ShowGrid          = true;
+SMAvsTimeScript.ShowPlot          = true;
+
+Create XYPlot RAANvsTimeINT;
+
+RAANvsTimeINT.SolverIterations    = Current;
+RAANvsTimeINT.UpperLeft           = [ 0.6424528301886793 0.4659949622166247 ];
+RAANvsTimeINT.Size                = [ 0.3490566037735849 0.4534005037783375 ];
+RAANvsTimeINT.RelativeZOrder      = 448;
+RAANvsTimeINT.XVariable           = Sat.TAIModJulian;
+RAANvsTimeINT.YVariables          = {Sat.RAAN};
+RAANvsTimeINT.ShowGrid            = true;
+RAANvsTimeINT.ShowPlot            = true;
+
+Create XYPlot RAANvsTimeScript;
+
+RAANvsTimeScript.SolverIterations = Current;
+RAANvsTimeScript.UpperLeft        = [ 0.6424528301886793 0.01259445843828715 ];
+RAANvsTimeScript.Size             = [ 0.3490566037735849 0.4534005037783375 ];
+RAANvsTimeScript.RelativeZOrder   = 444;
+RAANvsTimeScript.XVariable        = Sat.TAIModJulian;
+RAANvsTimeScript.YVariables       = {RAAN};
+RAANvsTimeScript.ShowGrid         = true;
+RAANvsTimeScript.ShowPlot         = true;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+BeginScript 'Define Constants'
+   
+   %  Define constants
+   pi2  = 6.283185307179586;
+   d2r  = .017453292519943295770;
+   mu   = 398600.4415;
+   SMA  = 7191.870446001621;
+   RAAN = 306.614;
+   
+EndScript;
+
+While 'While ElapsedDays < 1' Sat.ElapsedDays < 1.0
+   
+   Propagate 'Prop One Step' Prop(Sat);
+   
+   %  Compute the keplerian elements using the algorithm in the GMAT Math Spec
+   BeginScript 'Compute Kep Elements'
+      
+      %  Define individual cartesian states
+      x  = Sat.X;
+      y  = Sat.Y;
+      z  = Sat.Z;
+      vx = Sat.VX;
+      vy = Sat.VY;
+      vz = Sat.VZ;
+      
+      rv(1,1) = x;
+      rv(2,1) = y;
+      rv(3,1) = z;
+      vv(1,1) = vx;
+      vv(2,1) = vy;
+      vv(3,1) = vz;
+      
+      %  Calculate the angular momentum and its magnitude
+      hv(1,1) = y*vz-z*vy;
+      hv(2,1) = z*vx-x*vz;
+      hv(3,1) = x*vy-y*vx;
+      h = sqrt( hv(1,1)^2 +  hv(2,1)^2 +  hv(3,1)^2 );
+      
+      %  Calculate the vector in the direction of the line of nodes
+      nv(1,1) = -z*vx+x*vz;
+      nv(2,1) = y*vz-z*vy;
+      nv(3,1) = 0;
+      n = sqrt( nv(1,1)^2 +  nv(2,1)^2 +  nv(3,1)^2 );
+      
+      %  Calculate the magnitude of position and velocity
+      r = sqrt( x^2 +   y^2  + z^2 );
+      v = sqrt( vx^2 + vy^2 + vz^2 );
+      
+      %  Calculate the eccentricity vector
+      rdotv = x*vx + y*vy + z*vz;
+      ev    = ( ( v^2 - mu/r )*rv - rdotv*vv  ) / mu;    %  This should make a column vector!!
+      ECC   = sqrt( ev(1,1)^2 +  ev(2,1)^2 +  ev(3,1)^2 );
+      
+      %  Calculate the Energy, SMA and INC
+      Energy = v^2/2 - mu/r;
+      SMA = -mu/2/Energy;
+      INC = acos(hv(3,1)/h);
+      
+      %  Calculate RAAN
+      RAAN = acos( nv(1,1)/n );
+      %  Fix quadrant
+      If nv(2,1) < 0
+         RAAN = pi2 - RAAN;
+      EndIf;
+      
+      %  Calculate AOP
+      ndote = nv(1,1)*ev(1,1) + nv(2,1)*ev(2,1) + nv(3,1)*ev(3,1);
+      AOP   = acos(ndote/(n*ECC));
+      %  Fix quadrant
+      If ev(3,1) < 0
+         AOP = pi2 - AOP;
+      EndIf;
+      
+      %  Calculate TA
+      edotr = rv(1,1)*ev(1,1) + rv(2,1)*ev(2,1) + rv(3,1)*ev(3,1);
+      TA    = acos(edotr/(ECC*r));
+      %  Fix quadrant
+      If rdotv < 0
+         TA = pi2 - TA;
+      EndIf;  % rdotv < 0
+   EndScript;
+   
+   % Convert to degrees and compute diffs
+   BeginScript 'Convert and Compare'
+      
+      %  Convert Angles to degrees
+      INC  = INC/d2r;
+      RAAN = RAAN/d2r;
+      AOP  = AOP/d2r;
+      TA   = TA/d2r;
+      
+      %  Compute the errors
+      SMAError  = SMA - Sat.SMA;
+      ECCError  = ECC - Sat.ECC;
+      INCError  = INC - Sat.INC;
+      RAANError = RAAN - Sat.RAAN;
+      AOPError  = AOP  - Sat.AOP;
+      TAError   = TA   - Sat.TA;
+   EndScript;
+
+
+EndWhile;
+
+
+

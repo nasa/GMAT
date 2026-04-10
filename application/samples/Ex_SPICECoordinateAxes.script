@@ -1,0 +1,93 @@
+%
+%   Ex_SPICECoordinateAxes
+%
+%   Demonstrate use of coordinate systems defined using SPICE axes.
+%
+%   R2026a
+%
+
+SolarSystem.EphemerisSource   = 'SPICE'
+SolarSystem.SPKFilename       = '../data/planetary_ephem/spk/DE424AllPlanets.bsp'
+
+%
+%   Set the Moon-fixed frame as the MOON_PA frame
+%
+
+Luna.PlanetarySpiceKernelName = {'../data/planetary_coeff/SPICELunaCurrentKernel.bpc'}
+Luna.FrameSpiceKernelName     = {'../data/planetary_coeff/SPICELunaFrameKernel.tf'}
+Luna.RotationDataSource       = 'SPICE'
+Luna.SpiceFrameId             = 'MOON_PA'
+
+%
+%   Principal Axes (MOON_PA) coordinates of the Apollo 11 landing site
+%
+
+Create GroundStation Apollo11
+
+Apollo11.CentralBody      = Luna
+Apollo11.StateType        = Cartesian
+Apollo11.HorizonReference = Ellipsoid
+Apollo11.Location1        = 1591.967049
+Apollo11.Location2        = 690.698573
+Apollo11.Location3        = 21.004461
+
+%
+%   Create the SPICE-defined MoonME coordinate system
+%
+%   The MOON_ME frame is defined in ../data/planetary_coeff/SPICELunaFrameKernel.tf
+%
+
+Create CoordinateSystem MoonME
+
+MoonME.Origin       = Luna
+MoonME.Axes         = 'SPICE'
+MoonME.SpiceFrameId = 'MOON_ME'
+
+%
+%   Create the SPICE-defined MoonPA coordinate system
+%   The MOON_PA frame is defined in ../data/planetary_coeff/SPICELunaFrameKernel.tf
+%
+
+Create CoordinateSystem MoonPA
+
+MoonPA.Origin       = Luna
+MoonPA.Axes         = 'SPICE'
+MoonPA.SpiceFrameId = 'MOON_PA'
+
+%
+%   Create the Moon-fixed coordinate system
+%
+%   This is the equivalent of the MOON_PA frame, since we previously
+%   assigned Luna.RotationDataSource as SPICE and Luna.SpiceFrameId as MOON_PA
+%
+
+Create CoordinateSystem MoonFixed
+
+MoonFixed.Origin = Luna
+MoonFixed.Axes   = BodyFixed
+
+%
+%   Mission sequence
+%
+
+Create String LineOut
+
+BeginMissionSequence
+
+LineOut = sprintf('%.9f %.9f %.9f %.9f %.9f %.9f', ...
+    Apollo11.MoonME.X, Apollo11.MoonME.Y, Apollo11.MoonME.Z, ...
+    Apollo11.MoonME.VX, Apollo11.MoonME.VY, Apollo11.MoonME.VZ)
+
+Write LineOut
+
+LineOut = sprintf('%.9f %.9f %.9f %.9f %.9f %.9f', ...
+    Apollo11.MoonPA.X, Apollo11.MoonPA.Y, Apollo11.MoonPA.Z, ...
+    Apollo11.MoonPA.VX, Apollo11.MoonPA.VY, Apollo11.MoonPA.VZ)
+
+Write LineOut
+
+LineOut = sprintf('%.9f %.9f %.9f %.9f %.9f %.9f', ...
+    Apollo11.MoonFixed.X, Apollo11.MoonFixed.Y, Apollo11.MoonFixed.Z, ...
+    Apollo11.MoonFixed.VX, Apollo11.MoonFixed.VY, Apollo11.MoonFixed.VZ)
+
+Write LineOut

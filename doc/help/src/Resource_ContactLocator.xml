@@ -1,0 +1,2349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="ContactLocator"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>ContactLocator</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>ContactLocator</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>ContactLocator</refname>
+
+    <refpurpose>A line-of-sight event locator between a target
+    <guilabel>Spacecraft</guilabel> and a <guilabel>GroundStation</guilabel>
+    or <guilabel>PlanetographicRegion</guilabel>.</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <note>
+      <para><guilabel>ContactLocator</guilabel> is a SPICE-based subsystem
+      that uses a parallel configuration for the solar system and celestial
+      bodies from other GMAT components. For precision applications, care must
+      be taken to ensure that both configurations are consistent. See <link
+      linkend="ContactLocator_DataConfiguration">Remarks</link> for
+      details.</para>
+    </note>
+
+    <para>A <guilabel>ContactLocator</guilabel> is an event locator used to
+    find line-of-sight contact events between a
+    <guilabel>Spacecraft</guilabel> and a <guilabel>GroundStation</guilabel>
+    or <guilabel>PlanetographicRegion</guilabel>. By default, a
+    <guilabel>ContactLocator</guilabel> generates a text event report listing
+    the beginning and ending times of each line-of-sight event, along with the
+    duration. Contact location can be performed over the entire propagation
+    interval or over a subinterval, and can optionally adjust for light-time
+    delay and stellar aberration. Contact location can be configured to search
+    for times of occultation of other <guilabel>CelestialBody</guilabel>
+    resources that may block line of sight, and can limit contact events to a
+    specified minimum elevation angle configured on the
+    <guilabel>GroundStation</guilabel>.</para>
+
+    <para>Contact location can be performed between one
+    <guilabel>Spacecraft</guilabel> (<guilabel>Target</guilabel>) and any
+    number of <guilabel>GroundStation</guilabel> resources
+    (<guilabel>Observers</guilabel>). Each target-observer pair is searched
+    individually, and results in a separate segment of the resulting report.
+    All pairs must use the same interval and search options; to customize the
+    options per pair, use multiple <guilabel>ContactLocator</guilabel>
+    resources.</para>
+
+    <para>Third-body occultation searches can be included by listing one or
+    more <guilabel>CelestialBody</guilabel> resources in the
+    <guilabel>OccultingBodies</guilabel> list. Any configured
+    <guilabel>CelestialBody</guilabel> can be used as an occulting body,
+    including user-defined ones. By default, no occultation searches are
+    performed; the central body of the <guilabel>GroundStation</guilabel> is
+    included automatically in the basic line-of-sight algorithm.</para>
+
+    <para>By default, the <guilabel>ContactLocator</guilabel> searches the
+    entire interval of propagation of the <guilabel>Target</guilabel>, after
+    applying certain endpoint light-time adjustments; see <link
+    linkend="ContactLocator_SearchInterval">Remarks</link> for details. To
+    search a custom interval, set <guilabel>UseEntireInterval</guilabel> to
+    <literal>False</literal> and set <guilabel>InitialEpoch</guilabel> and
+    <guilabel>FinalEpoch</guilabel> accordingly. Note that these epochs are
+    assumed to be at the observer, and so must be valid when translated to the
+    target via light-time delay and stellar aberration, if configured. If they
+    fall outside the propagation interval of the <guilabel>Target</guilabel>,
+    GMAT will display an error.</para>
+
+    <para>The contact locator can optionally adjust for both light-time delay
+    and stellar aberration, using either a transmit sense
+    (<guilabel>Observer</guilabel>→<guilabel>Target</guilabel>) or receive
+    sense (<guilabel>Observer</guilabel>←<guilabel>Target</guilabel>)
+    depending on the value of <guilabel>LightTimeDirection</guilabel>. The
+    light-time direction affects the valid search interval by limiting
+    searches near the start of the interval (for transmit sense) or the end of
+    the interval (for receive sense). See <link
+    linkend="ContactLocator_SearchInterval">Remarks</link> for details.
+    Stellar aberration is only applied for the line-of-sight portion of the
+    search; it has no effect during occultation searches.</para>
+
+    <para>The event search is performed at a fixed step through the interval.
+    You can control the step size (in seconds) by setting the
+    <guilabel>StepSize</guilabel> field. An appropriate choice for step size
+    is no greater than half the period of the line-of-sight function—that is,
+    half the orbit period for an elliptical orbit. If third-body occultations
+    are used, the maximum step size is no greater than the minimum-duration
+    occultation event you wish to find. See <link
+    linkend="ContactLocator_SearchAlgorithm">Remarks</link> for
+    details.</para>
+
+    <para>GMAT uses the SPICE library for the fundamental event location
+    algorithm. As such, all celestial body data is loaded from SPICE kernels
+    for this subsystem, rather than GMAT's own
+    <guilabel>CelestialBody</guilabel> shape and orientation configuration.
+    See <link linkend="ContactLocator_Remarks">Remarks</link> for
+    details.</para>
+
+    <para>Unless otherwise mentioned, <guilabel>ContactLocator</guilabel>
+    fields cannot be set in the mission sequence.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="CelestialBody"/>, <xref linkend="GroundStation"/>, <xref
+    linkend="Spacecraft"/>, <xref linkend="EclipseLocator"/>, <xref
+    linkend="FindEvents"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>Filename</guilabel></entry>
+
+            <entry><para>Name and path of the contact report file. This field
+            can be set in the mission sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid file path</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'ContactLocator.txt'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>FinalEpoch</guilabel></entry>
+
+            <entry><para>Last epoch to search for contacts, in the format
+            specified by <guilabel>InputEpochFormat</guilabel>. The epoch is
+            relative to the <guilabel>Observer</guilabel>, and must map to a
+            valid epoch in the <guilabel>Target</guilabel> ephemeris interval,
+            including any light time. This field can be set in the mission
+            sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid epoch in available spacecraft ephemeris</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'21545.138'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>ModifiedJulian epoch formats: days</para>
+
+                    <para>Gregorian epoch formats: N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>InitialEpoch</guilabel></entry>
+
+            <entry><para>First epoch to search for contacts, in the format
+            specified by <guilabel>InputEpochFormat</guilabel>. The epoch is
+            relative to the <guibutton>Observer</guibutton>, and must map to a
+            valid epoch in the <guibutton>Target</guibutton> ephemeris
+            interval, including any light time. This field can be set in the
+            mission sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid epoch in available spacecraft ephemeris</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'21545'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>ModifiedJulian epoch formats: days</para>
+
+                    <para>Gregorian epoch formats: N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>InputEpochFormat</guilabel></entry>
+
+            <entry><para>The field allows you to set the type of the epoch
+            that you choose to enter for <guilabel>InitialEpoch</guilabel> and
+            <guilabel>FinalEpoch</guilabel> fields. This field cannot be
+            modified in the Mission Sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any of the following epoch formats:<guilabel>
+                    UTCGregorian</guilabel><guilabel>
+                    UTCModJulian</guilabel>,<guilabel>
+                    TAIGregorian</guilabel>,<guilabel>
+                    TAIModJulian</guilabel>,<guilabel>
+                    TTGregorian</guilabel>,<guilabel>
+                    TTModJulian</guilabel>,<guilabel> A1Gregorian</guilabel>,
+                    <guilabel>A1ModJulian</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>TAIModJulian</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>IntervalStepSize</guilabel></entry>
+
+            <entry><para>Determines the resolution of time intervals for the
+            intermediate step reporting. If set to 0, then only the beginning
+            and end of contact periods are recorded.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Positive Real values</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><literal>0.0</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Seconds</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>LeftJustified</guilabel></entry>
+
+            <entry><para>Modifies the contact report to have columns be left
+            or right justified. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>LightTimeDirection</guilabel></entry>
+
+            <entry><para>Sense of light-time calculation: transmit from
+            observer or receive at observer.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><literal>Transmit</literal>,
+                    <literal>Receive</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><literal>Transmit</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Observers</guilabel></entry>
+
+            <entry><para>List of the contact observer objects. Can be any
+            number of GMAT <guilabel>GroundStation</guilabel>
+            resources.Observations will be calculated using the minimum
+            elevation angle of the ground station as well as any FOV attached
+            to its antenna if available. These ground stations must have a
+            <guilabel>Planet</guilabel> or <guilabel>Moon</guilabel> for their
+            central body. For contact location to a
+            <guilabel>PlanetographicRegion</guilabel>, the observer is the
+            spacecraft passing over the defined region.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>List of <guilabel>GroundStation</guilabel>
+                    resources, or a single <guilabel>Spacecraft</guilabel>
+                    resource (<guilabel>PlanetographicRegion</guilabel>
+                    overflight finding only)</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any existing <guilabel>GroundStation</guilabel> or
+                    <guilabel>Spacecraft</guilabel> resources</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Empty list</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>OccultingBodies</guilabel></entry>
+
+            <entry><para>List of occulting bodies to search for contacts. Can
+            be any number of GMAT <guilabel>CelestialBody</guilabel>-type
+            resources, such as <guilabel>Planet</guilabel>,
+            <guilabel>Moon</guilabel>, <guilabel>Asteroid</guilabel>, etc.
+            Note that an occulting body must have a mass (e.g. not
+            <guilabel>LibrationPoint</guilabel> or
+            <guilabel>Barycenter</guilabel>).</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>List of <guilabel>CelestialBody</guilabel> resources
+                    (e.g. <guilabel>Planet</guilabel>,
+                    <guilabel>Asteroid</guilabel>, <guilabel>Moon</guilabel>,
+                    etc.)</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any existing
+                    <guilabel>CelestialBody</guilabel>-class resources</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Empty list</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportPrecision</guilabel></entry>
+
+            <entry><para>Modifies the contact report precision on fields other
+            than times. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Positive integers</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><literal>6</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportFormat</guilabel></entry>
+
+            <entry><para>Defines the report style to return from the
+            ContactLocator. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><literal>SiteViewMaxElevationReport,</literal><literal>ContactRangeReport,AzimuthElevationRangeReport,
+                    AzimuthElevationRangeRangeRateReport,SiteViewMaxElevationRangeReport,Legacy</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><literal>Legacy</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportTimeFormat</guilabel></entry>
+
+            <entry><para>Determines the time format to be written in the
+            ContactLocator report file. Does not affect reports of the
+            'Legacy' format</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><literal>UTCGregorian</literal>,
+                    <literal>UTCMJD,ISOYD</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><literal>UTCGregorian</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>RunMode</guilabel></entry>
+
+            <entry><para>Mode of event location execution.
+            <literal>'Automatic'</literal> triggers event location to occur
+            automatically at the end of the run. <literal>'Manual'</literal>
+            limits execution only to the <guilabel>FindEvents</guilabel>
+            command. <literal>'Disabled'</literal> turns off event location
+            entirely.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><literal>Automatic</literal>,
+                    <literal>Manual</literal>,
+                    <literal>Disabled</literal></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><filename>'Automatic'</filename></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>StepSize</guilabel></entry>
+
+            <entry><para>Step size of event locator. See <link
+            linkend="ContactLocator_SearchAlgorithm">Remarks</link> for
+            discussion of appropriate values.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><guilabel>StepSize</guilabel> &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>10</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>s</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Target</guilabel></entry>
+
+            <entry><para>The target <guilabel>Spacecraft</guilabel> or
+            <guilabel>PlanetographicRegion</guilabel> resource to search for
+            contacts.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para><guilabel>Spacecraft</guilabel> or
+                    <guilabel>PlanetographicRegion</guilabel> resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any existing <guilabel>Spacecraft</guilabel> or
+                    <guilabel>PlanetographicRegion</guilabel> resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>First configured <guilabel>Spacecraft</guilabel>
+                    resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>UseEntireInterval</guilabel></entry>
+
+            <entry><para>Search the entire available
+            <guilabel>Target</guilabel> ephemeris interval, after adjusting
+            the end-points for light-time delay as appropriate. See <link
+            linkend="ContactLocator_SearchInterval">Remarks</link> for
+            details. This field can be set in the mission
+            sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>UseLightTimeDelay</guilabel></entry>
+
+            <entry><para>Use light-time delay in the event-finding algorithm.
+            The clock is always hosted on the <guibutton>Observer</guibutton>.
+            For more information on how this is being calculated, see the link
+            to the SPICE aberration correction documentation in the
+            references.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>UseStellarAberration</guilabel></entry>
+
+            <entry><para>Use stellar aberration in addition to light-time
+            delay in the event-finding algorithm. Light-time delay must be
+            enabled. Stellar aberration only affects line-of-sight searches,
+            not occultation searches.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>WriteReport</guilabel></entry>
+
+            <entry><para>Write an event report when event location is
+            executed. This field can be set in the mission
+            sequence.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true, false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Resource_ContactLocator_1.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>The default <guilabel>ContactLocator</guilabel> GUI for a new
+    resource is shown above. You can choose one
+    <guilabel>Spacecraft</guilabel> from <guilabel>Target</guilabel>, which is
+    populated by all the <guilabel>Spacecraft</guilabel> resources currently
+    configured in the mission. In the <guilabel>Observers</guilabel> list, you
+    can check the box next to all <guilabel>GroundStations</guilabel> you want
+    to use in the contact search.</para>
+
+    <para>To search for third-body occultations, check the boxes next to any
+    applicable <guilabel>CelestialBody</guilabel> resources in the
+    <guilabel>Occulting Bodies</guilabel> list. This list shows all celestial
+    bodies currently configured in the mission. Note that each occultation
+    search will increase the execution time of the overall search.</para>
+
+    <para>You can configure the output via <guilabel>Filename</guilabel>,
+    <guilabel>Run Mode</guilabel>, and <guilabel>Write Report</guilabel> near
+    the bottom. If <guilabel>Write Report</guilabel> is enabled, a text report
+    will be written to the file specified in <guilabel>Filename</guilabel>.
+    The search will execute during <guilabel>FindEvents</guilabel> commands
+    (for <guilabel>Manual</guilabel> or <guilabel>Automatic</guilabel> modes)
+    and automatically at the end of the mission (for
+    <guilabel>Automatic</guilabel> mode), depending on the <guilabel>Run
+    Mode</guilabel>.</para>
+
+    <para>You can configure the search interval via the options in the upper
+    right. Uncheck <guilabel>Use Entire Interval</guilabel> to set the search
+    interval manually. See the <link
+    linkend="ContactLocator_SearchInterval">Remarks</link> section for
+    considerations when setting the search interval.</para>
+
+    <para>You can control the search algorithm via the options in the bottom
+    right. Configure light-time and stellar aberration via the check boxes
+    next to each, and select the signal direction via the <guilabel>Light-time
+    direction</guilabel> selection.</para>
+
+    <para>To control the fidelity and execution time of the search, set the
+    <guilabel>Step size</guilabel> appropriately. See the <link
+    linkend="ContactLocator_Remarks">Remarks</link> section for
+    details.</para>
+
+    <para>Note that configuration of the <guilabel>ContactLocator</guilabel>
+    for <guilabel>PlanetographicRegion</guilabel> overflight searches is not
+    currently available through the GUI panel and can be done only in
+    script.</para>
+  </refsection>
+
+  <refsection>
+    <title>Scripting</title>
+
+    <para>Beyond the basic ContactLocator options offered through the GUI,
+    GMAT offers a number of additional report customization options that can
+    be accessed through the script interface. To create a report that gives
+    information at set intervals within the contact period, the user may set
+    <emphasis role="bold">IntervalSize</emphasis> to a positive value in
+    seconds. Finally, using <emphasis role="bold">ReportPrecision</emphasis>
+    and <emphasis role="bold">LeftJustified</emphasis> allows for configuring
+    the advanced output with additional specificity.</para>
+  </refsection>
+
+  <refsection xml:id="ContactLocator_Remarks">
+    <title>Remarks</title>
+
+    <refsection xml:id="ContactLocator_DataConfiguration">
+      <title>Data configuration</title>
+
+      <para>The <guilabel>ContactLocator</guilabel> implementation is based on
+      the <link xlink:href="http://naif.jpl.nasa.gov/naif/">NAIF SPICE
+      toolkit</link>, which uses a different mechanism for environmental data
+      such as celestial body shape and orientation, planetary ephemerides,
+      body-specific frame definitions, and leap seconds. Therefore, it is
+      necessary to maintain two parallel configurations to ensure that the
+      event location results are consistent with GMAT's own propagation and
+      other parameters. The specific data to be maintained is:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Planetary shape and orientation:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GMAT core:
+              <guilabel>CelestialBody</guilabel>.<guilabel>EquatorialRadius</guilabel>,
+              <guilabel>Flattening</guilabel>,
+              <guilabel>SpinAxisRAConstant</guilabel>,
+              <guilabel>SpinAxisRARate</guilabel>, etc.</para>
+            </listitem>
+
+            <listitem>
+              <para>ContactLocator:
+              <guilabel>SolarSystem</guilabel>.<guilabel>PCKFilename</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>PlanetarySpiceKernelName</guilabel></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Planetary ephemeris:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GMAT core:
+              <guilabel>SolarSystem</guilabel>.<guilabel>DEFilename</guilabel>,
+              or
+              (<guilabel>SolarSystem</guilabel>.<guilabel>SPKFilename</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>OrbitSpiceKernelName</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>NAIFId</guilabel>)</para>
+            </listitem>
+
+            <listitem>
+              <para>ContactLocator:
+              <guilabel>SolarSystem</guilabel>.<guilabel>SPKFilename</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>OrbitSpiceKernelName</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>NAIFId</guilabel></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Body-fixed frame:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GMAT core: built-in</para>
+            </listitem>
+
+            <listitem>
+              <para>ContactLocator:
+              <guilabel>CelestialBody</guilabel>.<guilabel>SpiceFrameId</guilabel>,
+              <guilabel>CelestialBody</guilabel>.<guilabel>FrameSpiceKernelName</guilabel></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Leap seconds:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GMAT core: startup file <literal>LEAP_SECS_FILE</literal>
+              setting</para>
+            </listitem>
+
+            <listitem>
+              <para>ContactLocator:
+              <guilabel>SolarSystem</guilabel>.<guilabel>LSKFilename</guilabel></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+
+      <note>
+        <para>For precise applications, the <guilabel>CelestialBody</guilabel>
+        shape must be consistent in both subsystems to ensure consistent
+        placement of a <guilabel>GroundStation</guilabel>. The following
+        script lines make the two definitions consistent for Earth.</para>
+
+        <programlisting>SolarSystem.PCKFilename = '..\data\planetary_coeff\pck00010.tpc'
+Earth.EquatorialRadius = 6378.1366
+Earth.Flattening = 0.00335281310845547</programlisting>
+      </note>
+
+      <para>See SolarSystem and <link
+      linkend="CelestialBody_ConfiguringForEventLocation">CelestialBody</link>
+      for more details.</para>
+    </refsection>
+
+    <refsection xml:id="ContactLocator_SearchInterval">
+      <title>Search interval</title>
+
+      <para>The <guilabel>ContactLocator</guilabel> search interval can be
+      specified either as the entire ephemeris interval of the
+      <guilabel>Target</guilabel>, or as a user-defined interval. Each mode
+      offers specific behavior related to handling of light-time delay and
+      discontinuous intervals.</para>
+
+      <para>If <guilabel>UseEntireInterval</guilabel> is true, the search is
+      performed over the entire ephemeris interval of the
+      <guilabel>Target</guilabel>, including any gaps or discontinuities. If
+      light-time delay is enabled, the search interval is truncated by the
+      approximate light time to allow SPICE to determine the exact light-time
+      delay between the participants during the search. If
+      <guilabel>LightTimeDirection</guilabel> is <literal>Transmit</literal>,
+      the beginning of the interval is truncated. If
+      <guilabel>LightTimeDirection</guilabel> is <literal>Receive</literal>,
+      the end of the interval is truncated. In either case, the other end of
+      the interval is trimmed slightly via bisection to avoid stepping beyond
+      the end of the ephemeris due to numeric precision issues. This trimming
+      is typically less than 1 s. The endpoints of gaps or discontinuities are
+      not modified, so these are not fully supported if light-time delay is
+      enabled. If light-time delay is disabled, the entire interval is used
+      directly, with no endpoint manipulation.</para>
+
+      <para>If <guilabel>UseEntireInterval</guilabel> is false, the provided
+      <guilabel>InitialEpoch</guilabel> and <guilabel>FinalEpoch</guilabel>
+      are used to form the search interval directly. This interval is
+      consistent with the <guilabel>Observer</guilabel> clock, and does not
+      support the inclusion of gaps or discontinuities from the
+      <guilabel>Target</guilabel> ephemeris. The user must ensure than the
+      provided interval results in valid <guilabel>Target</guilabel> ephemeris
+      epochs after light-time delay and stellar aberration have been
+      applied.</para>
+
+      <para>These rules are summarized in the following table, where
+      t<subscript>0</subscript> and t<subscript>f</subscript> are the
+      beginning and end of the <guilabel>Target</guilabel> ephemeris,
+      respectively, and lt is the light time between the
+      <guilabel>Target</guilabel> and the
+      <guilabel>Observer</guilabel>.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="3">
+          <colspec colnum="1" colwidth=".75*"/>
+
+          <colspec colnum="2" colwidth="*"/>
+
+          <colspec colnum="3" colwidth="*"/>
+
+          <tbody>
+            <row>
+              <entry colsep="1"/>
+
+              <entry colsep="1"><guilabel>UseEntireInterval</guilabel>
+              true</entry>
+
+              <entry><guilabel>UseEntireInterval</guilabel> false</entry>
+            </row>
+
+            <row>
+              <entry colsep="1"><guilabel>UseLightTimeDelay</guilabel>
+              true</entry>
+
+              <entry align="left" colsep="1"><variablelist>
+                  <?dbfo list-presentation="blocks"?>
+
+                  <?dbhtml list-presentation="blocks"?>
+
+                  <varlistentry>
+                    <term>Effective interval</term>
+
+                    <listitem>
+                      <para><guilabel>LightTimeDirection</guilabel> =
+                      <literal>'Transmit'</literal>:
+                      [t<subscript>0</subscript>+lt,
+                      t<subscript>f</subscript>]</para>
+
+                      <para><guilabel>LightTimeDirection</guilabel> =
+                      <literal>'Receive'</literal>:
+                      [t<subscript>0</subscript>,
+                      t<subscript>f</subscript>-lt]</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Discontinuous intervals</term>
+
+                    <listitem>
+                      <para>Unsupported. Behavior is undefined.</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+
+              <entry align="left"><variablelist>
+                  <?dbfo list-presentation="blocks"?>
+
+                  <?dbhtml list-presentation="blocks"?>
+
+                  <varlistentry>
+                    <term>Effective interval</term>
+
+                    <listitem>
+                      <para>[<guilabel>InitialEpoch</guilabel>,
+                      <guilabel>FinalEpoch</guilabel>]</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Discontinuous intervals</term>
+
+                    <listitem>
+                      <para>Unsupported. Behavior is undefined.</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry colsep="1"><guilabel>UseLightTimeDelay</guilabel>
+              false</entry>
+
+              <entry align="left" colsep="1"><variablelist>
+                  <?dbfo list-presentation="blocks"?>
+
+                  <?dbhtml list-presentation="blocks"?>
+
+                  <varlistentry>
+                    <term>Effective interval</term>
+
+                    <listitem>
+                      <para>[t<subscript>0</subscript>,
+                      t<subscript>f</subscript>]</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Discontinuous intervals</term>
+
+                    <listitem>
+                      <para>Fully supported</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+
+              <entry align="left"><variablelist>
+                  <?dbfo list-presentation="blocks"?>
+
+                  <?dbhtml list-presentation="blocks"?>
+
+                  <varlistentry>
+                    <term>Effective interval</term>
+
+                    <listitem>
+                      <para>[<guilabel>InitialEpoch</guilabel>,
+                      <guilabel>FinalEpoch</guilabel>]</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Discontinuous intervals</term>
+
+                    <listitem>
+                      <para>Fully supported</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection xml:id="ContactLocator_RunModes">
+      <title>Run modes</title>
+
+      <para>The <guilabel>ContactLocator</guilabel> works in conjunction with
+      the <guilabel>FindEvents</guilabel> command: the
+      <guilabel>ContactLocator</guilabel> resource defines the configuration
+      of the event search, and the <guilabel>FindEvents</guilabel> command
+      executes the search at a specific point in the mission sequence. The
+      mode of interaction is defined by
+      <guilabel>ContactLocator</guilabel>.<guilabel>RunMode</guilabel>, which
+      has three options:<itemizedlist>
+          <listitem>
+            <para><literal>Automatic</literal>: All
+            <guilabel>FindEvents</guilabel> commands are executed as-is, plus
+            an additional <guilabel>FindEvents</guilabel> is executed
+            automatically at the end of the mission sequence.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>Manual</literal>: All
+            <guilabel>FindEvents</guilabel> commands are executed
+            as-is.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>Disabled</literal>: <guilabel>FindEvents</guilabel>
+            commands are ignored.</para>
+          </listitem>
+        </itemizedlist></para>
+    </refsection>
+
+    <refsection xml:id="ContactLocator_ObserverFieldOfView">
+      <title>Observer Field of View</title>
+
+      <para>The contact locator has two approaches to determining the field of
+      view of the observer. The most basic way is to initialize a
+      <guilabel>GroundStation</guilabel> with a
+      <guilabel>MinimumElevationAngle</guilabel> defined. This approach will
+      use a constant elevation off the horizon as the threshold for
+      visibility. If a <guilabel>HorizonMaskFileName</guilabel> is defined for
+      the ground station, the masking profile defined in the mask file will be
+      used to determine visibility. For more complex observers, users may
+      attach an imager with either a CircularFOV, RectangularFOV, or CustomFOV
+      to the ground station. For each observer in the ContactLocator, GMAT
+      will conduct an individual search for each <link
+      linkend="Imager">Imager</link> with a <link
+      linkend="FieldOfView">FOV</link>, listing the contacts separately in the
+      report.</para>
+    </refsection>
+
+    <refsection xml:id="ContactLocator_SearchAlgorithm">
+      <title>Search algorithm</title>
+
+      <para>The <guilabel>ContactLocator</guilabel> uses the NAIF SPICE GF
+      (geometry finder) subsystem to perform event location. Specifically, to
+      find the initial contact windows, GMAT uses the intersection of the
+      windows found by the following two functions:</para>
+
+      <para><itemizedlist>
+          <listitem>
+            <para><literal><link
+            xlink:href="http://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gfposc_c.html">gfposc_c</link></literal>:
+            For line-of-sight search above the
+            <guilabel>GroundStation.MinimumElevationAngle</guilabel></para>
+          </listitem>
+
+          <listitem>
+            <para><literal><link
+            xlink:href="https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gftfov_c.html">gftfov_c</link></literal>:
+            For line-of-sight search within the <emphasis
+            role="bold">FOV</emphasis> on any attached <emphasis
+            role="bold">Imager </emphasis>(ignored if no FOV are
+            available)</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>The following call is made to perform occultation
+      calculations:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para><literal><link
+          xlink:href="http://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gfoclt_c.html">gfoclt_c</link></literal>:
+          For third-body occultation searches</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>All functions implement a fixed-step search method through the
+      interval, with an embedded root-location step if an event is found.
+      Proper selection of <guilabel>StepSize</guilabel> differs between the
+      two types.</para>
+
+      <para>For the basic line-of-sight search, without third-body
+      occultations, <guilabel>StepSize</guilabel> can be set as high as
+      one-half the period of the event function. For an elliptic orbit, this
+      is up to one-half the orbit period. Note however, when computing view
+      periods to a <guilabel>GroundStation</guilabel> utilizing a horizon mask
+      (either via the <guilabel>GroundStation</guilabel>
+      <guilabel>HorizonMaskFileName</guilabel> or sensor
+      <guilabel>FieldOfView</guilabel>), <guilabel>StepSize</guilabel> should
+      be sized to the resolution of the horizon mask. If the step size is too
+      large, GMAT may completely overstep some portions of the mask and view
+      periods may be incorrect or missing some events.</para>
+
+      <para>For third-body occultations, <guilabel>StepSize</guilabel> should
+      be set equal to the length of the minimum-duration event to be found, or
+      equal to the length of the minimum-duration gap between events,
+      whichever is smaller. To guarantee location of 10-second occultations,
+      set <guilabel>StepSize</guilabel> = 10.</para>
+
+      <para>If no third-body occultations are to be found, you can increase
+      performance of the search by increasing <guilabel>StepSize</guilabel>
+      per the notes above.</para>
+
+      <para>For further details, see the reference documentation for the two
+      functions linked above.</para>
+    </refsection>
+
+    <refsection xml:id="ContactLocator_ReportFormat">
+      <title>Report format</title>
+
+      <para>When <guilabel>WriteReport</guilabel> is enabled,
+      <guilabel>ContactLocator</guilabel> outputs an event report at the end
+      of each search execution. There are six report types. The "Legacy"
+      report contains the following data:<itemizedlist>
+          <listitem>
+            <para>Target name</para>
+          </listitem>
+
+          <listitem>
+            <para>For each Observer:<itemizedlist>
+                <listitem>
+                  <para>Observer name</para>
+                </listitem>
+
+                <listitem>
+                  <para>For each event:<itemizedlist>
+                      <listitem>
+                        <para>Event start time (UTC)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Event stop time (UTC)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Duration (s)</para>
+                      </listitem>
+                    </itemizedlist></para>
+                </listitem>
+
+                <listitem>
+                  <para>Total number of events</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>A sample report of the Legacy format is shown below.</para>
+
+      <programlisting>Target: DefaultSC
+
+Observer: GroundStation1
+Start Time (UTC)            Stop Time (UTC)               Duration (s)         
+01 Jan 2000 13:18:45.268    01 Jan 2000 13:29:54.824      669.55576907    
+01 Jan 2000 15:06:44.752    01 Jan 2000 15:18:22.762      698.01023654    
+
+
+Number of events : 2
+
+
+Observer: GroundStation2
+Start Time (UTC)            Stop Time (UTC)               Duration (s)         
+01 Jan 2000 13:36:13.792    01 Jan 2000 13:47:51.717      697.92488540    
+
+
+Number of events : 1</programlisting>
+
+      <para>The "SiteViewMaxElevationReport" report contains the following
+      data:<itemizedlist>
+          <listitem>
+            <para>Target name</para>
+          </listitem>
+
+          <listitem>
+            <para>For each Observation:<itemizedlist>
+                <listitem>
+                  <para>Observer name</para>
+                </listitem>
+
+                <listitem>
+                  <para>For each event:<itemizedlist>
+                      <listitem>
+                        <para>Event start time (ReportTimeFormat)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Event stop time (ReportTimeFormat)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Duration (s)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Maximum Elevation (degrees)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Maximum Elevation Time (ReportTimeFormat)</para>
+                      </listitem>
+                    </itemizedlist></para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>The "SiteViewMaxElevationRangeReport" report contains the
+      following data:<itemizedlist>
+          <listitem>
+            <para>Target name</para>
+          </listitem>
+
+          <listitem>
+            <para>For each Observation:<itemizedlist>
+                <listitem>
+                  <para>Observer name</para>
+                </listitem>
+
+                <listitem>
+                  <para>For each event:<itemizedlist>
+                      <listitem>
+                        <para>Event start time (ReportTimeFormat)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Event stop time (ReportTimeFormat)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Duration (s)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Maximum Elevation (degrees)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Maximum Elevation Time (ReportTimeFormat)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Range at start time</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Range at stop time</para>
+                      </listitem>
+                    </itemizedlist></para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>The "AzimuthElevationRangeReport" report uses the IntervalStepSize
+      parameter to produce the following data:<itemizedlist>
+          <listitem>
+            <para>Target name</para>
+          </listitem>
+
+          <listitem>
+            <para>For each Observation:<itemizedlist>
+                <listitem>
+                  <para>The Pass number</para>
+                </listitem>
+
+                <listitem>
+                  <para>Observer name</para>
+                </listitem>
+
+                <listitem>
+                  <para>For Each Time Stamp<itemizedlist>
+                      <listitem>
+                        <para>The Azimuth (degrees)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>The elevation (degrees)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>The Range (km)</para>
+                      </listitem>
+                    </itemizedlist></para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>The "AzimuthElevationRangeRangeRateReport" report uses the
+      IntervalStepSize parameter to produce the following data:<itemizedlist>
+          <listitem>
+            <para>Target name</para>
+          </listitem>
+
+          <listitem>
+            <para>For each Observation:<itemizedlist>
+                <listitem>
+                  <para>The Pass number</para>
+                </listitem>
+
+                <listitem>
+                  <para>Observer name</para>
+                </listitem>
+
+                <listitem>
+                  <para>For Each Time Stamp<itemizedlist>
+                      <listitem>
+                        <para>The Azimuth (degrees)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>The elevation (degrees)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>The Range (km)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>The Range Rate (km/s)</para>
+                      </listitem>
+                    </itemizedlist></para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>The ContactRangeReport report contains the following
+      data:<itemizedlist>
+          <listitem>
+            <para>Target name</para>
+          </listitem>
+
+          <listitem>
+            <para>For each Observer:<itemizedlist>
+                <listitem>
+                  <para>Observer name</para>
+                </listitem>
+
+                <listitem>
+                  <para>For each event:<itemizedlist>
+                      <listitem>
+                        <para>Duration (s)</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Event start time</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Event stop time</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Range at start time</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Range at stop time</para>
+                      </listitem>
+                    </itemizedlist></para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+        </itemizedlist></para>
+    </refsection>
+
+    <refsection>
+      <title>Event location with SPK propagator</title>
+
+      <para>When using the SPK propagator, you load one or more SPK ephemeris
+      files using the
+      <guilabel>Spacecraft</guilabel>.<guilabel>OrbitSpiceKernelName</guilabel>
+      field. For the purposes of event location, this field causes the
+      appropriate ephemeris files to be loaded automatically on run, and so
+      use of the <guilabel>Propagate</guilabel> command is not necessary. This
+      is an easy way of performing event location on an existing SPK ephemeris
+      file. See the example below.</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Perform a basic contact search in LEO:</para>
+
+      <programlisting><code>SolarSystem.EphemerisSource = 'DE421'
+
+Earth.EquatorialRadius = 6378.1366
+Earth.Flattening       = 0.00335281310845547
+
+Create Spacecraft sat
+
+sat.DateFormat       = UTCGregorian
+sat.Epoch            = '15 Sep 2010 16:00:00.000'
+sat.CoordinateSystem = EarthMJ2000Eq
+sat.DisplayStateType = Keplerian
+sat.SMA              = 6678.14
+sat.ECC              = 0.001
+sat.INC              = 0
+sat.RAAN             = 0
+sat.AOP              = 0
+sat.TA               = 180
+
+Create ForceModel fm
+
+fm.CentralBody = Earth
+fm.PointMasses = {Earth}
+
+Create Propagator prop
+
+prop.FM   = fm
+prop.Type = RungeKutta89
+
+Create GroundStation GS
+
+GS.CentralBody      = Earth
+GS.StateType        = Spherical
+GS.HorizonReference = Ellipsoid
+GS.Location1        = 0
+GS.Location2        = 0
+GS.Location3        = 0
+
+Create ContactLocator cl
+
+cl.Target    = sat
+cl.Observers = {GS}
+cl.Filename  = 'Simple.report'
+
+BeginMissionSequence
+
+Propagate prop(sat) {sat.ElapsedSecs = 10800}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Perform a contact event search from an Earth ground station to a
+      Mars orbiter, with Phobos occultations. The required mar063.bsp file can
+      be found at
+      https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/mar063.cmt.</para>
+
+      <programlisting><code>% Mars orbiter, 2 days, Mars and Phobos eclipses
+
+SolarSystem.EphemerisSource = 'SPICE'
+SolarSystem.SPKFilename     = 'de421.bsp'
+
+Mars.OrbitSpiceKernelName = '../data/planetary_ephem/spk/mar063.bsp'
+
+Earth.EquatorialRadius = 6378.1366
+Earth.Flattening       = 0.00335281310845547
+
+Create CoordinateSystem MarsMJ2000Eq
+
+MarsMJ2000Eq.Origin = Mars
+MarsMJ2000Eq.Axes   = MJ2000Eq
+
+Create Spacecraft sat
+
+sat.DateFormat       = UTCGregorian
+sat.Epoch            = '11 Mar 2004 12:00:00.000'
+sat.CoordinateSystem = MarsMJ2000Eq
+sat.DisplayStateType = Cartesian
+sat.X                = -1.436997966893255e+003
+sat.Y                = 2.336077717512823e+003
+sat.Z                = 2.477821416108639e+003
+sat.VX               = -2.978497667195258e+000
+sat.VY               = -1.638005864673213e+000
+sat.VZ               = -1.836385137438366e-001
+
+Create ForceModel fm
+
+fm.CentralBody = Mars
+fm.PointMasses = {Mars}
+
+Create Propagator prop
+
+prop.FM   = fm
+prop.Type = RungeKutta89
+
+Create Moon Phobos
+
+Phobos.CentralBody          = 'Mars'
+Phobos.PosVelSource         = 'SPICE'
+Phobos.NAIFId               = 401
+Phobos.OrbitSpiceKernelName = {'mar063.bsp'}
+Phobos.SpiceFrameId         = 'IAU_PHOBOS'
+Phobos.EquatorialRadius     = 13.5
+Phobos.Flattening           = 0.3185185185185186
+Phobos.Mu                   = 7.093399e-004
+
+Create Moon Deimos
+
+Deimos.CentralBody          = 'Mars'
+Deimos.PosVelSource         = 'SPICE'
+Deimos.NAIFId               = 402
+Deimos.OrbitSpiceKernelName = {'mar063.bsp'}
+Deimos.SpiceFrameId         = 'IAU_DEIMOS'
+Deimos.EquatorialRadius     = 7.5
+Deimos.Flattening           = 0.30666666666666664
+Deimos.Mu                   = 1.588174e-004
+
+Create GroundStation GS
+
+GS.CentralBody      = Earth
+GS.StateType        = Spherical
+GS.HorizonReference = Ellipsoid
+GS.Location1        = 36.3269
+GS.Location2        = 127.433
+GS.Location3        = 0.081
+
+Create ContactLocator cl
+
+cl.Target          = sat
+cl.Observers       = {GS}
+cl.OccultingBodies = {Sun, Mercury, Venus, Luna, Mars, Phobos, Deimos}
+cl.Filename        = 'Martian.report'
+cl.StepSize        = 5
+
+BeginMissionSequence
+
+Propagate prop(sat) {sat.ElapsedDays = 2}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Perform contact location on an existing SPK ephemeris file:</para>
+
+      <programlisting>SolarSystem.EphemerisSource = 'DE421'
+
+Earth.EquatorialRadius = 6378.1366
+Earth.Flattening       = 0.00335281310845547
+
+Create Spacecraft sat
+
+sat.OrbitSpiceKernelName = {'../data/vehicle/ephem/spk/MoonTransfer.bsp'}
+sat.NAIFId               = -123456789
+
+Create GroundStation GS
+
+GS.CentralBody      = Earth
+GS.StateType        = Spherical
+GS.HorizonReference = Ellipsoid
+GS.Location1        = 0
+GS.Location2        = 0
+GS.Location3        = 0
+
+Create ContactLocator cl
+
+cl.Target    = sat
+cl.Observers = {GS}
+cl.Filename  = 'SPKPropagation.report'
+
+BeginMissionSequence</programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Perform a contact search with a station mask in LEO:</para>
+
+      <programlisting><code>Create Spacecraft sat
+
+sat.DateFormat       = UTCGregorian
+sat.Epoch            = '15 Sep 2010 16:00:00.000'
+sat.CoordinateSystem = EarthMJ2000Eq
+sat.DisplayStateType = Keplerian
+sat.SMA              = 6678.14
+sat.ECC              = 0.001
+sat.INC              = 0
+sat.RAAN             = 0
+sat.AOP              = 0
+sat.TA               = 180
+
+Create ForceModel fm
+
+fm.CentralBody = Earth
+fm.PointMasses = {Earth}
+
+Create Propagator prop
+
+prop.FM   = fm
+prop.Type = RungeKutta89
+
+Create CustomFOV ArrowFOV
+
+ArrowFOV.Elevation = [ 75 75 82 75 75 82 75 ]
+ArrowFOV.Azimuth   = [ 0 90 90.09999999999999 150 210 270 270.1 ]
+
+Create Antenna CustomAntenna
+
+CustomAntenna.FieldOfView = ArrowFOV
+CustomAntenna.DirectionX  = 0
+CustomAntenna.DirectionY  = 0
+CustomAntenna.DirectionZ  = 1
+
+Create GroundStation GS
+
+GS.CentralBody      = Earth
+GS.StateType        = Spherical
+GS.HorizonReference = Ellipsoid
+GS.Location1        = 0
+GS.Location2        = 0
+GS.Location3        = 0
+GS.AddHardware      = {CustomAntenna}
+
+Create ContactLocator cl
+
+cl.Target    = sat
+cl.Observers = {GS}
+cl.Filename  = 'Simple.report'
+
+BeginMissionSequence
+
+Propagate prop(sat) {sat.ElapsedSecs = 10800}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Perform a contact search with advanced reporting in LEO:</para>
+
+      <programlisting><code>Create Spacecraft sat
+
+sat.DateFormat       = UTCGregorian
+sat.Epoch            = '15 Sep 2010 16:00:00.000'
+sat.CoordinateSystem = EarthMJ2000Eq
+sat.DisplayStateType = Keplerian
+sat.SMA              = 6678.14
+sat.ECC              = 0.001
+sat.INC              = 0
+sat.RAAN             = 0
+sat.AOP              = 0
+sat.TA               = 180
+
+Create ForceModel fm
+
+fm.CentralBody = Earth
+fm.PointMasses = {Earth}
+
+Create Propagator prop
+
+prop.FM   = fm
+prop.Type = RungeKutta89
+
+Create GroundStation GS
+
+GS.CentralBody      = Earth
+GS.StateType        = Spherical
+GS.HorizonReference = Ellipsoid
+GS.Location1        = 0
+GS.Location2        = 0
+GS.Location3        = 0
+
+Create ContactLocator cl
+
+cl.Target           = sat
+cl.Filename         = 'Advanced.report'
+cl.Observers        = {GS}
+cl.LeftJustified    = false
+cl.ReportPrecision  = 6
+cl.IntervalStepSize = 60
+cl.ReportTimeFormat = 'UTCGregorian'
+cl.ReportFormat     = 'AzimuthElevationRangeReport'
+
+BeginMissionSequence
+
+Propagate prop(sat) {sat.ElapsedSecs = 10800}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Perform a contact search with interval reporting in LEO:</para>
+
+      <programlisting><code>Create Spacecraft sat
+
+sat.DateFormat       = UTCGregorian
+sat.Epoch            = '15 Sep 2010 16:00:00.000'
+sat.CoordinateSystem = EarthMJ2000Eq
+sat.DisplayStateType = Keplerian
+sat.SMA              = 6678.14
+sat.ECC              = 0.001
+sat.INC              = 0
+sat.RAAN             = 0
+sat.AOP              = 0
+sat.TA               = 180
+
+Create ForceModel fm
+
+fm.CentralBody = Earth
+fm.PointMasses = {Earth}
+
+Create Propagator prop
+
+prop.FM   = fm
+prop.Type = RungeKutta89
+
+Create GroundStation GS
+
+GS.CentralBody      = Earth
+GS.StateType        = Spherical
+GS.HorizonReference = Ellipsoid
+GS.Location1        = 0
+GS.Location2        = 0
+GS.Location3        = 0
+
+Create ContactLocator cl
+
+cl.Target             = sat
+cl.Filename           = 'Interval.report'
+cl.Observers          = {GS}
+cl.LightTimeDirection = Transmit
+cl.LeftJustified      = true
+cl.ReportPrecision    = 6
+cl.IntervalStepSize   = 60
+cl.ReportTimeFormat   = 'UTCGregorian'
+cl.ReportFormat       = 'AzimuthElevationRangeReport'
+
+BeginMissionSequence
+
+Propagate prop(sat) {sat.ElapsedSecs = 10800}</code></programlisting>
+    </informalexample>
+  </refsection>
+
+  <refsection>
+    <title>References</title>
+
+    <orderedlist>
+      <listitem>
+        <para>SPICE Toolkit Documentation, <link
+        xlink:href="https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/abcorr.html">Aberration
+        Corrections Required Reading</link></para>
+      </listitem>
+    </orderedlist>
+  </refsection>
+</refentry>

@@ -1,0 +1,149 @@
+\chapter{Low Thrust Optimization Using Orthogonal Collocation} \label{Ch:OrthogonalCollocation} 
+
+\section{Nomenclature}
+
+\begin{tabbing}
+12345678 \= Reynolds number based on length $s$ \kill\\
+$t$  \>   Time in dimensional units \\
+$\tau$  \>  Time in nondimensional units $(-1 \leq \tau \leq 1)$\\
+$t_I$  \>   Initial time \\
+$t_F$  \>  Final time\\
+$\mathbf{r}(t)$        \> Position vector in continous time form\\
+$\mathbf{v}(t)$        \> Velocity vector in continous time form\\
+$m(t)$        \> Mass in continous time form\\
+$\mathbf{x}(t)$   \>  State Vector in continous time form\\
+$\mathbf{r}_k$        \> Position vector in discrete time form at $k^{th}$ point\\
+$\mathbf{v}_k$        \> Velocity vector in discrete time form at $k^{th}$ point\\
+$m_k$        \> Mass in discrete time form at $k^{th}$ point\\
+$\mathbf{x}_k$   \>  State Vector in discrete time form at $k^{th}$ point\\
+$n_x$              \> Number of elements in state vector\\
+$n_u$              \> Number of elements in control vector\\
+$N$              \> Number of collocation points\\
+$n_k$              \> Number of quadrature points \\
+$L_i$              \> $i^{th}$ Lagrange polynomial \\
+\end{tabbing}
+
+\section{Dynamics Model}
+
+\section{Continuous Time Problem}
+
+\begin{equation}
+     J = \Phi \left(t_I,\mbx(t_I),t_F,\mbx(t_F)\right) + \int_{t_I}^{t_F} \mathcal{L}\left( \mbx(t),\mbu(t),t;\mbq \right)dt
+\end{equation}
+%
+subject to
+%
+\begin{equation}
+   \frac{\partial \mathbf{x}}{\partial t} = \mathbf{f}\left( \mbx(t),\mbu(t),t;\mbq \right)
+\end{equation}
+
+\section{Discretization of State and Dynamics}
+
+\begin{equation}
+    \mbx(\tau_k) \approx \mbx_k =  \sum^{N}_{j = 1,j \neq i} \mbx_i L_i(\tau_k)
+\end{equation}
+%
+where
+%
+\begin{equation}
+    L_i = \prod^{N}_{j = 1,j \neq i} \frac{\tau - \tau_j}{\tau_i - \tau_j}
+\end{equation}
+%
+%
+\begin{equation}
+   \dot{\mbx}(t_k) \approx \dot{\mbx}_k =  \sum^{N}_{j = 1,j \neq i} \mbx_i \dot{L}_i(\tau_k)  
+\end{equation}
+
+Define the matrix $\mathbf{X}$ as follows
+%
+\begin{equation}
+     \mathbf{X} = \left[
+     \begin{array}{ccc}
+         \mbx_1^T \\
+         \mbx_2^T \\
+         \vdots \\
+         \mbx_N^T
+     \end{array}
+     \right]
+     %
+     =
+     %
+     \left[
+     \begin{array}{ccc}
+         \mbr_1^T & \mbv_1^T & m_1 \\
+         \mbr_2^T & \mbv_2^T & m_2\\
+         \vdots \\
+         \mbr_N^T & \mbv_N^T & m_N
+     \end{array}
+     \right]
+     %
+\end{equation}
+%
+Similarly, define the matrix $\mathbf{F}$ as 
+%
+\begin{equation}
+   \mathbf{F} = \left[
+     \begin{array}{ccc}
+         \mathbf{f}_1^T \\
+         \mathbf{f}_2^T \\
+         \vdots \\
+         \mathbf{f}_N^T
+     \end{array}
+     \right]
+\end{equation}
+%
+and
+%
+\begin{equation}
+   \mathbf{U} = \left[
+     \begin{array}{ccc}
+         \mathbf{u}_1^T \\
+         \mathbf{u}_2^T \\
+         \vdots \\
+         \mathbf{u}_N^T
+     \end{array}
+     \right]
+\end{equation}
+
+then,
+%
+\begin{equation}
+    \dot{\mathbf{X}} = \mathbf{D}\mathbf{X}
+\end{equation}
+%
+\begin{equation}
+ \mathbf{D}\mathbf{X} - \mathbf{F}(\mathbf{X},\mathbf{U},\mathbf{Q}) = \mathbf{0}
+\end{equation}
+%
+\begin{equation}
+    \dot{\mathbf{x}}_k^T = \mathbf{D}_{(k,:)}\mathbf{X}
+\end{equation}
+%
+
+\begin{equation}
+     \frac{\partial \dot{\mbx}_k}{\partial \mbx_{\ell}} = \left[ \mathbf{0}_{n_x,\ell-1} 
+     \hspace{.1 in} \mathbf{D}_{(k,:)}^T \hspace{.1 in}  \mathbf{0}_{n_x,n_x - \ell+1} \right]
+\end{equation}
+%
+\begin{equation}
+     \frac{\partial \dot{\mbx}_k}{\partial \mathbf{u}_{\ell}} = \mathbf{0}_{n_x,n_u} 
+\end{equation}
+
+
+\begin{equation}
+     \frac{\partial \mathbf{f}_k}{\partial \mathbf{x}_{\ell}} = 
+     \left\{ \begin{array}{ccc}
+    &\mathbf{A}(t_\ell) \hspace{.1 in} & k = \ell \\
+    &\mathbf{0}_{n_x,n_x}  \hspace{.1 in} & k \neq \ell  \\
+    \end{array} \right. 
+\end{equation}
+%
+\begin{equation} 
+     \frac{\partial \mathbf{f}_k}{\partial \mathbf{u}_{\ell}} = 
+          \left\{ \begin{array}{ccc}
+          & \displaystyle\frac{\partial \mbf(t_\ell)}{\partial \mbu} \hspace{.1 in} & k = \ell \\
+          &\mathbf{0}_{n_x,n_u}  \hspace{.1 in} & k \neq \ell  \\
+          \end{array} \right. 
+\end{equation}
+
+\section{Discretization of Cost Function}

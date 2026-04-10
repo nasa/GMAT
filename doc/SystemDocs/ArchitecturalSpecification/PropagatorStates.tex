@@ -1,0 +1,165 @@
+\chapter{\label{chapter:PropagatorStates}The State Vector for Propagation}
+\chapauthor{Darrel J. Conway}{Thinking Systems, Inc.}
+
+%\section{\label{section:MissionStateOverview}The Mission State}
+
+% The current values of spacecraft data, the state transition matrix, and other elements that evolve
+% in GMAT's model are held, in the propagation subsystem, in the mission state\footnote{Here -- and
+% throughout this chapter -- the term ``mission state'' and the word ``state'' represent this
+% collection of data elements, unless otherwise specified.  Other chapters in the architectural
+% specification may use the word ``state'' for different purposes -- for example, the Solver classes
+% all function through finite state machines, where the current location of the system in the
+% solution process is assigned a specific status, called a state, and move from one of these
+% enumerated stated to another as the solution process is executed.}.  GMAT's mission state can be
+% further decomposed into static components, components that evolve through numerical integration,
+% components that have analytic evolution operators, and components that are modeled over time using
+% stochastic models.
+%
+% \section{Classes Supporting the Mission State}
+%
+% The mission state data is culled from the objects that make use of the data contained in the
+%state,
+% and passed into the elements that the propagators use to calculate the state evolution.  As an
+% example, each Spacecraft object manages data representing the position and velocity of that
+% particular Spacecraft.  When GMAT needs to model the motion of that spacecraft, it gathers the
+% epoch and corresponding position and velocity information in a mission state, and passes that
+% mission state to the evolution operator so that the motion associated with the change of epoch can
+% be calculated.  A more complete example of this process is presented in
+% Section~\ref{section:IntegratorExample}.
+
+\section{The MissionState Class}
+
+% The MissionState class plays two roles in GMAT.  It acts as a container class that takes pointers
+% to the objects that supply state data, providing a central location for the state data for mission
+% elements that use it.  It also supplies the accumulated state data to those elements in the form
+% that they need in order to process it and take actions, and routes any resulting changes in state
+% to the objects that receive those changes.
+%
+% The MissionState class collects data into vectors used by the propagators.  These vectors are
+% constructed based on the needs of the propagator, and
+%
+% GMAT's Numerical Integrators
+
+\subsection{Enumerations used in the MissionState}
+
+The MissionState uses several enumerations used to identify propagation components efficiently.
+This section describes each of these enumerations.
+
+\paragraph{PropMode}  The PropMode enumeration identifies the type of propagation used with a given
+set of state elements.
+
+\begin{itemize}
+\item \textbf{ANALYTIC\_PROP}
+\item \textbf{INTEGRATE}
+\item \textbf{PRECALCULATED\_PROP}
+\end{itemize}
+
+\paragraph{ElementType}  The ElementType enumeration identifies the kind of component contained in
+a PropVector
+
+\begin{itemize}
+\item \textbf{CARTESIAN\_START}
+\item \textbf{CARTESIAN}
+\item \textbf{EQUINOCTIAL\_START}
+\item \textbf{EQUINOCTIAL}
+\item \textbf{STM\_START}
+\item \textbf{STM}
+\item \textbf{QUARTERNION\_START}
+\item \textbf{QUARTERNION}
+\item \textbf{MASS}
+\item \textbf{USER\_DEFINED}
+\item \textbf{UNKNOWN\_ELEMENT\_TYPE}
+\end{itemize}
+
+\subsection{MissionState Attributes}
+
+\begin{itemize}
+\item\textbf{Real epoch} The epoch of the state data managed by the MissionState.  GMAT requires
+that all such state data in a MissionState use the same epoch.
+\item\textbf{ObjectArray dataSource} The vector of objects that are propagated
+\item\textbf{std::vector<PropMode> propModes} The propagation mode for each object that is
+propagated.
+\item\textbf{Integer dimension} Total number of elements that are propagated
+\item\textbf{PropVector thePropVector} The state data to be propagated
+\end{itemize}
+
+\subsubsection{MissionState Methods}
+
+\begin{itemize}
+\item\textbf{bool AddSource(GmatBase* src, PropMode mode, ElementType type, Integer elementId)}
+Registers an object as a data provider with the MissionState.  The mode parameter identifies the
+type of propagation desired: analytic, numerically integrated, or from an ephemeris source.  The
+type parameter identified the kind of element that is propagated.  The elementId parameter is the ID
+for the start of the data that is propagated.  All propagated data must be accessible using the
+generic access methods defined for GmatBase objects, so that the elementId can be used to access
+these data.
+\item\textbf{bool Initialize()}  Performs preliminary setup of the PropVector prior to propagation.
+\item \textbf{bool PrepareToPropagate()}  Completes pre-propagation setup.
+\end{itemize}
+
+\section{\label{section:propVector}The PropVector Class}
+
+%The propVector component of the MissionState is a Real array of data sized to match the data vector
+%needed by GMAT's numerical integrators for propagation.  The propVector is constructed by the
+%MisisonState when the PrepareToPropagate methos if executed by the command that controls the
+%propagation.  Figure~\ref{figure:PropVectorComponents} shows a representative layout for a
+%propVector.
+
+Figure~\ref{figure:PropVectorComponents} shows a representative layout of the data in a PropVector
+for a single spacecraft.  The vector displayed here is the PropVector used by a numerical
+integrator that is modeling the evolution of the spacecraft's trajectory, state transition matrix,
+and attitude during a finite burn maneuver.  When a MissionState object assembles a PropVector, it
+follows a set of ordering rules designed to make the data in the PropVector fall in a specific
+order so that access from the propagators is simplified.  The general order, as shown in this
+example, is to place trajectory data first in the vector, followed by associated matrices that
+evolve along with the trajectory, then attitude data followed by associated attitde matrices, then
+user defined elements, and finally transitory elements like mass, which only changes (through
+propagation) during maneuvers.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/PropVectorComponents.eps}
+\caption{\label{figure:PropVectorComponents}Representative Elements of a PropVector}
+\end{center}
+\end{figure}
+
+This ordering can be seen more explicitly in Figure~\ref{figure:ThreeSatPropVector}.  The
+PropVector shown in this figure is a vector constructed for three spacecraft, where the mission
+needs to propagate the trajectory, state transition matrix, and attitude for all three while
+maneuvering all three simultaneously.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/ThreeSatPropVector.eps}
+\caption{\label{figure:ThreeSatPropVector}Element Arrangement of a PropVector for Three
+Spacecraft}
+\end{center}
+\end{figure}
+
+Figure~\ref{figure:SelectPropVector} shown another example, where the propagation need not
+integrate every element of all of the spacecraft.  In this example, the trajector is integrated for
+all three spacecraft.  The state transition matrix is only propagated for the first and third
+spacecraft, the attitude is propagated for the second, and the first spacecraft is depleting mass
+during a maneuver.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/ThreeSatActivePropVector.eps}
+\caption{\label{figure:SelectPropVector}Three Spacecraft Arrangement for Select
+Propagation}
+\end{center}
+\end{figure}
+
+Figure~\ref{figure:AttitudePropVector} \textbf{This figure needs updating to include the second
+PropVector for the trajectory piece} shows a mixed mode propagation, where the trajectory for our
+three spacecraft is propagated using a precalculated, ephemeris based propagator and the attitude is
+propagated numerically.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/ThreeSatAttitudePropVector.eps}
+\caption{\label{figure:AttitudePropVector}PropVector for Attitude Only Propagation on Three
+Spacecraft}
+\end{center}
+\end{figure}
+

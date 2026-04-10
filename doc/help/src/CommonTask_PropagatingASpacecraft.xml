@@ -1,0 +1,458 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="PropagatingSpacecraft"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Propagating a Spacecraft</title>
+
+  <section>
+    <title>Configuring the Force Model</title>
+
+    <para>Propagation in GMAT is governed by a force model and an integrator,
+    which together form a propagator. The force model component offers many
+    options that let you control the fidelity of the simulation, from a simple
+    two-body model with a single point mass to a full-featured model with
+    central body non-spherical gravity, external point masses, atmospheric
+    drag, and more. This example configures an Earth-centered model with some
+    commonly-used parameters. Starting from the default mission:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Resources</guilabel> tree, double-click
+        <guilabel>DefaultProp</guilabel> to open its properties window.</para>
+      </step>
+
+      <step>
+        <para>Under <guilabel>Gravity</guilabel>, in the
+        <guilabel>Degree</guilabel> box, type
+        <userinput>21</userinput>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Order</guilabel> box, type
+        <userinput>21</userinput>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Atmosphere Model</guilabel> list, click
+        <guilabel>MSISE90</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Next to the <guilabel>PointMasses</guilabel> box, click the
+        <guibutton>Select</guibutton> button.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Available Bodies</guilabel> list on the left,
+        click <guilabel>Sun</guilabel>, then click
+        <guibutton>-&gt;</guibutton> to add <guilabel>Sun</guilabel> to your
+        force model.</para>
+      </step>
+
+      <step>
+        <para>Add <guilabel>Luna</guilabel> (Earth's moon) and
+        <guilabel>Jupiter</guilabel> using the same steps as above.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>OK</guilabel> to accept your changes.</para>
+      </step>
+
+      <step>
+        <para>Select <guilabel>Use Solar Radiation Pressure</guilabel> to
+        activate the solar radiation pressure force.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>OK</guilabel> to accept your changes.</para>
+      </step>
+    </procedure>
+
+    <para>The script for the force model configured above is shown
+    below.</para>
+
+    <programlisting>Create ForceModel DefaultProp_ForceModel
+DefaultProp_ForceModel.CentralBody = Earth
+DefaultProp_ForceModel.PrimaryBodies = {Earth}
+DefaultProp_ForceModel.PointMasses = {Jupiter, Luna, Sun}
+DefaultProp_ForceModel.SRP = On
+DefaultProp_ForceModel.GravityField.Earth.Degree = 21
+DefaultProp_ForceModel.GravityField.Earth.Order = 21
+DefaultProp_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof'
+DefaultProp_ForceModel.Drag.AtmosphereModel = MSISE90</programlisting>
+  </section>
+
+  <section>
+    <title>Configuring the Force Model: Mars</title>
+
+    <para>Creating a high-fidelity propagator for Mars is a bit more complex
+    than for Earth or the Moon. GMAT does not by default include Phobos and
+    Deimos as celestial bodies, so these must be added manually to include
+    them in the force model. This example shows how to do this, starting from
+    the default mission.</para>
+
+    <para>This example requires an external ephemeris file for Mars' moons.
+    For the following steps to work, download this file from this link:
+    <uri>ftp://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/mar097.bsp</uri>
+    .</para>
+
+    <para>First, create Phobos as a <guilabel>Moon</guilabel> resource:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Resource</guilabel> tree, expand the
+        <guilabel>SolarSystem</guilabel> folder to display all default
+        celestial bodies.</para>
+      </step>
+
+      <step>
+        <para>Right-click <guilabel>Mars</guilabel>, point to
+        <guilabel>Add</guilabel>, and click <guilabel>Moon</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Type <userinput>Phobos</userinput> and click
+        <guilabel>OK</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Double-click the new <guilabel>Phobos</guilabel> resource to
+        edit its properties.</para>
+      </step>
+
+      <step>
+        <para>Set the following properties to the values shown. These are
+        actual values for Phobos:</para>
+
+        <informaltable colsep="0" frame="topbot" rowsep="0">
+          <tgroup cols="2">
+            <thead>
+              <row rowsep="1">
+                <entry>Field</entry>
+
+                <entry>Value</entry>
+              </row>
+            </thead>
+
+            <tbody>
+              <row>
+                <entry><guilabel>Mu</guilabel></entry>
+
+                <entry><userinput>0.00070934</userinput></entry>
+              </row>
+
+              <row>
+                <entry><guilabel>Equatorial Radius</guilabel></entry>
+
+                <entry><userinput>13.5</userinput></entry>
+              </row>
+
+              <row>
+                <entry><guilabel>Flattening</guilabel></entry>
+
+                <entry><userinput>0.318</userinput></entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+
+        <!--This is an empty paragraph to help with spacing after the table; this shouldn't be necessary!-->
+
+        <para/>
+      </step>
+
+      <step>
+        <para>Click the <guilabel>Orbit</guilabel> tab.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Ephemeris Source</guilabel> list, make sure
+        <guilabel>SPICE</guilabel> is selected. This is currently the only
+        available option.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>NAIF ID</guilabel> box, type
+        <userinput>401</userinput>. This is the international identification
+        number for Phobos.</para>
+      </step>
+
+      <step>
+        <para>Click the <guilabel>Add</guilabel> button and choose the file
+        <userinput>mar085.bsp</userinput> that you downloaded above.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>OK</guilabel> to accept these changes.</para>
+      </step>
+    </procedure>
+
+    <para>Now follow the same steps to add Deimos. The only differences are
+    the following values:</para>
+
+    <informaltable colsep="0" frame="topbot" rowsep="0">
+      <tgroup cols="2">
+        <thead>
+          <row rowsep="1">
+            <entry>Field</entry>
+
+            <entry>Value</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><replaceable>Name</replaceable></entry>
+
+            <entry><userinput>Deimos</userinput></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Mu</guilabel></entry>
+
+            <entry><userinput>0.000158817</userinput></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Equatorial Radius</guilabel></entry>
+
+            <entry><userinput>7.5</userinput></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Flattening</guilabel></entry>
+
+            <entry><userinput>0.31</userinput></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>NAIF ID</guilabel></entry>
+
+            <entry><userinput>402</userinput></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+
+    <para>Now create the propagator itself:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Resources</guilabel> tree, in the
+        <guilabel>Propagators</guilabel> folder, double-click
+        <guilabel>DefaultProp</guilabel> to edit its properties.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Central Body</guilabel> list, click
+        <guilabel>Mars</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Primary Body</guilabel> list, click
+        <guilabel>Mars</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Under <guilabel>Gravity</guilabel>, in the
+        <guilabel>Model</guilabel> list, click
+        <guilabel>Mars-50C</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Degree</guilabel> and
+        <guilabel>Order</guilabel> boxes, type <userinput>4</userinput> and
+        <userinput>4</userinput>, respectively.</para>
+      </step>
+
+      <step>
+        <para>Next to the <guilabel>Point Masses</guilabel> box, click
+        <guilabel>Select</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Available Bodies</guilabel> list, click
+        <guilabel>Jupiter</guilabel>, <guilabel>Sun</guilabel>,
+        <guilabel>Phobos</guilabel>, and <guilabel>Deimos</guilabel>, and
+        click the right arrow to transfer them to the <guilabel>Selected
+        Bodies</guilabel> list.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>OK</guilabel> to accept this list.</para>
+      </step>
+
+      <step>
+        <para>Check <guilabel>Use Solar Radiation Pressure</guilabel> to
+        enable this force.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>OK</guilabel> to accept these changes.</para>
+      </step>
+    </procedure>
+
+    <para>The script for the resources configured above is shown
+    below.</para>
+
+    <programlisting>Create Moon Phobos
+Phobos.NAIFId = 401
+Phobos.OrbitSpiceKernelName = {'C:\mar097.bsp'}
+Phobos.EquatorialRadius = 13.5
+Phobos.Flattening = 0.318
+Phobos.Mu = 0.00070934
+Phobos.PosVelSource = 'SPICE'
+Phobos.CentralBody = 'Mars'
+
+Create Moon Deimos
+Deimos.NAIFId = 402
+Deimos.OrbitSpiceKernelName = {'C:\mar097.bsp'}
+Deimos.EquatorialRadius = 7.5
+Deimos.Flattening = 0.31
+Deimos.Mu = 0.000158817
+Deimos.PosVelSource = 'SPICE'
+Deimos.CentralBody = 'Mars'
+
+Create ForceModel DefaultProp_ForceModel
+DefaultProp_ForceModel.CentralBody = Mars
+DefaultProp_ForceModel.PrimaryBodies = {Mars}
+DefaultProp_ForceModel.PointMasses = {Deimos, Jupiter, Phobos, Sun}
+DefaultProp_ForceModel.SRP = On
+DefaultProp_ForceModel.GravityField.Mars.Degree = 4
+DefaultProp_ForceModel.GravityField.Mars.Order = 4
+DefaultProp_ForceModel.GravityField.Mars.PotentialFile = 'Mars50c.cof'</programlisting>
+  </section>
+
+  <section>
+    <title>Propagating for a Duration</title>
+
+    <para>GMAT can propagate a spacecraft for a duration of time, such as 60
+    seconds, 10 days, or one orbit period. Starting from the default
+    mission:</para>
+
+    <procedure>
+      <step>
+        <para>Click the <guilabel>Mission</guilabel> tab to show the
+        <guilabel>Mission</guilabel> tree.</para>
+      </step>
+
+      <step>
+        <para>Double-click <guilabel>Propagate1</guilabel>. The default
+        mission is configured to propagate the <guilabel>DefaultSC</guilabel>
+        spacecraft for 12000 seconds.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Parameter</guilabel> column, to the left of
+        <guilabel>DefaultSC.ElapsedSecs</guilabel>, click
+        <guibutton>…</guibutton>. This will display a window allowing you to
+        choose a new type of duration parameter.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Object Properties</guilabel> list, click
+        <guilabel>ElapsedDays</guilabel>, then click
+        <guibutton>-&gt;</guibutton> to add it to the <guilabel>Selected
+        Value(s)</guilabel> list.</para>
+      </step>
+
+      <step>
+        <para>Click <guibutton>OK</guibutton>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Condition</guilabel> column, double-click the
+        value <userinput>0.0</userinput> and enter <userinput>10</userinput>
+        instead.</para>
+      </step>
+
+      <step>
+        <para>Click <guibutton>OK</guibutton>, then click
+        <guibutton>Run</guibutton> (<subscript><inlinemediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="8pt"
+                         fileref="files/images/icons/RunMission.png"
+                         width="1em"/>
+            </imageobject>
+          </inlinemediaobject></subscript>).</para>
+      </step>
+    </procedure>
+
+    <para>GMAT will propagate the spacecraft for 10 days. Observe the 2D and
+    3D plots showing the propagated orbit.</para>
+    
+    <para>The script for the command configured above is shown
+    below.</para>
+
+    <programlisting>Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = 10}</programlisting>
+  </section>
+
+  <section>
+    <title>Propagating to an Orbit Condition</title>
+
+    <para>GMAT can propagate a spacecraft to a specific orbit condition, such
+    as periapsis, an altitude value, or a latitude value. Starting from the
+    default mission:</para>
+
+    <procedure>
+      <step>
+        <para>Click the <guilabel>Mission</guilabel> tab to show the
+        <guilabel>Mission</guilabel> tree.</para>
+      </step>
+
+      <step>
+        <para>Double-click <guilabel>Propagate1</guilabel>. The default
+        mission is configured to propagate the DefaultSC spacecraft for 12000
+        seconds.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Parameter</guilabel> column, to the left of
+        <guilabel>DefaultSC.ElapsedSecs</guilabel>, click
+        <guibutton>…</guibutton>. This will display a window allowing you to
+        choose a new type of duration parameter.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Object Properties</guilabel> list, click
+        <guilabel>Periapsis</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>In the <guilabel>Central Body</guilabel> list, make sure
+        <guilabel>Earth</guilabel> is selected. Then click
+        <guibutton>-&gt;</guibutton> to add it to the <guilabel>Selected
+        Value(s)</guilabel> list.</para>
+      </step>
+
+      <step>
+        <para>Click <guibutton>OK</guibutton> to close the
+        <guilabel>ParameterSelectDialog</guilabel> window.</para>
+      </step>
+
+      <step>
+        <para>Click <guibutton>OK</guibutton>, then click
+        <guibutton>Run</guibutton> (<subscript><inlinemediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="8pt"
+                         fileref="files/images/icons/RunMission.png"
+                         width="1em"/>
+            </imageobject>
+          </inlinemediaobject></subscript>).</para>
+      </step>
+    </procedure>
+
+    <para>GMAT will propagate the spacecraft until it reaches orbit
+    periapsis.</para>
+    
+    <para>The script for the command configured above is shown
+    below.</para>
+
+    <programlisting>Propagate DefaultProp(DefaultSC) {DefaultSC.Earth.Periapsis}</programlisting>
+  </section>
+</chapter>

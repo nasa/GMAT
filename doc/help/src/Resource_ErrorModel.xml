@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="ErrorModel"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>ErrorModel</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>ErrorModel</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>ErrorModel</refname>
+
+    <refpurpose>Used to specify measurement noise for simulation and
+    estimation, and to apply or estimate measurement biases.</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>An <guilabel>ErrorModel</guilabel> is assigned on the
+    <guilabel>ErrorModels</guilabel> field of an instance of
+    <guilabel>GroundStation</guilabel> or a spacecraft-attached
+    <guilabel>Receiver</guilabel> to model biases and noise, and optionally to
+    estimate biases on each measurement type provided by the ground station or
+    receiver. An error model must be specified for each data type employed by
+    each tracking station or receiver, but a single instance of
+    <guilabel>ErrorModel</guilabel> may be used by multiple ground stations or
+    spacecraft receivers.</para>
+
+    <para>An error model is only assigned to a receiver if
+    <guilabel>GPS_PosVec</guilabel> data is employed. The
+    <guilabel>GPS_PosVec</guilabel> observation type models position estimates
+    provided by an on-board GPS receiver. Since this type of data is not
+    derived from ground station measurement modeling, the error model for
+    <guilabel>GPS_PosVec</guilabel> data is specified on the
+    <guilabel>ErrorModels</guilabel> field of a <guilabel>Receiver</guilabel>
+    resource instead. The receiver must be attached to the corresponding
+    <guilabel>Spacecraft</guilabel> object. Error models for all other
+    observation types should be specified on the
+    <guilabel>ErrorModels</guilabel> field of the relevant ground station
+    resources. Error models cannot be assigned on receivers attached to ground
+    stations.</para>
+
+    <para>The <guilabel>ErrorModel</guilabel> is used by both the simulator
+    and the estimator. For a data simulation run, the
+    <guilabel>ErrorModel</guilabel> specifies the measurement type and noise
+    employed when generating the simulated measurement. A bias may optionally
+    be applied to the simulated observations. </para>
+
+    <para>For an estimation run, the <guilabel>ErrorModel</guilabel> specifies
+    the observation type, presumed observation noise, and an optional bias to
+    be applied to the observation. Observation biases may also be estimated by
+    adding the <guilabel>Bias</guilabel> or <guilabel>PassBiases</guilabel>
+    keyword to the <guilabel>ErrorModel.SolveFors</guilabel> list. See the
+    remarks below for the difference between <guilabel>Bias</guilabel> and
+    <guilabel>PassBiases</guilabel> estimation. If the
+    <guilabel>SolveFors</guilabel> list is empty, no bias will be estimated.
+    The <guilabel>SolveFors</guilabel> list is ignored by the
+    simulator.</para>
+
+    <para><note>
+        <para>In both simulation and estimation, the error model on the
+        receiving station determines the measurement properties (bias and
+        noise) and the transmit station error model properties are
+        ignored.</para>
+      </note></para>
+
+    <para>The <guilabel>ErrorModel</guilabel> resource does not currently
+    support application or estimation of biases for the
+    <guilabel>GPS_PosVec</guilabel> data type.</para>
+
+    <para>See Also <xref linkend="GroundStation"/>, <xref
+    linkend="Receiver"/>, <xref linkend="TrackingDataTypes"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.0*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>Bias</guilabel></entry>
+
+            <entry><para>The constant bias associated with the measurement.
+            For simulation, this bias is added to the measurement. As shown
+            below, the units used depend upon measurement type,
+            <guilabel>ErrorModel.Type</guilabel>.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>See Remarks section</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>BiasSigma</guilabel></entry>
+
+            <entry><para>Standard deviation of <guilabel>Bias</guilabel>. This
+            field is used to constrain the estimated value of
+            <guilabel>Bias</guilabel>, and only has a function if both (1)
+            <guilabel>BatchEstimator.UseInitialCovariance = True</guilabel>
+            and (2) <guilabel>Bias</guilabel> is a solve-for parameter. As
+            shown below, the units used depend upon measurement type,
+            <guilabel>ErrorModel.Type</guilabel>. This parameter is not
+            implemented for <guilabel>GPS_PosVec</guilabel>
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1e+70</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>See Remarks section</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>NoiseSigma</guilabel></entry>
+
+            <entry><para>One sigma value of Gaussian noise. For simulation
+            this noise is added to the measurements if
+            <guilabel>Sim.AddNoise</guilabel> <guilabel>= True</guilabel>. For
+            estimation, this value is used as part of the batch processing
+            algorithms to calculate the measurement type weighting. As shown
+            below, the units used depend upon measurement type,
+            <guilabel>ErrorModel.Type</guilabel>. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>103</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>See Remarks section</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SolveFors</guilabel></entry>
+
+            <entry><para>List of parameters to estimate. The user may estimate
+            either a single bias across the entire arc for any station using
+            the ErrorModel, or may estimate "pass-by-pass" biases. See the
+            remarks below for more details on the PassBiases option. The
+            <guilabel>SolveFors</guilabel> option is not implemented for
+            <guilabel>GPS_PosVec</guilabel> data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>StringArray</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>{}, {Bias}, or {PassBiases}</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>{}</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Type</guilabel></entry>
+
+            <entry><para>Measurement data type. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any supported measurement type name. See <xref
+                    linkend="TrackingDataTypes"/></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>DSN_SeqRange</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <refsection>
+      <title>Units for Bias, BiasSigma, and NoiseSigma</title>
+
+      <para>The units to be used for <guilabel>Bias</guilabel>,
+      <guilabel>BiasSigma</guilabel>, and <guilabel>NoiseSigma</guilabel> for
+      each measurement data type that GMAT supports are listed in the table of
+      measurement type descriptions in <xref
+      linkend="TrackingDataTypes"/>.</para>
+    </refsection>
+
+    <refsection xml:id="ErrorModel_Remarks_PassBiases">
+      <title>Pass-dependent Bias Estimation</title>
+
+      <para>GMAT provides two options for measurement bias estimation, set on
+      the ErrorModel SolveFor parameter: <guilabel>Bias</guilabel> and
+      <guilabel>PassBiases</guilabel>. Only one option may be chosen per
+      ErrorModel instance, but an estimation run can can simultaneously
+      perform Bias and PassBiases estimation for different error
+      models.</para>
+
+      <para>The <guilabel>Bias</guilabel> solve-for option instructs GMAT to
+      estimate a single bias across the entire estimation arc for each station
+      and spacecraft using the error model. Since the same instance of
+      ErrorModel may be applied to multiple trackers, a separate single bias
+      will be estimated for each tracker and spacecraft to which the error
+      model applies.</para>
+
+      <para>The <guilabel>PassBiases</guilabel> solve-for option instructs
+      GMAT to segment the measurement span into individual tracking passes,
+      and to estimate an independent bias for each tracking pass. This option
+      requires the user to also specify a
+      <guilabel>TimeGapForPassBreak</guilabel> on the applicable
+      <guilabel>TrackingFileSet</guilabel>. The value of TimeGapForPassBreak
+      represents an interval between tracking measurements which indicates the
+      start of a new pass. Measurements separated in time by a span larger
+      than the TimeGapForPassBreak are presumed to be from different passes. A
+      typical appropriate value might be something like 30 minutes. In this
+      case, batches of tracking measurements separated by 30 minutes or more
+      are assumed to be independent tracking passes, and an individual bias
+      will be estimated for each tracking pass. This process is only applied
+      to those stations using the error model configured with PassBiases
+      SolveFors. Other error models employing the Bias SolveFors option will
+      still estimate only a single bias for the entire tracking span. GMAT
+      will indicate the spans identified for each bias pass in both the
+      estimation report file and GMAT log file. When employing PassBiases
+      estimation, the user should review these files to confirm that passes
+      were identified as intended by the user.</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>This example shows how to create an error model for DSN Sequential
+      Range observations and illustrates estimation of a range bias
+      parameter.</para>
+
+      <programlisting><?db-font-size 75% ?>%   Create an ErrorModel
+%   Measurement noise is in Range Units
+ 
+Create ErrorModel RangeModel;
+  
+RangeModel.Type       = 'DSN_SeqRange';
+RangeModel.NoiseSigma = 11.;
+RangeModel.Bias       = 0.;
+RangeModel.SolveFors  = {Bias};
+ 
+%   Assign it to a ground station
+ 
+Create GroundStation DSN;
+ 
+DSN.ErrorModels = {RangeModel};
+
+BeginMissionSequence;</programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>This example shows how to create an error model for on-board GPS
+      observations.</para>
+
+      <programlisting><?db-font-size 75% ?>%   Create an ErrorModel
+%   Measurement noise is in kilometers. Bias estimation is not permitted.
+ 
+Create ErrorModel PosVecModel;
+  
+PosVecModel.Type       = 'GPS_PosVec';
+PosVecModel.NoiseSigma = 0.010;
+ 
+%   Assign the error model to a receiver and add that receiver to a spacecraft.
+ 
+Create Antenna GpsAntenna;
+Create Receiver GpsReceiver;
+
+GpsReceiver.Id             = 800;
+GpsReceiver.PrimaryAntenna = GpsAntenna;
+GpsReceiver.ErrorModels    = {PosVecModel};
+
+Create Spacecraft Sat;
+
+Sat.AddHardware = {GpsReceiver, GpsAntenna};
+
+BeginMissionSequence;</programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

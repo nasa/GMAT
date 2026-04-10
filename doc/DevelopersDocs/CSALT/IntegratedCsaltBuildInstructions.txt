@@ -1,0 +1,155 @@
+Building CSALT from the GMAT Repository
+
+D. Conway, December 2018
+
+
+1. Clone the GMAT repository, CSALT_Integration branch
+
+Repository location: gs-mesajade.gsfc.nasa.gov/home/GMAT/git/gmat.git
+
+On Linux, run these commands for a user named <username>.  Steve Hughes may need 
+to take some action to allow repository access.
+
+   $ git clone <username>@gs-mesajade.gsfc.nasa.gov/home/GMAT/git/gmat.git
+   $ git checkout CSALT_Integration
+
+2. Set up the GMAT dependencies
+
+There is a shell script that sets up the pre-CSALT GMAT dependencies, and a 
+Python version that works on Linux (now) and Mac and Windows (soon).  Run the 
+Python script like this:
+
+   $ cd <repolocation>/depends
+   $ python3 configure.py
+
+For Mac, do this instead:
+
+   $ cd <repolocation>/depends
+   $ ./configure.sh
+
+and on Windows:
+
+   $ cd <repolocation>\depends
+   $ configure.bat
+
+3. Set up the CSALT dependencies
+
+CSALT has 2 additional dependencies that are not yet part of the configuration
+scripting.  You'll need to set those up by hand.  
+
+3.1 Boost
+
+The first CSALT dependency the boost library; CSALT uses features of Boost that 
+require the Boost header files, but not a compilation.  Download the latest 
+version of Boost from www.boost.org, and unpack it into a boost folder inside of 
+the depends folder.  Following the download of boost_1_69_0.tar.gz on Linux into 
+my ~/Downloads folder, here's what I did to unpack the code and set its folder 
+to the expected folder name:
+
+   $ cd <repolocation>\depends
+   $ tar -zxf ~/Downloads/boost_1_69_0.tar.gz 
+   $ mv boost_1_69_0/ boost
+   
+3.2 SNOPT 7.5
+
+3.2.1  Windows
+
+The SNOPT library DLLs are precompiled for you on Windows.  They cannot be use 
+without a set of redistibutable libraries from Intel.
+
+TBD: Install procedure for Windows
+
+3.2.2 Linux and Mac
+
+The optimization engine in CSALT is SNOPT.  The SNOPT interfaces seem to change
+unpredictably from release to release.  We are using SNOPT 7.5.  The SNOPT 
+license does not permit distribution of the files, so they are not in the GMAT 
+repository.  They need to be obtained elsewhere.  
+
+In other words, contact Steve Hughes for the SNOPT source files.  I think 
+Goddard has a site license that lets him send them to other codes at GSFC.  I 
+cannot distribute mine outside of Thinking Systems.  I have the files (for the 
+purposes of this writeup) in my Downloads folder, in the file snopt7.5-1.4.zip. 
+I unpack them like this:
+
+   $ cd <repolocation>\depends
+   $ unzip ~/Downloads/snopt7.5-1.4.zip 
+
+which creates an snopt7 folder containing the code in the depends folder.  SNOPT 
+is written in Fortran, and has a C++ interface shell.  Everything is setup using 
+the autotools tool chain.  We need to build the compiler library.  Here's how I 
+do it:
+
+   $ cd <repolocation>/depends/snopt7
+   $ mkdir build
+   $ cd build
+   $ ../configure --with-cpp=yes
+   $ make -f GNUmakefile
+   $ mv lib/.libs ../lib
+   $ mv lib/* ../lib
+
+Note that GMAT uses the shared library version of the build.  (I suspect that 
+cFS/cFE will eventually want to link statically.)  Check to be sure that 
+libsnopt7.so and libsnopt7_cpp.so exist in the snopt7/lib folder.  On Linux, 
+these files follow the usual practice of setting up symbolic links that 
+eventually point to libsnopt7.so.0.0.0 and libsnopt7_cpp.so.0.0.0, so check that 
+the links are in place as needed.
+
+4. Clone the GMAT internal repository if you are building the CSALT interface code
+
+5. Configure the build using cmake
+
+
+
+5.1 Systems with cmake-gui
+
+* Start the CMake gui application
+* Toggle the Grouped and Advances buttons on
+* Set the "Where is the source code" setting to point to the GMAT repository location
+* Set the "Where to build the binaries" setting to a new folder for one of the following:
+** on windows: The location of the solution file and project files
+** on Linux or Mac: The location of the top level Makefile.  (I use a folder named build/gmat, at the same level as the GMAT repository location)
+* Recommended:  Change the GMAT_BUILDOUTPUT_DIRECTORY in the GMAT group to a folder outside of the GMAT repository.  (I use ~/BUILDS/GMAT)
+* Press the Configure button
+* Under "Ungrouped Entries". toggle the CSALT_INCLUDE_CSALT_IN_BUILD entry
+* If your are building the GMAT CSALT interface, set the GMAT_PROPRIETARY_PLUGINS_PATH setting (in the GMAT group) to the path to the GMAT internal repository.
+* Press the Configure button
+* If desired, toggle the CSALT test program to build using the CSALT_BUILD_TESTPROGRAM entry
+* If you are building the GMAT/CSALT interface, toggle the PLUGIN_PROPRIETARY_CSALT and PLUGIN_PROPRIETARY_EMTG_MODELS settings in the PLUGIN group
+* Press the Configure button
+* If no errors are reported, press the Generate button.
+* Close the CMake GUI.
+
+At this point, your system is configured to build GMAT and CSALT.
+
+5.2 Systems without the CMake GUI
+
+TBW
+
+6 Setup the GMAT data files
+
+Copy the contents of the GMAT application folder to your target build folder.
+
+7 Build GMAT
+
+7.1 Windows
+
+* Open a file explorer
+* Locate the GMAT.sln file in your selected build folder.
+* Double click on GMAT.sln to open it in Visual Studio
+* Select the desired build configuration (e.g. Debug or Release)
+* Build the solution
+
+7.2 Linux or Mac
+
+* Open a terminal
+* Change directories to your build system folder
+* Run the make command (the number following the -j here is the number of processor threads available on your machine):
+
+	$ make -j8
+
+8 Run the test program
+
+8.1 Windows
+
+Open a terminal window, and change directories to the bin folder inside your GMAT build output folder (the "GMAT_BUILDOUTPUT_DIRECTORY" setting from step 5).  

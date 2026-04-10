@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>State Management with the GMAT API &#8212; API Cookbook R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    
+    <script src="../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="STM and Covariance Propagation" href="stmpropagation.html" />
+    <link rel="prev" title="Propagation with the GMAT API" href="propagation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="stmpropagation.html" title="STM and Covariance Propagation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="propagation.html" title="Propagation with the GMAT API"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>State Management with the GMAT API</strong></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="state-management-with-the-gmat-api">
+<h1><strong>State Management with the GMAT API</strong><a class="headerlink" href="#state-management-with-the-gmat-api" title="Link to this heading">¶</a></h1>
+<section id="problem">
+<h2><strong>Problem</strong><a class="headerlink" href="#problem" title="Link to this heading">¶</a></h2>
+<p>GMAT contains state data for various objects that can be accessed for data collection.  API users need to also have access to state data and understand the initialization of said data as the state data in GMAT can be a bit confusing.</p>
+</section>
+<section id="solution">
+<h2><strong>Solution</strong><a class="headerlink" href="#solution" title="Link to this heading">¶</a></h2>
+<p>This chapter demonstrates the access and manipulation of state data from a Spacecraft.  The internal state is retrieved from the GetState method on the Spacecraft, and this state is used to convert outputs to requested state types in the Spacecraft’s coordinate system. Here we will cover examples of getting Cartesian and Keplerian states. As will be shown, care must be taken for whether or not this state has been properly initialized.  The Spacecraft state can also be manipulated and gathered in different coordinate systems created by the API user.</p>
+<p><strong>Step 1</strong>: Configure the Spacecraft</p>
+<p>We’ll need an object that provides the state.  We begin by creating a basic spacecraft, along with a reference to the state data inside of the spacecraft:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span><span class="s2">&quot;MySat&quot;</span><span class="p">)</span>
+<span class="n">iState</span> <span class="o">=</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The state reference here, iState, operates on the member of the Spacecraft object that GMAT uses when running a simulation.  The “internal state” referenced by iState is the Earth-centered mean-of-J2000 equatorial representation of position and velocity of the spacecraft MySat.  The data is contained in a GmatState object, which can be seen by accessing iState from the Python command prompt like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">iState</span>
+</pre></div>
+</div>
+<p>GmatState objects are used to collect together an epoch and a vector of data defining the object’s location in space at that epoch.  These data can be accessed directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The state epoch is &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetEpoch</span><span class="p">(),</span> <span class="s2">&quot;in A1ModJulian, the state has &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetSize</span><span class="p">(),</span> <span class="s2">&quot; elements, and contains the data:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetState</span><span class="p">(),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The data shown here is the default GmatState vector data for a spacecraft.  The epoch is January 1, 2000 at 12:00:00.000 in TAIModJulian time, or 21545.00000039794 in A.1 ModJulian time.  Note that GMAT uses A.1 Mod Julian as its internal epoch system.  The state has 6 elements.  The position and velocity data at this point are filled in with the dummy entries -999.999.</p>
+<p><strong>Step 2</strong>: Working with Cartesian and Keplerian Representations</p>
+<p>A spacecraft in GMAT has a second collection of data: the state data for the spacecraft in the coordinate system set on the spacecraft.  These data are the spacecraft’s “display state”, named that way because they are the data displayed to the user on the GMAT graphical user interface.  Users interact with the display state similarly to the way they interact with the scripting language.  Data for a Keplerian state can be set using the SetField() method, as shown here:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;StateType&quot;</span><span class="p">,</span> <span class="s2">&quot;Keplerian&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SMA&quot;</span><span class="p">,</span> <span class="mi">7015</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;ECC&quot;</span><span class="p">,</span> <span class="mf">0.0011</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;INC&quot;</span><span class="p">,</span> <span class="mf">98.6</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;RAAN&quot;</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;AOP&quot;</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;TA&quot;</span><span class="p">,</span> <span class="mf">33.333</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>At this point it can appear to the user that the data is set, but it really is not.  The spacecraft object cannot interpret the state data.  The data set using SetField needs more information than a spacecraft object can provide by itself.  Specifically, the uninitialized spacecraft here does not have a connected coordinate system.  Cartesian state data set on the spacecraft does not have connections defining the coordinate origin, nor the structures needed to set the orientation of the axes defining directions.  Additionally, the spacecraft does not have the the gravitational constant needed to interpret Keplerian data at this point.</p>
+<p>In this uninitialized state, the spacecraft uses its GmatState buffer to hold the data entries.  We can see that the data is not yet fully populated by posting queries to the spacecraft:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The internal state buffer just holds preinitialization data (Keplerian here):</span><span class="se">\n</span><span class="s2">  &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;but access to the Keplerian state shows that it is not correct:</span><span class="se">\n</span><span class="s2">  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">(),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The Keplerian state data is not correct because the GMAT objects are not yet initialized.  Once we initialize the system, the Keplerian state will be correct, and the internal state will be updated to the EarthMJ2000Eq system.  The interobject connections necessary for these settings are made by calling the API’s Initialize() function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The initialized internal state buffer is EarthMJ2000Eq:</span><span class="se">\n</span><span class="s2">  &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;and the Keplerian state is correct:</span><span class="se">\n</span><span class="s2">  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">(),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Changes made to the state variables are now applied to the state as expected:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SMA&quot;</span><span class="p">,</span> <span class="mi">8000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Internal state:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cartesian:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetCartesianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keplerian:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;INC&quot;</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Internal state:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cartesian:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetCartesianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keplerian:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;TA&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Internal state:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cartesian:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetCartesianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keplerian:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Step 3</strong>: Changing Coordinate Systems</p>
+<p>The previous section shows how to access Cartesian and Keplerian representations of the system.  In this section we will work with a couple of different coordinate systems: an Earth fixed coordinate system named “ECF” and accessed using the Python reference ecf, and a solar ecliptic system named “SolarEcliptic”, referenced as sec.  These coordinate systems are built using the code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ecf</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;ECF&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;BodyFixed&quot;</span><span class="p">)</span>
+<span class="n">sec</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;SolarEcliptic&quot;</span><span class="p">,</span> <span class="s2">&quot;Sun&quot;</span><span class="p">,</span> <span class="s2">&quot;MJ2000Ec&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this section, the spacecraft sat defined previously will be used with the Earth fixed coordinate system, and a copy of that spacecraft will be used with the solar ecliptic system.  GMAT’s objects support a method, Copy(), that copies one object into another object of the same type.  Rather than set up a new spacecraft from scratch, we’ll use that framework to get started by creating a new spacecraft and then setting the coordinate systems so that the original spacecraft uses the ECF coordinate system and the new spacecraft uses the solar ecliptic system.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">solsat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span><span class="s2">&quot;SolarSat&quot;</span><span class="p">)</span>
+<span class="n">solsat</span><span class="o">.</span><span class="n">Copy</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+
+<span class="c1"># Now set coordinate systems</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span><span class="s2">&quot;ECF&quot;</span><span class="p">)</span>
+<span class="n">solsat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span><span class="s2">&quot;SolarEcliptic&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We’ve reset the coordinate system names on the spacecraft at this point, but have yet to reset the associated objects because the Initialize() function that connects objects together has not been called since making the reassignment.  The data reflects this state of the system:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show the data after setting the new coordinate systems, before initialization</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The spacecraft &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetName</span><span class="p">(),</span> <span class="s2">&quot; initialization state is &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">IsInitialized</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The internal state buffer:  &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The ECF Cartesian State:    &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetCartesianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The ECF Keplerian State:    &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The spacecraft &quot;</span><span class="p">,</span> <span class="n">solsat</span><span class="o">.</span><span class="n">GetName</span><span class="p">(),</span> <span class="s2">&quot; initialization state is &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">IsInitialized</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The internal state buffer (SolarSat):  &quot;</span><span class="p">,</span> <span class="n">solsat</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The SolarEcliptic Cartesian State:     &quot;</span><span class="p">,</span> <span class="n">solsat</span><span class="o">.</span><span class="n">GetCartesianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The SolarEcliptic Keplerian State:     &quot;</span><span class="p">,</span> <span class="n">solsat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><em>Note that the initialization state reported here is a bug: resetting object references should toggle the initialization flag, but did not.</em></p>
+<p>Once we initialize the system, replacing the coordinate system references with the correct objects, the data is once again correct:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Connect the GMAT objects together</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+
+<span class="c1"># And show the data in the new coordinate systems</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The internal state buffer:  &quot;</span><span class="p">,</span> <span class="n">iState</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The ECF Cartesian State:    &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetCartesianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The ECF Keplerian State:    &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The internal state buffer (SolarSat):  &quot;</span><span class="p">,</span> <span class="n">solsat</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The SolarEcliptic Cartesian State:     &quot;</span><span class="p">,</span> <span class="n">solsat</span><span class="o">.</span><span class="n">GetCartesianState</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The SolarEcliptic Keplerian State:     &quot;</span><span class="p">,</span> <span class="n">solsat</span><span class="o">.</span><span class="n">GetKeplerianState</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="discussion">
+<h2><strong>Discussion</strong><a class="headerlink" href="#discussion" title="Link to this heading">¶</a></h2>
+<p>Utilizing the state management foundations covered in this chapter, API users can gather Spacecraft state data throughout missions in desired representations.  The other state and coordinate system types supported by GMAT can be found in the GMAT User Guide under the Spacecraft Orbit State and CoordinateSystem resources, respectively.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#"><strong>State Management with the GMAT API</strong></a><ul>
+<li><a class="reference internal" href="#problem"><strong>Problem</strong></a></li>
+<li><a class="reference internal" href="#solution"><strong>Solution</strong></a></li>
+<li><a class="reference internal" href="#discussion"><strong>Discussion</strong></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="propagation.html"
+                          title="previous chapter"><strong>Propagation with the GMAT API</strong></a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="stmpropagation.html"
+                          title="next chapter"><strong>STM and Covariance Propagation</strong></a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/statemanagement.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="stmpropagation.html" title="STM and Covariance Propagation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="propagation.html" title="Propagation with the GMAT API"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>State Management with the GMAT API</strong></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

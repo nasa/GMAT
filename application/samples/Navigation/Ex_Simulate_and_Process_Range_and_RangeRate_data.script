@@ -1,0 +1,238 @@
+%
+%   Ex_Simulate_and_Process_Range_and_RangeRate_data 
+%
+%   SpacecraftNavigation_SolveFors_CartesianState_Range_RangeRate
+%
+%   Solve for the Spacecraft Cartesian state. Use Range and RangeRate data.
+%
+%   Released:  R2017a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat          = UTCGregorian;
+SimSat.Epoch               = '10 Jun 2010 00:00:00.000';
+SimSat.CoordinateSystem    = EarthMJ2000Eq;
+SimSat.DisplayStateType    = Cartesian;
+SimSat.X                   = 576.869556
+SimSat.Y                   = -5701.142761
+SimSat.Z                   = -4170.593691
+SimSat.VX                  = -1.76450794
+SimSat.VY                  = 4.18128798
+SimSat.VZ                  = -5.96578986
+SimSat.DryMass             = 850;
+SimSat.Cd                  = 2.2;
+SimSat.Cr                  = 1.8;
+SimSat.DragArea            = 15;
+SimSat.SRPArea             = 15;
+SimSat.Id                  = 'LEOSat';
+SimSat.AddHardware         = {Transponder1, SpacecraftAntenna};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat          = UTCGregorian;
+EstSat.Epoch               = '10 Jun 2010 00:00:00.000';
+EstSat.CoordinateSystem    = EarthMJ2000Eq;
+EstSat.DisplayStateType    = Cartesian;
+EstSat.X                   = 576.8
+EstSat.Y                   = -5701.1
+EstSat.Z                   = -4170.5
+EstSat.VX                  = -1.764508
+EstSat.VY                  = 4.181288
+EstSat.VZ                  = -5.965790
+EstSat.DryMass             = 850;
+EstSat.Cd                  = 2.2;
+EstSat.Cr                  = 1.8;
+EstSat.DragArea            = 15;
+EstSat.SRPArea             = 15;
+EstSat.Id                  = 'LEOSat';
+EstSat.AddHardware         = {Transponder1, SpacecraftAntenna};
+EstSat.SolveFors           = {CartesianState};     
+
+%----------------------------------------
+%------ Spacecraft hardware
+%----------------------------------------
+
+Create Antenna SpacecraftAntenna;
+Create Transponder Transponder1;
+
+Transponder1.PrimaryAntenna  = SpacecraftAntenna;
+Transponder1.HardwareDelay   = 0.00005;
+Transponder1.TurnAroundRatio = '240/221' 
+
+%----------------------------------------
+%----- GroundStation hardware
+%----------------------------------------
+
+Create Transmitter Transmitter1;
+Create Antenna Antenna1;
+Create Receiver Receiver1;
+
+Transmitter1.PrimaryAntenna = Antenna1;
+Transmitter1.Frequency      = 2067.5;
+Receiver1.PrimaryAntenna    = Antenna1;
+
+%----------------------------------------
+%----- Ground stations
+%----------------------------------------
+
+Create GroundStation GDS;
+
+GDS.CentralBody           = Earth;
+GDS.StateType             = Cartesian;
+GDS.HorizonReference      = Ellipsoid;
+GDS.Location1             = -2353.621251;
+GDS.Location2             = -4641.341542;
+GDS.Location3             =  3677.052370;
+GDS.Id                    = 'GDS';
+GDS.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+GDS.MinimumElevationAngle = 10;
+GDS.ErrorModels           = {RangeModel, RangeRateModel};
+
+Create GroundStation CAN;
+
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514;
+CAN.Location2             =  2682.281745;
+CAN.Location3             = -3674.570392;
+CAN.Id                    = 'CAN';
+CAN.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+CAN.MinimumElevationAngle = 10.;
+CAN.ErrorModels           = {RangeModel, RangeRateModel};
+
+Create GroundStation MAD;
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4849.519988;
+MAD.Location2             = -360.641653;
+MAD.Location3             = 4114.504590;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+MAD.MinimumElevationAngle = 10.;
+MAD.ErrorModels           = {RangeModel, RangeRateModel};
+
+%----------------------------------------
+%------ Error models
+%----------------------------------------
+
+Create ErrorModel RangeModel;
+
+RangeModel.Type           = 'Range';
+RangeModel.NoiseSigma     = 0.010;
+RangeModel.Bias           = 0.0;
+RangeModel.SolveFors      = {};
+
+Create ErrorModel RangeRateModel;
+
+RangeRateModel.Type       = 'RangeRate';
+RangeRateModel.NoiseSigma = 0.00001;
+RangeRateModel.Bias       = 0.0;
+RangeRateModel.SolveFors  = {};
+
+%----------------------------------------
+%------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet simData;
+
+simData.AddTrackingConfig       = {{GDS, SimSat, GDS}, 'Range', 'RangeRate'};
+simData.AddTrackingConfig       = {{CAN, SimSat, CAN}, 'Range', 'RangeRate'};
+simData.AddTrackingConfig       = {{MAD, SimSat, MAD}, 'Range', 'RangeRate'};
+simData.FileName                = {'SpacecraftNavigation_SolveFors_CartesianState_Range_RangeRate.gmd'};
+simData.RampTable               = {};
+simData.UseLightTime            = True;
+simData.UseRelativityCorrection = False;
+simData.UseETminusTAI           = False;
+simData.SimRangeModuloConstant  = 67108864;
+simData.SimDopplerCountInterval = 10.;  
+simData.DataFilters             = {};
+
+Create TrackingFileSet estData;
+
+estData.AddTrackingConfig       = {{GDS, EstSat, GDS}, 'Range', 'RangeRate'};
+estData.AddTrackingConfig       = {{CAN, EstSat, CAN}, 'Range', 'RangeRate'};
+estData.AddTrackingConfig       = {{MAD, EstSat, MAD}, 'Range', 'RangeRate'};
+estData.FileName                = {'SpacecraftNavigation_SolveFors_CartesianState_Range_RangeRate.gmd'};
+estData.RampTable               = {};
+estData.UseLightTime            = True;
+estData.UseRelativityCorrection = False;
+estData.UseETminusTAI           = False;
+estData.SimRangeModuloConstant  = 67108864;
+estData.SimDopplerCountInterval = 10.;  
+estData.DataFilters             = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel ODProp_ForceModel;
+
+ODProp_ForceModel.CentralBody  = Earth;
+ODProp_ForceModel.PointMasses  = {Earth};
+ODProp_ForceModel.Drag         = None;
+ODProp_ForceModel.SRP          = Off;
+ODProp_ForceModel.ErrorControl = None;
+
+Create Propagator ODProp;
+
+ODProp.FM                      = ODProp_ForceModel;
+ODProp.Type                    = 'RungeKutta56';
+ODProp.InitialStepSize         = 60;
+ODProp.Accuracy                = 1e-13;
+ODProp.MinStep                 = 0;
+ODProp.MaxStep                 = 60;
+ODProp.MaxStepAttempts         = 50;
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator sim;
+
+sim.AddData                    = {simData};
+sim.EpochFormat                = 'UTCGregorian';
+sim.InitialEpoch               = '10 Jun 2010 00:00:00.000';
+sim.FinalEpoch                 = '14 Jun 2010 00:00:00.000';
+sim.MeasurementTimeStep        = 60;
+sim.Propagator                 = ODProp;
+sim.AddNoise                   = On;
+
+ 
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create BatchEstimator bat
+
+bat.ShowProgress               = True;
+bat.Measurements               = {estData} 
+bat.AbsoluteTol                = 0.0001;
+bat.RelativeTol                = 0.001;
+bat.MaximumIterations          = 10;
+bat.MaxConsecutiveDivergences  = 3;
+bat.Propagator                 = ODProp;
+bat.ShowAllResiduals           = On;
+bat.OLSEInitialRMSSigma        = 1000;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant       = 0;
+bat.InversionAlgorithm         = 'Internal';
+bat.ReportStyle                = 'Normal';
+bat.ReportFile                 = 'SpacecraftNavigation_SolveFors_CartesianState_Range_RangeRate.txt';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+RunSimulator sim;
+RunEstimator bat;

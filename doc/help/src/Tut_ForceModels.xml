@@ -1,0 +1,820 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="ForceModels"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Force Models</title>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>This tutorial demonstrates how to set up different force models and
+    then propagate a spacecraft using those models. Modifying the types of
+    force models affecting a spacecraft at certain points in a mission can be
+    advantageous, for example, in simplifying a mission sequence, increasing
+    accuracy, or reducing computing time.</para>
+
+    <para>You can download the script file and run it beforehand to see the
+    final results of this tutorial: <link
+    xlink:href="scripts/ForceModelsTutorial.script">ForceModelsTutorial.script</link></para>
+
+    <section>
+      <title>Prerequisites</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Basic Understanding of how to create and propagate a
+          spacecraft, as in Tutorial <link
+          linkend="CreatingandPropagatingaSpacecraft">Creating and Propagating
+          a Spacecraft</link></para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Mission Description</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Objective: Propagate a spacecraft using several different
+          force models. Compare the results from different models and
+          differences in computing times.</para>
+        </listitem>
+
+        <listitem>
+          <para>Assume:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>A given spacecraft in low earth orbit (LEO) with</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>A UTCGregorian Epoch of 04 Jan 2003
+                  00:00:00.000</para>
+                </listitem>
+
+                <listitem>
+                  <para>An SMA of 11295.67681418613</para>
+                </listitem>
+
+                <listitem>
+                  <para>An Eccentricity of 0.2032349944098091</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Find: (Observation only)</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Resource Tree</title>
+
+    <para>This mission requires only a simple resource tree. There is a single
+    spacecraft, one OpenGL Plot, one report, and a series of 6 propagators to
+    accomplish this mission. Everything else should be default. The steps on
+    how to setup the resource tree is presented below.</para>
+
+    <section>
+      <title>Objects Required</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft: Sat1</para>
+        </listitem>
+
+        <listitem>
+          <para>Propagators: RKV89PointMass, RKV89ThirdBodies, RKV8912x12,
+          RKV89MSISE90, RKV89JR, RKV89SRP</para>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports: OpenGLSat1, ForceModelRpt</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Creating and Modifying Objects</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft (Note: Figure below shows how the resulting Sat1
+          properties window should look like. Similar for other steps)</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Rename DefaultSC to Sat1</para>
+            </listitem>
+
+            <listitem>
+              <para>Change the Epoch Format to UTCGregorian</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the Epoch to 04 Jan 2003 00:00:00.000</para>
+            </listitem>
+
+            <listitem>
+              <para>Change the State Type to Keplerian</para>
+            </listitem>
+
+            <listitem>
+              <para>Set SMA to 11295.67681418613km</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the Eccentricity to 0.2032349944098091</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the remaining orbital elements to zero</para>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: Sat1 Spacecraft Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_ForceModels_Sat1SpacecraftObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: Sat1 Spacecraft Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Propagators</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>RKV89PointMass</para>
+
+              <para>This propagator simply sets the Earth as a point mass and
+              uses it as the Force Model. All other propagators below, except
+              for one (RKV8912x12), use Earth as a point mass as well. Figure
+              below shows this propagator properties' window; windows for
+              other propagators will look similarly.</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Rename DefaultProp to RKV89PointMass</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Initial Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Accuracy at 1e-012</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Min Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Max Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Degree in the Gravity Group box to 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Order in the Gravity Group box to 0</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: RKV89PointMass Propagator Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_ForceModels_RKV89PointMassPropagatorObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: RKV89PointMass Propagator Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>RKV89ThirdBodies</para>
+
+              <para>This propagator adds all the planets except Mercury and
+              Pluto as point masses to the Force Model.</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a Propagator and rename it RKV89ThirdBodies</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Initial Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Accuracy at 1e-012</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Min Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Max Step Size to 30 as well</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Degree in the Gravity Group box to 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Order in the Gravity Group box to 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Add Sun, Luna, and all the planets except Mercury and
+                  Pluto to the Point Masses field</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>RKV8912x12</para>
+
+              <para>Unlike other propagators, this one does not set Earth as a
+              point mass in the Force Model; it uses instead a 12x12 JGM-2
+              Gravity Model.</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a Propagator and rename it RKV8912x12</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Initial Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Accuracy at 1e-012</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Min Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Max Step Size to 30 as well</para>
+                </listitem>
+
+                <listitem>
+                  <para>Raise the Degree in the Gravity Group box to 12</para>
+                </listitem>
+
+                <listitem>
+                  <para>Raise the Order in the Gravity Group box to 12</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>RKV89MSISE90</para>
+
+              <para>The Force Model in this Propagator calculates drag on the
+              spacecraft based on the MSISE90 Atmospheric Model.</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a Propagator and rename it RKV89MSISE90</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Accuracy at 1e-012</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Min Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Max Step Size to 30 as well</para>
+                </listitem>
+
+                <listitem>
+                  <para>Lower the Degree in the Gravity Group box to 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Lower the Order in the Gravity Group box down to
+                  0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Atmosphere Model under the Drag Group Box to
+                  MSISE90</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>RKV89JR</para>
+
+              <para>The Force Model in this Propagator calculates drag on the
+              spacecraft based on the Jacchia-Roberts Atmosphere Model.</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a Propagator and rename it RKV89JR</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Initial Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Accuracy at 1e-012</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Min Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Max Step Size to 30 as well</para>
+                </listitem>
+
+                <listitem>
+                  <para>Lower the Degree in the Gravity Group box to 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Lower the Order in the Gravity Group box down to
+                  0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Atmosphere Model under the Drag Group Box to
+                  JacchiaRoberts</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>RKV89SRP</para>
+
+              <para>This propagator is like the first one (RKV89PointMass),
+              with the only difference that it accounts for the Solar
+              Radiation Pressure.</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a Propagator and rename it RKV89SRP</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Initial Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Accuracy at 1e-012</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Min Step Size to 30</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Max Step Size to 30 as well</para>
+                </listitem>
+
+                <listitem>
+                  <para>Lower the Degree in the Gravity Group box to 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Lower the Order in the Gravity Group box down to
+                  0</para>
+                </listitem>
+
+                <listitem>
+                  <para>Check the Use Solar Radiation Pressure Check
+                  box</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Burns</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Delete DefaultIB in the Resource tree</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>OpenGLSat1 OpenGL Plot</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Rename DefaultOpenGL to OpenGLSat1</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Axis under the View Up Definition Group box to
+                  X</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: OpenGLSat1 OpenGL Plot Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_ForceModels_OpenGLSat1OpenGLPlotObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: OpenGLSat1 OpenGL Plot Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>ForceModelRpt Report</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Create a Report Named ForceModelRpt</para>
+                </listitem>
+
+                <listitem>
+                  <para>Remove all Parameters from the Parameter List</para>
+                </listitem>
+
+                <listitem>
+                  <para>Select the File as being
+                  ./output/SampleMissions/Ex_ForceModels.report</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: ForceModelRpt Report Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_ForceModels_ForceModelRptReportObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: ForceModelRpt Report Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Mission Sequence</title>
+
+    <para>In addition to the default layout, this mission sequence includes an
+    initial Report and Equation, followed by a series of alternating
+    Propagates and Reports. Consequently, the mission runs several different
+    Propagators, with their progress reported back to the user via the
+    generated report file.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>Delete the initial Propagate</para>
+      </listitem>
+
+      <listitem>
+        <para>Append the Mission Sequence Folder with a Report: Add Sat1.X, Y,
+        Z, VX, VY, and VZ to the Parameter List</para>
+      </listitem>
+
+      <listitem>
+        <para>Insert an Equation after Report 1. Set it to
+        ForceModelRpt.WriteHeaders = Off</para>
+      </listitem>
+    </itemizedlist>
+
+    <screenshot>
+      <info>
+        <title>Figure: Report1 Report Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ForceModels_Report1ReportCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Report1 Report Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: Equation1 Equation Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ForceModels_Equation1EquationCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Equation1 Equation Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <itemizedlist>
+      <listitem>
+        <para>Insert a Propagate after Equation1</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Set the Parameter Field to Sat1.ElapsedDays</para>
+          </listitem>
+
+          <listitem>
+            <para>Set the Condition Field to 0.1</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Insert a Report after Propagate 1. Set it exactly as
+        Report1</para>
+
+        <screenshot>
+          <info>
+            <title>Figure: Propagate1 Propagate Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_ForceModels_Propagate1PropagateCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Propagate1 Propagate Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </listitem>
+    </itemizedlist>
+
+    <itemizedlist>
+      <listitem>
+        <para>Insert a Propagate after Report2</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Set the Propagator Field to RKV89ThirdBodies</para>
+          </listitem>
+
+          <listitem>
+            <para>Set the Stopping Conditions Group Box to match
+            Propagate1</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Insert a Report after Propagate 2. Set it exactly as
+        Report1</para>
+      </listitem>
+    </itemizedlist>
+
+    <itemizedlist>
+      <listitem>
+        <para>Insert a Propagate after Report3</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Set the Propagator Field to RKV8912x12</para>
+          </listitem>
+
+          <listitem>
+            <para>Set the Stopping Conditions Group Box to match
+            Propagate1</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Insert a Report after Propagate 3. Set it exactly as
+        Report1</para>
+      </listitem>
+    </itemizedlist>
+
+    <itemizedlist>
+      <listitem>
+        <para>Insert a Propagate after Report4</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Set the Propagator Field to RKV89MSISE90</para>
+          </listitem>
+
+          <listitem>
+            <para>Set the Stopping Conditions Group Box to match
+            Propagate1</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Insert a Report after Propagate 4. Set it exactly as
+        Report1</para>
+      </listitem>
+    </itemizedlist>
+
+    <itemizedlist>
+      <listitem>
+        <para>Insert a Propagate after Report5</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Set the Propagator Field to RKV89JR</para>
+          </listitem>
+
+          <listitem>
+            <para>Set the Stopping Conditions Group Box to match
+            Propagate1</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Insert a Report after Propagate 5. Set it exactly as
+        Report1</para>
+      </listitem>
+    </itemizedlist>
+
+    <itemizedlist>
+      <listitem>
+        <para>Insert a Propagate after Report6</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Set the Propagator Field to RKV89SRP</para>
+          </listitem>
+
+          <listitem>
+            <para>Set the Stopping Conditions Group Box to match
+            Propagate1</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Insert a Report after Propagate 6: Set it exactly as
+        Report1</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>The resulting view of Resource, Mission, and Output Trees</title>
+
+    <informaltable colsep="0" frame="none">
+      <tgroup cols="3">
+	  <colspec colname='c1'/>
+	  <colspec colname='c2'/>
+	  <colspec colname='c3'/>
+        <tbody>
+          <row>
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Force Models' Resource, Mission, and Output
+                  Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_ForceModels_ForceModelsResourceMissionandOutputTrees1.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Force Models' Resource, Mission, and Output
+                  Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_ForceModels_ForceModelsResourceMissionandOutputTrees2.jpeg"></imagedata>
+                  </imageobject>
+
+                </mediaobject>
+              </screenshot></entry>
+
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Force Models' Resource, Mission, and Output
+                  Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_ForceModels_ForceModelsResourceMissionandOutputTrees3.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+          </row>
+		  <row>
+			<entry namest="c1" nameend="c3" align='center'>Figure: Force Models' Resource, Mission, and Output
+                    Trees</entry>
+		  </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
+
+  <section>
+    <title>Running the Mission</title>
+
+    <para>When running the mission, you will see the spacecraft Sat1 orbit the
+    earth. Every one tenth of a day there is a switch to the Propagator that
+    governs the Sat1 dynamics at the related stage. The requested mission
+    report (in the directory specified in the ForceModelRpt Report Object)
+    shows the data that came out of the mission run. If these data seem
+    difficult to understand, you may try to change the output parameters in
+    the Report commands to Keplerian orbital elements, or to some other method
+    of tracking. You will notice slight variations in the data received from
+    each report, due to the differences in governing forces in each
+    Propagator.</para>
+
+    <screenshot>
+      <info>
+        <title>Figure: Output</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ForceModels_Output.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Output</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+</section>

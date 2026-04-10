@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Accessing GMAT Commands &#8212; API Cookbook R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    
+    <script src="../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="A Collection of Command Functions" href="commandfunctions.html" />
+    <link rel="prev" title="Executing Finite Burns" href="finiteBurn.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="commandfunctions.html" title="A Collection of Command Functions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="finiteBurn.html" title="Executing Finite Burns"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Accessing GMAT Commands</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="accessing-gmat-commands">
+<span id="commandaccesschapter"></span><h1>Accessing GMAT Commands<a class="headerlink" href="#accessing-gmat-commands" title="Link to this heading">¶</a></h1>
+<section id="problem">
+<h2><strong>Problem</strong><a class="headerlink" href="#problem" title="Link to this heading">¶</a></h2>
+<p>GMAT’s mission control sequence (MCS) controls the order of actions taken when a simulation is run.  The MCS is a linked list of objects all derived from the GmatCommand base class.  API users may need access to these commands in order to determine the state of the system at specific nodes in the MCS.  This page shows how to do this, using the Ex_HohmannTransfer sample script.</p>
+</section>
+<section id="solution">
+<h2><strong>Solution</strong><a class="headerlink" href="#solution" title="Link to this heading">¶</a></h2>
+<p>The solver control sequences for targeting and for optimization share setting of variables through the Vary command.  Targeting specifies the target goals using the Achieve command.  Optimization uses the Minimize command to set the objective function that is minimized, and the NonlinearConstraint command to constrain the optimization solution.</p>
+<section id="setup-and-some-comments">
+<h3>Setup and Some Comments<a class="headerlink" href="#setup-and-some-comments" title="Link to this heading">¶</a></h3>
+<p>The targeting example used in this chapter uses the Hohmann transfer sample script supplied with GMAT. Create a folder one level up from the run folder, name it scripts, and copy “Ex_HohmannTransfer.script” from the GMAT samples folder into that folder.</p>
+<p>The purpose of this chapter is exploration, using the GMAT API, of the mission control sequence.  The MCS in the Hohmann Transfer sample script is shown in
+<a class="reference internal" href="#hohmanntransferscript"><span class="std std-numref">Listing 7</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<span id="hohmanntransferscript"></span><div class="code-block-caption"><span class="caption-number">Listing 7 </span><span class="caption-text">The Full Hohmann Transfer MCS</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="n">BeginMissionSequence</span><span class="p">;</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop to Perigee&#39;</span><span class="w"> </span><span class="s">DefaultProp(DefaultSC)</span><span class="w"> </span><span class="s">{DefaultSC.Periapsis}</span><span class="p">;</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="c">% Burn in the velocity direction to reach an alternate Apoapsis point</span>
+<span class="linenos"> 6</span><span class="n">Target</span><span class="w"> </span><span class="s">&#39;Raise and Circularize&#39;</span><span class="w"> </span><span class="s">DC</span><span class="w"> </span><span class="s">{SolveMode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Solve</span><span class="p">,</span><span class="w"> </span><span class="n">ExitMode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">DiscardAndContinue</span><span class="p">};</span>
+<span class="linenos"> 7</span><span class="w">   </span><span class="n">Vary</span><span class="w"> </span><span class="s">&#39;Vary TOI.V&#39;</span><span class="w"> </span><span class="s">DC(TOI.Element1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Perturbation</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span><span class="w"> </span><span class="n">Lower</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Upper</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">3.14159</span><span class="p">,</span><span class="w"> </span><span class="n">MaxStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">});</span>
+<span class="linenos"> 8</span><span class="w">   </span><span class="n">Maneuver</span><span class="w"> </span><span class="s">&#39;Apply TOI&#39;</span><span class="w"> </span><span class="s">TOI(DefaultSC)</span><span class="p">;</span>
+<span class="linenos"> 9</span><span class="w">   </span><span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop to Apogee&#39;</span><span class="w"> </span><span class="s">DefaultProp(DefaultSC)</span><span class="w"> </span><span class="s">{DefaultSC.Apoapsis}</span><span class="p">;</span>
+<span class="linenos">10</span><span class="w">   </span><span class="n">Achieve</span><span class="w"> </span><span class="s">&#39;Achieve RMAG&#39;</span><span class="w"> </span><span class="s">DC(DefaultSC.Earth.RMAG</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">42165</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Tolerance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.1</span><span class="p">});</span>
+<span class="linenos">11</span><span class="w">   </span><span class="n">Vary</span><span class="w"> </span><span class="s">&#39;Vary GOI.V&#39;</span><span class="w"> </span><span class="s">DC(GOI.Element1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Perturbation</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span><span class="w"> </span><span class="n">Lower</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Upper</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">3.14159</span><span class="p">,</span><span class="w"> </span><span class="n">MaxStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">});</span>
+<span class="linenos">12</span><span class="w">   </span><span class="n">Maneuver</span><span class="w"> </span><span class="s">&#39;Apply GOI&#39;</span><span class="w"> </span><span class="s">GOI(DefaultSC)</span><span class="p">;</span>
+<span class="linenos">13</span><span class="w">   </span><span class="n">Achieve</span><span class="w"> </span><span class="s">&#39;Achieve ECC&#39;</span><span class="w"> </span><span class="s">DC(DefaultSC.ECC</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Tolerance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.1</span><span class="p">});</span>
+<span class="linenos">14</span><span class="n">EndTarget</span><span class="p">;</span><span class="w">  </span><span class="c">% For targeter DC</span>
+<span class="linenos">15</span>
+<span class="linenos">16</span><span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop 1 Day&#39;</span><span class="w"> </span><span class="s">DefaultProp(DefaultSC)</span><span class="w"> </span><span class="s">{DefaultSC.ElapsedSecs</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">86400</span><span class="p">};</span>
+</pre></div>
+</div>
+</div>
+<p>The GMAT MCS shown here consists of two pieces.  The core MCS is a set of four commands:</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-number">Listing 8 </span><span class="caption-text">The Top Level MCS</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">BeginMissionSequence</span><span class="p">;</span>
+<span class="linenos">2</span><span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop to Perigee&#39;</span><span class="w"> </span><span class="s">DefaultProp(DefaultSC)</span><span class="w"> </span><span class="s">{DefaultSC.Periapsis}</span><span class="p">;</span>
+<span class="linenos">3</span><span class="n">Target</span><span class="w"> </span><span class="s">&#39;Raise and Circularize&#39;</span><span class="w"> </span><span class="s">DC</span><span class="w"> </span><span class="s">{SolveMode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Solve</span><span class="p">,</span><span class="w"> </span><span class="n">ExitMode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">DiscardAndContinue</span><span class="p">};</span>
+<span class="linenos">4</span><span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop 1 Day&#39;</span><span class="w"> </span><span class="s">DefaultProp(DefaultSC)</span><span class="w"> </span><span class="s">{DefaultSC.ElapsedSecs</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">86400</span><span class="p">};</span>
+</pre></div>
+</div>
+</div>
+<p>Each line in this list is an instance of a class derived from the GmatComand class.  GmatCommand provides two methods used to manage the MCS: a GetNext() method that returns a pointer to the next command in the list, and a GetPrevious() method that returns the command preceding the command.  Each list is terminated - on both ends - by a null pointer, indicates as a “None” object in Python.</p>
+<p>The Target command on line 3 is an example of a “BranchCommand” object in the GMAT code.  Branch commands are commands that can pass processing in more than one direction: either to the next node in the sequence, or to a branch of commands scripted to perform some specific set of actions.  In this example, the Target command branches to the Targeter Control Sequence that specifies the actions followed to tune a pair of maneuvers that move a spacecraft from low Earth orbit to geosynchronous orbit.</p>
+<p>This chapter shows how to access these commands and examine them.  Manipulation of the commands, with a focus on manipulations for the targets and optimizers, will be presented in a later chapter.</p>
+</section>
+<section id="top-level-command-access">
+<h3>Top Level Command Access<a class="headerlink" href="#top-level-command-access" title="Link to this heading">¶</a></h3>
+<p>This section shows how to view the main MCS.</p>
+<p><strong>Step 1</strong>: Load the script</p>
+<p>GMAT Scripts are loaded and run in the APIusing the LoadScript function:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">from</span><span class="w"> </span><span class="s">load_gmat</span><span class="w"> </span><span class="s">import</span><span class="w"> </span><span class="s">gmat</span>
+
+#<span class="w"> </span><span class="n">Load</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">Hohmann</span><span class="w"> </span><span class="n">transfer</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="n">into</span><span class="w"> </span><span class="n">GMAT</span><span class="p">.</span>
+<span class="n">retval</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gmat</span><span class="p">.</span><span class="n">LoadScript</span><span class="p">(</span><span class="s">&quot;../scripts/Ex_HohmannTransfer.script&quot;</span><span class="p">)</span>
+
+<span class="k">if</span><span class="w"> </span><span class="n">retval</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">False</span><span class="p">:</span>
+<span class="w">   </span><span class="nb">print</span><span class="p">(</span><span class="s">&quot;The script failed to load.&quot;</span><span class="p">)</span>
+<span class="w">   </span><span class="nb">exit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This function returns the status of the load: True if the script was loaded, False if the load failed.</p>
+<p><strong>Step 2</strong>:  Access the first command in the list</p>
+<p>Access to a loaded script in GMAT is made through the GMAT Moderator.  From the API, access to the moderator, and then to the first command (or node) in the MCS is straightforward:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span>#<span class="w"> </span><span class="n">Connect</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">GMAT</span><span class="w"> </span><span class="n">engine</span><span class="w"> </span><span class="n">through</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">Moderator</span><span class="w"> </span><span class="n">singleton</span>
+<span class="nb">mod</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gmat</span><span class="p">.</span><span class="n">Moderator</span><span class="p">.</span><span class="n">Instance</span><span class="p">()</span>
+
+#<span class="w"> </span><span class="n">Access</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="n">node</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">MCS</span><span class="p">;</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="s">convention,</span><span class="w"> </span><span class="s">this</span><span class="w"> </span><span class="s">is</span><span class="w"> </span><span class="s">a</span><span class="w"> </span><span class="s">NoOp</span><span class="w"> </span><span class="s">command</span>
+<span class="n">startnode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">mod</span><span class="p">.</span><span class="n">GetFirstCommand</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The command list in GMAT always starts with a node that performs no work - a NoOp command in the core code.  Commands in GMAT have both a type and optionally a name.  The type field identifies the command’s class.  The Name field stores the command string assigned to the command.  One way to access these attributes of the current command is by simply printing the Python object directly.  The can be accessed individually using the GetTypeName() and GetName() methods:</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-number">Listing 9 </span><span class="caption-text">Attributes of the first MCS node</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span>#<span class="w"> </span><span class="n">View</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">attributes</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">node</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">startnode</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s">&quot;Type:  &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">startnode</span><span class="p">.</span><span class="n">GetTypeName</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s">&quot;Name:  &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">startnode</span><span class="p">.</span><span class="n">GetName</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<p>This code produces the output</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Object of type NoOp named
+Type:   NoOp
+Name:
+</pre></div>
+</div>
+<p>The NoOp command does not have a name, so those fields are empty in the output.</p>
+<p><strong>Step 3</strong>:  Access the next command in the list</p>
+<p>The MCS itself is pointed to by this NoOp command.  Access to the MCS is made like this:</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<span id="thenextnode"></span><div class="code-block-caption"><span class="caption-number">Listing 10 </span><span class="caption-text">Accessing the first scripted command</span><a class="headerlink" href="#id4" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span>#<span class="w"> </span><span class="n">Now</span><span class="w"> </span><span class="n">access</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="n">scripted</span><span class="w"> </span><span class="n">command</span>
+<span class="n">node</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">startnode</span><span class="p">.</span><span class="n">GetNext</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>The node object now points to the first command in the MCS, as can be verified like this:</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-number">Listing 11 </span><span class="caption-text">Attributes of the current MCS node</span><a class="headerlink" href="#id5" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span>#<span class="w"> </span><span class="n">View</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">attributes</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="n">node</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s">&quot;Type:  &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">GetTypeName</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s">&quot;Name:  &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">GetName</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<p>with output</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Object of type BeginMissionSequence named
+Type:   BeginMissionSequence
+Name:
+</pre></div>
+</div>
+<p>The node object points to the first scripted command, “BeginMissionSequence,” as expected.</p>
+<p><strong>Step 4</strong>:  Access the previous command in the list</p>
+<p>GMAT’s MCS is implemented as a doubly linked list, meaning that the commands are linked both to subsequent commands and to commands that come before the current command.  Subsequent commands are accessed using GetNext(), and shown above.  The predecessors to the current command are accessed using GetPrevious().  For example, the node object set in <a class="reference internal" href="#thenextnode"><span class="std std-numref">Listing 10</span></a> points back to the NoOp command at the start of the list, and can be shown like this:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">GetPrevious</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>producing the expected output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Object of type NoOp named
+</pre></div>
+</div>
+<p><strong>Step 5</strong>:  Display the MCS</p>
+<p>The methods presented above can be used to view the complete top level MCS.  The function WalkTheMCS() shown in <a class="reference internal" href="#walkthemcs"><span class="std std-numref">Listing 12</span></a> shows how to move through the control sequence and access each node’s descriptive attributes.</p>
+<div class="literal-block-wrapper docutils container" id="id6">
+<span id="walkthemcs"></span><div class="code-block-caption"><span class="caption-number">Listing 12 </span><span class="caption-text">A Utility Function to Show the MCS</span><a class="headerlink" href="#id6" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">def</span><span class="w"> </span><span class="s">WalkTheMCS(node):</span>
+<span class="w">   </span><span class="s">&#39;&#39;&#39;</span>
+<span class="s">      Simple function to show a GmatCommand linked list, omitting children</span>
+
+<span class="s">      inputs:</span>
+<span class="s">         node  The starting node for the command list</span>
+
+<span class="s">      returns:</span>
+<span class="s">         None.  The command list is written to the display</span>
+<span class="s">   &#39;&#39;&#39;</span>
+<span class="w">   </span><span class="nb">count</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span>
+
+<span class="w">   </span><span class="k">while</span><span class="w"> </span><span class="n">node</span><span class="w"> </span>!<span class="p">=</span><span class="w"> </span><span class="n">None</span><span class="p">:</span>
+<span class="w">      </span><span class="n">indent</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&quot;  &quot;</span>
+<span class="w">      </span><span class="nb">print</span><span class="p">(</span><span class="n">indent</span><span class="p">,</span><span class="w"> </span><span class="nb">count</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:  &quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;{:20}&#39;</span><span class="p">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">GetTypeName</span><span class="p">()),</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">GetName</span><span class="p">())</span>
+<span class="w">      </span><span class="n">node</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">GetNext</span><span class="p">()</span>
+<span class="w">      </span><span class="nb">count</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+<p>Whenthis function is called with the node pointing to the BeginMissionSequence command, the ouput shown in <a class="reference internal" href="#thetopmcs"><span class="std std-numref">Listing 13</span></a> is displayed.</p>
+<div class="literal-block-wrapper docutils container" id="id7">
+<span id="thetopmcs"></span><div class="code-block-caption"><span class="caption-number">Listing 13 </span><span class="caption-text">The MCS shown using WalkTheMCS()</span><a class="headerlink" href="#id7" title="Link to this code">¶</a></div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>   1 :   BeginMissionSequence
+   2 :   Propagate            Prop to Perigee
+   3 :   Target               Raise and Circularize
+   4 :   Propagate            Prop 1 Day
+</pre></div>
+</div>
+</div>
+<p>Compare this output with <a class="reference internal" href="#hohmanntransferscript"><span class="std std-numref">Listing 7</span></a> to see how the methods called from the API align with the GMAT scripting.</p>
+</section>
+<section id="branch-command-access">
+<h3>Branch Command Access<a class="headerlink" href="#branch-command-access" title="Link to this heading">¶</a></h3>
+<p>The MCS for the Hohmann transfer script includes a targeting loop.  The sequence of commands in that loop are not shown when running the WalkTheMCS() function because the targeter commands are branched off of the main mission control sequence.  That branch of commands, called the solver control sequence, is scripted off of the Target command like this in the sample script:</p>
+<div class="literal-block-wrapper docutils container" id="id8">
+<span id="hohmanntransferscs"></span><div class="code-block-caption"><span class="caption-number">Listing 14 </span><span class="caption-text">The Solver Control Sequence for the Hohmann Transfer</span><a class="headerlink" href="#id8" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">Target</span><span class="w"> </span><span class="s">&#39;Raise and Circularize&#39;</span><span class="w"> </span><span class="s">DC</span><span class="w"> </span><span class="s">{SolveMode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Solve</span><span class="p">,</span><span class="w"> </span><span class="n">ExitMode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">DiscardAndContinue</span><span class="p">};</span>
+<span class="linenos">2</span><span class="w">   </span><span class="n">Vary</span><span class="w"> </span><span class="s">&#39;Vary TOI.V&#39;</span><span class="w"> </span><span class="s">DC(TOI.Element1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Perturbation</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span><span class="w"> </span><span class="n">Lower</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Upper</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">3.14159</span><span class="p">,</span><span class="w"> </span><span class="n">MaxStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">});</span>
+<span class="linenos">3</span><span class="w">   </span><span class="n">Maneuver</span><span class="w"> </span><span class="s">&#39;Apply TOI&#39;</span><span class="w"> </span><span class="s">TOI(DefaultSC)</span><span class="p">;</span>
+<span class="linenos">4</span><span class="w">   </span><span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop to Apogee&#39;</span><span class="w"> </span><span class="s">DefaultProp(DefaultSC)</span><span class="w"> </span><span class="s">{DefaultSC.Apoapsis}</span><span class="p">;</span>
+<span class="linenos">5</span><span class="w">   </span><span class="n">Achieve</span><span class="w"> </span><span class="s">&#39;Achieve RMAG&#39;</span><span class="w"> </span><span class="s">DC(DefaultSC.Earth.RMAG</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">42165</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Tolerance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.1</span><span class="p">});</span>
+<span class="linenos">6</span><span class="w">   </span><span class="n">Vary</span><span class="w"> </span><span class="s">&#39;Vary GOI.V&#39;</span><span class="w"> </span><span class="s">DC(GOI.Element1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Perturbation</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span><span class="w"> </span><span class="n">Lower</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Upper</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">3.14159</span><span class="p">,</span><span class="w"> </span><span class="n">MaxStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">});</span>
+<span class="linenos">7</span><span class="w">   </span><span class="n">Maneuver</span><span class="w"> </span><span class="s">&#39;Apply GOI&#39;</span><span class="w"> </span><span class="s">GOI(DefaultSC)</span><span class="p">;</span>
+<span class="linenos">8</span><span class="w">   </span><span class="n">Achieve</span><span class="w"> </span><span class="s">&#39;Achieve ECC&#39;</span><span class="w"> </span><span class="s">DC(DefaultSC.ECC</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Tolerance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.1</span><span class="p">});</span>
+<span class="linenos">9</span><span class="n">EndTarget</span><span class="p">;</span><span class="w">  </span><span class="c">% For targeter DC</span>
+</pre></div>
+</div>
+</div>
+<p>The Target command here is apart of the top level MCS.  The remaining lines are the solver control sequence command, and access to the solver commands requires code that accesses that solver control sequence branch.</p>
+<p><strong>Step 1</strong>: Locate a Branch Command Object</p>
+<p>In GMAT, every command that manages branching is derived from the BranchCommand class.  That feature can be used to find the branch commands in the MCS by checking each command to determine if it is a branch command:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">node</span> <span class="o">=</span> <span class="n">startnode</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+<span class="k">while</span> <span class="n">node</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+   <span class="n">branchstatus</span> <span class="o">=</span> <span class="s2">&quot;does not branch&quot;</span>
+   <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">IsOfType</span><span class="p">(</span><span class="s2">&quot;BranchCommand&quot;</span><span class="p">):</span>
+      <span class="n">branchstatus</span> <span class="o">=</span> <span class="s2">&quot;is a branch command&quot;</span>
+   <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">GetTypeName</span><span class="p">(),</span> <span class="n">branchstatus</span><span class="p">)</span>
+   <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This code block locates the Target command in the Hohmann transfer script and identifies it as a command that has a branch:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>BeginMissionSequence does not branch
+Propagate does not branch
+Target is a branch command
+Propagate does not branch
+</pre></div>
+</div>
+<p><strong>Step 2</strong>: Access the child command from the Branch Command</p>
+<p>Now that the branch command has been located, the first command in the branch is retrieved using the GetChildCommand() method, like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">child</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetChildCommand</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Step 3</strong>: Walk through the command branch</p>
+<p>Using the child node, the solver control sequence in the Hohmann transfer script can be examined using the same techniques followed for the top level MCS.  This can be done using an updated, and now recursive, function to walk the MCS:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">WalkTheMCSWithBranches</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">depth</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">parent</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">      Simple function to show a GmatCommand linked list, including children.</span>
+
+<span class="sd">      Note that there is a hack in this implementation.  Ideally, we would</span>
+<span class="sd">      check nodes against the parent pointer, but in Python, we have</span>
+<span class="sd">      references to SWIG pointers to the GmatCommand object pointers.  It&#39;s a</span>
+<span class="sd">      windy little maze of rooms that all look the same, and that need to be</span>
+<span class="sd">      unwound when time permits.</span>
+
+<span class="sd">      inputs:</span>
+<span class="sd">         node  The starting node for the command list</span>
+<span class="sd">         depth The current depth of the call (used for indentation)</span>
+<span class="sd">         parent The node that has node as a child, or None for a top level node</span>
+
+<span class="sd">      returns:</span>
+<span class="sd">         None.  The command list is written, including branches, to the display</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
+   <span class="n">indent</span> <span class="o">=</span> <span class="s2">&quot;  &quot;</span> <span class="o">*</span> <span class="n">depth</span>
+
+   <span class="k">while</span> <span class="n">node</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+
+      <span class="nb">print</span><span class="p">(</span><span class="n">indent</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="s2">&quot;:  &quot;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{:20}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">GetTypeName</span><span class="p">()),</span> <span class="n">node</span><span class="o">.</span><span class="n">GetName</span><span class="p">())</span>
+
+      <span class="c1"># Handle the kiddos</span>
+      <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">IsOfType</span><span class="p">(</span><span class="s2">&quot;BranchCommand&quot;</span><span class="p">):</span>
+
+         <span class="n">child</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetChildCommand</span><span class="p">()</span>
+         <span class="n">WalkTheMCSWithBranches</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+
+      <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+      <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span>
+
+      <span class="k">if</span> <span class="n">parent</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+         <span class="c1"># Note: This is a hack for now.  We want to compare command pointers,</span>
+         <span class="c1"># but they are buried several levels deep and are not easily accessed</span>
+         <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">GetTypeName</span><span class="p">()</span> <span class="o">==</span> <span class="n">parent</span><span class="o">.</span><span class="n">GetTypeName</span><span class="p">()</span> <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span> <span class="o">==</span> <span class="n">parent</span><span class="o">.</span><span class="n">GetName</span><span class="p">():</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="kc">None</span>
+</pre></div>
+</div>
+<p>Calling WalkTheMCSWithBranches(node) generates the full mission control sequence with branches when called with node set to the BeginMissionSequence command:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1 :   BeginMissionSequence
+2 :   Propagate            Prop to Perigee
+3 :   Target               Raise and Circularize
+  1 :   Vary                 Vary TOI.V
+  2 :   Maneuver             Apply TOI
+  3 :   Propagate            Prop to Apogee
+  4 :   Achieve              Achieve RMAG
+  5 :   Vary                 Vary GOI.V
+  6 :   Maneuver             Apply GOI
+  7 :   Achieve              Achieve ECC
+  8 :   EndTarget
+4 :   Propagate            Prop 1 Day
+</pre></div>
+</div>
+</section>
+<section id="viewing-run-results">
+<h3>Viewing Run Results<a class="headerlink" href="#viewing-run-results" title="Link to this heading">¶</a></h3>
+<p>The instructions provided above show how to access the commands in the MCS.  Each command supports a field that reports the state of the spacecraft in the MCS the last time the command was accessed.  The summary for a specific command is accessed through the “Summary” field name.  Before the script has been run, the summary text data is not populated, and the field returns text to that effect.  For example, if the node points to the last propagate command, then accessing the Summary field produces the message</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; print(node.GetField(&quot;Summary&quot;))
+******  Changes made to the mission will not be reflected ******
+******  in the data displayed until the mission is rerun  ******
+
+        Propagate Command: Unnamed
+        Command summary is not supported for Propagate (in Single Step Mode)
+        or when the command did not execute due to control logic statements.
+        Please see the next valid command.
+</pre></div>
+</div>
+<p>After the script has run, the summary contains more useful data:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; gmat.RunScript()
+True
+&gt;&gt;&gt; print(node.GetField(&quot;Summary&quot;))
+******  Changes made to the mission will not be reflected ******
+******  in the data displayed until the mission is rerun  ******
+
+        Propagate Command: Unnamed
+        Spacecraft       : DefaultSC
+        Coordinate System: EarthMJ2000Eq
+
+        Time System   Gregorian                     Modified Julian
+        ----------------------------------------------------------------------
+        UTC Epoch:    02 Jan 2000 18:32:14.796      21546.2723934740
+        TAI Epoch:    02 Jan 2000 18:32:46.796      21546.2727638444
+        TT  Epoch:    02 Jan 2000 18:33:18.980      21546.2731363444
+        TDB Epoch:    02 Jan 2000 18:33:18.980      21546.2731363440
+
+        Cartesian State                       Keplerian State
+        ---------------------------           --------------------------------
+        X  =   7059.8054404060 km             SMA  =   42165.000291122 km
+        Y  =   41006.405025033 km             ECC  =   0.0000007749653
+        Z  =   6820.5046046645 km             INC  =   12.852951589765 deg
+        VX =  -2.9804993875227 km/sec         RAAN =   306.15458093975 deg
+        VY =   0.5912233799383 km/sec         AOP  =   180.88186603791 deg
+        VZ =  -0.4695068593848 km/sec         TA   =   312.46888463718 deg
+                                              MA   =   312.46895014326 deg
+                                              EA   =   312.46891739023 deg
+
+        Spherical State                       Other Orbit Data
+        ---------------------------           --------------------------------
+        RMAG =   42164.978228331 km           Mean Motion        =   7.291900370e-05 deg/sec
+        RA   =   80.231521342877 deg          Orbit Energy       =  -4.7266742410520 km^2/s^2
+        DEC  =   9.3089268671491 deg          C3                 =  -9.4533484821041 km^2/s^2
+        VMAG =   3.0746314210029 km/s         Semilatus Rectum   =   42165.000291097 km
+        AZI  =   98.901788705887 deg          Angular Momentum   =   129641.76692671 km^2/s
+        VFPA =   90.000032753035 deg          Beta Angle         =  -17.350375964570 deg
+        RAV  =   168.78023389434 deg          Periapsis Altitude =   35786.831314710 km
+        DECV =  -8.7836287310829 deg          VelPeriapsis       =   3.0746321949380 km/s
+                                              VelApoapsis        =   3.0746274294752 km/s
+                                              Orbit Period       =   86166.636794673 s
+
+        Planetodetic Properties
+        ---------------------------
+        LST       =   80.231355220914 deg
+        MHA       =   19.777879001376 deg
+        Latitude  =   9.3164365259040 deg
+        Longitude =   60.453476219538 deg
+        Altitude  =   35787.400879520 km
+
+
+        Spacecraft Properties
+        ------------------------------
+        Cd                    =   2.200000
+        Drag area             =   15.00000 m^2
+        Cr                    =   1.800000
+        Reflective (SRP) area =   1.000000 m^2
+        Dry mass              =   850.00000000000 kg
+        Total mass            =   850.00000000000 kg
+        SPADDragScaleFactor   =   1.000000
+        SPADSRPScaleFactor    =   1.000000
+</pre></div>
+</div>
+<p>There are a few additional features worth mentioning:</p>
+<ul class="simple">
+<li><p>When the node used to generate the summary data is a branch command, the summary is reported for that node and for each node in the branch.</p></li>
+<li><p>Commands also have an option to report the summary, starting from the selected node, through the end of the control sequence.  You can access that report through the “MissionSummary” field of the command.</p></li>
+</ul>
+</section>
+</section>
+<section id="discussion">
+<h2><strong>Discussion</strong><a class="headerlink" href="#discussion" title="Link to this heading">¶</a></h2>
+<p>This chapter provides an overview showing how to use the GMAT API to access the commands in a script and to begin viewing the data associated with the commands.  Subsequent chapters show how to change data in selected commands.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Accessing GMAT Commands</a><ul>
+<li><a class="reference internal" href="#problem"><strong>Problem</strong></a></li>
+<li><a class="reference internal" href="#solution"><strong>Solution</strong></a><ul>
+<li><a class="reference internal" href="#setup-and-some-comments">Setup and Some Comments</a></li>
+<li><a class="reference internal" href="#top-level-command-access">Top Level Command Access</a></li>
+<li><a class="reference internal" href="#branch-command-access">Branch Command Access</a></li>
+<li><a class="reference internal" href="#viewing-run-results">Viewing Run Results</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#discussion"><strong>Discussion</strong></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="finiteBurn.html"
+                          title="previous chapter"><strong>Executing Finite Burns</strong></a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="commandfunctions.html"
+                          title="next chapter">A Collection of Command Functions</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/commandaccess.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="commandfunctions.html" title="A Collection of Command Functions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="finiteBurn.html" title="Executing Finite Burns"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Accessing GMAT Commands</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

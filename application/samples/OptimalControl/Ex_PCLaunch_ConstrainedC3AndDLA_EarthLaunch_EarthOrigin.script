@@ -1,0 +1,345 @@
+%
+%  Ex_PCLaunch_ConstrainedC3AndDLA_EarthLaunch_EarthOrigin
+%
+%  Sample optimal control script incorporating a patched-conic launch boundary condition.
+%
+%  Released: R2020a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+%%%%%%%%%%%%%%%%%%%%%
+% create a spacecraft
+%%%%%%%%%%%%%%%%%%%%%
+
+Create Spacecraft testSat;
+
+testSat.DateFormat                   = TAIModJulian;
+testSat.Epoch                        = '21545';
+testSat.CoordinateSystem             = EarthMJ2000Eq;
+testSat.DisplayStateType             = Cartesian;
+testSat.X                            = 7100;
+testSat.Y                            = 0;
+testSat.Z                            = 1300;
+testSat.VX                           = 0;
+testSat.VY                           = 7.35;
+testSat.VZ                           = 1;
+testSat.DryMass                      = 850;
+testSat.Cd                           = 2.2;
+testSat.Cr                           = 1.8;
+testSat.DragArea                     = 15;
+testSat.SRPArea                      = 10;
+testSat.SPADDragScaleFactor          = 1;
+testSat.SPADSRPScaleFactor           = 1;
+testSat.Tanks                        = {ChemicalTank1};
+testSat.NAIFId                       = -10001001;
+testSat.NAIFIdReferenceFrame         = -9001001;
+testSat.OrbitColor                   = Red;
+testSat.TargetColor                  = Teal;
+testSat.OrbitErrorCovariance         = [ 1e+70 0 0 0 0 0 ; 0 1e+70 0 0 0 0 ; 0 0 1e+70 0 0 0 ; 0 0 0 1e+70 0 0 ; 0 0 0 0 1e+70 0 ; 0 0 0 0 0 1e+70 ];
+testSat.CdSigma                      = 1e+70;
+testSat.CrSigma                      = 1e+70;
+testSat.Id                           = 'SatId';
+testSat.Attitude                     = CoordinateSystemFixed;
+testSat.SPADSRPInterpolationMethod   = Bilinear;
+testSat.SPADSRPScaleFactorSigma      = 1e+70;
+testSat.SPADDragInterpolationMethod  = Bilinear;
+testSat.SPADDragScaleFactorSigma     = 1e+70;
+testSat.ModelFile                    = 'aura.3ds';
+testSat.ModelOffsetX                 = 0;
+testSat.ModelOffsetY                 = 0;
+testSat.ModelOffsetZ                 = 0;
+testSat.ModelRotationX               = 0;
+testSat.ModelRotationY               = 0;
+testSat.ModelRotationZ               = 0;
+testSat.ModelScale                   = 1;
+testSat.AttitudeDisplayStateType     = 'Quaternion';
+testSat.AttitudeRateDisplayStateType = 'AngularVelocity';
+testSat.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+testSat.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+Create ChemicalTank ChemicalTank1;
+
+ChemicalTank1.AllowNegativeFuelMass = false;
+ChemicalTank1.FuelMass              = 50000;
+ChemicalTank1.Pressure              = 1500;
+ChemicalTank1.Temperature           = 20;
+ChemicalTank1.RefTemperature        = 20;
+ChemicalTank1.Volume                = 40;
+ChemicalTank1.FuelDensity           = 1260;
+ChemicalTank1.PressureModel         = PressureRegulated;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+%%%%%%%%%%%%%%%%%%%%%%%
+% create force model(s)
+%%%%%%%%%%%%%%%%%%%%%%%
+
+Create ForceModel PatchedConicForceModel;
+
+PatchedConicForceModel.CentralBody            = Earth;
+PatchedConicForceModel.PointMasses            = {Sun};
+PatchedConicForceModel.Drag                   = None;
+PatchedConicForceModel.SRP                    = Off;
+PatchedConicForceModel.RelativisticCorrection = Off;
+PatchedConicForceModel.ErrorControl           = RSSStep;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% create coordinate system(s)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Create CoordinateSystem SunMJ2000Eq;
+
+SunMJ2000Eq.Origin = Sun;
+SunMJ2000Eq.Axes   = MJ2000Eq;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OrbitView OrbitView1;
+OrbitView1.SolverIterations = Current;
+OrbitView1.UpperLeft = [ 0.002435460301997077 0 ];
+OrbitView1.Size      = [ 0.7998051631758403 0.8493788819875776 ];
+OrbitView1.RelativeZOrder = 24;
+OrbitView1.Maximized = false;
+OrbitView1.Add = {testSat, Earth, Sun, Venus};
+OrbitView1.CoordinateSystem = EarthMJ2000Eq;
+OrbitView1.DrawObject = [ true true true ];
+OrbitView1.DataCollectFrequency = 1;
+OrbitView1.UpdatePlotFrequency = 50;
+OrbitView1.NumPointsToRedraw = 0;
+OrbitView1.ShowPlot = true;
+OrbitView1.MaxPlotPoints = 20000;
+OrbitView1.ShowLabels = true;
+OrbitView1.ViewPointReference = Earth;
+OrbitView1.ViewPointVector = [ 0 0 200000 ];
+OrbitView1.ViewDirection = Earth;
+OrbitView1.ViewScaleFactor = 1;
+OrbitView1.ViewUpCoordinateSystem = EarthMJ2000Eq;
+OrbitView1.ViewUpAxis = Z;
+OrbitView1.EclipticPlane = Off;
+OrbitView1.XYPlane = On;
+OrbitView1.WireFrame = Off;
+OrbitView1.Axes = On;
+OrbitView1.Grid = Off;
+OrbitView1.SunLine = Off;
+OrbitView1.UseInitialView = On;
+OrbitView1.StarCount = 7000;
+OrbitView1.EnableStars = On;
+OrbitView1.EnableConstellations = On;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Create OpenFramesInterface OFI_OrbitView1;
+
+OFI_OrbitView1.SolverIterations = Current;
+OFI_OrbitView1.UpperLeft        = [ 0.002435460301997077 0 ];
+OFI_OrbitView1.Size             = [ 0.7998051631758403 0.8493788819875776 ];
+OFI_OrbitView1.RelativeZOrder   = 24;
+OFI_OrbitView1.Maximized        = false;
+
+OFI_OrbitView1.Add              = {testSat, Earth, Sun, Venus};
+OFI_OrbitView1.View             = {Orbit_View};
+OFI_OrbitView1.Vector           = {Sun_Vector, Venus_Vector};
+
+OFI_OrbitView1.CoordinateSystem = EarthMJ2000Eq;
+OFI_OrbitView1.DrawObject       = [ true true true true];
+OFI_OrbitView1.DrawXYPlane      = [ false false false false];
+OFI_OrbitView1.DrawLabel        = [ true true true true];
+OFI_OrbitView1.DrawGrid         = [ false false false false];
+
+OFI_OrbitView1.Axes             = On;
+OFI_OrbitView1.XYPlane          = On;
+OFI_OrbitView1.EclipticPlane    = Off;
+OFI_OrbitView1.EnableStars      = On;
+OFI_OrbitView1.StarCount        = 40000;
+OFI_OrbitView1.ShowPlot         = true;
+
+%---------------------------------------------
+%--- Object OFI View
+%---------------------------------------------
+Create OpenFramesView Orbit_View;
+
+Orbit_View.ViewFrame           = CoordinateSystem;
+Orbit_View.SetDefaultLocation  = On;
+Orbit_View.SetCurrentLocation  = Off;
+
+Orbit_View.DefaultEye          = [ 0 0 200000 ];
+Orbit_View.DefaultCenter       = [ 0 0 0 ];
+Orbit_View.DefaultUp           = [ 1 0 0];
+
+%---------------------------------------------
+%--- Object OFI Vector
+%---------------------------------------------
+
+Create OpenFramesVector Sun_Vector;
+
+Sun_Vector.VectorColor         = [255 255 0];
+Sun_Vector.SourceObject        = Earth;
+Sun_Vector.VectorType          = Relative Position;
+Sun_Vector.DestinationObject   = Sun;
+Sun_Vector.VectorLabel         = 'Sun';
+Sun_Vector.VectorLengthType    = 'Auto';
+
+
+Create OpenFramesVector Venus_Vector;
+
+Venus_Vector.VectorColor       = [0 255 0];
+Venus_Vector.SourceObject      = Earth;
+Venus_Vector.VectorType        = Relative Position;
+Venus_Vector.DestinationObject = Venus;
+Venus_Vector.VectorLabel       = 'Venus';
+Venus_Vector.VectorLengthType  = 'Auto';
+
+
+%----------------------------------------
+%---------- User Objects
+%----------------------------------------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% create emtg thruster model
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Create EMTGSpacecraft emtg;
+
+emtg.SpacecraftFile  = 'FixedThrustAndIsp_Model1.emtg_spacecraftopt';
+emtg.DutyCycle       = 1;
+emtg.SpacecraftStage = [ 1 ];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% create dynamics configuration(s)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Create DynamicsConfiguration PatchedConicDynConfig;
+
+PatchedConicDynConfig.ForceModels    = {PatchedConicForceModel};
+PatchedConicDynConfig.Spacecraft     = {testSat};
+PatchedConicDynConfig.FiniteBurns    = {emtg};
+PatchedConicDynConfig.EMTGTankConfig = {ChemicalTank1};
+
+%%%%%%%%%%%%%%%%%%%
+% initial guess(es)
+%%%%%%%%%%%%%%%%%%%
+
+Create OptimalControlGuess PatchedConicLaunchGuess;
+
+PatchedConicLaunchGuess.Type             = 'CollocationGuessFile';
+PatchedConicLaunchGuess.TimeSystem       = 'A1ModJulian';
+PatchedConicLaunchGuess.CoordinateSystem = EarthMJ2000Eq;
+PatchedConicLaunchGuess.FileName         = '../data/misc/GuessWithUnityControl.och';
+
+%%%%%%%%%%%%%%%%%
+% create phase(s)
+%%%%%%%%%%%%%%%%%
+
+Create Phase Phase_PatchedConicLaunch;
+
+Phase_PatchedConicLaunch.Type               = 'RadauPseudospectral';
+Phase_PatchedConicLaunch.ThrustMode         = 'Coast';
+Phase_PatchedConicLaunch.SubPhaseBoundaries = [ -1 -0.75 -0.5 -0.25 0 0.25 0.5 0.75 1 ];
+Phase_PatchedConicLaunch.PointsPerSubPhase  = [ 3 3 3 3 3 3 3 3 ];
+Phase_PatchedConicLaunch.GuessSource        = PatchedConicLaunchGuess;
+Phase_PatchedConicLaunch.EpochFormat        = 'A1ModJulian';
+Phase_PatchedConicLaunch.StateLowerBound    = [ -1495980000 -1495980000 -1495980000 -100 -100 -100 1 ];
+Phase_PatchedConicLaunch.StateUpperBound    = [ 1495980000 1495980000 1495980000 100 100 100 50000 ];
+Phase_PatchedConicLaunch.ControlLowerBound  = [ -1 -1 -1 ];
+Phase_PatchedConicLaunch.ControlUpperBound  = [ 1 1 1 ];
+Phase_PatchedConicLaunch.EpochLowerBound    = '30540';
+Phase_PatchedConicLaunch.EpochUpperBound    = '30600';
+
+% guess for epochs
+Phase_PatchedConicLaunch.InitialEpoch          = '30545';
+Phase_PatchedConicLaunch.FinalEpoch            = '30555';
+Phase_PatchedConicLaunch.DynamicsConfiguration = PatchedConicDynConfig;
+
+% cost function
+Phase_PatchedConicLaunch.BuiltInCost               = 'TotalMassFinal';
+Phase_PatchedConicLaunch.MinControlMagnitude       = 0;
+Phase_PatchedConicLaunch.MaxControlMagnitude       = 1;
+Phase_PatchedConicLaunch.MaxRelativeErrorTolerance = 1e-05;
+Phase_PatchedConicLaunch.OverrideColorInGraphics   = false;
+Phase_PatchedConicLaunch.OrbitColor                = Red;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% custom linkage constraints
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% duration of launch phase
+Create CustomLinkageConstraint LaunchPhaseDuration;
+
+LaunchPhaseDuration.ConstraintMode           = 'Difference';
+LaunchPhaseDuration.InitialPhase             = Phase_PatchedConicLaunch;
+LaunchPhaseDuration.InitialPhaseBoundaryType = 'Start';
+LaunchPhaseDuration.FinalPhase               = Phase_PatchedConicLaunch;
+LaunchPhaseDuration.FinalPhaseBoundaryType   = 'End';
+LaunchPhaseDuration.SetModelParameter('TimeLowerBound', 'ElapsedDays', 8);
+LaunchPhaseDuration.SetModelParameter('TimeUpperBound', 'ElapsedDays', 8);
+
+% launch epoch
+Create CustomLinkageConstraint LaunchEpoch;
+
+LaunchEpoch.ConstraintMode = 'Absolute';
+LaunchEpoch.InitialPhase   = Phase_PatchedConicLaunch;
+LaunchEpoch.InitialPhaseBoundaryType = 'Start';
+LaunchEpoch.SetModelParameter('TimeLowerBound', A1ModJulian, 30540);
+LaunchEpoch.SetModelParameter('TimeUpperBound', A1ModJulian, 30560);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% create optimal control functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% patched conic launch constraint
+Create OptimalControlFunction PatchedConicLaunchConstraint;
+
+PatchedConicLaunchConstraint.Function  = 'PatchedConicLaunch';
+PatchedConicLaunchConstraint.Type      = 'AlgebraicConstraint';
+PatchedConicLaunchConstraint.PhaseList = {'Phase_PatchedConicLaunch.Initial'};
+PatchedConicLaunchConstraint.SetModelParameter('VehicleName', 'TestConfig1');
+PatchedConicLaunchConstraint.SetModelParameter('CentralBody', 'Earth');
+PatchedConicLaunchConstraint.SetModelParameter('EMTGLaunchVehicleOptionsFile', ../data/emtg/NLSII_August2018_Augmented.emtg_launchvehicleopt);
+
+%%%%%%%%%%%%%%%%%%%
+% create trajectory
+%%%%%%%%%%%%%%%%%%%
+Create Trajectory traj;
+
+traj.GuessSource                  = PatchedConicLaunchGuess;
+traj.MaxMeshRefinementIterations  = 5;
+traj.PhaseList                    = {Phase_PatchedConicLaunch};
+traj.AddBoundaryFunction          = {PatchedConicLaunchConstraint};
+traj.SNOPTOutputFile              = 'SNOPTOutputFile.txt';
+traj.CustomLinkages               = {LaunchPhaseDuration, LaunchEpoch};
+traj.SolutionFile                 = 'PCLaunch_ConstrainedC3AndDLA_EarthLaunch_EarthOrigin.och';
+traj.StateScaleMode               = 'Canonical';
+traj.MassScaleFactor              = 1000;
+traj.OutputCoordinateSystem       = UsePhaseCoordinateSystems;
+traj.FeasibilityTolerances        = [ 1e-08 ];
+traj.MajorOptimalityTolerances    = [ 0.0001 ];
+traj.MajorIterationsLimits        = [ 1000 ];
+traj.TotalIterationsLimits        = [ 200000 ];
+traj.OptimizationMode             = {'Minimize'};
+traj.AllowFailedMeshOptimizations = true;
+traj.MeshRefinementGuessMode      = 'BestSolutionMostRecentMesh';
+traj.PublishUpdateRate            = 30;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+% execute
+BeginMissionSequence;
+
+Collocate traj

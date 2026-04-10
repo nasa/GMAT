@@ -1,0 +1,56 @@
+%
+%  Ex_STKEphemOutput
+%
+%  Propagate a spacecraft and generate an STK ephemeris file.
+%
+%  Released: R2016a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft theSat;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+Create ForceModel DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+Create Propagator DefaultProp;
+
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create EphemerisFile EphemerisFile1;
+
+EphemerisFile1.UpperLeft          = [ 0 0 ];
+EphemerisFile1.Size               = [ 0 0 ];
+EphemerisFile1.RelativeZOrder     = 0;
+EphemerisFile1.Maximized          = false;
+EphemerisFile1.Spacecraft         = theSat;
+EphemerisFile1.Filename           = 'EphemerisFile1.e';
+EphemerisFile1.FileFormat         = STK-TimePosVel;
+EphemerisFile1.EpochFormat        = UTCGregorian;
+EphemerisFile1.InitialEpoch       = InitialSpacecraftEpoch;
+EphemerisFile1.FinalEpoch         = FinalSpacecraftEpoch;
+EphemerisFile1.StepSize           = IntegratorSteps;
+EphemerisFile1.Interpolator       = Lagrange;
+EphemerisFile1.InterpolationOrder = 7;
+EphemerisFile1.CoordinateSystem   = EarthMJ2000Eq;
+EphemerisFile1.OutputFormat       = LittleEndian;
+EphemerisFile1.WriteEphemeris     = true;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate DefaultProp(theSat) {theSat.ElapsedSecs = 12000.0};

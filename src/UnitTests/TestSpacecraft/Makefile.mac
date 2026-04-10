@@ -1,0 +1,43 @@
+# Project:    GMAT
+# Module:     makefile for testing spacecraft
+# Created:    Joey Gurgnaus 
+# Date:       2004/01/16
+# Modified:   2004/05/05 - Changed to wildcard *.cpp
+
+PROJECT_ROOT    = ../..
+BINDIR	= $(PROJECT_ROOT)/bin
+LIBDIR	= $(PROJECT_ROOT)/lib
+INCDIR	= $(PROJECT_ROOT)/include
+INSTALLED_LIB	= $(LIBDIR)/libgmatbase.a	
+EXECUTABLE = TestSpacecraft
+
+TEST_FLAGS = -D__DEBUG__ -D__CONSOLE_APP__
+
+# Source files for EXECUTABLE
+SRC	:= $(wildcard *.cpp)
+#
+# LIB need to compile the EXECUTABLE  
+LIB	= -L$(LIBDIR)
+# How they are invoked on the compile  line
+LIBS	= -lgmatbase
+#
+# Define macro for using the included file
+INCMK = $(PROJECT_ROOT)/test/inc.mac
+include ${INCMK}
+#
+###############################################################################
+# Target defiitions
+#
+all: $(EXECUTABLE)
+
+$(EXECUTABLE): $(OBJ) $(INSTALLED_LIB) 
+	@if [ ! -x $(BINDIR) ]; then mkdir $(BINDIR); fi 
+	$(CPP) $(OBJ) $(LIB) $(LIBS) -o $@
+	@chmod -R 755 $(BINDIR)
+	@cp $@ $(BINDIR)/.
+
+clean:
+	rm -f $(OBJ) core
+
+bare: clean
+	rm -f $(EXECUTABLE) $(BINDIR)/$(EXECUTABLE)

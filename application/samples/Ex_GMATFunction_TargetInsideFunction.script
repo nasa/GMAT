@@ -1,0 +1,190 @@
+%
+%  Ex_GMATFunction_TargetInsideFunction
+%
+%  Implement a targeting loop inside a GMAT function.
+%
+%  Released: R2015a
+% 
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft LEOsat;
+
+LEOsat.DateFormat       = UTCGregorian;
+LEOsat.Epoch            = '01 Jan 2000 11:59:28.000';
+LEOsat.CoordinateSystem = EarthMJ2000Eq;
+LEOsat.DisplayStateType = Keplerian;
+LEOsat.SMA              = 6733.989999999996;
+LEOsat.ECC              = 0.0004329999999984123;
+LEOsat.INC              = 34.98399999999998;
+LEOsat.RAAN             = 274.742;
+LEOsat.AOP              = 287.8049999999732;
+LEOsat.TA               = 294.0690000000269;
+LEOsat.DryMass          = 850;
+LEOsat.Cd               = 2.2;
+LEOsat.Cr               = 1.8;
+LEOsat.DragArea         = 15;
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel LEOprop_ForceModel;
+
+LEOprop_ForceModel.CentralBody                      = Earth;
+LEOprop_ForceModel.PrimaryBodies                    = {Earth};
+LEOprop_ForceModel.PointMasses                      = {Luna, Sun};
+LEOprop_ForceModel.SRP                              = On;
+LEOprop_ForceModel.RelativisticCorrection           = Off;
+LEOprop_ForceModel.ErrorControl                     = RSSStep;
+LEOprop_ForceModel.GravityField.Earth.Degree        = 4;
+LEOprop_ForceModel.GravityField.Earth.Order         = 4;
+LEOprop_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+LEOprop_ForceModel.GravityField.Earth.TideModel     = 'None';
+LEOprop_ForceModel.SRP.Flux                         = 1367;
+LEOprop_ForceModel.SRP.SRPModel                     = Spherical;
+LEOprop_ForceModel.SRP.Nominal_Sun                  = 149597870.691;
+LEOprop_ForceModel.Drag.AtmosphereModel             = JacchiaRoberts;
+LEOprop_ForceModel.Drag.HistoricWeatherSource       = 'ConstantFluxAndGeoMag';
+LEOprop_ForceModel.Drag.PredictedWeatherSource      = 'ConstantFluxAndGeoMag';
+LEOprop_ForceModel.Drag.CSSISpaceWeatherFile        = '../samples/SupportFiles/CSSI_2004To2026.txt';
+LEOprop_ForceModel.Drag.SchattenFile                = 'SchattenPredict.txt';
+LEOprop_ForceModel.Drag.F107                        = 150;
+LEOprop_ForceModel.Drag.F107A                       = 150;
+LEOprop_ForceModel.Drag.MagneticIndex               = 3;
+LEOprop_ForceModel.Drag.SchattenErrorModel          = 'Nominal';
+LEOprop_ForceModel.Drag.SchattenTimingModel         = 'NominalCycle';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator LEOprop;
+LEOprop.FM = LEOprop_ForceModel;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TCM1;
+
+TCM1.CoordinateSystem = Local;
+TCM1.Origin           = Earth;
+TCM1.Axes             = VNB;
+
+Create ImpulsiveBurn TCM2;
+
+TCM2.CoordinateSystem = Local;
+TCM2.Origin           = Earth;
+TCM2.Axes             = VNB;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface DefaultOrbitView;
+
+DefaultOrbitView.SolverIterations    = Current;
+DefaultOrbitView.UpperLeft           = [ 0.3733075435203095 0.004672897196261682 ];
+DefaultOrbitView.Size                = [ 0.5957446808510638 0.4330218068535826 ];
+DefaultOrbitView.RelativeZOrder      = 370;
+DefaultOrbitView.Maximized           = false;
+
+DefaultOrbitView.Add                 = {LEOsat, Earth};
+DefaultOrbitView.View                = {DefaultOrbit_View};
+
+DefaultOrbitView.CoordinateSystem    = EarthMJ2000Eq;   % Not sure this needed
+DefaultOrbitView.DrawObject          = [ true true true];
+DefaultOrbitView.DrawXYPlane         = [ false false false];
+DefaultOrbitView.DrawLabel           = [ true true true ];
+DefaultOrbitView.DrawGrid            = [ false false false];
+
+DefaultOrbitView.Axes                = On;
+DefaultOrbitView.XYPlane             = On;
+DefaultOrbitView.EclipticPlane       = Off;
+DefaultOrbitView.EnableStars         = On;
+DefaultOrbitView.StarCount           = 40000;
+DefaultOrbitView.ShowPlot            = true;
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame              = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation     = On;
+DefaultOrbit_View.SetCurrentLocation     = Off;
+
+DefaultOrbit_View.DefaultEye             = [ 30000 0 0 ];
+DefaultOrbit_View.DefaultCenter          = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp              = [ 0 0 1 ];
+
+
+
+Create XYPlot XYPlot1;
+
+XYPlot1.SolverIterations = Current;
+XYPlot1.UpperLeft        = [ 0.3762088974854932 0.4439252336448598 ];
+XYPlot1.Size             = [ 0.5957446808510638 0.4361370716510903 ];
+XYPlot1.RelativeZOrder   = 368;
+XYPlot1.XVariable        = LEOsat.A1ModJulian;
+XYPlot1.YVariables       = {LEOsat.Earth.Altitude};
+
+Create GroundTrackPlot GroundTrackPlot1
+GroundTrackPlot1.Add = {LEOsat};
+
+Create EphemerisFile EphemerisFile1;
+
+EphemerisFile1.Spacecraft   = LEOsat;
+EphemerisFile1.Filename     = 'EphemerisFile1.oem';
+EphemerisFile1.FileFormat   = CCSDS-OEM;
+EphemerisFile1.EpochFormat  = UTCGregorian;
+EphemerisFile1.InitialEpoch = InitialSpacecraftEpoch;
+EphemerisFile1.FinalEpoch   = FinalSpacecraftEpoch;
+EphemerisFile1.StepSize     = IntegratorSteps;
+
+Create ReportFile rf
+
+Create ReportFile rf2
+rf2.Add = {LEOsat.UTCModJulian, LEOsat.Earth.Altitude, LEOsat.Earth.RMAG, LEOsat.Earth.ECC};
+
+
+%----------------------------------------
+%---------- Functions
+%----------------------------------------
+
+Create GmatFunction TargetLEOStationKeeping;
+Create Variable desiredRMAG desiredECC
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+% Desired solution
+desiredRMAG = 6737;
+desiredECC  = 0.00005;
+
+Global LEOsat DC TCM1 TCM2 DefaultOrbitView  XYPlot1 rf rf2 EphemerisFile1 GroundTrackPlot1 LEOprop_ForceModel
+
+While 'While ElapsedDays < 10' LEOsat.ElapsedDays < 10.0
+
+   Propagate 'Prop One Step' LEOprop(LEOsat);
+	
+   If 'If Alt < Threshold' LEOsat.Earth.Altitude < 342
+      Propagate 'Prop To Periapsis' LEOprop(LEOsat) {LEOsat.Periapsis};
+		
+		% Call function to implement station keeping
+		TargetLEOStationKeeping(desiredRMAG,desiredECC)
+   EndIf;
+	
+EndWhile;
+
+Report rf LEOsat.UTCModJulian LEOsat.X LEOsat.Y LEOsat.Z LEOsat.Earth.Altitude LEOsat.Earth.ECC;

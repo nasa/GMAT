@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Control of Scripted Solvers &#8212; API Cookbook R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    
+    <script src="../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="A Collection of Command Functions" href="commandfunctions.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="commandfunctions.html" title="A Collection of Command Functions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>Control of Scripted Solvers</strong></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="control-of-scripted-solvers">
+<h1><strong>Control of Scripted Solvers</strong><a class="headerlink" href="#control-of-scripted-solvers" title="Link to this heading">¶</a></h1>
+<p>This chapter uses targeting and optimization scripts to demonstrate control of the targeting and optimization processes using the GMAT API.  It uses the sample scripts for a Hohmann transfer and for a minimum fuel lunar orbit insertion to show the steps used for control of the related processes. This chapter build on the command access capabilities described in <a class="reference internal" href="commandaccess.html#commandaccesschapter"><span class="std std-ref">Accessing GMAT Commands</span></a>.</p>
+<p>Some of the code presented in this chapter uses the functions defined in <a class="reference internal" href="commandfunctions.html#commandfunctionpython"><span class="std std-ref">Command access function utilities</span></a>, imported through the CommandFunctions package.</p>
+<section id="problem">
+<h2><strong>Problem</strong><a class="headerlink" href="#problem" title="Link to this heading">¶</a></h2>
+<p>GMAT’s optimizers and targeters provide a set of tools that can be used to tune the parameters used when solving analysis problems.  These solver capabilities are scripted in a “Solver Control Sequence.”  The Solver control sequence is an ordered list of GMAT commands that work together to solve a scripted analysis problem.  An example can be found in the Ex_HohmannTransfer sample script.  The solver control sequence for from that script is shown in <a class="reference internal" href="#atargetingsequence"><span class="std std-numref">Listing 16</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<span id="atargetingsequence"></span><div class="code-block-caption"><span class="caption-number">Listing 16 </span><span class="caption-text">The Hohmann Transfer targeting sequence</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="w">     </span><span class="n">Target</span><span class="w"> </span><span class="s">&#39;Raise and Circularize&#39;</span><span class="w"> </span><span class="s">DC</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Vary</span><span class="w"> </span><span class="s">&#39;Vary TOI.V&#39;</span><span class="w"> </span><span class="s">DC(TOI.Element1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Perturbation</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span><span class="w"> </span><span class="k">...</span>
+<span class="w">            </span><span class="n">Lower</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Upper</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">3.14159</span><span class="p">,</span><span class="w"> </span><span class="n">MaxStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">});</span>
+<span class="w">        </span><span class="n">Maneuver</span><span class="w"> </span><span class="s">&#39;Apply TOI&#39;</span><span class="w"> </span><span class="s">TOI(DefaultSC)</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop to Apogee&#39;</span><span class="w"> </span><span class="s">DefaultProp(DefaultSC)</span><span class="w"> </span><span class="s">{DefaultSC.Apoapsis}</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Achieve</span><span class="w"> </span><span class="s">&#39;Achieve RMAG&#39;</span><span class="w"> </span><span class="s">DC(DefaultSC.Earth.RMAG</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">42165</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Tolerance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.1</span><span class="p">});</span>
+<span class="w">        </span><span class="n">Vary</span><span class="w"> </span><span class="s">&#39;Vary GOI.V&#39;</span><span class="w"> </span><span class="s">DC(GOI.Element1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Perturbation</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span><span class="w"> </span><span class="k">...</span>
+<span class="w">            </span><span class="n">Lower</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Upper</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">3.14159</span><span class="p">,</span><span class="w"> </span><span class="n">MaxStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">});</span>
+<span class="w">        </span><span class="n">Maneuver</span><span class="w"> </span><span class="s">&#39;Apply GOI&#39;</span><span class="w"> </span><span class="s">GOI(DefaultSC)</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Achieve</span><span class="w"> </span><span class="s">&#39;Achieve ECC&#39;</span><span class="w"> </span><span class="s">DC(DefaultSC.ECC</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Tolerance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.1</span><span class="p">});</span>
+<span class="w">     </span><span class="n">EndTarget</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<p>Sometimes the scripted control sequence needs to be adjusted, either because the goals of the sequence have changed or because the variables are not conditioned properly, leading to an inability to converge on a solution to the analysis problem.  API users need to be able to tune the solver sequence through API calls to the underlying objects.</p>
+</section>
+<section id="solution">
+<h2><strong>Solution</strong><a class="headerlink" href="#solution" title="Link to this heading">¶</a></h2>
+<p>The solver control sequences for targeting and for optimization share setting of variables through the Vary command.  Targeting specifies the target goals using the Achieve command.  Optimization uses the Minimize command to set the objective function that is minimized, and the NonlinearConstraint command to constrain the optimization solution.  The API provides access to each of these commands so that their settings can be viewed and changed.  The sections below show how to work with each component.</p>
+<section id="vary-command-access">
+<h3>Vary Command Access<a class="headerlink" href="#vary-command-access" title="Link to this heading">¶</a></h3>
+<p>Scripting for the Vary command is shown in <a class="reference internal" href="#avarycommand"><span class="std std-numref">Listing 17</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<span id="avarycommand"></span><div class="code-block-caption"><span class="caption-number">Listing 17 </span><span class="caption-text">A single Vary command</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">Vary</span><span class="w"> </span><span class="s">&#39;Vary TOI.V&#39;</span><span class="w"> </span><span class="s">DC(TOI.Element1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Perturbation</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span><span class="w"> </span><span class="k">...</span>
+<span class="w">       </span><span class="n">Lower</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Upper</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">3.14159</span><span class="p">,</span><span class="w"> </span><span class="n">MaxStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">,</span><span class="w"> </span><span class="k">...</span>
+<span class="w">       </span><span class="n">AdditiveScaleFactor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">MultiplicativeScaleFactor</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">});</span>
+</pre></div>
+</div>
+</div>
+<p>The right side of the equality setting for each field in the command can be set in the API.  The API also provides access to the most recent evaluated value for the variable.  <a class="reference internal" href="#varyfields"><span class="std std-numref">Table 1</span></a> shows the field names and access attributes available through the API.</p>
+<span id="varyfields"></span><table class="docutils align-default" id="id3">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">Fields on the Vary Command</span><a class="headerlink" href="#id3" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Access</p></th>
+<th class="head"><p>Description and notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SolverName</p></td>
+<td><p>R</p></td>
+<td><p>The name of the targeter or optimizer controlling this variable</p></td>
+</tr>
+<tr class="row-odd"><td><p>InitialValue</p></td>
+<td><p>R/W</p></td>
+<td><p>Variable value used to start the targeting or optimization</p></td>
+</tr>
+<tr class="row-even"><td><p>Perturbation</p></td>
+<td><p>R/W</p></td>
+<td><p>Perturbation applied to compute the Jacobian numerically.
+0.0 not allowed</p></td>
+</tr>
+<tr class="row-odd"><td><p>Lower</p></td>
+<td><p>R/W</p></td>
+<td><p>The minimum allowed value for the variable, for solvers that
+allow control over the minimum.</p></td>
+</tr>
+<tr class="row-even"><td><p>Upper</p></td>
+<td><p>R/W</p></td>
+<td><p>The maximum allowed value for the variable, for solvers that
+allow control over the maximum.</p></td>
+</tr>
+<tr class="row-odd"><td><p>MaxStep</p></td>
+<td><p>R/W</p></td>
+<td><p>The largest change allowed in the magnitude of the variable</p></td>
+</tr>
+<tr class="row-even"><td><p>AdditiveScaleFactor</p></td>
+<td><p>R/W</p></td>
+<td><p>A factor added to the variable value</p></td>
+</tr>
+<tr class="row-odd"><td><p>MultiplicativeScaleFactor</p></td>
+<td><p>R/W</p></td>
+<td><p>A factor used to scale the variable</p></td>
+</tr>
+<tr class="row-even"><td><p>CurrentValue</p></td>
+<td><p>R</p></td>
+<td><p>The most recent value of the variable during a run.</p></td>
+</tr>
+</tbody>
+</table>
+<p>API users access these settings after loading a script.  They can be accessed prior to a run, or after the script has been run in preparation for a subsequent run.  :numref`VaryExample` shows how to set some of the field settings from the API.</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<span id="varyexample"></span><div class="code-block-caption"><span class="caption-number">Listing 18 </span><span class="caption-text">Sample code for modifying a Vary command</span><a class="headerlink" href="#id4" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">load_gmat</span> <span class="kn">import</span> <span class="n">gmat</span>
+<span class="kn">import</span> <span class="nn">CommandFunctions</span> <span class="k">as</span> <span class="nn">cf</span>
+
+<span class="c1"># Load the Hohmann transfer script into GMAT.</span>
+<span class="n">retval</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">LoadScript</span><span class="p">(</span><span class="s2">&quot;../scripts/Ex_HohmannTransfer.script&quot;</span><span class="p">)</span>
+
+<span class="n">mcs</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">GetMissionSequence</span><span class="p">()</span>
+
+<span class="c1"># Locate the Target command</span>
+<span class="n">solverCmd</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindSolverCommand</span><span class="p">(</span><span class="n">mcs</span><span class="p">)</span>
+
+<span class="c1"># Find the 1st Vary command</span>
+<span class="n">vary1</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;Vary&quot;</span><span class="p">)</span>
+
+<span class="c1"># Change some settings</span>
+<span class="n">val</span> <span class="o">=</span> <span class="mf">2.4</span>
+
+ <span class="c1"># Set from a Python variable</span>
+<span class="n">vary1</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;InitialValue&quot;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+<span class="c1"># Set from a numeric value</span>
+<span class="n">vary1</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Perturbation&quot;</span><span class="p">,</span> <span class="mf">0.0005</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Control of the Vary command parameters is a stepping stone to control of GMAT’s targeting and optimization processes, discussed below.</p>
+</section>
+<section id="use-case-1-targeting">
+<h3>Use Case 1: Targeting<a class="headerlink" href="#use-case-1-targeting" title="Link to this heading">¶</a></h3>
+<p>Targeting in GMAT is driven by commands between an opening “Target” command and a closing “EndTarget” command.  Example script is shown in <a class="reference internal" href="#targetendtargetexample"><span class="std std-numref">Listing 19</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<span id="targetendtargetexample"></span><div class="code-block-caption"><span class="caption-number">Listing 19 </span><span class="caption-text">The start and end of a targeter control sequence</span><a class="headerlink" href="#id5" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">Target</span><span class="w"> </span><span class="s">DC</span>
+<span class="w">   </span><span class="c">% Control sequence, with at least one Vary and one Achieve command, goes here</span>
+<span class="n">EndTarget</span>
+</pre></div>
+</div>
+</div>
+<p>That target control sequence contains the variables, manipulated by a Vary command (described above), a timeline of actions to execute, and the targeting goals, captured in Achieve commands.  The Target command provides a field used to find the name of the targeter used, and a simple Boolean field that checks to see if the targeter control sequence has succeeded in finding a valid solution.</p>
+<span id="targetfields"></span><table class="docutils align-default" id="id6">
+<caption><span class="caption-number">Table 2 </span><span class="caption-text">Fields on the Target Command</span><a class="headerlink" href="#id6" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Access</p></th>
+<th class="head"><p>Description and notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SolverName</p></td>
+<td><p>R</p></td>
+<td><p>The name of the targeter used in the run</p></td>
+</tr>
+<tr class="row-odd"><td><p>Targeter</p></td>
+<td><p>R</p></td>
+<td><p>The name of the targeter used in the run</p></td>
+</tr>
+<tr class="row-even"><td><p>TargeterConverged</p></td>
+<td><p>R</p></td>
+<td><p>Boolean flag indicating if targeter convergence has been
+achieved</p></td>
+</tr>
+</tbody>
+</table>
+<p>The Achieve command (scripting: <a class="reference internal" href="#achievescripting"><span class="std std-numref">Listing 20</span></a>) controls the goals of the targeting run.</p>
+<div class="literal-block-wrapper docutils container" id="id7">
+<span id="achievescripting"></span><div class="code-block-caption"><span class="caption-number">Listing 20 </span><span class="caption-text">Example of an Achieve command</span><a class="headerlink" href="#id7" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">Achieve</span><span class="w"> </span><span class="s">DC(sat.SMA</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">42165.0</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">Tolerance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.1</span><span class="p">});</span>
+</pre></div>
+</div>
+</div>
+<p>The user sets desired values for the targeter goals and tolerances on those values.  The targeter retrieves those settings and used them, along</p>
+<span id="achievefields"></span><table class="docutils align-default" id="id8">
+<caption><span class="caption-number">Table 3 </span><span class="caption-text">Fields on the Achieve Command</span><a class="headerlink" href="#id8" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Access</p></th>
+<th class="head"><p>Description and notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SolverName</p></td>
+<td><p>R</p></td>
+<td><p>The name of the targeter controlling this goal</p></td>
+</tr>
+<tr class="row-odd"><td><p>Goal</p></td>
+<td><p>R</p></td>
+<td><p>String identifying the targeter goal</p></td>
+</tr>
+<tr class="row-even"><td><p>GoalValue</p></td>
+<td><p>R/W</p></td>
+<td><p>The desired value of the goal</p></td>
+</tr>
+<tr class="row-odd"><td><p>Tolerance</p></td>
+<td><p>R/W</p></td>
+<td><p>The precision needed in the achieved value relative to the
+desired value in the converged solution</p></td>
+</tr>
+<tr class="row-even"><td><p>AchievedValue</p></td>
+<td><p>R</p></td>
+<td><p>The value of the goal following a run.  Note that this is a
+numeric field only accessed using GetNumber()</p></td>
+</tr>
+</tbody>
+</table>
+<p>The Achieve fields provide full control over teh goals of the targeting run.  <a class="reference internal" href="#achieveexample"><span class="std std-numref">Listing 21</span></a> illustrated their use.</p>
+<div class="literal-block-wrapper docutils container" id="id9">
+<span id="achieveexample"></span><div class="code-block-caption"><span class="caption-number">Listing 21 </span><span class="caption-text">Sample code setting the tolerance on an Achieve command and accessing the Target command fields</span><a class="headerlink" href="#id9" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">achieve2</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;Achieve&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">achieve2</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Tolerance&quot;</span><span class="p">,</span> <span class="mf">1e-7</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Variable 1:  Initial Value:&quot;</span><span class="p">,</span> <span class="n">vary1</span><span class="o">.</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">RunScript</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The targeter&quot;</span><span class="p">,</span> <span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Targeter&quot;</span><span class="p">),</span>
+   <span class="s2">&quot;completed its run with convergence status&quot;</span><span class="p">,</span>
+   <span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;TargeterConverged&quot;</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The goal&quot;</span><span class="p">,</span> <span class="n">achieve2</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Goal&quot;</span><span class="p">),</span> <span class="s2">&quot;=&quot;</span><span class="p">,</span>
+   <span class="n">achieve2</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;GoalValue&quot;</span><span class="p">),</span> <span class="s2">&quot;has a tolerance of&quot;</span><span class="p">,</span>
+   <span class="n">achieve2</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Tolerance&quot;</span><span class="p">),</span> <span class="s2">&quot;and a final value&quot;</span><span class="p">,</span>
+   <span class="n">achieve2</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;AchievedValue&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>The full sample Python code used when writing this section can be found in <a class="reference internal" href="#targeterpythondriver"><span class="std std-ref">Complete example for targeter control</span></a>.</p>
+</section>
+<section id="use-case-2-optimization">
+<h3>Use case 2: Optimization<a class="headerlink" href="#use-case-2-optimization" title="Link to this heading">¶</a></h3>
+<p>Optimization in GMAT is driven by commands between an opening “Optimize” command and a closing “EndOptimize” command.  Example script for these commands is shown in <a class="reference internal" href="#optimizeendoptimizeexample"><span class="std std-numref">Listing 22</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id10">
+<span id="optimizeendoptimizeexample"></span><div class="code-block-caption"><span class="caption-number">Listing 22 </span><span class="caption-text">The start and end of an optimizer control sequence</span><a class="headerlink" href="#id10" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">Optimize</span><span class="w"> </span><span class="s">opt</span>
+<span class="w">   </span><span class="c">% Control sequence, with at least one Vary and one Minimize or NonlinearConstraint command, goes here</span>
+<span class="n">EndOptimize</span>
+</pre></div>
+</div>
+</div>
+<p>That optimization control sequence contains the variables, manipulated by a Vary command (described above), a timeline of actions to execute, and the optimization objective function, captured in a Minimize command, along with any constraints to be applied to the optimization process, specified using NonlinearConstraint commands.  The Optimize command provides a field used to find the name of the optimizer used, and a simple Boolean field that checks to see if the optimization control sequence has succeeded in finding a valid solution.  These fields are described in <a class="reference internal" href="#optimizefields"><span class="std std-numref">Table 4</span></a>.</p>
+<span id="optimizefields"></span><table class="docutils align-default" id="id11">
+<caption><span class="caption-number">Table 4 </span><span class="caption-text">Fields on the Optimize Command</span><a class="headerlink" href="#id11" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Access</p></th>
+<th class="head"><p>Description and notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SolverName</p></td>
+<td><p>R</p></td>
+<td><p>The name of the optimizer used in the run</p></td>
+</tr>
+<tr class="row-odd"><td><p>OptimizerName</p></td>
+<td><p>R</p></td>
+<td><p>The name of the optimizer used in the run</p></td>
+</tr>
+<tr class="row-even"><td><p>OptimizerConverged</p></td>
+<td><p>R</p></td>
+<td><p>Boolean flag indicating if optimizer convergence has been
+achieved</p></td>
+</tr>
+</tbody>
+</table>
+<p>Linear and nonlinear equality and inequality constraints are specified in NonlinearConstraint commands.  The fields of those commands, shown in <a class="reference internal" href="#constraintfields"><span class="std std-numref">Table 5</span></a>, provide similar control for optimization to the Achieve controls for targeting.</p>
+<div class="literal-block-wrapper docutils container" id="id12">
+<span id="constraintscripting"></span><div class="code-block-caption"><span class="caption-number">Listing 23 </span><span class="caption-text">Example of an optimization constraint</span><a class="headerlink" href="#id12" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">NonlinearConstraint</span><span class="w"> </span><span class="s">opt(MMSRef.Luna.SMA</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2300</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<p>The constraints, scripted as in <a class="reference internal" href="#constraintscripting"><span class="std std-numref">Listing 23</span></a>, are specified in the format &lt;arg1&gt; operator &lt;arg2&gt;.  The API provides methods for evaluating both the left side argument, arg1, and the right side argument, arg2 using the fields shown in <a class="reference internal" href="#constraintfields"><span class="std std-numref">Table 5</span></a>.  The value for arg2 can also be specified using the RHSValue field.  Tolerances can be set on nonlinear constraints using the Tolerance setting.  Users should be cautious with this setting: some optimizers support it at the individual constraint level, while other do not.</p>
+<span id="constraintfields"></span><table class="docutils align-default" id="id13">
+<caption><span class="caption-number">Table 5 </span><span class="caption-text">Fields on the NonlinearConstraint Command</span><a class="headerlink" href="#id13" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Access</p></th>
+<th class="head"><p>Description and notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SolverName</p></td>
+<td><p>R</p></td>
+<td><p>The name of the optimizer controlling this goal</p></td>
+</tr>
+<tr class="row-odd"><td><p>ConstraintArg1</p></td>
+<td><p>R</p></td>
+<td><p>The text description of the left hand side of the constraint</p></td>
+</tr>
+<tr class="row-even"><td><p>LHSValue</p></td>
+<td><p>R</p></td>
+<td><p>The most recent (or desired) value of argument 1.  Note that the
+argument to the left of the operator is not a number, and cannot
+be set.</p></td>
+</tr>
+<tr class="row-odd"><td><p>ConstraintArg2</p></td>
+<td><p>R</p></td>
+<td><p>The text description of the right hand side of the constraint</p></td>
+</tr>
+<tr class="row-even"><td><p>RHSValue</p></td>
+<td><p>R/W</p></td>
+<td><p>The most recent (or desired) value of argument 2</p></td>
+</tr>
+<tr class="row-odd"><td><p>Operator</p></td>
+<td><p>R/W</p></td>
+<td><p>The operator used to compare the left and right arguments.
+Valid operators are &gt;=, =, and &lt;=.</p></td>
+</tr>
+<tr class="row-even"><td><p>Tolerance</p></td>
+<td><p>R/W</p></td>
+<td><p>Tolerance setting for equality constrains, for optimizers that
+support that setting at the constraint level.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The final component used in optimization problems if the objective function, defining the function that needs to be minimized during optimization.  In GMAT scripting, that function is set using the Minimize command exemplified in <a class="reference internal" href="#objectivefunctionscripting"><span class="std std-numref">Listing 24</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id14">
+<span id="objectivefunctionscripting"></span><div class="code-block-caption"><span class="caption-number">Listing 24 </span><span class="caption-text">Scripting for the objective function definition for optimization</span><a class="headerlink" href="#id14" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">Minimize</span><span class="w"> </span><span class="s">opt(myCostFunction)</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<p>The API provides access to reading the objective function settings using the fields shown in <a class="reference internal" href="#minimizefields"><span class="std std-numref">Table 6</span></a>.</p>
+<span id="minimizefields"></span><table class="docutils align-default" id="id15">
+<caption><span class="caption-number">Table 6 </span><span class="caption-text">Fields on the Minimize Command</span><a class="headerlink" href="#id15" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Access</p></th>
+<th class="head"><p>Description and notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SolverName</p></td>
+<td><p>R</p></td>
+<td><p>The name of the optimizer controlling this goal</p></td>
+</tr>
+<tr class="row-odd"><td><p>OptimizerName</p></td>
+<td><p>R</p></td>
+<td><p>The name of the optimizer controlling this goal</p></td>
+</tr>
+<tr class="row-even"><td><p>ObjectiveName</p></td>
+<td><p>R</p></td>
+<td><p>The scripted cost function</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cost</p></td>
+<td><p>R</p></td>
+<td><p>The most recent value of the objective function</p></td>
+</tr>
+</tbody>
+</table>
+<p>An example showing the use of these settings is shown in <a class="reference internal" href="#optimizercontrolexample"><span class="std std-numref">Listing 25</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id16">
+<span id="optimizercontrolexample"></span><div class="code-block-caption"><span class="caption-number">Listing 25 </span><span class="caption-text">Sample code (simplified) showing control of constraints and access to the objective function</span><a class="headerlink" href="#id16" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># See full example (below) for some definitions</span>
+
+<span class="n">nlc</span> <span class="o">=</span>  <span class="n">cf</span><span class="o">.</span><span class="n">FindChildByName</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;SMA = 2300&quot;</span><span class="p">)</span>
+<span class="n">nlc</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;RHSValue&quot;</span><span class="p">,</span> <span class="mf">2100.0</span><span class="p">)</span>
+
+<span class="c1"># Run with the scripted settings</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">RunScript</span><span class="p">()</span>
+
+<span class="n">minCommand</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;Minimize&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Objective function:  &quot;</span><span class="p">,</span> <span class="n">minCommand</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ObjectiveName&quot;</span><span class="p">),</span>
+      <span class="s2">&quot;=&quot;</span> <span class="p">,</span> <span class="n">minCommand</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;Cost&quot;</span><span class="p">),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Constraint results:&quot;</span><span class="p">,</span> <span class="n">nlc</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ConstraintArg1&quot;</span><span class="p">),</span>
+      <span class="n">nlc</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Operator&quot;</span><span class="p">),</span> <span class="n">nlc</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ConstraintArg2&quot;</span><span class="p">),</span>
+      <span class="s2">&quot; ==&gt; &quot;</span><span class="p">,</span> <span class="n">nlc</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;LHSValue&quot;</span><span class="p">),</span> <span class="n">nlc</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Operator&quot;</span><span class="p">),</span>
+      <span class="n">nlc</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;RHSValue&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>The full sample Python code used when writing this section can be found in <a class="reference internal" href="#optimizerpythondriver"><span class="std std-ref">Complete example for optimizer control</span></a>.</p>
+</section>
+</section>
+<section id="discussion">
+<h2><strong>Discussion</strong><a class="headerlink" href="#discussion" title="Link to this heading">¶</a></h2>
+<p>This chapter provides usage examples for controlling GMAT scripts that target and optimize trajectories using the Python API.</p>
+</section>
+<section id="complete-targeter-script">
+<h2><strong>Complete Targeter Script</strong><a class="headerlink" href="#complete-targeter-script" title="Link to this heading">¶</a></h2>
+<div class="literal-block-wrapper docutils container" id="id17">
+<span id="targeterpythondriver"></span><div class="code-block-caption"><span class="caption-number">Listing 26 </span><span class="caption-text">Complete example for targeter control</span><a class="headerlink" href="#id17" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/python3</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Example showing how to manipulate variables in a solver control sequence </span>
+<span class="sd">	using the GMAT API.  </span>
+
+<span class="sd">	This example uses the Hohmann transfer sample script supplied with GMAT.  </span>
+<span class="sd">	Create a folder one level up from the run folder, name it scripts, and copy</span>
+<span class="sd">	Ex_HohmannTransfer.script from the GMAT samples folder into that folder.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">load_gmat</span> <span class="kn">import</span> <span class="n">gmat</span>
+<span class="kn">import</span> <span class="nn">CommandFunctions</span> <span class="k">as</span> <span class="nn">cf</span>
+
+<span class="c1"># For reporting, set up a local log file</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">UseLogFile</span><span class="p">(</span><span class="s2">&quot;./VarExampleLog.txt&quot;</span><span class="p">)</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">EchoLogFile</span><span class="p">()</span>
+
+
+<span class="c1"># Load the Hohmann transfer script into GMAT.</span>
+<span class="n">retval</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">LoadScript</span><span class="p">(</span><span class="s2">&quot;../scripts/Ex_HohmannTransfer.script&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">retval</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The script failed to load.&quot;</span><span class="p">)</span>
+	<span class="n">exit</span><span class="p">()</span>
+
+<span class="c1"># Connect to the GMAT engine and access the MCS</span>
+<span class="n">mcs</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">GetMissionSequence</span><span class="p">()</span>
+
+<span class="c1"># Locate the Target command</span>
+<span class="n">solverCmd</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindSolverCommand</span><span class="p">(</span><span class="n">mcs</span><span class="p">)</span>
+
+<span class="c1"># Find the 1st Vary command</span>
+<span class="n">vary1</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;Vary&quot;</span><span class="p">)</span>
+<span class="c1"># Find the 2nd Vary command</span>
+<span class="n">vary2</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;Vary&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Variable 1:  Initial Value:&quot;</span><span class="p">,</span> <span class="n">vary1</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;InitialValue&quot;</span><span class="p">),</span> 
+	<span class="s2">&quot;Perturbation:&quot;</span><span class="p">,</span> <span class="n">vary1</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;Perturbation&quot;</span><span class="p">),</span>
+	<span class="s2">&quot;Max Step:&quot;</span><span class="p">,</span> <span class="n">vary1</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;MaxStep&quot;</span><span class="p">),)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Variable 2:  Initial Value:&quot;</span><span class="p">,</span> <span class="n">vary2</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;InitialValue&quot;</span><span class="p">),</span> 
+	<span class="s2">&quot;Perturbation:&quot;</span><span class="p">,</span> <span class="n">vary2</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;Perturbation&quot;</span><span class="p">),</span>
+	<span class="s2">&quot;Max Step:&quot;</span><span class="p">,</span> <span class="n">vary2</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;MaxStep&quot;</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The targeter&quot;</span><span class="p">,</span> <span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Targeter&quot;</span><span class="p">),</span> 
+	<span class="s2">&quot;entered its run with convergence status&quot;</span><span class="p">,</span> 
+	<span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;TargeterConverged&quot;</span><span class="p">))</span>
+
+<span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Press Enter to continue...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Run with the scripted settings</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">RunScript</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The targeter&quot;</span><span class="p">,</span> <span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Targeter&quot;</span><span class="p">),</span> 
+	<span class="s2">&quot;completed its run with convergence status&quot;</span><span class="p">,</span> 
+	<span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;TargeterConverged&quot;</span><span class="p">))</span>
+
+<span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Press Enter to continue...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">val</span> <span class="o">=</span> <span class="n">vary1</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;CurrentValue&quot;</span><span class="p">)</span>
+
+<span class="c1"># Now change the settings</span>
+<span class="n">vary1</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;InitialValue&quot;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+<span class="n">vary1</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Perturbation&quot;</span><span class="p">,</span> <span class="mf">0.0005</span><span class="p">)</span>
+<span class="n">vary2</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;InitialValue&quot;</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">)</span>
+<span class="n">vary2</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;MaxStep&quot;</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)</span>
+
+<span class="n">achieve2</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;Achieve&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">achieve2</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Tolerance&quot;</span><span class="p">,</span> <span class="mf">1e-7</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Variable 1:  Initial Value:&quot;</span><span class="p">,</span> <span class="n">vary1</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;InitialValue&quot;</span><span class="p">),</span> 
+	<span class="s2">&quot;Perturbation:&quot;</span><span class="p">,</span> <span class="n">vary1</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;Perturbation&quot;</span><span class="p">),</span>
+	<span class="s2">&quot;Max Step:&quot;</span><span class="p">,</span> <span class="n">vary1</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;MaxStep&quot;</span><span class="p">),)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Variable 2:  Initial Value:&quot;</span><span class="p">,</span> <span class="n">vary2</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;InitialValue&quot;</span><span class="p">),</span> 
+	<span class="s2">&quot;Perturbation:&quot;</span><span class="p">,</span> <span class="n">vary2</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;Perturbation&quot;</span><span class="p">),</span>
+	<span class="s2">&quot;Max Step:&quot;</span><span class="p">,</span> <span class="n">vary2</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;MaxStep&quot;</span><span class="p">))</span>
+
+<span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Press Enter to continue...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">gmat</span><span class="o">.</span><span class="n">RunScript</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The targeter&quot;</span><span class="p">,</span> <span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Targeter&quot;</span><span class="p">),</span> 
+	<span class="s2">&quot;completed its run with convergence status&quot;</span><span class="p">,</span> 
+	<span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;TargeterConverged&quot;</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The goal&quot;</span><span class="p">,</span> <span class="n">achieve2</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Goal&quot;</span><span class="p">),</span> <span class="s2">&quot;=&quot;</span><span class="p">,</span> 
+	<span class="n">achieve2</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;GoalValue&quot;</span><span class="p">),</span> <span class="s2">&quot;has a tolerance of&quot;</span><span class="p">,</span>
+	<span class="n">achieve2</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Tolerance&quot;</span><span class="p">),</span> <span class="s2">&quot;and a final value&quot;</span><span class="p">,</span>
+	<span class="n">achieve2</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;AchievedValue&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="complete-optimizer-script">
+<h2><strong>Complete Optimizer Script</strong><a class="headerlink" href="#complete-optimizer-script" title="Link to this heading">¶</a></h2>
+<div class="literal-block-wrapper docutils container" id="id18">
+<span id="optimizerpythondriver"></span><div class="code-block-caption"><span class="caption-number">Listing 27 </span><span class="caption-text">Complete example for optimizer control</span><a class="headerlink" href="#id18" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/python3</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Example showing how to manipulate variables in a solver control sequence </span>
+<span class="sd">	using the GMAT API.  </span>
+
+<span class="sd">	This example uses the Hohmann transfer sample script supplied with GMAT.  </span>
+<span class="sd">	Create a folder one level up from the run folder, name it scripts, and copy</span>
+<span class="sd">	Ex_HohmannTransfer.script from the GMAT samples folder into that folder.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">load_gmat</span> <span class="kn">import</span> <span class="n">gmat</span>
+<span class="kn">import</span> <span class="nn">CommandFunctions</span> <span class="k">as</span> <span class="nn">cf</span>
+
+<span class="c1"># For reporting, set up a local log file</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">UseLogFile</span><span class="p">(</span><span class="s2">&quot;./VarExampleLog.txt&quot;</span><span class="p">)</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">EchoLogFile</span><span class="p">()</span>
+
+<span class="c1"># Load the lunar optimal fuel transfer script into GMAT.</span>
+<span class="n">retval</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">LoadScript</span><span class="p">(</span><span class="s2">&quot;../scripts/Ex_MinFuelLunarTransfer.script&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">retval</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The script failed to load.&quot;</span><span class="p">)</span>
+	<span class="n">exit</span><span class="p">()</span>
+
+<span class="c1"># Connect to the GMAT engine and access the MCS</span>
+<span class="n">mcs</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">GetMissionSequence</span><span class="p">()</span>
+
+<span class="c1"># Locate the Target command</span>
+<span class="n">solverCmd</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindCommandByName</span><span class="p">(</span><span class="n">mcs</span><span class="p">,</span> <span class="s2">&quot;Optimal Transfer&quot;</span><span class="p">)</span>
+
+<span class="n">solverCmd</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;ShowProgressWindow&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<span class="n">optName</span> <span class="o">=</span> <span class="n">solverCmd</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;OptimizerName&quot;</span><span class="p">)</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">GetObject</span><span class="p">(</span><span class="n">optName</span><span class="p">)</span>
+
+<span class="n">minCommand</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;Minimize&quot;</span><span class="p">)</span>
+
+<span class="n">constraints</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Collect the constraint list</span>
+<span class="n">index</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">node</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;NonlinearConstraint&quot;</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="n">node</span><span class="p">:</span>
+	<span class="n">constraints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+	<span class="n">index</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
+	<span class="n">node</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">FindChild</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;NonlinearConstraint&quot;</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+
+<span class="c1"># Run with the scripted settings</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">RunScript</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Objective function:  &quot;</span><span class="p">,</span> <span class="n">minCommand</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ObjectiveName&quot;</span><span class="p">),</span>
+     <span class="s2">&quot;=&quot;</span> <span class="p">,</span> <span class="n">minCommand</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;Cost&quot;</span><span class="p">),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Constraints:&quot;</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">constraints</span><span class="p">)):</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;   &quot;</span><span class="p">,</span> <span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ConstraintArg1&quot;</span><span class="p">),</span> 
+			<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Operator&quot;</span><span class="p">),</span>
+      		<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ConstraintArg2&quot;</span><span class="p">),</span> <span class="s2">&quot; ==&gt; &quot;</span><span class="p">,</span> 
+      		<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;LHSValue&quot;</span><span class="p">),</span> 
+      		<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Operator&quot;</span><span class="p">),</span>
+      		<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;RHSValue&quot;</span><span class="p">))</span>
+
+<span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Press Enter to continue...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">nlc</span> <span class="o">=</span>  <span class="n">cf</span><span class="o">.</span><span class="n">FindChildByName</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;SMA = 2300&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">nlc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The command named &#39;SMA = 2300&#39; was not found&quot;</span><span class="p">)</span>
+	<span class="n">exit</span><span class="p">()</span>
+<span class="n">nlc</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;RHSValue&quot;</span><span class="p">,</span> <span class="mf">2100.0</span><span class="p">)</span>
+
+<span class="n">nlc</span> <span class="o">=</span>  <span class="n">cf</span><span class="o">.</span><span class="n">FindChildByName</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;Inc = 65&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">nlc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The command named &#39;Inc = 65&#39; was not found&quot;</span><span class="p">)</span>
+	<span class="n">exit</span><span class="p">()</span>
+<span class="n">nlc</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;RHSValue&quot;</span><span class="p">,</span> <span class="mi">85</span><span class="p">)</span>
+
+<span class="n">nlc</span> <span class="o">=</span>  <span class="n">cf</span><span class="o">.</span><span class="n">FindChildByName</span><span class="p">(</span><span class="n">solverCmd</span><span class="p">,</span> <span class="s2">&quot;ECC = 0.01&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">nlc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The command named &#39;ECC = 0.01&#39; was not found&quot;</span><span class="p">)</span>
+	<span class="n">exit</span><span class="p">()</span>
+<span class="n">nlc</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;RHSValue&quot;</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Constraints reset:&quot;</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">constraints</span><span class="p">)):</span>
+		<span class="nb">print</span><span class="p">(</span><span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetName</span><span class="p">(),</span> <span class="s2">&quot;now set to &quot;</span><span class="p">,</span> <span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;RHSValue&quot;</span><span class="p">))</span> 
+
+<span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Press Enter to continue...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Run with the scripted settings</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">RunScript</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Objective function:  &quot;</span><span class="p">,</span> <span class="n">minCommand</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ObjectiveName&quot;</span><span class="p">),</span> <span class="s2">&quot;=&quot;</span> <span class="p">,</span> <span class="n">minCommand</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;Cost&quot;</span><span class="p">),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Constraints:&quot;</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">constraints</span><span class="p">)):</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;   &quot;</span><span class="p">,</span> <span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ConstraintArg1&quot;</span><span class="p">),</span> 
+			<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Operator&quot;</span><span class="p">),</span>
+      		<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;ConstraintArg2&quot;</span><span class="p">),</span> <span class="s2">&quot; ==&gt; &quot;</span><span class="p">,</span> 
+      		<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;LHSValue&quot;</span><span class="p">),</span> 
+      		<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Operator&quot;</span><span class="p">),</span> 
+      		<span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">GetNumber</span><span class="p">(</span><span class="s2">&quot;RHSValue&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Ta da!</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#"><strong>Control of Scripted Solvers</strong></a><ul>
+<li><a class="reference internal" href="#problem"><strong>Problem</strong></a></li>
+<li><a class="reference internal" href="#solution"><strong>Solution</strong></a><ul>
+<li><a class="reference internal" href="#vary-command-access">Vary Command Access</a></li>
+<li><a class="reference internal" href="#use-case-1-targeting">Use Case 1: Targeting</a></li>
+<li><a class="reference internal" href="#use-case-2-optimization">Use case 2: Optimization</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#discussion"><strong>Discussion</strong></a></li>
+<li><a class="reference internal" href="#complete-targeter-script"><strong>Complete Targeter Script</strong></a></li>
+<li><a class="reference internal" href="#complete-optimizer-script"><strong>Complete Optimizer Script</strong></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="commandfunctions.html"
+                          title="previous chapter">A Collection of Command Functions</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/solvercontrol.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="commandfunctions.html" title="A Collection of Command Functions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>Control of Scripted Solvers</strong></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

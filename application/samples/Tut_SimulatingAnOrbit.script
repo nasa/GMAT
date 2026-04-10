@@ -1,0 +1,143 @@
+%
+%  Script: Tut_SimulatingAnOrbit
+%
+%  Script for the "Simulating an Orbit" Users Guide tutorial.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Sat;
+
+Sat.DateFormat                   = UTCGregorian;
+Sat.Epoch                        = '22 Jul 2014 11:29:10.811';
+Sat.CoordinateSystem             = EarthMJ2000Eq;
+Sat.DisplayStateType             = Keplerian;
+Sat.SMA                          = 83474.31800000001;
+Sat.ECC                          = 0.89652;
+Sat.INC                          = 12.4606;
+Sat.RAAN                         = 292.8362;
+Sat.AOP                          = 218.9805;
+Sat.TA                           = 180;
+Sat.DryMass                      = 850;
+Sat.Cd                           = 2.2;
+Sat.Cr                           = 1.8;
+Sat.DragArea                     = 15;
+Sat.SRPArea                      = 1;
+Sat.NAIFId                       = -123456789;
+Sat.NAIFIdReferenceFrame         = -123456789;
+Sat.Id                           = 'SatId';
+Sat.Attitude                     = CoordinateSystemFixed;
+Sat.ModelFile                    = '../data/vehicle/models/aura.3ds';
+Sat.ModelOffsetX                 = 0;
+Sat.ModelOffsetY                 = 0;
+Sat.ModelOffsetZ                 = 0;
+Sat.ModelRotationX               = 0;
+Sat.ModelRotationY               = 0;
+Sat.ModelRotationZ               = 0;
+Sat.ModelScale                   = 1;
+Sat.AttitudeDisplayStateType     = 'Quaternion';
+Sat.AttitudeRateDisplayStateType = 'AngularVelocity';
+Sat.AttitudeCoordinateSystem     = 'EarthMJ2000Eq';
+
+
+Create ForceModel LowEarthProp_ForceModel;
+
+LowEarthProp_ForceModel.CentralBody                      = Earth;
+LowEarthProp_ForceModel.PrimaryBodies                    = {Earth};
+LowEarthProp_ForceModel.PointMasses                      = {Luna, Sun};
+LowEarthProp_ForceModel.SRP                              = On;
+LowEarthProp_ForceModel.RelativisticCorrection           = Off;
+LowEarthProp_ForceModel.ErrorControl                     = RSSStep;
+LowEarthProp_ForceModel.GravityField.Earth.Degree        = 10;
+LowEarthProp_ForceModel.GravityField.Earth.Order         = 10;
+LowEarthProp_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+LowEarthProp_ForceModel.GravityField.Earth.TideModel     = 'None';
+LowEarthProp_ForceModel.Drag.AtmosphereModel             = 'JacchiaRoberts';
+LowEarthProp_ForceModel.Drag.F107                        = 150;
+LowEarthProp_ForceModel.Drag.F107A                       = 150;
+LowEarthProp_ForceModel.Drag.MagneticIndex               = 3;
+LowEarthProp_ForceModel.Drag.F107                        = 150;
+LowEarthProp_ForceModel.Drag.F107A                       = 150;
+LowEarthProp_ForceModel.Drag.MagneticIndex               = 3;
+LowEarthProp_ForceModel.SRP.Flux                         = 1367;
+LowEarthProp_ForceModel.SRP.Nominal_Sun                  = 149597870.691;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator LowEarthProp;
+
+LowEarthProp.FM              = LowEarthProp_ForceModel;
+LowEarthProp.Type            = RungeKutta89;
+LowEarthProp.InitialStepSize = 60;
+LowEarthProp.Accuracy        = 9.999999999999999e-012;
+LowEarthProp.MinStep         = 0.001;
+LowEarthProp.MaxStep         = 2700;
+LowEarthProp.MaxStepAttempts = 50;
+LowEarthProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn DefaultIB;
+
+DefaultIB.CoordinateSystem = Local;
+DefaultIB.Origin           = Earth;
+DefaultIB.Axes             = VNB;
+DefaultIB.Element1         = 0;
+DefaultIB.Element2         = 0;
+DefaultIB.Element3         = 0;
+DefaultIB.DecrementMass    = false;
+DefaultIB.Isp              = 300;
+DefaultIB.GravitationalAccel = 9.810000000000001;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.SolverIterations = Current;
+OFI_DefaultOrbitView.UpperLeft        = [ 0 0 ];
+OFI_DefaultOrbitView.Size             = [ .8 .85 ];
+OFI_DefaultOrbitView.RelativeZOrder   = 0;
+OFI_DefaultOrbitView.Maximized        = false;
+
+OFI_DefaultOrbitView.Add              = {Sat, Earth};
+OFI_DefaultOrbitView.View             = {DefaultOrbit_View};
+
+OFI_DefaultOrbitView.CoordinateSystem = EarthMJ2000Eq;
+OFI_DefaultOrbitView.DrawObject       = [ true true];
+OFI_DefaultOrbitView.DrawXYPlane      = [ false false];
+OFI_DefaultOrbitView.DrawLabel        = [ true true];
+OFI_DefaultOrbitView.DrawGrid         = [ false false];
+
+OFI_DefaultOrbitView.Axes             = On;
+OFI_DefaultOrbitView.XYPlane          = Off;
+OFI_DefaultOrbitView.EclipticPlane    = Off;
+OFI_DefaultOrbitView.EnableStars      = On;
+OFI_DefaultOrbitView.StarCount        = 40000;
+OFI_DefaultOrbitView.ShowPlot         = true;
+
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame           = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation  = On;
+DefaultOrbit_View.SetCurrentLocation  = Off;
+
+DefaultOrbit_View.DefaultEye          = [ -60000 30000 20000 ];
+DefaultOrbit_View.DefaultCenter       = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp           = [ 0 0 1 ];
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate LowEarthProp(Sat) {Sat.Earth.Periapsis};

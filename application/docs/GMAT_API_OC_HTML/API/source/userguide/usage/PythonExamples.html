@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>API Examples &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="API Examples in Java" href="JavaExamples.html" />
+    <link rel="prev" title="Time and Coordinate Conversions" href="Conversion.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="JavaExamples.html" title="API Examples in Java"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Conversion.html" title="Time and Coordinate Conversions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="Examples.html" accesskey="U">Usage Examples</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">API Examples</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="api-examples">
+<span id="pythonexamples"></span><h1>API Examples<a class="headerlink" href="#api-examples" title="Link to this heading">¶</a></h1>
+<p>Four Python sample use cases were coded using the prototype SWIG API to act as
+a guide to addressing the changes that are needed for the production system.
+These cases ranged from a trivial time system conversion use case to a full
+propagation use case.  These cases, shown in <a class="reference internal" href="../../appendix/PrototypeProductionComparison.html#swigoldandnew"><span class="std std-ref">Comparison of the SWIG Prototype with the Production API</span></a>, were then
+reworked into the API syntax documented here.  The following section previews
+the changes coming to the GMAT API by presenting each of these cases as planned
+for the API.  The examples presented here are in Python.  Java examples are
+presented in <a class="reference internal" href="JavaExamples.html#javaexamples"><span class="std std-ref">API Examples in Java</span></a>.</p>
+<section id="case-1-time-system-conversion">
+<h2>Case 1: Time System Conversion<a class="headerlink" href="#case-1-time-system-conversion" title="Link to this heading">¶</a></h2>
+<p>GMAT supports five time systems: A.1 Atomic Time (A1), International Atomic Time
+(TAI), Coordinated Universal Time (UTC), Barycentric Dynamical Time (TDB), and
+Terrestrial Time (TT).  Times in GMAT are stored internally in a modified Julian
+format, referenced to January 5, 1941 at noon.  Conversions between these time
+systems are performed using a time system converter, coded in the TimeSystemConverter
+singleton class.  The time system converter also provides routines to convert
+between modified Julian representations and Gregorian representations.</p>
+<p>The simplest usage of the time system converter using GMAT’s API consists
+of two lines of code; lines 5 and 9 shown here:</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-number">Listing 8 </span><span class="caption-text">Python code for time conversions using the GMAT API</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="linenos">2</span><span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="linenos">3</span>
+<span class="linenos">4</span><span class="c1"># Get the converter</span>
+<span class="linenos">5</span><span class="n">timeConverter</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">TimeSystemConverter</span><span class="o">.</span><span class="n">Instance</span><span class="p">()</span>
+<span class="linenos">6</span>
+<span class="linenos">7</span><span class="c1"># Convert an epoch</span>
+<span class="linenos">8</span><span class="n">UTCEpoch</span> <span class="o">=</span> <span class="mf">21738.22145</span>
+<span class="linenos">9</span><span class="n">TAIEpoch</span> <span class="o">=</span> <span class="n">timeConverter</span><span class="o">.</span><span class="n">Convert</span><span class="p">(</span><span class="n">UTCEpoch</span><span class="p">,</span> <span class="n">gmat</span><span class="o">.</span><span class="n">TimeSystemConverter</span><span class="o">.</span><span class="n">UTC</span><span class="p">,</span> <span class="n">gmat</span><span class="o">.</span><span class="n">TimeSystemConverter</span><span class="o">.</span><span class="n">TAI</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This code shows two features of the API.  The first line shows how a Python
+user loads the GMAT system and initializes it for use.  As part  of the
+initialization process, several components are created in the GMAT module
+that are single instance objects, following a singleton design pattern.  These
+singletons are accessed from the API by calling .Instance() on their names.
+Line 5 is an example of this usage.  The time system converter
+singleton is accessed using the object name TimeSystemConverter.  In the
+python code, the object “timeConverter” is connected to the singleton, and
+then used to convert a UTC epoch to the TAI time system on line 9.</p>
+<p>At this point, the singleton is ready for the user to ineract with it
+directly.  Using the API, the conversion is immediately available:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">timeConverter</span><span class="o">.</span><span class="n">ConvertMjdToGregorian</span><span class="p">(</span><span class="n">UTCEpoch</span><span class="p">)</span>
+<span class="go">&#39;12 Jul 2000 17:18:53.280&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TAIEpoch</span> <span class="o">=</span> <span class="n">timeConverter</span><span class="o">.</span><span class="n">Convert</span><span class="p">(</span><span class="n">UTCEpoch</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">timeConverter</span><span class="o">.</span><span class="n">ConvertMjdToGregorian</span><span class="p">(</span><span class="n">TAIEpoch</span><span class="p">)</span>
+<span class="go">&#39;12 Jul 2000 17:19:25.280&#39;</span>
+</pre></div>
+</div>
+<p>The interactive call shows the correct time system difference arising from the
+number of leap seconds needed to convert from UTC time to TAI time.  Users can
+access the leap second count at a specified epoch directly as well:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">timeConverter</span><span class="o">.</span><span class="n">NumberOfLeapSecondsFrom</span><span class="p">(</span><span class="n">TAIEpoch</span><span class="p">)</span>
+<span class="go">32.0</span>
+</pre></div>
+</div>
+</section>
+<section id="case-2-coordinate-system-conversion">
+<h2>Case 2: Coordinate System Conversion<a class="headerlink" href="#case-2-coordinate-system-conversion" title="Link to this heading">¶</a></h2>
+<p>The time system converter is a stand alone component in GMAT.  It does not
+require external components to perform conversions.  Coordinate systems are more
+complex.  They require connections to other objects in order to compute data.
+<a class="reference internal" href="#coordinatesystemsettings"><span class="std std-numref">Table 7</span></a> shows the settings, required and optional, to
+define a GMAT coordinate system.</p>
+<span id="coordinatesystemsettings"></span><table class="docutils align-default" id="id2">
+<caption><span class="caption-number">Table 7 </span><span class="caption-text">Coordinate System Settings</span><a class="headerlink" href="#id2" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 18.0%" />
+<col style="width: 14.0%" />
+<col style="width: 53.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Required?</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AxisType</p></td>
+<td><p>AxisSystem object</p></td>
+<td><p>Yes</p></td>
+<td><p>Defines the orientation of the coordinate axes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Origin</p></td>
+<td><p>SpacePoint object</p></td>
+<td><p>Yes</p></td>
+<td><p>Defines the coordinate system origin</p></td>
+</tr>
+<tr class="row-even"><td><p>Primary</p></td>
+<td><p>SpacePoint object</p></td>
+<td><p>No</p></td>
+<td><p>Reference body used in coordinate systems that
+need a primary body</p></td>
+</tr>
+<tr class="row-odd"><td><p>Secondary</p></td>
+<td><p>SpacePoint object</p></td>
+<td><p>No</p></td>
+<td><p>Reference body used in coordinate systems that
+need a secondary body</p></td>
+</tr>
+<tr class="row-even"><td><p>J2000 Body</p></td>
+<td><p>Internal reference object</p></td>
+<td><p>Yes</p></td>
+<td><p>Reference origin in GMAT (always set to Earth)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Solar System</p></td>
+<td><p>Solar System object</p></td>
+<td><p>Yes</p></td>
+<td><p>The solar system used in the run</p></td>
+</tr>
+</tbody>
+</table>
+<p>Coordinate systems are defined in GMAT as a collection of objects, using a core
+composite component that collect together the axis system defining the
+directions for the coordinate system axes, the bodies used to set the coordinate
+system origin and the axis references, and core GMAT settings used to tie the
+coordinate system into the rest of the executing GMAT code.  Many of the user
+objects in GMAT have a structure like this: a core object that uses other
+objects to form a composite component consistent with the rest of the running
+GMAT system.</p>
+<p>GMAT performs conversions between coordinate systems using a coordinate system
+converter, coded in the CoordinateConverter class.  The CoordinateConverter
+class maintains state information about the most recent conversion performed.
+This state data would cause issues using a state converter in a single instance
+context, because the state data from one conversion could be accessed in code
+requesting the state data from a second conversion.  For that reason, the
+CoordinateConverter class does not provide a singleton instance, and a separate
+object must be created for each use.</p>
+<p>A basic use case for the coordinate system converter takes a state in
+Earth-centered Mean-of-J2000 Equatorial coordinates and converts the state into
+Earth-centered Earth-fixed coordinates.  The Python code demonstrating this
+conversion using the GMAT API is</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-number">Listing 9 </span><span class="caption-text">Python code for coordinate system conversions</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="c1"># Setup the GMAT data structures for the conversion</span>
+<span class="linenos"> 4</span><span class="n">mjd</span>   <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">A1Mjd</span><span class="p">(</span><span class="mf">22326.977184</span><span class="p">)</span>
+<span class="linenos"> 5</span><span class="n">rvIn</span>  <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Rvector6</span><span class="p">(</span><span class="mf">6988.427</span><span class="p">,</span> <span class="mf">1073.884</span><span class="p">,</span> <span class="mf">2247.333</span><span class="p">,</span> <span class="mf">0.019982</span><span class="p">,</span> <span class="mf">7.226988</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.554962</span><span class="p">)</span>
+<span class="linenos"> 6</span><span class="n">rvOut</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Rvector6</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="linenos"> 7</span><span class="n">UTCEpoch</span> <span class="o">=</span> <span class="mf">19053.293</span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span><span class="c1"># Create the converter</span>
+<span class="linenos">10</span><span class="n">csConverter</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">CoordinateConverter</span><span class="p">()</span>
+<span class="linenos">11</span>
+<span class="linenos">12</span><span class="c1"># Create the input and output coordinate systems</span>
+<span class="linenos">13</span><span class="n">eci</span>  <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;ECI&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;MJ2000Eq&quot;</span><span class="p">)</span>
+<span class="linenos">14</span><span class="n">ecef</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;ECEF&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;BodyFixed&quot;</span><span class="p">)</span>
+<span class="linenos">15</span><span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="linenos">16</span><span class="n">csConverter</span><span class="o">.</span><span class="n">Convert</span><span class="p">(</span><span class="n">UTCEpoch</span><span class="p">,</span> <span class="n">rvIn</span><span class="p">,</span> <span class="n">eci</span><span class="p">,</span> <span class="n">rvOut</span><span class="p">,</span> <span class="n">ecef</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The key features shown in this example for the API are:</p>
+<ul class="simple">
+<li><p>Default objects (like the solar system and Earth objects) are set
+automatically.</p></li>
+<li><p>GMAT objects are built using the Construct() command.</p></li>
+</ul>
+</section>
+<section id="cases-3-and-4-force-modeling-and-propagation">
+<h2>Cases 3 and 4: Force Modeling and Propagation<a class="headerlink" href="#cases-3-and-4-force-modeling-and-propagation" title="Link to this heading">¶</a></h2>
+<p>Force models in GMAT – or, more properly, dynamics models – are built by
+creating an object from the force container class, ODEModel, and adding the
+constituent forces to that container.  The ODEModel object is responsible for
+accumulating the dynamics into a derivative vector.  The dynamics are computed
+when the GetDerivatives() method is called on the object.  The resulting
+computation is stored in a class member, accessible using the
+GetDerivativeArray() method.</p>
+<p>The ODEModel class is one component of a more complicated propagation subsystem
+in GMAT.  That subsystem is designed with spacecraft propagation in mind.  Force
+modeling requires an associated spacecraft object.  During initialization, an
+instance of the GMAT helper class, PropagationStateManager (PSM), is used to
+collect data and assemble the state vector used to evaluate the dynamics.  The
+PSM determines the size of the state vector by checking to see if the 6 element
+Cartesian state, mass flow from spacecraft tanks, and the state transition
+matrix or state Jacobian (A-matrix) are needed during the propagation.  Once the
+size of the propagation state vector is determined, the complete vector is
+assembled and initialized, and only then can the dynamics be evaluated.</p>
+<p>The steps required for this initialization are largely implemented behind the
+scenes in the GMAT API.  Users that want to manage this setup by hand are
+referred to the sample code in <a class="reference internal" href="../../appendix/PrototypeProductionComparison.html#swigoldandnew"><span class="std std-ref">Comparison of the SWIG Prototype with the Production API</span></a>.  The third example in that
+chapter shows force model configuration.  API users can access GMAT’s dynamics
+models by configuring the forces piece by piece and assigning them to an
+ODEModel container.  Here is an example of this process for an Earth point mass
+force model:</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-number">Listing 10 </span><span class="caption-text">Python code for force modeling using the API</span><a class="headerlink" href="#id4" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;Sat&quot;</span><span class="p">)</span>
+<span class="linenos"> 4</span><span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cr&quot;</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">)</span>
+<span class="linenos"> 5</span><span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SRPArea&quot;</span><span class="p">,</span> <span class="mf">6.5</span><span class="p">)</span>
+<span class="linenos"> 6</span><span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DryMass&quot;</span><span class="p">,</span> <span class="mi">225</span><span class="p">)</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span><span class="n">psm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">PropagationStateManager</span><span class="p">()</span>
+<span class="linenos"> 9</span><span class="n">psm</span><span class="o">.</span><span class="n">SetObject</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+<span class="linenos">10</span><span class="n">psm</span><span class="o">.</span><span class="n">BuildState</span><span class="p">()</span>
+<span class="linenos">11</span>
+<span class="linenos">12</span><span class="n">dynamics</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ODEModel&quot;</span><span class="p">,</span> <span class="s2">&quot;EPM_SRP&quot;</span><span class="p">)</span>
+<span class="linenos">13</span><span class="n">epm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">PointMassForce</span><span class="p">(</span><span class="s2">&quot;EarthPointMass&quot;</span><span class="p">)</span>
+<span class="linenos">14</span><span class="n">srp</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">SolarRadiationPressure</span><span class="p">(</span><span class="s2">&quot;SRP&quot;</span><span class="p">)</span>
+<span class="linenos">15</span><span class="n">dynamics</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">epm</span><span class="p">)</span>
+<span class="linenos">16</span><span class="n">dynamics</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">srp</span><span class="p">)</span>
+<span class="linenos">17</span><span class="n">dynamics</span><span class="o">.</span><span class="n">SetPropStateManager</span><span class="p">(</span><span class="n">psm</span><span class="p">)</span>
+<span class="linenos">18</span><span class="n">dynamics</span><span class="o">.</span><span class="n">SetState</span><span class="p">(</span><span class="n">psm</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span><span class="n">pstate</span> <span class="o">=</span> <span class="p">[</span><span class="mf">7000.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="p">]</span>
+<span class="linenos">21</span>
+<span class="linenos">22</span><span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="linenos">23</span>
+<span class="linenos">24</span><span class="n">dynamics</span><span class="o">.</span><span class="n">BuildModelFromMap</span><span class="p">()</span>
+<span class="linenos">25</span><span class="n">dynamics</span><span class="o">.</span><span class="n">UpdateInitialData</span><span class="p">()</span>
+<span class="linenos">26</span>
+<span class="linenos">27</span><span class="n">dynamics</span><span class="o">.</span><span class="n">GetDerivatives</span><span class="p">(</span><span class="n">pstate</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="linenos">28</span><span class="n">pderiv</span> <span class="o">=</span> <span class="n">dynamics</span><span class="o">.</span><span class="n">GetDerivativeArray</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>The setup for dynamics modeling above extends with little additional
+configuration to numerical integration.  The integration piece of the
+configuration adds the lines</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-number">Listing 11 </span><span class="caption-text">Propagator setup and use in the API</span><a class="headerlink" href="#id5" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">prop</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PrinceDormand78&quot;</span><span class="p">,</span> <span class="s2">&quot;MyIntegrator&quot;</span><span class="p">)</span>
+<span class="linenos">2</span><span class="n">prop</span><span class="o">.</span><span class="n">SetPhysicalModel</span><span class="p">(</span><span class="n">dynamics</span><span class="p">)</span>
+<span class="linenos">3</span>
+<span class="linenos">4</span><span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="linenos">5</span>
+<span class="linenos">6</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+<span class="linenos">7</span>   <span class="n">prop</span><span class="o">.</span><span class="n">Step</span><span class="p">(</span><span class="mf">60.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>To summarize: The goal of the GMAT API is to make API based configuration as
+simple as possible, while maintaining full access to the capabilities of GMAT.
+Towards that end, the design of the API can be illustrated through a
+representative example implementation of a propagation problem.  A reference
+propagation in the GMAT API looks like this:</p>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-number">Listing 12 </span><span class="caption-text">The Propagation example in Python</span><a class="headerlink" href="#id6" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="c1"># Set up the spacecraft</span>
+<span class="linenos"> 4</span><span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;Sat&quot;</span><span class="p">)</span>
+<span class="linenos"> 5</span><span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cr&quot;</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">)</span>
+<span class="linenos"> 6</span><span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SRPArea&quot;</span><span class="p">,</span> <span class="mf">6.5</span><span class="p">)</span>
+<span class="linenos"> 7</span><span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DryMass&quot;</span><span class="p">,</span> <span class="mi">225</span><span class="p">)</span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span><span class="c1"># Make a force container and set its spacecraft</span>
+<span class="linenos">10</span><span class="n">dynamics</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ODEModel&quot;</span><span class="p">,</span> <span class="s2">&quot;EPM_SRP&quot;</span><span class="p">)</span>
+<span class="linenos">11</span><span class="n">dynamics</span><span class="o">.</span><span class="n">SetObject</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+<span class="linenos">12</span>
+<span class="linenos">13</span><span class="c1"># Set the forces</span>
+<span class="linenos">14</span><span class="n">epm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">PointMassForce</span><span class="p">(</span><span class="s2">&quot;EarthPointMass&quot;</span><span class="p">)</span>
+<span class="linenos">15</span><span class="n">srp</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">SolarRadiationPressure</span><span class="p">(</span><span class="s2">&quot;SRP&quot;</span><span class="p">)</span>
+<span class="linenos">16</span><span class="n">dynamics</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">epm</span><span class="p">)</span>
+<span class="linenos">17</span><span class="n">dynamics</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">srp</span><span class="p">)</span>
+<span class="linenos">18</span>
+<span class="linenos">19</span><span class="c1"># Propagator configuration</span>
+<span class="linenos">20</span><span class="n">prop</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PrinceDormand78&quot;</span><span class="p">,</span> <span class="s2">&quot;MyIntegrator&quot;</span><span class="p">)</span>
+<span class="linenos">21</span><span class="n">prop</span><span class="o">.</span><span class="n">SetPhysicalModel</span><span class="p">(</span><span class="n">dynamics</span><span class="p">)</span>
+<span class="linenos">22</span>
+<span class="linenos">23</span><span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="linenos">24</span>
+<span class="linenos">25</span><span class="c1"># Number of steps to take</span>
+<span class="linenos">26</span><span class="n">count</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="linenos">27</span>
+<span class="linenos">28</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+<span class="linenos">29</span>    <span class="n">prop</span><span class="o">.</span><span class="n">Step</span><span class="p">(</span><span class="mf">60.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="cases-5-working-with-a-gmat-script">
+<h2>Cases 5: Working with a GMAT Script<a class="headerlink" href="#cases-5-working-with-a-gmat-script" title="Link to this heading">¶</a></h2>
+<p>The script examples above show how an API user interacts with GMAT components
+directly.  This final example shows how a user can work with an existing GMAT
+script that needs to change settings on one of the scripted objects.  For this
+example, the GMAT sample mission that demonstrates finite burns is used.  The
+full script is the Ex_FiniteBurn.script file in the GMAT samples folder.  Part
+of that script includes the definition of a chemical thruster, shown through the
+thrust vector portion here:</p>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-number">Listing 13 </span><span class="caption-text">The Thruster in GMAT’s FiniteBurn Sample Mission</span><a class="headerlink" href="#id7" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">Create</span> <span class="n">ChemicalThruster</span> <span class="n">engine1</span><span class="p">;</span>
+<span class="linenos">2</span><span class="n">GMAT</span> <span class="n">engine1</span><span class="o">.</span><span class="n">CoordinateSystem</span> <span class="o">=</span> <span class="n">Local</span><span class="p">;</span>
+<span class="linenos">3</span><span class="n">GMAT</span> <span class="n">engine1</span><span class="o">.</span><span class="n">Origin</span> <span class="o">=</span> <span class="n">Earth</span><span class="p">;</span>
+<span class="linenos">4</span><span class="n">GMAT</span> <span class="n">engine1</span><span class="o">.</span><span class="n">Axes</span> <span class="o">=</span> <span class="n">VNB</span><span class="p">;</span>
+<span class="linenos">5</span><span class="n">GMAT</span> <span class="n">engine1</span><span class="o">.</span><span class="n">ThrustDirection1</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="linenos">6</span><span class="n">GMAT</span> <span class="n">engine1</span><span class="o">.</span><span class="n">ThrustDirection2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="linenos">7</span><span class="n">GMAT</span> <span class="n">engine1</span><span class="o">.</span><span class="n">ThrustDirection3</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="linenos">8</span><span class="o">...</span>
+</pre></div>
+</div>
+</div>
+<p>An API user might want to change the thrust direction before running the script.
+The following API code loads the script, adds an orbit normal component to the
+thrust direction and then runs the script.</p>
+<div class="literal-block-wrapper docutils container" id="id8">
+<div class="code-block-caption"><span class="caption-number">Listing 14 </span><span class="caption-text">Changing an Object and then Running a Script</span><a class="headerlink" href="#id8" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="linenos">2</span>
+<span class="linenos">3</span><span class="n">gmat</span><span class="o">.</span><span class="n">LoadScript</span><span class="p">(</span><span class="s2">&quot;../samples/Ex_FiniteBurn.script&quot;</span><span class="p">)</span>
+<span class="linenos">4</span>
+<span class="linenos">5</span><span class="n">Thruster</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">GetObject</span><span class="p">(</span><span class="s2">&quot;engine1&quot;</span><span class="p">)</span>
+<span class="linenos">6</span><span class="n">Thruster</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;ThrustDirection2&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="linenos">7</span>
+<span class="linenos">8</span><span class="n">gmat</span><span class="o">.</span><span class="n">RunScript</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">API Examples</a><ul>
+<li><a class="reference internal" href="#case-1-time-system-conversion">Case 1: Time System Conversion</a></li>
+<li><a class="reference internal" href="#case-2-coordinate-system-conversion">Case 2: Coordinate System Conversion</a></li>
+<li><a class="reference internal" href="#cases-3-and-4-force-modeling-and-propagation">Cases 3 and 4: Force Modeling and Propagation</a></li>
+<li><a class="reference internal" href="#cases-5-working-with-a-gmat-script">Cases 5: Working with a GMAT Script</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="Conversion.html"
+                          title="previous chapter">Time and Coordinate Conversions</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="JavaExamples.html"
+                          title="next chapter">API Examples in Java</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../../_sources/API/source/userguide/usage/PythonExamples.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="JavaExamples.html" title="API Examples in Java"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Conversion.html" title="Time and Coordinate Conversions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="Examples.html" >Usage Examples</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">API Examples</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="PythonInterface"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>Python Interface</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Python Interface</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">System</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Python Interface</refname>
+
+    <refpurpose>Interface to the Python programming language</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The Python interface provides a link to the Python programming
+    language, allowing GMAT to run Python functions as if they were native
+    functions in the GMAT script language.</para>
+
+    <para>The interface does not have any parameters that can be controlled
+    directly through the GMAT script language. Instead, GMAT starts the Python
+    interface automatically when it calls a Python function.</para>
+
+    <para>The Python interface is accessed using GMAT's CallPythonFunction
+    command. For details on calling a function and passing data, see the
+    <guilabel><xref linkend="CallPythonFunction"/></guilabel>
+    reference.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="CallPythonFunction"/></para>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <para>The Python interface in GMAT is launched and driven internally.
+    Users do not have direct access to the interface from the GMAT graphical
+    user interface.</para>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <refsection>
+      <title xml:id="System_PythonInterface_InterfaceSetup">Interface
+      Setup</title>
+
+      <para>The following conditions must all be true for GMAT to successfully
+      call into a compatible instance of Python.</para>
+
+      <itemizedlist spacing="normal">
+        <listitem>
+          <para>The GMAT startup file must specify a version of the Python
+          interface that matches the installed version of Python (see
+          compatibility table below). Only one version of the Python interface
+          can be loaded at a time. Note that untested Python interface
+          versions are provided purely for convenience. <informaltable
+              colsep="0" frame="topbot">
+              <tgroup cols="3">
+                <colspec colwidth="249*"/>
+
+                <colspec colwidth="319*"/>
+
+                <colspec colwidth="432*"/>
+
+                <thead>
+                  <row>
+                    <entry>Python Version</entry>
+
+                    <entry>Python Interface Plugin</entry>
+
+                    <entry>Status</entry>
+                  </row>
+                </thead>
+                <tbody>
+                  <row>
+                    <entry><guilabel>3.9 (64-bit)</guilabel></entry>
+
+                    <entry><para>libPythonInterface_py39 </para></entry>
+
+                    <entry><para>Tested </para></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>3.10 (64-bit)</guilabel></entry>
+
+                    <entry>libPythonInterface_py310</entry>
+
+                    <entry>Tested</entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>3.11 (64-bit)</guilabel></entry>
+
+                    <entry>libPythonInterface_py311</entry>
+
+                    <entry>Tested</entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>3.12 (64-bit)</guilabel></entry>
+
+                    <entry>libPythonInterface_py312</entry>
+
+                    <entry>Tested</entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>3.13 (64-bit)</guilabel></entry>
+
+                    <entry>libPythonInterface_py313</entry>
+
+                    <entry>Lightly Tested</entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>3.14 (64-bit)</guilabel></entry>
+
+                    <entry>libPythonInterface_py314</entry>
+
+                    <entry>Lightly Tested</entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </informaltable></para>
+        </listitem>
+
+        <listitem>
+          <para>GMAT does not support 32-bit Python.</para>
+        </listitem>
+
+        <listitem>
+          <para>The Python interface accesses Python modules on the user's
+          machine. This functionality is configured, including path
+          information used by Python, on a per-OS basis as shown below.</para>
+        </listitem>
+
+        <listitem>
+          <para>On Windows: <itemizedlist>
+              <listitem>
+                <para>The following path entries (where
+                <filename><replaceable>Python</replaceable></filename> is the
+                full path to the installed version of Python) must be present
+                in the <envar>Path</envar> environment variable.</para>
+
+                <para><filename><replaceable>Python</replaceable></filename></para>
+
+                <para><filename><replaceable>Python</replaceable>\Scripts</filename></para>
+
+                <para/>
+              </listitem>
+
+              <listitem>
+                <para>The following path (where
+                <filename><replaceable>Python</replaceable></filename> is the
+                path to the installed version of Python) must be present in
+                the <envar>PYTHONPATH</envar> environment variable.</para>
+
+                <para><filename><replaceable>Python</replaceable>\Lib\site-packages</filename></para>
+
+                <para/>
+              </listitem>
+
+              <listitem>
+                <para>The <envar>PYTHONHOME</envar> environment variable must
+                be set to the directory containing
+                <emphasis>python</emphasis>3<emphasis>X.dll</emphasis>, where
+                <emphasis>3X</emphasis> denotes the python version, for
+                example <emphasis role="bold">python39.dll</emphasis>. This
+                directory is normally the root directory of your python
+                installation or Anaconda environment.</para>
+              </listitem>
+            </itemizedlist></para>
+
+          <para>If you are using Anaconda Python, these paths may be set to
+          point to directories within the Anaconda environment you want GMAT
+          to use.</para>
+        </listitem>
+
+        <listitem>
+          <para>On macOS:<itemizedlist>
+              <listitem>
+                <para>On macOS, the Python interface only works with
+                Python.org distributions of Python. These installations must
+                be in the following specific directory (default for
+                Python.org):
+                <filename>/Library/Frameworks/Python.framework/Versions/3.X</filename></para>
+
+                <para>The Python interface has not been tested with Anaconda
+                Python on macOS.</para>
+              </listitem>
+
+              <listitem>
+                <para>The following entry (where
+                <filename><replaceable>Python</replaceable></filename> is the
+                full path to the installed version of Python 3.X) must be
+                present in the GMAT startup file. This allows the Python
+                Interface to access Python packages such as Numpy.</para>
+
+                <para><filename>PYTHON_MODULE_PATH =
+                <replaceable>Python</replaceable>/lib/python3.X/site-packages</filename></para>
+
+                <para>Note that multiple
+                <filename>PYTHON_MODULE_PATH</filename> entries are allowed in
+                the startup file, and they can be placed anywhere in the
+                file.</para>
+              </listitem>
+
+              <listitem>
+                <para>Python versions 3.6 and 3.7 are not supported for the
+                Mac platform.</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+
+        <listitem>
+          <para>On Linux: <itemizedlist>
+              <listitem>
+                <para>The Python release used in the GMAT build typically uses 
+                the default Python package (e.g. Python 3.12) accessed from the
+                terminal.</para>
+
+                <para>Users that enable the MATLAB interface may find that the
+                Python interface does not load because of a library conflict.
+                If the Python interface reports the issue</para>
+
+                <para><userinput>undefined symbol:
+                XML_SetHashSalt</userinput></para>
+
+                <para>there is a conflict between the expat library that is
+                included with MATLAB and the library required for the
+                distribution's Python 3 installation. This issue can be
+                corrected by loading the system expat library before GMAT
+                starts using the LD_PRELOAD command. The command</para>
+
+                <para><userinput>LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libexpat.so
+                ./GMAT</userinput></para>
+
+                <para>loads the expat library and then launches GMAT,
+                resolving the issue for systems like Ubuntu 22.04.</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+      </itemizedlist>
+
+      <note>
+        <para>Common troubleshooting tips on Windows:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>GMAT is a 64-bit application. Make sure you have the 64-bit 
+            version of Python installed.</para>
+          </listitem>
+
+          <listitem>
+            <para>If the path above exists in your system <envar>Path</envar>
+            variable, try placing it at the front of the path
+            specification.</para>
+          </listitem>
+        </itemizedlist>
+      </note>
+    </refsection>
+
+    <refsection>
+      <title>Python Engine Connection</title>
+
+      <warning>
+        <para>GMAT does not close the Python interface after a run has
+        completed. This feature prevents anomalous behavior that can occur
+        when loading some Python modules repeatedly during a run, but it can
+        lead to confusing behavior if Python files are changed and rerun in
+        the same GMAT session.</para>
+
+        <para>We recommend restarting GMAT after editing Python functions in
+        order to guarantee that your edits take effect when you rerun your
+        script.</para>
+      </warning>
+
+      <para>When GMAT runs a mission that contains a Python function call, it
+      loads Python into memory as an embedded system in GMAT before it makes
+      the function call. It then reuses this system for the rest of the GMAT
+      session.</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <para>See the <xref linkend="CallPythonFunction"/> reference for common
+    examples.</para>
+  </refsection>
+</refentry>

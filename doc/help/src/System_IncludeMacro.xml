@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="IncludeMacro"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>#Include Macro</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>#Include Macro</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Commands</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>#Include Macro</refname>
+
+    <refpurpose>Load or import a script snippet</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Script Syntax</title>
+
+    <synopsis><literal>#Include</literal> <replaceable>'./Define_Path_to_Script_Snippet_File_In_SingleQuotes.txt'</replaceable>    </synopsis>
+    <synopsis><literal>#Include</literal> <replaceable>UserStringVariable</replaceable></synopsis>
+  </refsynopsisdiv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>Using the <guilabel>#Include</guilabel> macro, GMAT now allows you
+    to load GMAT resources and script snippets from external files during the
+    script initialization and mission execution. This is a powerful feature
+    that allows you to reuse configurations across multiple users and/or
+    scripts. This feature can be used to simplify automation for operations
+    and Monte-Carlo and parametric scanning that have use cases with a lot of
+    common data but some data that changes from one execution to the
+    next.</para>
+
+    <para>The script snippet external files that you can now load using the
+    <guilabel>#Include</guilabel> macro can be defined with any file
+    extensions, although most common file extensions are (*.script) or
+    (*.txt). The <guilabel>#Include</guilabel> macro can be used to load
+    snippets from external files either before or after the
+    <guilabel>BeginMissionSequence</guilabel> script command. The
+    <guilabel>#Include</guilabel> macro can only be used through the script
+    mode and its usage is not allowed via the GUI.</para>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <para>There are two rules in regards to how GMAT's GUI behaves whenever we
+    use the <guilabel>#Include</guilabel> macro:<orderedlist>
+        <listitem>
+          <para>If any <guilabel>#Include</guilabel> macro is used before
+          <guilabel>BeginMissionSequence</guilabel>, then GMAT’s GUI is
+          editable, runnable but you cannot save GMAT scripts from the GUI's
+          <literal>Save</literal> button. You can of course make changes to
+          your script in the Script mode and save your changes from the script
+          mode.</para>
+        </listitem>
+
+        <listitem>
+          <para>If there are no <guilabel>#Include</guilabel> macros before
+          <guilabel>BeginMissionSequence</guilabel> and there are any number
+          of <guilabel>#Include</guilabel> macros after
+          <guilabel>BeginMissionSequence</guilabel>, then GMAT’s GUI is
+          editable, runnable and savable (i.e. you can make changes to objects
+          in the GUI and then save those changes to the script from the GUI's
+          <literal>Save</literal> button).</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>Whenever you load and run GMAT scripts that may use an
+    <guilabel>#Include</guilabel> macro before
+    <guilabel>BeginMissionSequence</guilabel> command, (i.e. Rule # 1 defined
+    above), then GMAT’s <guilabel>Resources</guilabel>,
+    <guilabel>Mission</guilabel> and <guilabel>Output</guilabel> trees will
+    change color to a light olive green and a <literal>Non-Savable GUI
+    Mode</literal> message will show up in red color at the top center of the
+    main GMAT screen. This light olive green color change and
+    <literal>Non-Savable GUI Mode</literal> message is simply telling you that
+    GMAT's GUI is editable, runnable but you cannot save changes to your GMAT
+    script via GMAT GUI's <literal>Save</literal> button.</para>
+
+    <para>If your GMAT script only contains <guilabel>#Include</guilabel>
+    macro(s) after <guilabel>BeginMissionSequence</guilabel> (i.e. Rule # 2
+    defined above), then no color changes occur in GMAT's
+    <guilabel>Resources</guilabel>, <guilabel>Mission</guilabel> and
+    <guilabel>Output</guilabel> trees and you can save changes to your scripts
+    either from GUI or script mode.</para>
+  </refsection>
+
+  <refsection xml:id="IncludeMacro_Remarks">
+    <title>Remarks</title>
+
+    <para>In GMAT, the default method of defining the file path of the
+    external file(s) that you want to load using the
+    <guilabel>#Include</guilabel> macro is:
+    <literal>'./My_Script_Snippet.txt'</literal>. This is the easiest and most
+    convenient method of defining the path of your script snippet files as it
+    simply requires that both your main script and script snippet file be in
+    the same directory. You can also define both relative
+    (<literal>'..\My_Script_Snippet.txt'</literal>) and absolute paths to your
+    external script snippet files.</para>
+
+    <para>You may also use a created <xref linkend="String"/> variable's value
+    as the path for <guilabel>#Include</guilabel>. For example, setting your 
+    variable as <literal>UserString = './My_Script_Snippet.txt'</literal>, the
+    scripting <literal>#Include UserString</literal> would include your listed
+    file.</para>
+
+    <para>The <xref linkend="IncludeMacro_Examples" xrefstyle="select:title"/>
+    section shows you simple yet powerful examples of how to use the
+    <guilabel>#Include</guilabel> macro in simplifying your main GMAT
+    scripts.</para>
+  </refsection>
+
+  <refsection xml:id="IncludeMacro_Examples">
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Initialize S/C from an external script snippet file called
+      'Initialize_Spacecraft.txt'. Run this example by creating a .txt file
+      and paste contents of 'Initialize_Spacecraft.txt' and put this snippet
+      script in same directory as the main GMAT script.</para>
+
+      <programlisting><code>Create Spacecraft aSat
+
+%Initialize aSat from external file:
+#Include './Initialize_Spacecraft.txt'
+
+Create Propagator aProp
+
+Create OrbitView anOrbitView
+anOrbitView.Add = {aSat, Earth}
+
+BeginMissionSequence
+
+Propagate aProp(aSat) {aSat.ElapsedDays = 0.5}
+
+
+%%%%%% Contents of 'Initialize_Spacecraft.txt' snippet file begins below:
+
+aSat.DateFormat = UTCGregorian
+aSat.Epoch = '02 Jan 2000 11:59:28.000'
+aSat.CoordinateSystem = EarthMJ2000Eq
+aSat.DisplayStateType = Cartesian
+aSat.X = 8000
+aSat.Y = 2000
+aSat.Z = 4000
+aSat.VX = 0.5
+aSat.VY = 7.5
+aSat.VZ = 1.5
+aSat.DryMass = 1000
+aSat.Cd = 2.2
+aSat.Cr = 1.8
+aSat.DragArea = 20
+aSat.SRPArea = 1
+aSat.NAIFId = -10009001
+aSat.NAIFIdReferenceFrame = -9009001
+aSat.OrbitColor = Yellow
+aSat.TargetColor = Teal
+aSat.Id = 'SatId'
+aSat.Attitude = CoordinateSystemFixed
+aSat.SPADSRPScaleFactor = 1
+aSat.ModelFile = 'aura.3ds'
+aSat.ModelOffsetX = 0
+aSat.ModelOffsetY = 0
+aSat.ModelOffsetZ = 0
+aSat.ModelRotationX = 0
+aSat.ModelRotationY = 0
+aSat.ModelRotationZ = 0
+aSat.ModelScale = 1
+aSat.AttitudeDisplayStateType = 'Quaternion'
+aSat.AttitudeRateDisplayStateType = 'AngularVelocity'
+aSat.AttitudeCoordinateSystem = EarthMJ2000Eq
+aSat.EulerAngleSequence = '321'</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>In this example, we call an external file through
+      <guilabel>#Include</guilabel> macro which is used only after the
+      <guilabel>BeginMissionSequence</guilabel> command. Perform a finite burn
+      from an external script snippet file called 'Perform_FiniteBurn.txt'.
+      Run this example by creating a .txt file and paste contents of
+      'Perform_FiniteBurn.txt' and put this snippet script in same directory
+      as the main GMAT script.</para>
+
+      <programlisting><code>Create Spacecraft aSat
+
+Create ChemicalTank aFuelTank
+
+Create ChemicalThruster aThruster
+aThruster.DecrementMass = true
+aThruster.Tank = {aFuelTank}
+aThruster.C1 = 1000 % Constant Thrust
+aThruster.K1 = 300 % Constant Isp
+
+aSat.Thrusters = {aThruster}
+aSat.Tanks = {aFuelTank}
+
+Create ForceModel aFM
+aFM.CentralBody = Earth
+aFM.PointMasses = {Earth}
+
+Create Propagator aProp
+aProp.FM = aFM
+
+Create FiniteBurn aFB
+aFB.Thrusters = {aThruster}
+
+Create ReportFile rf
+rf.Add = {aSat.UTCGregorian, aFB.TotalAcceleration1, ...
+aFB.TotalAcceleration2, aFB.TotalAcceleration3, ...
+aFB.TotalMassFlowRate, aFB.TotalThrust1, ...
+aFB.TotalThrust2, aFB.TotalThrust3, ...
+aSat.aThruster.MassFlowRate, ...
+aSat.aThruster.ThrustMagnitude, aSat.aThruster.Isp}
+
+Create OrbitView anOrbitView
+anOrbitView.Add = {aSat, Earth}
+
+
+BeginMissionSequence
+
+Propagate aProp(aSat) {aSat.ElapsedSecs = 1000}
+
+%Perform a FiniteBurn from an external file:
+#Include './Perform_FiniteBurn.txt'
+
+Propagate aProp(aSat) {aSat.ElapsedSecs = 1000}
+
+
+%%%%%% Contents of 'Perform_FiniteBurn.txt' snippet file begins below:
+
+% Do a Finite-Burn for 1800 Secs
+
+BeginFiniteBurn aFB(aSat)
+Propagate aProp(aSat) {aSat.ElapsedSecs = 1800,  OrbitColor = Yellow}
+EndFiniteBurn aFB(aSat)</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>In this example, we call external files through
+      <guilabel>#Include</guilabel> macros which are used both before and
+      after the <guilabel>BeginMissionSequence</guilabel>. Note that all
+      objects in the Resources tree are imported and initialized from an
+      external script snippet file called 'Entire_Resources_Tree.txt'.
+      Similarly, all commands in the Mission tree are loaded from an external
+      snippet file called 'Entire_Mission_Tree.txt'. Run this example by
+      creating a .txt file and paste contents of 'Entire_Resources_Tree.txt'.
+      Next create another .txt file and paste contents of
+      'Entire_Mission_Tree.txt'. Put both of these snippet scripts in same
+      directory as the main GMAT script and then run the main GMAT
+      script.</para>
+
+      <programlisting><code>% Initialize all Resources tree objects
+% from an external file:
+#Include './Entire_Resources_Tree.txt'
+
+BeginMissionSequence
+
+% Execute all Mission tree commands
+% from an external file:
+#Include './Entire_Mission_Tree.txt'
+
+
+%%%%%% Contents of 'Entire_Resources_Tree.txt' snippet file begins below:
+
+Create Spacecraft aSat
+
+Create Propagator aProp
+
+Create ImpulsiveBurn TOI
+
+Create DifferentialCorrector aDC
+
+Create OrbitView anOrbitView
+anOrbitView.Add = {aSat, Earth}
+anOrbitView.SolverIterations = All
+
+
+%%%%%% Contents of 'Entire_Mission_Tree.txt' snippet file begins below:
+
+Propagate aProp(aSat) {aSat.Earth.Periapsis}
+
+Target aDC
+Vary aDC(TOI.Element1 = 0.24, {Perturbation = 0.001, ... 
+Lower = 0.0, Upper = 3.14159, MaxStep = 0.5})
+Maneuver TOI(aSat)
+Propagate aProp(aSat) {aSat.Earth.Apoapsis}
+Achieve aDC(aSat.Earth.RMAG = 42165)
+EndTarget
+
+</code></programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

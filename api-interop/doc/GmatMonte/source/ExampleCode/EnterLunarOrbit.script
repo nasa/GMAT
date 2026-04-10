@@ -1,0 +1,102 @@
+% General Mission Analysis Tool(GMAT) Script
+%
+% EnterLunarOrbit.script
+%
+% Example of GMAT targeting a Lunar insertion
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft LunarExpedition;
+GMAT LunarExpedition.NAIFId = -421;
+GMAT LunarExpedition.NAIFIdReferenceFrame = -9000001;
+GMAT LunarExpedition.OrbitSpiceKernelName = {'/home/djc/monte/toolinterop/doc/GmatMonte/source/ExampleCode/LunarExpedition.bsp'};
+
+%----------------------------------------
+%---------- ForceModel
+%----------------------------------------
+
+Create ForceModel MoonForces;
+GMAT MoonForces.CentralBody = Luna;
+GMAT MoonForces.PrimaryBodies = {Luna};
+GMAT MoonForces.PointMasses = {Earth, Sun};
+GMAT MoonForces.GravityField.Luna.Degree = 4;
+GMAT MoonForces.GravityField.Luna.Order = 4;
+GMAT MoonForces.GravityField.Luna.PotentialFile = 'LP165P.cof';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator EarthEphemProp;
+GMAT EarthEphemProp.Type = SPK;
+GMAT EarthEphemProp.StepSize = 300;
+GMAT EarthEphemProp.CentralBody = Earth;
+GMAT EarthEphemProp.EpochFormat = 'UTCGregorian';
+GMAT EarthEphemProp.StartEpoch = '24 Jul 2014 00:00:00.000';
+
+Create Propagator MoonProp;
+GMAT MoonProp.FM = MoonForces;
+GMAT MoonProp.Type = PrinceDormand78;
+GMAT MoonProp.Accuracy = 1.0e-12;
+GMAT MoonProp.MinStep = 0.0;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn LOI;
+GMAT LOI.CoordinateSystem = Local;
+GMAT LOI.Origin = Luna;
+GMAT LOI.Axes = VNB;
+
+%----------------------------------------
+%---------- Coordinate System
+%----------------------------------------
+
+Create CoordinateSystem MoonMJ2000Eq;
+GMAT MoonMJ2000Eq.Origin = Luna;
+GMAT MoonMJ2000Eq.Axes = MJ2000Eq;
+
+%----------------------------------------
+%---------- Targeter
+%----------------------------------------
+
+Create DifferentialCorrector DC
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create EphemerisFile EphemWithLOI;
+GMAT EphemWithLOI.Spacecraft = LunarExpedition;
+GMAT EphemWithLOI.Filename = './LunarExpeditionWithLOI.bsp';
+GMAT EphemWithLOI.FileFormat = SPK;
+GMAT EphemWithLOI.EpochFormat = UTCGregorian;
+GMAT EphemWithLOI.InitialEpoch = InitialSpacecraftEpoch;
+GMAT EphemWithLOI.FinalEpoch = FinalSpacecraftEpoch;
+GMAT EphemWithLOI.CoordinateSystem = EarthMJ2000Eq;
+
+%----------------------------------------
+%---------- Variables
+%----------------------------------------
+
+Create Variable apRadius
+
+%----------------------------------------
+%---------- Mission Timeline
+%----------------------------------------
+
+BeginMissionSequence;
+Propagate EarthEphemProp(LunarExpedition) {LunarExpedition.Luna.Periapsis};
+apRadius = LunarExpedition.Luna.RadPer + 10.0;
+
+% Maneuver to a near circular orbit
+Target DC
+	Vary DC(LOI.V = -0.5, {Perturbation = 0.0001});
+	Maneuver LOI(LunarExpedition);
+	Achieve DC(LunarExpedition.Luna.RadApo = apRadius, {Tolerance = 0.10});
+EndTarget
+
+Propagate MoonProp(LunarExpedition) {LunarExpedition.ElapsedDays = 5};

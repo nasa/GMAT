@@ -1,0 +1,112 @@
+%
+%  Ex_ControlFlow
+%
+%  Use For, While, and If statements
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Sat;
+
+Sat.DateFormat       = UTCGregorian;
+Sat.Epoch            = '22 Jul 2014 11:29:10.811';
+Sat.CoordinateSystem = EarthMJ2000Eq;
+Sat.DisplayStateType = Keplerian;
+Sat.SMA              = 83474.31799999999;
+Sat.ECC              = 0.89652;
+Sat.INC              = 12.4606;
+Sat.RAAN             = 112.8362;
+Sat.AOP              = 218.9805;
+Sat.TA               = 180;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+
+Create Propagator EarthPointMass;
+EarthPointMass.FM = FM;
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+
+Create Variable I;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.SolverIterations     = Current;
+OFI_EarthView.UpperLeft            = [ 0.3685770750988142 0.01259445843828715 ];
+OFI_EarthView.Size                 = [ 0.5573122529644269 0.8501259445843828 ];
+OFI_EarthView.RelativeZOrder       = 183;
+OFI_EarthView.Maximized            = false;
+
+OFI_EarthView.Add                  = {Sat, Earth};
+OFI_EarthView.View                 = {a3Dplot_View};
+
+OFI_EarthView.CoordinateSystem     = EarthMJ2000Eq;
+OFI_EarthView.DrawObject           = [ true true ];
+OFI_EarthView.DrawXYPlane          = [ false false ];
+OFI_EarthView.DrawLabel            = [ true true ];
+OFI_EarthView.DrawGrid             = [ false false ];
+
+OFI_EarthView.Axes                 = On;
+OFI_EarthView.XYPlane              = On;
+OFI_EarthView.EclipticPlane        = Off;
+OFI_EarthView.EnableStars          = On;
+OFI_EarthView.StarCount            = 40000;
+OFI_EarthView.ShowPlot             = true;
+
+Create OpenFramesView a3Dplot_View;
+
+a3Dplot_View.ViewFrame          = CoordinateSystem;
+a3Dplot_View.SetDefaultLocation = On;
+a3Dplot_View.SetCurrentLocation = Off;
+
+a3Dplot_View.DefaultEye         = [ 0 0 75000 ]; 
+a3Dplot_View.DefaultCenter      = [ 0 0 0 ];
+a3Dplot_View.DefaultUp          = [ 1 0 0 ];
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+% =========================================================================
+%  Example:  Use For loop to Prop for 5 orbits and save ephem at every apogee
+% =========================================================================
+For 'For I = 1:1:5' I = 1:1:5;
+   Propagate 'Prop to Apoapsis' EarthPointMass(Sat) {Sat.Apoapsis};
+EndFor;
+
+% =========================================================================
+%  Example: Prop to next apogee while the ElapsedDays is less than ten days
+% =========================================================================
+While 'While Epoch < 26882' Sat.TAIModJulian < 26882
+   Propagate 'Prop to Apoapsis' EarthPointMass(Sat) {Sat.Apoapsis};
+EndWhile;
+
+% =========================================================================
+%  Example:  If the true anomaly of Sat's orbit is greater than 178 degrees, then
+%  propagate to periapsis.
+% =========================================================================
+If 'If Sat.TA > 178' Sat.TA > 178
+   Propagate 'Prop to Periapsis' EarthPointMass(Sat) {Sat.Periapsis};
+EndIf;
+
+% =========================================================================
+%  Example:  If TA is < 90 prop to periapsis, otherwise, prop to apoapsis
+% =========================================================================
+If 'If Sat.TA > 90' Sat.TA > 90
+   Propagate 'Prop to Periapsis' EarthPointMass(Sat) {Sat.Periapsis};
+Else
+   Propagate 'Prop to Apoapsis' EarthPointMass(Sat) {Sat.Apoapsis};
+EndIf;

@@ -1,0 +1,83 @@
+%
+%  Ex_Basic3DModel
+%
+%  Use of spacecraft and Earth 3-D modeling capabilities.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Sat;
+
+Sat.SMA                      = 9999.999999999995;
+Sat.ECC                      = 0.09999999999999988;
+Sat.INC                      = 12.85008005658097;
+Sat.RAAN                     = 306.6148021947984;
+Sat.AOP                      = 314.1905515359921;
+Sat.TA                       = 99.88774933204877;
+Sat.ModelFile                = '../data/vehicle/models/aura.3ds';
+Sat.ModelOffsetX             = 0;
+Sat.ModelOffsetY             = 0;
+Sat.ModelOffsetZ             = 0;
+Sat.ModelRotationX           = 0;
+Sat.ModelRotationY           = 0;
+Sat.ModelRotationZ           = 0;
+Sat.ModelScale               = 1.5;
+Sat.Attitude                 = CoordinateSystemFixed;
+Sat.AttitudeCoordinateSystem = EarthMJ2000Eq;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM      = DefaultProp_ForceModel;
+DefaultProp.MaxStep = 2;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View 
+
+Create OpenFramesInterface OFI_Earth3DView;
+
+OFI_Earth3DView.Add           = {Sat, Earth};
+OFI_Earth3DView.View          = {Earth_View};
+
+OFI_Earth3DView.DrawObject    = [ true true];
+OFI_Earth3DView.DrawXYPlane   = [ false false];
+OFI_Earth3DView.DrawLabel     = [ true true];
+OFI_Earth3DView.DrawGrid      = [ false false];
+
+OFI_Earth3DView.Axes          = On;
+OFI_Earth3DView.XYPlane       = On;
+OFI_Earth3DView.EclipticPlane = Off;
+OFI_Earth3DView.EnableStars   = On;
+OFI_Earth3DView.StarCount     = 40000;
+OFI_Earth3DView.ShowPlot      = true;
+
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame          = CoordinateSystem;
+Earth_View.SetDefaultLocation = On;
+Earth_View.SetCurrentLocation = Off;
+
+Earth_View.DefaultEye         = [ 30000 0 0]; 
+Earth_View.DefaultCenter      = [ 0 0 0 ];
+Earth_View.DefaultUp          = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop 40000 s' DefaultProp(Sat) {Sat.ElapsedSecs = 40000};
+Propagate 'Prop 40000 s' DefaultProp(Sat) {Sat.ElapsedSecs = 40000};

@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="ReleaseNotesR2018a"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>GMAT R2018a Release Notes</title>
+
+  <para>The General Mission Analysis Tool (GMAT) version R2018a was released
+  March 2018. This is the first public release since June, 2017, and is the
+  12th release for the project.</para>
+
+  <para>Below is a summary of key changes in this release. Please see the full
+  <link
+  xlink:href="http://bugs.gmatcentral.org/secure/ReleaseNote.jspa?version=11104&amp;styleName=Html&amp;projectId=10000&amp;Create=Create&amp;atl_token=B8F2-GAHA-O7AM-D5JZ%7C78ed3832b129ed9d51b5d382a7c04b0602d918d9%7Clin">R2018a
+  Release Notes</link> on JIRA for a complete list.</para>
+
+  <section>
+    <title>Milestones and Accomplishments</title>
+
+    <para>We're excited that GMAT has recently seen signficant adoption for
+    operational misssion support.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>GMAT is now used as the primary system for maneuver planning and
+        product generation for the Solar Dynamics Observatory (SDO).</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT is now used as the primary operational tool for orbit
+        determination for the Solar and Heliospheric Observatory (SOHO)
+        mission.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT is now used as the primary operational tool for maneuver
+        planning, orbit determination, and product generation for the Advanced
+        Composition Explorer (ACE) mission.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT is now used as the primary operational tool for maneuver
+        planning, orbit determination, and product generation for the Wind
+        mission.</para>
+      </listitem>
+
+      <listitem>
+        <para>In April 2018, the Transiting Exoplanet Survey Satellite (TESS)
+        mission is planned to launch. TESS has used GMAT as its primary tool
+        for mission design and maneuver planning from proposal development
+        through operations.</para>
+      </listitem>
+
+      <listitem>
+        <para>In April 2018, the LRO project will hold an operational
+        readiness review to perform final evaluation of GMAT to replace GTDS
+        as the primary operational orbit determination (OD) tool for the Lunar
+        Reconnaissance Orbiter (LRO).</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>New Features</title>
+
+    <section>
+      <title>Orbit Determination Enhancements</title>
+
+      <para>The following new features and capabilities have been added to
+      GMAT's estimation system.</para>
+
+      <para><itemizedlist spacing="compact">
+          <listitem>
+            <para>The batch estimator now supports a capability that freezes
+            the measurements used for estimation after a user-specified number
+            of iterations. This functionality avoids estimator chatter that
+            can occur near solutions when some measurements are near the sigma
+            edit boundary and are repeatedly removed during one iteration and
+            then added back in the next iteration.</para>
+          </listitem>
+
+          <listitem>
+            <para>Numerics are improved when calculating Doppler and DSN_TCP
+            measurement residuals, improving noise behavior in the
+            residuals.</para>
+          </listitem>
+
+          <listitem>
+            <para>The GroundStation object supports a new troposphere model,
+            the Marini model, matchig the implementation used in GTDS. One
+            operational advantage of the Marini model is that it doesn’t
+            require input of weather data at the Ground station. (Models that
+            do accept weather data may have more accuracy.) <itemizedlist
+                spacing="compact">
+                <listitem>
+                  <para>Time is now modeled using three data members, a day
+                  number, seconds of day, and fraction of second. High
+                  precision time is surgically implemented in appropriate
+                  models such as Earth rotation, planetary ephemerides and
+                  others.</para>
+                </listitem>
+
+                <listitem>
+                  <para>Range differences are computed using a Taylor series
+                  and differenced Chebyshev polynomials.</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+
+          <listitem>
+            <para>Measurement simulation now accounts for central body
+            occultation when orbiting bodies other than the Earth.</para>
+          </listitem>
+
+          <listitem>
+            <para>Estimation now supports solving for the Keplerian state
+            estimation with a priori constraints.</para>
+          </listitem>
+
+          <listitem>
+            <para>For BLS estimation, the user may choose to perform
+            measurement editing using either the weighted root-mean-square
+            (WRMS) of residuals, or the predicted weighted root-mean-square
+            (WRMSP) of residuals. Residuals of elevation edited data are now
+            reported.</para>
+          </listitem>
+
+          <listitem>
+            <para>The batch estimator report now shows the name of input files
+            used in the configuration and the observation time span.
+            Additionally, spacecraft hardware configurations and new
+            measurement statistics information are included.</para>
+          </listitem>
+
+          <listitem>
+            <para>GMD file improvements</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>As shown by the new features above, GMAT’s orbit determination
+      (OD) capability has been significantly enhanced. As with all new
+      releases, missions that use GMAT’s OD capability should perform a
+      baseline set of regression/performance tests prior to using the new
+      version of GMAT OD for operational purposes.</para>
+
+      <para>Example scripts:</para>
+
+      <para><itemizedlist spacing="compact">
+          <listitem>
+            <para>See <filename>Ex_CompareEphemeris.script</filename>
+            for a new example on performing ephemeris compares at non-Earth
+            bodies.</para>
+          </listitem>
+
+          <listitem>
+            <para>See <filename>Ex_MergeEphemeris.script</filename> for
+            an example demonstrating merging ephemerides.</para>
+          </listitem>
+        </itemizedlist></para>
+    </section>
+
+    <section>
+      <title>Built-in Optimizer</title>
+
+      <para>GMAT now contains a built-in optimizer called Yukon, developed by
+      the GMAT team. The algorithm uses an SQP line search algorithm with an
+      active set QP-subproblem algorithm. Yukon is designed for small scale
+      problems and is not applicable to large, sparse optimization problems.
+      See the <link linkend="Yukon">Yukon</link> reference for more
+      information.</para>
+    </section>
+  </section>
+
+  <section>
+    <title>Improvements</title>
+
+    <itemizedlist spacing="compact">
+      <listitem>
+        <para>Tide modeling is improved, and GMAT now supports lunar
+        tides.</para>
+      </listitem>
+
+      <listitem>
+        <para>STM propagation now includes variational terms from drag
+        models.</para>
+      </listitem>
+
+      <listitem>
+        <para>The degree and order of STM contributions from harmonic gravity
+        is now settable by the user and defaults to the maximum order on the
+        gravity file or 100, whichever is lower.</para>
+      </listitem>
+
+      <listitem>
+        <para>The buffer size that determines the number of plot points stored
+        by the OrbitView Resource is now exposed to the user.</para>
+      </listitem>
+
+      <listitem>
+        <para>Significant performance improvements have been made in the
+        IRI2007 ionosphere model.</para>
+      </listitem>
+
+      <listitem>
+        <para>The script editor highlights errors and warnings found on the
+        first pass of parsing.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT now supports body fixed and TOD coordinate systems for Code
+        500 Ephemerides and supports all central bodies in the Code 500
+        Ephemeris format.</para>
+      </listitem>
+
+      <listitem>
+        <para>The CommandEcho command has been added to GMAT to support
+        printing commands to the message window and log file as they are
+        executed in a mission sequence. This command is particularly useful
+        when debugging user scripts. See the <link
+        linkend="CommandEcho">CommandEcho</link> reference for more
+        information.</para>
+      </listitem>
+
+      <listitem>
+        <para>The Code500 propagator type now automatically detects the
+        endianness when reading Code500 files.</para>
+      </listitem>
+
+      <listitem>
+        <para>The STK ephemeris propagator now uses Hermite interpolation, and
+        includes velocity information in the position interpolation for
+        segments that contain fewer than 7 rows of data. Velocity
+        interpolation for segments with fewer than 7 rows of data is performed
+        by forming the hermite interpolating polynomial for position, and then
+        differentiating the position interpolating polynomial to obtain the
+        velocity.</para>
+      </listitem>
+
+      <listitem>
+        <para>You can now set the step size of an ephemeris propagator during
+        mission execution (i.e. after the BeginMissionSequence
+        command).</para>
+      </listitem>
+
+      <listitem>
+        <para>The startup file now allows optional updating of the user
+        configuration file. This avoids issues encountered when simultaneous
+        instances of GMAT try to write to the user config file at the same
+        time, resulting in a system error.</para>
+      </listitem>
+
+      <listitem>
+        <para>The Python data file utility now updates data files used by the
+        IRI2007 model.</para>
+      </listitem>
+
+      <listitem>
+        <para>The GMAT CMake based build system now supports plugin components
+        developed by external groups.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT now supports GUI plugin components.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Compatibility Changes</title>
+
+    <itemizedlist>
+      <listitem>
+        <para>Batch estimation now requires the use of fixed step
+        integration.</para>
+      </listitem>
+
+      <listitem>
+        <para>The RotationDataSource on CelestialBody Resources is deprecated
+        and no longer has an effect.</para>
+      </listitem>
+
+      <listitem>
+        <para>The Spacecraft EstimationStateType parameter is
+        deprecated.</para>
+      </listitem>
+
+      <listitem>
+        <para>The EphemerisFile OutputFormat options ‘UNIX’ and ‘PC’ are
+        deprecated. ‘BigEndian’ and ‘LittleEndian’ should be used
+        instead.</para>
+      </listitem>
+
+      <listitem>
+        <para>The EarthTideModel on the ForceModel Resource has been renamed
+        to TideModel</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT now returns error codes via the command line interface to
+        indicate if issues were encountered during system execution.</para>
+      </listitem>
+
+      <listitem>
+        <para>When using the Write command to write Resource properties to a
+        ReportFile, only scalar, real quantities are written. Properties that
+        are either not real or are arrays are ignored and a warning is
+        issued.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Upcoming Changes in R2019a</title>
+
+    <para>This is the last version of GMAT tested on Windows 7.</para>
+  </section>
+
+  <section>
+    <title>Known &amp; Fixed Issues</title>
+
+    <section>
+      <title>Fixed Issues</title>
+
+      <para>Over 112 bugs were closed in this release. See the <link
+      xlink:href="http://bugs.gmatcentral.org/issues/?filter=14102">"Critical
+      Issues Fixed in R2018a" report</link> for a list of critical bugs and
+      resolutions in R2018a. See the <link
+      xlink:href="http://bugs.gmatcentral.org/issues/?filter=14103">"Minor
+      Issues Fixed for R2018a" report</link> for minor issues addressed in
+      R2018a.</para>
+
+      <para><itemizedlist spacing="compact">
+          <listitem>
+            <para>The STK ephemeris propagator now correctly handles segments
+            with fewer than 5 rows of data.</para>
+          </listitem>
+
+          <listitem>
+            <para>STK ephemeris files that contain event boundaries now
+            correctly count the number of ephemeris rows represented in the
+            NumberOfEphemerisPoints keyword value pair.</para>
+          </listitem>
+
+          <listitem>
+            <para>Comments describing the source of ephemeris discontinuities
+            in CCSDS ephemeris files are now written inside of meta data
+            blocks.</para>
+          </listitem>
+        </itemizedlist></para>
+    </section>
+
+    <section>
+      <title>Known Issues</title>
+
+      <para>See the <link
+      xlink:href="http://bugs.gmatcentral.org/issues/?filter=14104">"All Known
+      Issues for R2018a" report</link> for a list of all known issues in
+      R2018a.</para>
+
+      <para>There are several known issues in this release that we consider to
+      be significant:<informaltable frame="topbot">
+          <tgroup cols="2">
+            <colspec colnum="1" colwidth="0.2*"/>
+
+            <thead>
+              <row>
+                <entry align="left">ID</entry>
+
+                <entry align="left">Description</entry>
+              </row>
+            </thead>
+
+            <tbody>
+              <row>
+                <entry>GMT-5417</entry>
+
+                <entry>Adaptive step size control behaves inconsistently when
+                used in GMAT's navigation system. Fixed step integration is
+                currently required for simulation and estimation.</entry>
+              </row>
+
+              <row>
+                <entry>GMT-6202</entry>
+
+                <entry>Spikes of up to 1 mm/sec may be observed in some cases
+                in DSN_TCP and Doppler ionospheric corrections. The IRI2007
+                model has some jumps in the electron density when moving
+                through time. Spikes are caused when the start and end signal
+                paths are located on different sides of these jumps.</entry>
+              </row>
+
+              <row>
+                <entry>GMT-6367</entry>
+
+                <entry>For Macs with a Touch Bar (GUI issue only): there
+                appears to be an issue with WxWidgets, the third party GUI
+                library used by GMAT, and the Mac Touch Bar. Crashes occur
+                frequently and the traceback indicates that the issue lies in
+                Apple code, related to the Touch bar specifically, possibly
+                caused by a NULL string pointer. Our analysis suggests this
+                issue cannot be addressed by the GMAT team or by WxWidgets;
+                however, we will continue to investigate. In the meantime, the
+                GMAT Console version will continue to work, and the GUI
+                version (Beta) will work on Macs without a Touch Bar.</entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable></para>
+    </section>
+  </section>
+</section>

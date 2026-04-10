@@ -1,0 +1,34 @@
+%
+%  Ex_NewFunctions_GetEphemStates
+%
+%  Use the GetEphemStates built-in function to read ephemeris meta-data.
+%
+%  Created: R2016a
+% 
+
+%  Put the ephemeris file on the spacecraft. 
+%  The approach is the same for other file types
+
+Create Spacecraft Sat1
+
+Sat1.EphemerisName = '../data/vehicle/ephem/ccsds/DemoLEO-1.oem'
+
+%  Creates some user defined data types
+
+Create String initialEpoch finalEpoch
+Create Array initialState[6,1] finalState[6,1]
+
+Create ReportFile rf
+
+rf.Filename = 'get_ephem_states.txt'
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence
+
+%  Extract the initial epoch from the ephemeris file so we know when to start propgation
+[initialEpoch, initialState, finalEpoch, finalState] = GetEphemStates('CCSDS-OEM', Sat1, 'UTCGregorian', EarthMJ2000Eq)
+
+Report rf initialEpoch initialState finalEpoch finalState

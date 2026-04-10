@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="AlgebraicOptimization"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Algebraic Optimization</title>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>This tutorial optimizes a chosen criterion - or, more specifically,
+    finds the values of chosen variables that bring the minimum value to a
+    chosen criterion function. The tutorial's goal is to demonstrate how the
+    GMAT's optimizer works. Examples of the use of optimization in real
+    missions include minimizing the amount of fuel used by the mission or
+    minimizing the mission flight time while achieving certain characteristics
+    of the mission. In order to learn how to optimize a mission sequence one
+    needs to be familiar with optimizers, nonlinear constraints, and the
+    minimize command - which is what this tutorial will cover.</para>
+
+    <para>You can download the tutorial's script file, <link
+    xlink:href="scripts/Ex_AlgebraicOptimization.script">Ex_AlgebraicOptimization.script</link>
+    , and run it beforehand, to observe the expected final results.</para>
+
+    <section>
+      <title>Prerequisites</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Basic Understanding of how to create and propagate a
+          spacecraft, as in Tutorial <link
+          linkend="CreatingandPropagatingaSpacecraft">Creating and Propagating
+          a Spacecraft</link></para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Mission Description</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Objective: The goal here is to find values of variables X1 and
+          X2 that minimize a criterion function F, with a constraint that
+          X1+X2=8, as follows:</para>
+
+          <para>F = ( X1 - 2 )<superscript>2</superscript> + ( X2 - 2
+          )<superscript>2</superscript></para>
+
+          <para>G = X1 + X2</para>
+
+          <para>G = 8</para>
+        </listitem>
+
+        <listitem>
+          <para>Find: Values X1 and X2</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Note that the constraint G makes our problem one of conditional
+      optimization. With no constraint G, the function F minimum would
+      obviously correspond to X1=2, X2=2, thus F=0. But this solution is not
+      possible due to G = X1 + X2 = 8. At the end of this tutorial, after we
+      solve our original problem, for exersize we will request GMAT to produce
+      the unconditional F value as well.</para>
+    </section>
+  </section>
+
+  <section>
+    <title>Configuring the Resource Tree</title>
+
+    <section>
+      <title>Objects Required</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Optimizer: VF13ad1</para>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports: Report Data</para>
+        </listitem>
+
+        <listitem>
+          <para>Variables: X1, X2, F, G</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+       
+
+      <title>Creating and Modifying Resource Tree Objects</title>
+
+      <para> We will create/modify the following objects: the optimizer (in
+      section Solvers of the Resource Tree); the report (in Output); and
+      variables (in Variables/Arrays/Strings). GMAT defaults will be used for
+      other mission resources. </para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Solvers: Add to the sequence the VF13ad1 optimizer. We will
+          use the optimizer's default characteristics. The figure below shows
+          how this dialog box looks like</para>
+
+            <screenshot>
+              <mediaobject>
+                <imageobject>
+                  <imagedata align="center" contentdepth="100%"
+                             fileref="files/images/Tut_AlgebraicOpt_VF13ad1BoundaryValueSolverObject.jpeg"
+                             scalefit="1" width="100%" />
+                </imageobject>
+
+                <caption>
+                  <para>Figure: VF13ad1 Boundary Value Solver Object</para>
+                </caption>
+              </mediaobject>
+            </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports: Set up the Data ReportFile. Your ReportFile
+          dialog box should look as in the figure below</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Clear Parameter List</para>
+              </listitem>
+
+              <listitem>
+                <para>Save at
+                ./output/SampleMissions/Ex_AlgebraicOptimization.report</para>
+              </listitem>
+            </itemizedlist>
+
+            <screenshot>
+              <mediaobject>
+                <imageobject>
+                  <imagedata align="center" contentdepth="100%"
+                             fileref="files/images/Tut_AlgebraicOpt_DataReportFileSystemObject.jpeg"
+                             scalefit="1" width="100%" />
+                </imageobject>
+
+                <caption>
+                  <para>Figure: Data ReportFile System Object</para>
+                </caption>
+              </mediaobject>
+            </screenshot>
+
+        </listitem>
+
+        <listitem>
+          <para>Variables/Strings/Arrays: Set the initial values, as
+          follows:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Variable X1 = 0</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable X2 = 0</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable F = 0</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable G = 0. Your last Variables/Strings/Arrays dialog
+              box should look as shown in this figure:</para>
+            </listitem>
+            </itemizedlist>
+            <screenshot>
+              <mediaobject>
+                <imageobject>
+                  <imagedata align="center" contentdepth="100%"
+                             fileref="files/images/Tut_AlgebraicOpt_VariableObject.jpeg"
+                             scalefit="1" width="100%" />
+                </imageobject>
+
+                <caption>
+                  <para>Figure: ReportFile System Object</para>
+                </caption>
+              </mediaobject>
+            </screenshot>
+
+        </listitem>
+      </itemizedlist>
+
+       
+
+      <para>Now your Resource Tree should look as shown in this figure:
+      </para>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_AlgebraicOpt_AlgebraicOptimizationResourceTree.jpeg"
+                       scalefit="1" width="100%" />
+          </imageobject>
+
+          <caption>
+            <para>Figure: Algebraic Optimization Resource Tree</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+
+       
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Mission Tree</title>
+
+    <section>
+      <title>Set up the Mission Tree and the Output Tree; when done, they
+      should look as in the two figures below</title>
+
+      <informaltable colsep="0" frame="none">
+        <tgroup cols="2">
+          <tbody>
+            <row>
+              <entry><figure>
+                  
+                  <title>Figure: Mission Tree</title>
+                  <screenshot>
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata align="center" contentdepth="100%"
+                                 fileref="files/images/Tut_AlgebraicOpt_AlgebraicOptimizationMissionandTree.jpeg"
+                                 scalefit="1" width="100%" />
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></figure></entry>
+
+              <entry><figure><title>Figure: Output Tree</title><screenshot>
+                  
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata align="center" contentdepth="100%"
+                                 fileref="files/images/Tut_AlgebraicOpt_AlgebraicOptimizationOutputTree.jpeg"
+                                 scalefit="1" width="100%" />
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></figure></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section>
+      <title>Creating and Modifying Command Sequences</title>
+
+      <para>As said above, values X1 and X2 are independent variables of the
+      function F that is to be optimized. The sum of X1 and X2 form a
+      constraint G, G=X1+X2=8. The final values of F, X1, X2 are to be sent to
+      a report file. In this section we will set up the optimization command
+      sequence, as in the Optimize sequence below. Optimization is done in
+      Equation1, via the optimization criterion function F, using the Matlab
+      routine SQPfmincon. For the constraint G, since a function cannot be a
+      constraint in itself, the value G is used. This is done in
+      Equation2.</para>
+
+      <para>You set up the commands using the corresponding dialog boxes. When
+      done, the dialog boxes for commands in the Mission Tree - Vary1, Vary2,
+      Equation1, Minimize1, Equation2, NonlinearConstraint1, and Report1 -
+      should look like as shown in the figures below.</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Optimize</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Vary X1 using SQPfmincon</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Upper = 10, Lower = -10</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>Vary X2 using SQPfmincon</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Upper = 10, Lower = -10</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>Equation1: F = ( X1 - 2 )<superscript>2</superscript> + (
+              X2 - 2 )<superscript>2</superscript></para>
+            </listitem>
+
+            <listitem>
+              <para>Minimize the value of F using SQPfmincon</para>
+            </listitem>
+
+            <listitem>
+              <para>Equation2: G = X1 + X2</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the Nonlinear Constraint G = 8 using SQPfmincon</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Report to file Data the values of variables F, G, X1,
+          X2</para>
+        </listitem>
+      </itemizedlist>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_AlgebraicOpt_VaryX1Command.jpeg"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: Vary X1 Command</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_AlgebraicOpt_VaryX2Command.jpeg"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: Vary X2 Command</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_AlgebraicOpt_Equation1Command.jpeg"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: Equation1 Command</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_AlgebraicOpt_MinimizeFCommand.jpeg"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: Minimize F Command</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_AlgebraicOpt_Equation2Command.jpeg"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: Equation2 Command</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_AlgebraicOpt_NonlinearConstraintCommand.jpeg"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: Nonlinear Constraint Command</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_AlgebraicOpt_ReportCommand.jpeg"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+
+          <caption>
+            <para>Figure: Report Command</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+    </section>
+  </section>
+
+  <section>
+    <title>Running the Mission</title>
+
+    <para>There is no plot for this mission sequence. Its results - values X1,
+    X2, the minimum value of the optimized function F, and, for completeness,
+    the constraint value G - can be found by calling ReportFile1 in the Output
+    Tree. The report should look like the figure below.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_AlgebraicOpt_DataReportFile.jpeg"
+                     scalefit="1" width="100%"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Data ReportFile</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <para>As an exersize, let us see what values X1, X2, and F would the
+    optimizer deliver if we eleminate the constraint G. In the Mission Tree,
+    remove the NonlinearConstraint1 command and run the mission again. Not
+    surprisingly, the optimizer delivers values X1=2, X2=2, and F=0. See the
+    ReportFile box below (value G has no meaning here).</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_AlgebraicOpt_DataReportFile2.jpeg"
+                     scalefit="1" width="100%"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Data ReportFile with Eliminated Constraint G</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+</section>

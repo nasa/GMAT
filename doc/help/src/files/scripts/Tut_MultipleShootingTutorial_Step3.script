@@ -1,0 +1,403 @@
+
+%----------------------------------------------------------------------------------------
+%----------------------------------------------------------------------------------------
+% Script Part 1: Configuration
+%----------------------------------------------------------------------------------------
+%----------------------------------------------------------------------------------------
+
+%----------------------------------------------------------------------------------------
+% Configure coordinate systems
+%----------------------------------------------------------------------------------------
+
+Create CoordinateSystem MoonMJ2000Eq
+MoonMJ2000Eq.Origin = Luna
+MoonMJ2000Eq.Axes   = MJ2000Eq
+
+%----------------------------------------------------------------------------------------
+% Configure spacecraft
+%----------------------------------------------------------------------------------------
+
+%  The TOI control point
+Create Spacecraft satTOI
+satTOI.DateFormat                  = TAIModJulian
+satTOI.CoordinateSystem            = EarthMJ2000Eq
+
+%  Flyby control point
+Create Spacecraft satFlyBy_Forward
+satFlyBy_Forward.DateFormat        = TAIModJulian
+satFlyBy_Forward.CoordinateSystem  = MoonMJ2000Eq
+
+%  Flyby control point
+Create Spacecraft satFlyBy_Backward
+satFlyBy_Backward.DateFormat       = TAIModJulian
+satFlyBy_Backward.CoordinateSystem = MoonMJ2000Eq
+
+% MOI control point
+Create Spacecraft satMOI_Backward
+satMOI_Backward.DateFormat         = TAIModJulian
+satMOI_Backward.CoordinateSystem   = EarthMJ2000Eq
+
+% MOI control point
+Create Spacecraft satMOI_Forward
+satMOI_Forward.DateFormat          = TAIModJulian
+satMOI_Forward.CoordinateSystem    = EarthMJ2000Eq
+
+%----------------------------------------------------------------------------------------
+% Configure propagators and force models
+%----------------------------------------------------------------------------------------
+
+Create ForceModel NearEarthForceModel
+NearEarthForceModel.CentralBody               = Earth
+NearEarthForceModel.PrimaryBodies             = {Earth}
+NearEarthForceModel.PointMasses               = {Luna, Sun}
+NearEarthForceModel.SRP                       = On
+NearEarthForceModel.GravityField.Earth.Degree = 8
+NearEarthForceModel.GravityField.Earth.Order  = 8
+
+Create ForceModel NearMoonForceModel
+NearMoonForceModel.CentralBody                = Luna
+NearMoonForceModel.PointMasses                = {Luna, Earth, Sun}
+NearMoonForceModel.Drag                       = None
+NearMoonForceModel.SRP                        = On
+
+Create Propagator NearEarthProp
+NearEarthProp.FM = NearEarthForceModel
+NearEarthProp.Type                     = PrinceDormand78
+NearEarthProp.InitialStepSize          = 60
+NearEarthProp.Accuracy                 = 1e-11
+NearEarthProp.MinStep                  = 0.0
+NearEarthProp.MaxStep                  = 86400
+
+Create Propagator NearMoonProp
+NearMoonProp.FM                        = NearMoonForceModel
+NearMoonProp.Type                      = PrinceDormand78
+NearMoonProp.InitialStepSize           = 60
+NearMoonProp.Accuracy                  = 1e-11
+NearMoonProp.MinStep                   = 0
+NearMoonProp.MaxStep                   = 86400
+
+%----------------------------------------------------------------------------------------
+% Configure maneuvers
+%----------------------------------------------------------------------------------------
+
+Create ImpulsiveBurn MOI
+MOI.CoordinateSystem   = Local
+MOI.Origin             = Earth
+MOI.Axes               = VNB
+
+%----------------------------------------------------------------------------------------
+% Create user data: variables, arrays, strings
+%----------------------------------------------------------------------------------------
+
+%  Variables for defining constraint values
+Create Variable conTOIPeriapsis conMOIPeriapsis conTOIInclination
+Create Variable conLunarPeriapsis conMOIApoapsis conMOIInclination
+Create Variable launchRdotV finalPeriapsisValue
+
+%  Variables for computing constraint violations
+Create Variable errorPos1 errorVel1 errorPos2 errorVel2 
+Create Variable errorMOIRadApo errorMOIRadPer errorMOIInclination 
+
+%  Variables for managing time calculations
+Create Variable patchTwoElapsedDays patchOneEpoch patchTwoEpoch refEpoch
+Create Variable toiEpoch flybyEpoch moiEpoch patchOneElapsedDays
+Create Variable deltaTimeFlyBy
+
+%  Constants and miscellaneous variables
+Create Variable earthRadius earthMu launchEnergy launchVehicleDeltaV
+Create Variable toiDeltaV launchCircularVelocity loopIdx Cost
+
+%----------------------------------------------------------------------------------------
+% Configure solvers
+%----------------------------------------------------------------------------------------
+
+Create VF13ad NLPOpt
+NLPOpt.ShowProgress          = true
+NLPOpt.ReportStyle           = Normal
+NLPOpt.ReportFile            = 'VF13adVF13ad1.data'
+NLPOpt.MaximumIterations     = 200
+NLPOpt.Tolerance             = 1e-004
+NLPOpt.UseCentralDifferences = false
+NLPOpt.FeasibilityTolerance  = 0.1
+
+%----------------------------------------------------------------------------------------
+% Configure plots, reports, etc.
+%----------------------------------------------------------------------------------------
+
+Create OrbitView EarthView
+EarthView.ShowPlot               = false
+EarthView.SolverIterations       = All
+EarthView.UpperLeft       = [ 0.4960127591706539 0.00992063492063492 ];
+EarthView.Size            = [ 0.4800637958532695 0.5218253968253969 ];
+EarthView.RelativeZOrder         = 501
+EarthView.Add                    = ...
+{satTOI, satFlyBy_Forward, satFlyBy_Backward, satMOI_Backward, Earth, Luna, satMOI_Forward}
+EarthView.CoordinateSystem       = EarthMJ2000Eq
+EarthView.DrawObject             = [ true true true true true]
+EarthView.OrbitColor   =  ...
+[ 255 32768 1743054 16776960 32768 12632256 14268074 ]
+EarthView.TargetColor  = ...
+[ 65280 124 4227327 255 12345 9843 16711680 ];
+EarthView.DataCollectFrequency   = 1
+EarthView.UpdatePlotFrequency    = 50
+EarthView.NumPointsToRedraw      = 300
+EarthView.ViewScaleFactor        = 35
+EarthView.ViewUpAxis             = X
+EarthView.UseInitialView         = On
+
+Create XYPlot PositionError
+PositionError.SolverIterations = All
+PositionError.UpperLeft        = [ 0.02318840579710145 0.4358208955223881 ];
+PositionError.Size             = [ 0.4594202898550724 0.5283582089552239 ];
+PositionError.RelativeZOrder   = 378
+PositionError.XVariable        = loopIdx
+PositionError.YVariables       = {errorPos1, errorPos2}
+PositionError.ShowGrid         = true
+PositionError.ShowPlot         = true
+
+Create XYPlot VelocityError
+VelocityError.SolverIterations = All
+VelocityError.UpperLeft        = [ 0.02463768115942029 0.01194029850746269 ];
+VelocityError.Size             = [ 0.4565217391304348 0.4208955223880597 ];
+VelocityError.RelativeZOrder   = 410
+VelocityError.XVariable        = loopIdx
+VelocityError.YVariables       = {errorVel1, errorVel2}
+VelocityError.ShowGrid         = true
+VelocityError.ShowPlot         = true
+
+Create XYPlot OrbitDimErrors
+OrbitDimErrors.SolverIterations = All
+OrbitDimErrors.UpperLeft      = [ 0.4960127591706539 0.5337301587301587 ];
+OrbitDimErrors.Size           = [ 0.481658692185008 0.4246031746031746 ];
+OrbitDimErrors.RelativeZOrder = 347
+OrbitDimErrors.XVariable      = loopIdx
+OrbitDimErrors.YVariables     = {errorMOIRadApo, errorMOIRadPer}
+OrbitDimErrors.ShowGrid       = true
+OrbitDimErrors.ShowPlot       = true
+
+Create XYPlot IncError
+IncError.SolverIterations = All
+IncError.UpperLeft        = [ 0.4953586497890296 0.01306240928882438 ];
+IncError.Size             = [ 0.479324894514768 0.5079825834542816 ];
+IncError.RelativeZOrder   = 382
+IncError.YVariables       = {errorMOIInclination}
+IncError.XVariable        = loopIdx
+IncError.ShowGrid         = true
+IncError.ShowPlot         = true
+
+Create ReportFile debugData
+debugData.SolverIterations = Current
+debugData.Precision        = 16
+debugData.WriteHeaders     = Off
+debugData.LeftJustify      = On
+debugData.ZeroFill         = Off
+debugData.ColumnWidth      = 20
+debugData.WriteReport      = false
+
+%----------------------------------------------------------------------------------------
+%----------------------------------------------------------------------------------------
+% Script Part 2: The Mission Sequence
+%----------------------------------------------------------------------------------------
+%----------------------------------------------------------------------------------------
+
+BeginMissionSequence
+
+%  Define initial guesses for optimization variables
+BeginScript 'Initial Guess Values'
+
+   %  Robust intial guess but not feasible  
+   toiEpoch = 27698.1612435
+   flybyEpoch = 27703.7658714
+   moiEpoch = 27723.305398
+   satTOI.X = -6659.70273964
+   satTOI.Y = -229.327053112
+   satTOI.Z = -168.396030559
+   satTOI.VX = 0.26826479315
+   satTOI.VY = -9.54041067213
+   satTOI.VZ = 5.17141415746
+   satFlyBy_Forward.X = 869.478955662
+   satFlyBy_Forward.Y = -6287.76679557
+   satFlyBy_Forward.Z = -3598.47087228
+   satFlyBy_Forward.VX = 1.14619150302
+   satFlyBy_Forward.VY = -0.73648611256
+   satFlyBy_Forward.VZ = -0.624051812914
+   satMOI_Backward.X = -53544.9703742
+   satMOI_Backward.Y = -68231.6310266
+   satMOI_Backward.Z = -1272.76362793
+   satMOI_Backward.VX = 2.051823425
+   satMOI_Backward.VY = -1.91406286218
+   satMOI_Backward.VZ = -0.280408526046
+   MOI.Element1 = -0.0687322937282
+         
+EndScript
+
+%  Define constants and configuration settings
+BeginScript 'Constants and Init'
+   
+   %  Some constants
+   earthRadius          = 6378.1363
+      
+   %  Define constraint values and other constants 
+   conTOIPeriapsis     = 6378 + 285
+   conTOIInclination   = 28.5
+   conLunarPeriapsis   = 8000
+   conMOIApoapsis      = 60*earthRadius
+   conMOIInclination   = 10
+   conMOIPeriapsis     = 15*earthRadius
+   patchOneElapsedDays = 1
+   patchTwoElapsedDays = 13
+   refEpoch            = toiEpoch
+   
+EndScript
+
+%  The optimization loop
+Optimize 'Optimize Flyby' NLPOpt ...
+    {SolveMode = Solve, ExitMode = DiscardAndContinue}
+   
+   %   Loop initializatoins
+   loopIdx = loopIdx + 1
+   
+   %  Vary the epochs 
+   Vary NLPOpt(toiEpoch = toiEpoch, {Perturbation = 0.0001, MaxStep = 0.5})
+   Vary NLPOpt(flybyEpoch  = flybyEpoch, {Perturbation = 0.0001, MaxStep = 0.5})
+   Vary NLPOpt(moiEpoch    = moiEpoch, {Perturbation = 0.0001, MaxStep = 0.5})
+
+   %  Configure epochs and spacecraft
+   satTOI.Epoch.TAIModJulian           = toiEpoch
+   satMOI_Backward.Epoch.TAIModJulian  = moiEpoch
+   satFlyBy_Forward.Epoch.TAIModJulian = flybyEpoch
+   patchOneEpoch                       = refEpoch + patchOneElapsedDays
+   patchTwoEpoch                       = refEpoch + patchTwoElapsedDays
+   
+   %  Vary the states and delta V
+   Vary NLPOpt(satTOI.X            = satTOI.X, {Perturbation = 0.00001, MaxStep = 100})
+   Vary NLPOpt(satTOI.Y            = satTOI.Y, {Perturbation = 0.000001, MaxStep = 100})
+   Vary NLPOpt(satTOI.Z            = satTOI.Z, {Perturbation = 0.00001, MaxStep = 100})
+   Vary NLPOpt(satTOI.VX           = satTOI.VX, {Perturbation = 0.00001, MaxStep = 0.05})
+   Vary NLPOpt(satTOI.VY           = satTOI.VY, {Perturbation = 0.000001, MaxStep = 0.05})
+   Vary NLPOpt(satTOI.VZ           = satTOI.VZ, {Perturbation = 0.000001, MaxStep = 0.05})
+   Vary NLPOpt(satFlyBy_Forward.X  = satFlyBy_Forward.MoonMJ2000Eq.X, {Perturbation = 0.00001, MaxStep = 100})
+   Vary NLPOpt(satFlyBy_Forward.Y  = satFlyBy_Forward.MoonMJ2000Eq.Y, {Perturbation = 0.00001, MaxStep = 100})
+   Vary NLPOpt(satFlyBy_Forward.Z  = satFlyBy_Forward.MoonMJ2000Eq.Z, {Perturbation = 0.00001, MaxStep = 100})
+   Vary NLPOpt(satFlyBy_Forward.VX = satFlyBy_Forward.MoonMJ2000Eq.VX, {Perturbation = 0.00001, MaxStep = 0.1})
+   Vary NLPOpt(satFlyBy_Forward.VY = satFlyBy_Forward.MoonMJ2000Eq.VY, {Perturbation = 0.00001, MaxStep = 0.1})
+   Vary NLPOpt(satFlyBy_Forward.VZ = satFlyBy_Forward.MoonMJ2000Eq.VZ, {Perturbation = 0.00001, MaxStep = 0.1})
+   Vary NLPOpt(satMOI_Backward.X   = satMOI_Backward.X, {Perturbation = 0.000001, MaxStep = 40000})
+   Vary NLPOpt(satMOI_Backward.Y   = satMOI_Backward.Y, {Perturbation = 0.000001, MaxStep = 40000})
+   Vary NLPOpt(satMOI_Backward.Z   = satMOI_Backward.Z, {Perturbation = 0.000001, MaxStep = 40000})
+   Vary NLPOpt(satMOI_Backward.VX  = satMOI_Backward.VX, {Perturbation = 0.00001, MaxStep = 0.1})
+   Vary NLPOpt(satMOI_Backward.VY  = satMOI_Backward.VY, {Perturbation = 0.00001, MaxStep = 0.1})
+   Vary NLPOpt(satMOI_Backward.VZ  = satMOI_Backward.VZ, {Perturbation = 0.00001, MaxStep = 0.1})
+   Vary NLPOpt(MOI.Element1        = MOI.Element1, {Perturbation = 0.0001, MaxStep = 0.005})
+   
+   %  Initialize spacecraft and do some reporting
+   satFlyBy_Backward = satFlyBy_Forward
+   satMOI_Forward    = satMOI_Backward
+   deltaTimeFlyBy    = flybyEpoch - toiEpoch
+   
+   %  Apply constraints on initial states
+   NonlinearConstraint NLPOpt(satTOI.INC=conTOIInclination)
+   NonlinearConstraint NLPOpt(satTOI.RadPer=conTOIPeriapsis)
+   NonlinearConstraint NLPOpt(satMOI_Backward.RadPer = conMOIPeriapsis)
+   errorMOIRadPer = satMOI_Backward.RadPer - conMOIPeriapsis
+   
+   %  This constraint ensures that satTOI state is at periapsis at injection
+   launchRdotV = (satTOI.X *satTOI.VX + satTOI.Y *satTOI.VY + satTOI.Z *satTOI.VZ)/1000
+   NonlinearConstraint NLPOpt(launchRdotV=0)
+
+   %  Propagate the segments
+   Propagate NearEarthProp(satTOI) {satTOI.TAIModJulian = patchOneEpoch, StopTolerance = 1e-005}
+   PenUp EarthView    %  The next three lines handle epoch discontinuity in plotting
+   Propagate BackProp NearMoonProp(satFlyBy_Backward)
+   PenDown EarthView  
+   Propagate BackProp NearMoonProp(satFlyBy_Backward) {satFlyBy_Backward.TAIModJulian = patchOneEpoch, StopTolerance = 1e-005}
+   
+   %  Propagate FlybySat to Apogee and apply apogee constraints
+   PenUp EarthView    %  The next three lines handle epoch discontinuity in plotting
+   Propagate NearMoonProp(satFlyBy_Forward)
+   PenDown EarthView
+   Propagate NearMoonProp(satFlyBy_Forward) {satFlyBy_Forward.Earth.Apoapsis, StopTolerance = 1e-005}
+   Report debugData satFlyBy_Forward.RMAG
+ 
+   %  Propagate FlybSat and satMOI_Backward to patchTwoEpoch
+   If satFlyBy_Forward.TAIModJulian > patchTwoEpoch
+      Propagate BackProp NearMoonProp(satFlyBy_Forward) {satFlyBy_Forward.TAIModJulian = patchTwoEpoch, StopTolerance = 1e-005}
+   Else
+      Propagate NearMoonProp(satFlyBy_Forward) {satFlyBy_Forward.TAIModJulian = patchTwoEpoch, StopTolerance = 1e-005}
+   EndIf
+   PenUp EarthView    %  The next three lines handle epoch discontinuity in plotting
+   Propagate BackProp NearMoonProp(satMOI_Backward)
+   PenDown EarthView
+   Propagate BackProp NearMoonProp(satMOI_Backward) {satMOI_Backward.TAIModJulian = patchTwoEpoch, StopTolerance = 1e-005}
+
+   %  Compute constraint errors for plots
+   errorPos1 = sqrt((satTOI.X - satFlyBy_Backward.X)^2 + ...
+              (satTOI.Y - satFlyBy_Backward.Y)^2 + ...
+              (satTOI.Z - satFlyBy_Backward.Z)^2)
+   errorVel1 = sqrt((satTOI.VX - satFlyBy_Backward.VX)^2 + ...
+              (satTOI.VY - satFlyBy_Backward.VY)^2 +...
+              (satTOI.VZ - satFlyBy_Backward.VZ)^2)
+   errorPos2 = sqrt((satMOI_Backward.X - satFlyBy_Forward.X)^2 + ...
+              (satMOI_Backward.Y - satFlyBy_Forward.Y)^2 + ...
+              (satMOI_Backward.Z - satFlyBy_Forward.Z)^2)
+   errorVel2 = sqrt((satMOI_Backward.VX - satFlyBy_Forward.VX)^2 + ...
+              (satMOI_Backward.VY - satFlyBy_Forward.VY)^2 + ...
+              (satMOI_Backward.VZ - satFlyBy_Forward.VZ)^2)
+              
+   %  Apply the collocation constraints constraints on final states
+   %  Apply the collocation constraints constraints on final states
+   NonlinearConstraint NLPOpt(satTOI.EarthMJ2000Eq.X= ...
+                       satFlyBy_Backward.EarthMJ2000Eq.X)
+   NonlinearConstraint NLPOpt(satTOI.EarthMJ2000Eq.Y= ...
+                       satFlyBy_Backward.EarthMJ2000Eq.Y)
+   NonlinearConstraint NLPOpt(satTOI.EarthMJ2000Eq.Z= ...
+                       satFlyBy_Backward.EarthMJ2000Eq.Z)
+   NonlinearConstraint NLPOpt(satTOI.EarthMJ2000Eq.VX= ...
+                       satFlyBy_Backward.EarthMJ2000Eq.VX)
+   NonlinearConstraint NLPOpt(satTOI.EarthMJ2000Eq.VY=...
+                       satFlyBy_Backward.EarthMJ2000Eq.VY)
+   NonlinearConstraint NLPOpt(satTOI.EarthMJ2000Eq.VZ=...
+                       satFlyBy_Backward.EarthMJ2000Eq.VZ)
+   NonlinearConstraint NLPOpt(satMOI_Backward.EarthMJ2000Eq.X=...
+                       satFlyBy_Forward.EarthMJ2000Eq.X)
+   NonlinearConstraint NLPOpt(satMOI_Backward.EarthMJ2000Eq.Y=...
+                       satFlyBy_Forward.EarthMJ2000Eq.Y)
+   NonlinearConstraint NLPOpt(satMOI_Backward.EarthMJ2000Eq.Z=...
+                       satFlyBy_Forward.EarthMJ2000Eq.Z)
+   NonlinearConstraint NLPOpt(satMOI_Backward.EarthMJ2000Eq.VX=...
+                       satFlyBy_Forward.EarthMJ2000Eq.VX)
+   NonlinearConstraint NLPOpt(satMOI_Backward.EarthMJ2000Eq.VY=...
+                       satFlyBy_Forward.EarthMJ2000Eq.VY)
+   NonlinearConstraint NLPOpt(satMOI_Backward.EarthMJ2000Eq.VZ=...
+                       satFlyBy_Forward.EarthMJ2000Eq.VZ)
+
+   %  Apply mission orbit constraints and others on segments after propagation
+   errorMOIInclination = satMOI_Forward.INC - conMOIInclination
+   NonlinearConstraint NLPOpt(satMOI_Forward.EarthMJ2000Eq.INC = ...
+   conMOIInclination)
+      %  Propagate satMOI_Forward to apogee
+   PenUp EarthView    %  The next three lines handle epoch discontinuity in plotting
+   Propagate NearEarthProp(satMOI_Forward)
+   PenDown EarthView
+   If satMOI_Forward.Earth.TA > 180
+      Propagate NearEarthProp(satMOI_Forward) {satMOI_Forward.Earth.Periapsis}
+   Else
+      Propagate BackProp NearEarthProp(satMOI_Forward) {satMOI_Forward.Earth.Periapsis}
+   EndIf
+   Maneuver MOI(satMOI_Forward)
+   Propagate NearEarthProp(satMOI_Forward) {satMOI_Forward.Earth.Apoapsis}
+   NonlinearConstraint NLPOpt(satMOI_Forward.RadApo=conMOIApoapsis)
+   errorMOIRadApo = satMOI_Forward.Earth.RadApo - conMOIApoapsis
+   
+   %  Apply cost function and 
+   Cost = sqrt( MOI.Element1^2 + MOI.Element2^2 + MOI.Element3^2)
+   Minimize NLPOpt(Cost)
+   
+   %  Report stuff at the end of the loop
+   Report debugData MOI.Element1
+   Report debugData satMOI_Forward.RMAG conMOIApoapsis conMOIInclination
+   
+   %Stop
+EndOptimize  % For optimizer NLPOpt
+
+

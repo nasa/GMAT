@@ -1,0 +1,292 @@
+%
+%   Simulate_DSN_Range_then_Estimate_CartesianState_and_Cr
+%
+%  (1)  Simulate DSN Range. Use S/C, SimSat and TrackingFileSet, simData, to do 
+%       this. Note that Cr for this "truth" s/c is set to 0.54
+%  (2)  Perform estimation using this simulation data.  The estimated a priori 
+%       state is given by s/c, EstSat. Note that the a priori guess for Cr is 1.54
+%  (3)  Verify that, after estimation is complete, the estimated Cr is close to 
+%       the "truth" value of 0.54
+%
+
+
+%----------------------------------------
+%---------- Solar System User-Modified Values
+%----------------------------------------
+
+SolarSystem.EphemerisSource = 'DE421';
+
+%-------------------------------------------- 
+%---------- Spacecraft
+%--------------------------------------------
+Create Spacecraft SimSat;
+
+SimSat.DateFormat       = UTCGregorian;
+SimSat.Epoch            = '16 Jul 2012 00:00:00.000';  
+SimSat.CoordinateSystem = SunMJ2000Eq;
+SimSat.DisplayStateType = Cartesian;
+SimSat.X                = 74687817.03982838;
+SimSat.Y                = 107018399.5024377;
+SimSat.Z                = 46279991.4002645;
+SimSat.VX               = -24.43619252417577;
+SimSat.VY               = 16.49856732228815;
+SimSat.VZ               = 7.084755971994685;
+SimSat.DryMass          = 603.309;     
+SimSat.Cd               = 2.2;
+SimSat.Cr               = 0.54;
+SimSat.DragArea         = 15;
+SimSat.SRPArea          = 7.9796;      
+
+
+Create Spacecraft SimSatCopy EstSat;
+
+SimSatCopy              = SimSat 
+EstSat                  = SimSat
+
+SimSat.Id               = 'EstSat01';
+SimSat.AddHardware      = {Transponder1, Antenna2};
+				        
+EstSat.Cr               = 1.54;
+EstSat.Id               = 'EstSat01';
+EstSat.AddHardware      = {Transponder1, Antenna2};
+EstSat.SolveFors        = {'CartesianState', 'Cr'};
+
+
+%----------------------------------------
+%---------- Communications Hardware
+%----------------------------------------
+
+Create Antenna Antenna1;
+
+Create Transmitter Transmitter1;
+
+Transmitter1.PrimaryAntenna = Antenna1;
+Transmitter1.Frequency      = 2067.5; %% MHz
+
+Create Receiver Receiver1;
+
+Receiver1.PrimaryAntenna = Antenna1;
+
+Create Transponder Transponder1;
+
+Transponder1.HardwareDelay   = 0;
+Transponder1.PrimaryAntenna  = Antenna2;
+Transponder1.TurnAroundRatio = '240/221';
+
+Create Antenna Antenna2;
+
+%----------------------------------------
+%---------- GroundStations
+%----------------------------------------
+Create GroundStation CAN; %DSN 
+
+CAN.OrbitColor            = Thistle;
+CAN.TargetColor           = DarkGray;
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514;
+CAN.Location2             = 2682.281745;
+CAN.Location3             = -3674.570392;
+CAN.Id                    = 'CAN';
+CAN.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+CAN.IonosphereModel       = 'None';
+CAN.TroposphereModel      = 'None';
+CAN.DataSource            = 'Constant';
+CAN.Temperature           = 295.1;
+CAN.Pressure              = 1013.5;
+CAN.Humidity              = 55;
+CAN.MinimumElevationAngle = 0;
+CAN.ErrorModels           = {DSNRange_ErrorModel};
+
+Create GroundStation GDS;  %DSN Goldstone
+
+GDS.OrbitColor            = Thistle;
+GDS.TargetColor           = DarkGray;
+GDS.CentralBody           = Earth;
+GDS.StateType             = Cartesian;
+GDS.HorizonReference      = Ellipsoid;
+GDS.Location1             = -2353.621251;
+GDS.Location2             = -4641.341542;
+GDS.Location3             = 3677.05237;
+GDS.Id                    = 'GDS';
+GDS.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+GDS.IonosphereModel       = 'None';
+GDS.TroposphereModel      = 'None';
+GDS.DataSource            = 'Constant';
+GDS.Temperature           = 295.1;
+GDS.Pressure              = 1013.5;
+GDS.Humidity              = 55;
+GDS.MinimumElevationAngle = 0;
+GDS.ErrorModels           = {DSNRange_ErrorModel};
+
+Create GroundStation MAD;  %DSN Madrid
+
+MAD.OrbitColor            = Thistle;
+MAD.TargetColor           = DarkGray;
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4849.519988;
+MAD.Location2             = -360.641653;
+MAD.Location3             = 4114.50459;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+MAD.IonosphereModel       = 'None';
+MAD.TroposphereModel      = 'None';
+MAD.DataSource            = 'Constant';
+MAD.Temperature           = 295.1;
+MAD.Pressure              = 1013.5;
+MAD.Humidity              = 55;
+MAD.MinimumElevationAngle = 0;
+MAD.ErrorModels           = {DSNRange_ErrorModel};
+
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+Create ForceModel ODProp_ForceModel;
+
+ODProp_ForceModel.CentralBody            = Sun;
+ODProp_ForceModel.PointMasses            = {Earth, Luna, Sun};
+ODProp_ForceModel.Drag                   = None;
+ODProp_ForceModel.SRP                    = On;
+ODProp_ForceModel.RelativisticCorrection = Off;
+ODProp_ForceModel.ErrorControl           = None;
+ODProp_ForceModel.SRP.Flux               = 1370.052;
+ODProp_ForceModel.SRP.SRPModel           = Spherical;
+ODProp_ForceModel.SRP.Nominal_Sun        = 149597870.691;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator ODProp;
+
+ODProp.FM              = ODProp_ForceModel;
+ODProp.Type            = RungeKutta89;
+ODProp.InitialStepSize = 60;
+ODProp.Accuracy        = 1e-013;
+ODProp.MinStep         = 0;
+ODProp.MaxStep         = 86400;
+ODProp.MaxStepAttempts = 50;
+ODProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem SunMJ2000Eq;
+SunMJ2000Eq.Origin = Sun;
+SunMJ2000Eq.Axes   = MJ2000Eq;
+
+%----------------------------------------
+%---------- ErrorModels
+%----------------------------------------
+
+Create ErrorModel DSNRange_ErrorModel;
+
+DSNRange_ErrorModel.Type       = 'DSN_SeqRange';
+DSNRange_ErrorModel.NoiseSigma = 35.375;         % unit: RU
+DSNRange_ErrorModel.Bias       = 0;              % unit: RU
+DSNRange_ErrorModel.SolveFors  = {};
+
+
+%----------------------------------------
+%---------- TrackingFileSet
+%----------------------------------------
+Create TrackingFileSet simData;
+
+simData.AddTrackingConfig       = { '{{GDS,SimSat,GDS},DSN_SeqRange}', '{{MAD,SimSat,MAD},DSN_SeqRange}', '{{CAN,SimSat,CAN},DSN_SeqRange}'};
+simData.FileName                = {'TrkFile_SimEst_DSN_DS.gmd'};
+simData.RampTable               = {};
+simData.UseLightTime            = true;
+simData.UseRelativityCorrection = true;
+simData.UseETminusTAI           = true;
+simData.SimRangeModuloConstant  = 33554432;
+simData.SimDopplerCountInterval = 10;
+
+Create TrackingFileSet estData;
+estData.AddTrackingConfig       = {'{{GDS,EstSat,GDS},DSN_SeqRange}', '{{CAN,EstSat,CAN},DSN_SeqRange}', '{{MAD,EstSat,MAD},DSN_SeqRange}'};
+estData.FileName                = {'TrkFile_SimEst_DSN_DS.gmd'};
+estData.RampTable               = {};
+estData.UseLightTime            = true;
+estData.UseRelativityCorrection = true;
+estData.UseETminusTAI           = true;
+estData.SimRangeModuloConstant  = 33554432;    % unit: RU
+estData.SimDopplerCountInterval = 10;          % unit: seconds, 
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+Create Simulator simmer;
+
+simmer.AddData             = {simData};
+simmer.Propagator          = ODProp;
+simmer.EpochFormat         = UTCGregorian;
+simmer.InitialEpoch        = '16 Jul 2012 00:00:00.000';
+simmer.FinalEpoch          = '23 Jul 2012 00:00:00.000';
+simmer.MeasurementTimeStep = 600;
+simmer.AddNoise            = On;
+
+Create BatchEstimator bat;
+
+bat.ShowProgress               = true;
+bat.ReportFile                 = 'TrkFile_SimEst_DSN_DS_WorkingFile.report';
+bat.MaximumIterations          = 4;
+bat.Measurements               = {estData};
+bat.AbsoluteTol                = 0.001;
+bat.RelativeTol                = 0.00001;
+bat.Propagator                 = ODProp;
+bat.ShowAllResiduals           = On;
+bat.OLSEInitialRMSSigma        = 3000;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant       = 0;
+bat.ResetBestRMSIfDiverging    = false;
+bat.EstimationEpochFormat      = 'FromParticipants';  %'TAIModJulian
+bat.InversionAlgorithm         = 'Internal';          %Cholesky, Schur
+bat.MaxConsecutiveDivergences  = 3;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create ReportFile rf;
+
+rf.SolverIterations = Current;
+rf.UpperLeft        = [ 0.08695652173913043 0.187207488299532 ];
+rf.Size             = [ 0.5992753623188406 0.7987519500780032 ];
+rf.RelativeZOrder   = 20;
+rf.Maximized        = false;
+rf.Filename         = 'TrkFile_SimEst_DSN_DS_2.report';
+rf.Precision        = 16;
+rf.WriteHeaders     = false;
+rf.LeftJustify      = On;
+rf.ZeroFill         = Off;
+rf.FixedWidth       = true;
+rf.Delimiter        = ' ';
+rf.ColumnWidth      = 23;
+rf.WriteReport      = true;
+
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+
+Create Variable PosError VelError CrError;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+%----- Run the Simulator followed by the Estimator
+BeginMissionSequence;
+
+RunSimulator simmer;
+RunEstimator bat;
+
+PosError = sqrt (  (EstSat.X - SimSatCopy.X)^2 + (EstSat.Y - SimSatCopy.Y)^2 + (EstSat.Z - SimSatCopy.Z)^2 );
+VelError = sqrt (  (EstSat.VX - SimSatCopy.VX)^2  + (EstSat.VY - SimSatCopy.VY)^2  + (EstSat.VZ - SimSatCopy.VZ)^2 );
+CrError  = EstSat.Cr - SimSatCopy.Cr;
+
+Report rf PosError VelError CrError;

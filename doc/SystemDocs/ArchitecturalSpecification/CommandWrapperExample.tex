@@ -1,0 +1,153 @@
+% $Id: CommandWrapperExample.tex,v 1.2 2008/02/16 00:54:58 dconway Exp $
+\chapter{\label{chapter:CommandWrapperExample}Command Implementation: Sample
+Code\index{Wrappers!Example}}
+\chapauthor{Darrel J. Conway}{Thinking Systems, Inc.}
+
+The wrapper classes described in Chapter~\ref{chapter:Commands} encapsulate the data used by
+commands that need information at the single data element level, giving several disparate types a
+common interface used during operation in the GMAT Sandbox.  This appendix provides sample code for
+the usage of these wrappers, starting with sample setup code, and proceeding through
+initialization, execution, and finalization.  The Vary command, used by the Solvers, is used to
+demonstrate these steps.
+
+\section{Sample Usage: The Maneuver Command}
+
+Maneuver commands are used to apply impulsive velocity changes to a spacecraft.  They take the form
+
+\begin{quote}
+\begin{verbatim}
+Maneuver burn1(sat1)
+\end{verbatim}
+\end{quote}
+
+\noindent where burn1 is an ImpulsiveBurn object specifying the components of the velocity change
+and sat1 is the spacecraft that receives the velocity change.  The Maneuver command overrides
+InterpretAction using the following code:
+
+\begin{quote}
+\begin{verbatim}
+//------------------------------------------------------------------------------
+//  bool InterpretAction()
+//------------------------------------------------------------------------------
+/**
+ * Parses the command string and builds the corresponding command structures.
+ *
+ * The Maneuver command has the following syntax:
+ *
+ *     Maneuver burn1(sat1);
+ *
+ * where burn1 is an ImpulsiveBurn used to perform the maneuver, and sat1 is the
+ * name of the spacecraft that is maneuvered.  This method breaks the script
+ * line into the corresponding pieces, and stores the name of the ImpulsiveBurn
+ * and the Spacecraft so they can be set to point to the correct objects during
+ * initialization.
+ */
+//------------------------------------------------------------------------------
+bool Maneuver::InterpretAction()
+{
+   StringArray chunks = InterpretPreface();
+
+   // Find and set the burn object name ...
+   StringArray currentChunks = parser.Decompose(chunks[1], "()", false);
+   SetStringParameter(burnNameID, currentChunks[0]);
+
+   // ... and the spacecraft that is maneuvered
+   currentChunks = parser.SeparateBrackets(currentChunks[1], "()", ", ");
+   SetStringParameter(satNameID, currentChunks[0]);
+
+   return true;
+}
+\end{verbatim}
+\end{quote}
+
+\noindent The maneuver command works with GMAT objects -- specifically ImpulsiveBurn objects and
+Spacecraft -- but does not require the usage of the data wrapper classes.  The next example, the
+Vary command, demonstrates usage of the data wrapper classes to set numeric values.
+
+\section{Sample Usage: The Vary Command}
+
+The Vary command has a much more complicated syntax than does the Maneuver command.  Vary commands
+take the form
+\begin{quote}
+\begin{verbatim}
+Vary myDC(Burn1.V = 0.5, {Pert = 0.0001, MaxStep = 0.05, Lower = 0.0, ...
+    Upper = 3.14159, AdditiveScaleFactor = 1.5, MultiplicativeScaleFactor = 0.5);
+\end{verbatim}
+\end{quote}
+
+\noindent The resulting InterpretAction method is a bit more complicated:
+
+\begin{quote}
+\begin{verbatim}
+//------------------------------------------------------------------------------
+//  void Vary::InterpretAction()
+//------------------------------------------------------------------------------
+/**
+ * Parses the command string and builds the corresponding command structures.
+ *
+ * The Vary command has the following syntax:
+ *
+ *     Vary myDC(Burn1.V = 0.5, {Pert = 0.0001, MaxStep = 0.05, ...
+ *               Lower = 0.0, Upper = 3.14159);
+ *
+ * where
+ *
+ * 1. myDC is a Solver used to Vary a set of variables to achieve the
+ * corresponding goals,
+ * 2. Burn1.V is the parameter that is varied, and
+ * 3. The settings in the braces specify features about how the variable can
+ * be changed.
+ *
+ * This method breaks the script line into the corresponding pieces, and stores
+ * the name of the Solver so it can be set to point to the correct object
+ * during initialization.
+ */
+//------------------------------------------------------------------------------
+bool Vary::InterpretAction()
+{
+   // Clean out any old data
+   wrapperObjectNames.clear();
+   ClearWrappers();
+
+   StringArray chunks = InterpretPreface();
+
+   // Find and set solver object name --the only setting in Vary not in a wrapper
+   StringArray currentChunks = parser.Decompose(chunks[1], "()", false);
+   SetStringParameter(SOLVER_NAME, currentChunks[0]);
+
+   // The remaining text in the instruction is the variable definition and
+   // parameters, all contained in currentChunks[1].  Deal with those next.
+   currentChunks = parser.SeparateBrackets(currentChunks[1], "()", ", ");
+
+   // First chunk is the variable and initial value
+   std::string lhs, rhs;
+   if (!SeparateEquals(currentChunks[0], lhs, rhs))
+      // Variable takes default initial value
+      rhs = "0.0";
+
+   variableName = lhs;
+   variableId = -1;
+
+   variableValueString = rhs;
+   initialValueName = rhs;
+
+   // Now deal with the settable parameters
+   currentChunks = parser.SeparateBrackets(currentChunks[1], "{}", ", ");
+
+   for (StringArray::iterator i = currentChunks.begin();
+        i != currentChunks.end(); ++i)
+   {
+      SeparateEquals(*i, lhs, rhs);
+      if (IsSettable(lhs))
+         SetStringParameter(lhs, rhs);
+      else
+         throw CommandException("Setting \"" + lhs +
+            "\" is missing a value required for a " + typeName +
+            " command.\nSee the line \"" + generatingString +"\"\n");
+   }
+
+   MessageInterface::ShowMessage("InterpretAction succeeded!\n");
+   return true;
+}
+\end{verbatim}
+\end{quote}

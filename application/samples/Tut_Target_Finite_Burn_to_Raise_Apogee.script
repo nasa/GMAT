@@ -1,0 +1,255 @@
+%
+%  Script: Tut_Target_Finite_Burn_to_Raise_Apogee
+%
+%  Script for the "Target Finite Burn to Raise Apogee" Users Guide tutorial.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+DefaultSC.DateFormat                   = TAIModJulian;
+DefaultSC.Epoch                        = '21545';
+DefaultSC.CoordinateSystem             = EarthMJ2000Eq;
+DefaultSC.DisplayStateType             = Cartesian;
+DefaultSC.X                            = 7100;
+DefaultSC.Y                            = 0;
+DefaultSC.Z                            = 1300;
+DefaultSC.VX                           = 0;
+DefaultSC.VY                           = 7.35;
+DefaultSC.VZ                           = 1;
+DefaultSC.DryMass                      = 850;
+DefaultSC.Cd                           = 2.2;
+DefaultSC.Cr                           = 1.8;
+DefaultSC.DragArea                     = 15;
+DefaultSC.SRPArea                      = 1;
+DefaultSC.Tanks                        = {ChemicalTank1};
+DefaultSC.Thrusters                    = {ChemicalThruster1};
+DefaultSC.NAIFId                       = -123456789;
+DefaultSC.NAIFIdReferenceFrame         = -123456789;
+DefaultSC.OrbitColor                   = Red;
+DefaultSC.TargetColor                  = Teal;
+DefaultSC.Id                           = 'SatId';
+DefaultSC.Attitude                     = CoordinateSystemFixed;
+DefaultSC.SPADSRPScaleFactor           = 1;
+DefaultSC.ModelFile                    = '../data/vehicle/models/aura.3ds';
+DefaultSC.ModelOffsetX                 = 0;
+DefaultSC.ModelOffsetY                 = 0;
+DefaultSC.ModelOffsetZ                 = 0;
+DefaultSC.ModelRotationX               = 0;
+DefaultSC.ModelRotationY               = 0;
+DefaultSC.ModelRotationZ               = 0;
+DefaultSC.ModelScale                   = 1;
+DefaultSC.AttitudeDisplayStateType     = 'Quaternion';
+DefaultSC.AttitudeRateDisplayStateType = 'AngularVelocity';
+DefaultSC.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+DefaultSC.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+Create ChemicalTank ChemicalTank1;
+
+ChemicalTank1.AllowNegativeFuelMass = false;
+ChemicalTank1.FuelMass              = 756;
+ChemicalTank1.Pressure              = 1500;
+ChemicalTank1.Temperature           = 20;
+ChemicalTank1.RefTemperature        = 20;
+ChemicalTank1.Volume                = 0.75;
+ChemicalTank1.FuelDensity           = 1260;
+ChemicalTank1.PressureModel         = PressureRegulated;
+
+Create ChemicalThruster ChemicalThruster1;
+
+ChemicalThruster1.CoordinateSystem   = Local;
+ChemicalThruster1.Origin             = Earth;
+ChemicalThruster1.Axes               = VNB;
+ChemicalThruster1.ThrustDirection1   = 1;
+ChemicalThruster1.ThrustDirection2   = 0;
+ChemicalThruster1.ThrustDirection3   = 0;
+ChemicalThruster1.DutyCycle          = 1;
+ChemicalThruster1.ThrustScaleFactor  = 1;
+ChemicalThruster1.DecrementMass      = true;
+ChemicalThruster1.Tank               = {ChemicalTank1};
+ChemicalThruster1.MixRatio           = [1];
+ChemicalThruster1.GravitationalAccel = 9.810000000000001;
+ChemicalThruster1.C1                 = 1000;
+ChemicalThruster1.C2                 = 0;
+ChemicalThruster1.C3                 = 0;
+ChemicalThruster1.C4                 = 0;
+ChemicalThruster1.C5                 = 0;
+ChemicalThruster1.C6                 = 0;
+ChemicalThruster1.C7                 = 0;
+ChemicalThruster1.C8                 = 0;
+ChemicalThruster1.C9                 = 0;
+ChemicalThruster1.C10                = 0;
+ChemicalThruster1.C11                = 0;
+ChemicalThruster1.C12                = 0;
+ChemicalThruster1.C13                = 0;
+ChemicalThruster1.C14                = 0;
+ChemicalThruster1.C15                = 0;
+ChemicalThruster1.C16                = 0;
+ChemicalThruster1.K1                 = 300;
+ChemicalThruster1.K2                 = 0;
+ChemicalThruster1.K3                 = 0;
+ChemicalThruster1.K4                 = 0;
+ChemicalThruster1.K5                 = 0;
+ChemicalThruster1.K6                 = 0;
+ChemicalThruster1.K7                 = 0;
+ChemicalThruster1.K8                 = 0;
+ChemicalThruster1.K9                 = 0;
+ChemicalThruster1.K10                = 0;
+ChemicalThruster1.K11                = 0;
+ChemicalThruster1.K12                = 0;
+ChemicalThruster1.K13                = 0;
+ChemicalThruster1.K14                = 0;
+ChemicalThruster1.K15                = 0;
+ChemicalThruster1.K16                = 0;
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp_ForceModel.CentralBody                      = Earth;
+DefaultProp_ForceModel.PrimaryBodies                    = {Earth};
+DefaultProp_ForceModel.Drag                             = None;
+DefaultProp_ForceModel.SRP                              = Off;
+DefaultProp_ForceModel.RelativisticCorrection           = Off;
+DefaultProp_ForceModel.ErrorControl                     = RSSStep;
+DefaultProp_ForceModel.GravityField.Earth.Degree        = 4;
+DefaultProp_ForceModel.GravityField.Earth.Order         = 4;
+DefaultProp_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+DefaultProp_ForceModel.GravityField.Earth.TideModel     = 'None';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM                       = DefaultProp_ForceModel;
+DefaultProp.Type                     = RungeKutta89;
+DefaultProp.InitialStepSize          = 60;
+DefaultProp.Accuracy                 = 9.999999999999999e-012;
+DefaultProp.MinStep                  = 0.001;
+DefaultProp.MaxStep                  = 2700;
+DefaultProp.MaxStepAttempts          = 50;
+DefaultProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn DefaultIB;
+
+DefaultIB.CoordinateSystem   = Local;
+DefaultIB.Origin             = Earth;
+DefaultIB.Axes               = VNB;
+DefaultIB.Element1           = 0;
+DefaultIB.Element2           = 0;
+DefaultIB.Element3           = 0;
+DefaultIB.DecrementMass      = false;
+DefaultIB.Isp                = 300;
+DefaultIB.GravitationalAccel = 9.810000000000001;
+
+Create FiniteBurn FiniteBurn1;
+FiniteBurn1.Thrusters              = {ChemicalThruster1};
+FiniteBurn1.ThrottleLogicAlgorithm = 'MaxNumberOfThrusters';
+
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC1;
+
+DC1.ShowProgress      = true;
+DC1.ReportStyle       = Normal;
+DC1.ReportFile        = 'DifferentialCorrectorDC1.data';
+DC1.MaximumIterations = 25;
+DC1.DerivativeMethod  = ForwardDifference;
+DC1.Algorithm         = NewtonRaphson;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.SolverIterations = Current;
+OFI_DefaultOrbitView.UpperLeft        = [ 0.002941176470588235 0.2149220489977728 ];
+OFI_DefaultOrbitView.Size             = [ 0.4664705882352941 0.5055679287305123 ];
+OFI_DefaultOrbitView.RelativeZOrder   = 170;
+OFI_DefaultOrbitView.Maximized        = false;
+
+OFI_DefaultOrbitView.Add              = {DefaultSC, Earth};
+OFI_DefaultOrbitView.View             = {DefaultOrbit_View};
+
+OFI_DefaultOrbitView.CoordinateSystem = EarthMJ2000Eq;
+OFI_DefaultOrbitView.DrawObject       = [ true true];
+OFI_DefaultOrbitView.DrawXYPlane      = [ false false];
+OFI_DefaultOrbitView.DrawLabel        = [ true true];
+OFI_DefaultOrbitView.DrawGrid         = [ false false];
+
+OFI_DefaultOrbitView.Axes             = On;
+OFI_DefaultOrbitView.XYPlane          = On;
+OFI_DefaultOrbitView.EclipticPlane    = Off;
+OFI_DefaultOrbitView.EnableStars      = On;
+OFI_DefaultOrbitView.StarCount        = 40000;
+OFI_DefaultOrbitView.ShowPlot         = true;
+
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame           = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation  = On;
+DefaultOrbit_View.SetCurrentLocation  = Off;
+
+DefaultOrbit_View.DefaultEye          = [ 30000 0 0 ];
+DefaultOrbit_View.DefaultCenter       = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp           = [ 0 0 1 ];
+
+
+Create GroundTrackPlot DefaultGroundTrackPlot;
+
+DefaultGroundTrackPlot.SolverIterations     = Current;
+DefaultGroundTrackPlot.UpperLeft            = [ 0.4688235294117647 0.2160356347438753 ];
+DefaultGroundTrackPlot.Size                 = [ 0.47 0.5089086859688196 ];
+DefaultGroundTrackPlot.RelativeZOrder       = 172;
+DefaultGroundTrackPlot.Maximized            = false;
+DefaultGroundTrackPlot.Add                  = {DefaultSC};
+DefaultGroundTrackPlot.DataCollectFrequency = 1;
+DefaultGroundTrackPlot.UpdatePlotFrequency  = 50;
+DefaultGroundTrackPlot.NumPointsToRedraw    = 0;
+DefaultGroundTrackPlot.ShowPlot             = true;
+DefaultGroundTrackPlot.CentralBody          = Earth;
+DefaultGroundTrackPlot.TextureMap           = '../data/graphics/texture/ModifiedBlueMarble.jpg';
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable BurnDuration;
+BurnDuration = 0;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop To Perigee' DefaultProp(DefaultSC) {DefaultSC.Earth.Periapsis};
+Target 'Raise Apogee' DC1 {SolveMode = Solve, ExitMode = SaveAndContinue, ShowProgressWindow = true};
+   Vary 'Vary Burn Duration' DC1(BurnDuration = 200, {Perturbation = 0.0001, Lower = 0.0, Upper = 10000, MaxStep = 100, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   BeginFiniteBurn 'Turn Thruster On' FiniteBurn1(DefaultSC);
+   Propagate 'Prop BurnDuration' DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = BurnDuration};
+   EndFiniteBurn 'Turn Thruster Off' FiniteBurn1(DefaultSC);
+   Propagate 'Prop To Apogee' DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis};
+   Achieve 'Achieve Apogee Radius = 12000' DC1(DefaultSC.Earth.RMAG = 12000, {Tolerance = 0.1});
+EndTarget;  % For targeter DC1

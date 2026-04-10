@@ -1,0 +1,2335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0"
+          xml:id="NumericalIntegrators"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>NumericalIntegrators</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>NumericalIntegrators</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>NumericalIntegrators</refname>
+
+    <refpurpose>
+      A propagator models spacecraft motion
+    </refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>
+        A <guilabel>Propagator</guilabel> is the GMAT component used to model spacecraft motion. GMAT contains two types of 
+        propagators: a numerical integrator type, and an ephemeris type. When using a numerical integrator 
+        type propagator, you can choose among a suite of numerical integrators implenting Runge-Kutta and predictor 
+        corrector methods as well the Bulirsch-Stoer integrator. See the Remarks section below for detailed discussion 
+        of GMAT’s numerical integrators as well as performance and accuracy comparisons, and usage recommendations.
+    </para>
+
+    <para>
+      A  <guilabel>Propagator</guilabel> object that uses a numerical integrator (as opposed to an ephemeris propagator) 
+      is one of a few objects in GMAT that is configured differently in the scripting and in the GUI.  
+      In the GUI, you configure the integrator and force model setting on the same dialog box. When working in 
+      the script, you must create a <guilabel>ForceModel</guilabel> object separately from the Propagator and specify the force model 
+      using the “FM” field on the propagator. See examples later in this section for details.
+    </para>
+
+    <para>
+      The ephemeris based propagator is turned off in the GMAT installation because final testing is not complete. 
+      Later in this section, we describe how to enable the SPICE propagator and show a brief example that uses it.
+    </para>
+    
+    <para>
+      <phrase role="ref_seealso">See Also</phrase>: 
+      <xref linkend="ForceModel"/>, 
+      <xref linkend="Propagate"/>
+    </para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0"
+                   frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1"
+                 colwidth=".5*"/>
+
+        <colspec colnum="2"
+                 colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry>
+              <guilabel>StopIfAccuracyIsViolated</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                Flag to stop propagation if integration error value defined by Accuracy is not satisfied.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      BOOLEAN_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      true, false
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      true
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+
+          <row>
+            <entry>
+              <guilabel>MaximumReduction</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                Largest factor by which the step size will be reduced, such that the new step H_new = (MaximumReduction * H_old). Applies only to BulirshStoer Integrator.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      DEFERRED
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt; 0.0 AND 0.0 &lt; MaximumReduction &lt; MinimumReduction
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      1e-005
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+
+          <row>
+            <entry>
+              <guilabel>MinimumReduction</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                Smallest factor by which the step size will be reduced, such that the new step H_new = (MinimumReduction * H_old). Applies only to BulirshStoer Integrator.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      DEFERRED
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt; 0.0  AND 0.0 &lt; MaximumReduction &lt; MinimumReduction
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      default
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+
+          <row>
+            <entry>
+              <guilabel>MinimumTolerance</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                deprecated
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      deprecated- ignored with warning
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      deprecated
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      N/A
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      deprecated
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          
+          <row>
+            <entry>
+              <guilabel>MaxStepAttempts</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The number of attempts the integrator takes to meet the tolerance defined by the Accuracy field.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      INTEGER_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Integer &gt; 1
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      50
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>FM</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                Identifies the force model used by an integrator.  If no force model is provided, GMAT uses an Earth centered 4x4 gravity model only.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      OBJECT_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Valid force model.
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      Script only, Set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      N/A
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para></para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>Type</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                Specifies the integrator or analytic propagator used to model time evolution of spacecraft motion.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      OBJECT_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      PrinceDormand78, PrinceDormand45, RungeKutta89, RungeKutta68, RungeKutta56, BulirschStoer, AdamsBashforthMoulton, SPK
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      RungeKutta89
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>Accuracy</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The desired accuracy for an integration step. GMAT uses the method selected in the ErrorControl field on the Force Model to determine a metric of the integration accuracy. For each step, the integrator ensures that the error in accuracy is smaller than the value defined by the ErrorControl metric.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      REAL_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt; 0, &lt; 1 
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      1e-11 except for ABM integrator which is 1e-10
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>InitialStepSize</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The size of the first step attempted by the integrator.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      REAL_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt; 0.0001
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      60
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>sec</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>LowerError</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The lower bound on integration error, used to determine when to make step size larger. Applies only to AdamsBashforthMoultonIntegrator
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      REAL_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt; 0 AND 0 &lt; LowerError &lt; TargetError &lt; Accuracy
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      1e-13
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>MaxStep</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The maximum allowable step size.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      REAL_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt; 0 AND MinStep &lt;= MaxStep
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      2700
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>sec</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>MinStep</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The minimum allowable step size.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      REAL_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt;= 0 AND MinStep &lt;= MaxStep
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      0.001
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>sec</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>TargetError</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The nominal bound on integration error, used to set the target integration accuracy when adjusting step size.  Applies only to AdamsBashforthMoultonIntegrator
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      REAL_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt; 0 AND 0 &lt; LowerError &lt; TargetError &lt; Accuracy
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      1e-11
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>CentralBody</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The central body of propagation.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      OBJECT_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Valid Celestial body.
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      set
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      Earth
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para></para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>EpochFormat</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The format of the epoch contained in the StartEpoch field.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      STRING_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      A1ModJulian, TAIModJulian, UTCModJulian, TTModJulian, TDBModJulian, A1Gregorian, TAIGregorian, TTGregorian, UTCGregorian, TDBGregorian
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      A1ModJulian
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <guilabel>Start Epoch</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                Only used for an SPK propagator. The initial epoch of propagation. When an epoch is provided that epoch is used as the initial epoch.  When the keyword "FromSpacecraft" is provided, the start epoch is inherited from the spacecraft.
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      STRING_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      "Gregorian: 04 Oct 1957 12:00:00.000 &lt;= Epoch &lt;= 28 Feb 2100 00:00:00.000
+                      Modified Julian: 6116.0 &lt;= Epoch &lt;= 58127.5 or ""FromSpacecraft"""
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+                      
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      21545
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>See Description.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+
+          <row>
+            <entry>
+              <guilabel>StepSize</guilabel>
+            </entry>
+
+            <entry>
+              <para>
+                The step size for an SPK Propagator
+              </para>
+              <variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>
+                      REAL_TYPE
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      Real &gt; 0
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>
+
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      300
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>sec</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist>
+            </entry>
+          </row>
+
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <para>
+      Settings for the embedded Runge-Kutta integrators and the Bulirsch Stoer Integrators:
+    </para>
+    
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center"
+                     contentdepth="100%"
+                     fileref="files/images/Resource_NumericalIntegrators_GUI_1.png"
+                     scalefit="1"
+                     width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>
+      The Adams-Bashforth-Moulton integrator has additional settings, as shown below:
+    </para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center"
+                     contentdepth="100%"
+                     fileref="files/images/Resource_NumericalIntegrators_GUI_2.png"
+                     scalefit="1"
+                     width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <refsection>
+      <title>
+        Best Practices for Using Numerical Integrators
+      </title>
+
+      <para>
+        We recommend that you study the performance and accuracy analysis documented later in 
+        this section to select a numerical integrator for your application.  You may need to perform 
+        further analysis and comparisons for your application.  The comparison data below suggest that 
+        the PrinceDormand78 integrator is the best all purpose integrator in GMAT.  When in doubt, use the 
+        PrinceDormance78 integrator, and set MinStep to zero so that the integrator’s adaptive step algorithm controls 
+        the minimum integration step size.
+      </para>
+
+      <para>
+        Below are some important comments on GMAT’s step size control algorithms 
+        and the dangers of using a non-zero value for the minimum integration step size.
+      </para>
+
+      <warning>
+        <para>
+          Caution: GMAT’s default error computation mode is RSStep and this is a more stringent error control 
+          method than RSSState that is often used as the default in other software such as STK.  If you set 
+          Accuracy to a very small number, 1e-13 for example, and leave ErrorControl set to RSSStep, integrator 
+          performance will be poor, for little if any improvement in the accuracy of the orbit integration.
+        </para>
+
+        <para>
+          To find the best balance between integration accuracy and performance, we recommend you 
+          experiment with the accuracy setting for your selected integrator for your application. 
+          You can start with a relatively high setting of Accuracy, say 1e-9, and lower the accuracy 
+          by an order of magnitude at a time and compare the final orbital states to determine where smaller 
+          values of Accuracy result in longer propagation times without providing more accurate orbital solutions.
+        </para>
+      </warning>
+
+      <warning>
+        <para>
+          Caution: GMAT allows you to set a Minimum Step on numerical integrators. 
+          It is possible that the requested Accuracy cannot be achieved given the MinimumStep setting.  
+          The Propagator flag StopIfAccuracyIsViolated determines the behavior if Accuracy cannot be satisfied.  
+          If StopIfAccuracyIsViolated is true, GMAT will throw an error and stop execution if integration accuracy is not satisfied. 
+          If StopIfAccuracyIsViolated is false, GMAT will only throw a warning that the integration accuracy was not satisfied 
+          but will continue to propagate the orbit.
+        </para>
+      </warning>
+    </refsection>
+
+    <refsection>
+      <title>
+        Numerical Integrators Overview
+      </title>
+
+      <para>
+        The table below describes each numerical integrator in detail.
+      </para>
+
+      <informaltable colsep="0"
+                     frame="topbot">
+        <tgroup cols="2">
+          <colspec colnum="1"
+                   colwidth=".5*"/>
+
+          <colspec colnum="2"
+                   colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Integrator Name</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>
+                <guilabel>RungeKutta89</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  An adaptive step, ninth order Runge-Kutta integrator with eighth order error control. The coefficients were derived by J. Verner. Verner developed several sets 
+                  of coefficients for an 89 integrator and we have chosen the coefficients that are the most robust but not necessarily the most efficient.
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>PrinceDormand78</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  An adaptive step, eighth order Runge-Kutta integrator with seventh order error control. The coefficients were derived by Prince and Dormand.
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>PrinceDormand45</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  An adaptive step, fifth order Runge-Kutta integrator with fourth order error control. The coefficients were derived by Prince and Dormand.
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>RungeKutta68</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  A second order Runge-Kutta-Nystrom type integrator with coefficients developed by by Dormand, 
+                  El-Mikkawy and Prince. The integrator is a 9-stage Nystrom integrator, with error control on both 
+                  the dependent variables and their derivatives. This second order implementation will correctly integrate 
+                  forces that are non-conservative but it is not recommended for this use.  See the integrator comparisons 
+                  below for numerical comparisons.  You cannot use this integrator to integrate mass during a finite maneuver 
+                  because the mass flow rate is a first order differential equation not supported by this integrator.
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>RungeKutta56</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Description
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>IntName</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  A Gragg-Bulirsch-Stoer integrator as described in Numerical Recipes in C. The basic algorithm uses a modified-midpoint algorithm, 
+                  evaluated at intermediate points in the interval of interest, to extrapolate the next state vector from the current state. 
+                  This extrapolation is performed for several different sizes of substeps, and the resulting states are used to estimate the 
+                  results as the step size of the substeps is reduced to zero.
+                </para>
+
+                <para>
+                  This integrator can take large steps that may be undesirable for graphical output or when high precision, 
+                  dense spacecraft ephemerides are required. The Bulirsch-Stoer integrator is best used for long propagations 
+                  required for lifetime and re-entry analysis.
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>AdamsBashforthMoulton</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  A fourth-order Adams-Bashford predictor / Adams-Moulton corrector as described in Fundamentals of 
+                  Astrodynamics by Bate, Mueller and White. The predictor step extrapolates the next state of the 
+                  variables using the the derivative information at the current state and three previous states of the variables. 
+                  The corrector uses derivative information evaluated for this state, along with the derivative information at the 
+                  original state and two preceding states, to tune this state, giving the final, corrected state. The ABM integrator 
+                  uses and the RungeKutta89 integrator to start the integration process.  The ABM is a low order integrator and should 
+                  not be used for precise applications or for highly nonlinear applications such as celestial body flybys.
+                </para>
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>
+        Performance &amp; Accuracy Comparison of Numerical Integrators
+      </title>
+
+      <para>
+        This table below shows performance and accuracy comparisons of numerical integrators for 
+        different orbit types. Performance is normalized and is shown in seconds and accuracy is given in meters.
+      </para>
+
+      <informaltable colsep="0"
+                     frame="topbot">
+        <tgroup cols="8">
+          <colspec colnum="1"
+                   colwidth="2.5*"/>
+
+          <colspec colnum="8"
+                   colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry></entry>
+
+              <entry></entry>
+
+              <entry>LEO</entry>
+
+              <entry>HEO</entry>
+
+              <entry>Lunar Tran</entry>
+
+              <entry>Mars Tran</entry>
+
+              <entry>Finite Thrust (blow down tank)</entry>
+
+              <entry>Finite Thrust (Pressure regulated tank)</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>
+                <guilabel>PrinceDormand78</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Perf (sec)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.466
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.000
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  2.932
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.000
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.000
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.000
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel></guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Diff (m)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0031
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0085
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.00024
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0740
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.00160
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0070
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>PrinceDormand45</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Perf (sec)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  2.862
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  2.0454
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  3.670
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.1930
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.2657
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.488
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel></guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Diff (m)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0010
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0344
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.00226
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.1484
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0022
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.002
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>RungeKutta89</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Perf (sec)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.470
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.1071
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.000
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.0173
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.0259
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.0507
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel></guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Diff (m)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0049
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0132
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0633
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0070
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0019
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.00057
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>RungeKutta68</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Perf (sec)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.000
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.086
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.040
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.026
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel></guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Diff (m)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  64.025
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.600
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0167
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0074
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>RungeKutta56</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Perf (sec)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  2.173
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.4073
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  3.030
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.0770
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.1665
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.2680
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel></guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Diff (m)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0223
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0538
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0023
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.1273
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0060
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.00230
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>Bulirsch Stoer</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Perf (sec)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel></guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Diff (m)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  TBD
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel>Adams-Bashforth-Moulton</guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Perf (sec)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  3.540
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  4.483
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  6.510
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.888
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.707
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.7034
+                </para>
+              </entry>
+            </row>
+
+            <row>
+              <entry>
+                <guilabel></guilabel>
+              </entry>
+
+              <entry>
+                <para>
+                  Diff (m)
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0113
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  1.755
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.1023
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  20.224
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.00005
+                </para>
+              </entry>
+
+              <entry>
+                <para>
+                  0.0025
+                </para>
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>
+        Fields Unique to the AdamsBashforthMoulton Integrator
+      </title>
+
+      <para>
+        The Adams-Bashforth-Moulton integrator has two additional fields named TargetError and LowerError that 
+        are only active when Type is set to AdamsBashforthMoulton.  If you are using another integrator type,
+        those fields must be removed from your script file to avoid parsing errors.  When working in the GUI, this 
+        is performed automatically.  See examples below for more details.
+      </para>
+    </refsection>
+
+    <refsection>
+      <title>
+        Fields Unique to the BulirschStoer Integrator
+      </title>
+
+      <para>
+        The Bulirsh-Stoer integrator has additional fields named MinimumReduction, MaximumReduction, and MinimumTolerance that 
+        are only active when Type is set to BulirschStoer.  Note these fields are only available in the script.  Furthermore, 
+        If you are using another integrator type, those fields must be removed from your script file to avoid parsing errors.  
+        When working in the GUI, this is performed automatically.  See examples below for more details.
+      </para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>
+        Propagate an orbit using a general purpose Runge-Kutta integrator.
+      </para>
+
+      <programlisting>
+        <code>
+  Create Spacecraft aSat;
+  Create ForceModel aForceModel;
+
+  Create Propagator aProp;
+  aProp.FM          	= aForceModel;
+  aProp.Type        	= PrinceDormand78;
+  aProp.InitialStepSize   = 60;
+  aProp.Accuracy    	= 1e-011;
+  aProp.MinStep     	= 0;
+  aProp.MaxStep     	= 86400;
+  aProp.MaxStepAttempts = 50;
+  aProp.StopIfAccuracyIsViolated = true;
+
+  BeginMissionSequence
+
+  Propagate aProp(aSat) {aSat.ElapsedDays = .2};
+        </code>
+      </programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>
+        Propagate an orbit using an Adams-Bashforth-Moulton predictor-corrector integrator.
+      </para>
+
+      <programlisting>
+        <code>
+  Create Spacecraft aSat;
+  Create ForceModel aForceModel;
+  aForceModel.ErrorControl = RSSStep;
+
+  Create Propagator aProp;
+  aProp.FM          	= aForceModel;
+  aProp.Type        	= AdamsBashforthMoulton;
+  aProp.InitialStepSize   = 60;
+  aProp.MinStep     	= 0;
+  aProp.MaxStep     	= 86400;
+  aProp.MaxStepAttempts   = 50;
+  %  Note the following fields must be set with decreasing values!
+  aProp.Accuracy    	= 1e-010;
+  aProp.TargetError 	= 1e-011;
+  aProp.LowerError  	= 1e-013;
+  aProp.StopIfAccuracyIsViolated = true;
+
+  BeginMissionSequence
+
+  Propagate aProp(aSat) {aSat.ElapsedDays = .2};
+        </code>
+      </programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>
+        Propagate an orbit using the Bulirsch-Stoer integrator.
+      </para>
+
+      <programlisting>
+        <code>
+  Create Spacecraft aSat;
+  Create ForceModel aForceModel;
+
+  Create Propagator aProp;
+  aProp.FM          	= aForceModel;
+  aProp.Type        	= BulirschStoer;
+  aProp.InitialStepSize   = 60;
+  aProp.MinStep     	= 0;
+  aProp.MaxStep     	= 86400;
+  aProp.MaxStepAttempts   = 50;
+  aProp.Accuracy    	= 1e-011;
+  aProp.MinimumReduction = 0.7;
+  aProp.MaximumReduction = 1e-005;
+  aProp.MinimumTolerance = 1e-012;
+  aProp.StopIfAccuracyIsViolated = true;
+
+  BeginMissionSequence
+
+  Propagate aProp(aSat) {aSat.ElapsedDays = .2};
+        </code>
+      </programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>
+        Propagate using a fixed step configuration.  Do this by setting InitialStepSize to the 
+        desired fixed step size and setting ErrorControl to None.  This example propagates in 
+        constant steps of 30 seconds.
+      </para>
+
+      <programlisting>
+        <code>
+  Create Spacecraft aSat;
+  Create ForceModel aForceModel;
+  aForceModel.ErrorControl = None;
+
+  Create Propagator aProp;
+  aProp.FM          	= aForceModel;
+  aProp.Type        	= PrinceDormand78;
+  aProp.InitialStepSize = 30;
+
+  BeginMissionSequence
+
+  Propagate aProp(aSat) {aSat.ElapsedDays = .2};
+        </code>
+      </programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

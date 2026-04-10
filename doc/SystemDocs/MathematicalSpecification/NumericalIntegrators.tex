@@ -1,0 +1,168 @@
+\chapter{Numerical Integrators} \label{Ch:NumericalIntegrators}
+
+\section{Runge-Kutta Integrators} \index{Numerical
+integrators!Runge-Kutta}
+
+The Runge-Kutta integration scheme is a single step method used to
+solve  differential equations for $n$ coupled variables of the
+form
+
+\[{{dr^i}\over{dt}} = f(t,r)\]
+
+(The superscript in this discussion refers to the variables; hence
+$f^i$ is the $i^{th}$ variable, and $r^{(n)}$ refers to all $n$
+variables.) The method takes an integration step, $h$, by breaking
+the  interval into several stages (usually of smaller size) and
+calculating  estimates of the integration result at each stage.
+The later stages use the  results of the earlier stages. The
+cumulative effect of the integration is  an approximate total step
+$\delta t$, accurate to a given order in the  series expansion of
+the differential equation, for the state variables  $r_i(t+\delta
+t)$ given the state $r_i(t)$.
+
+The time increment for a given stage is given as a multiple $a_i$
+of the  total time step desired; thus for the $i^{th}$ stage the
+interval used  for the calculation is $a_i \delta t$; the estimate
+of the integrated  state at this stage is given by
+
+\[ k_i^{(n)} = \delta t f(t+a_i\delta t, r^{(n)}(t) + \sum_{j=1}^{i-1}b_{ij}k_j^{(n)}) \]
+
+where $b_{ij}$ contains a set of coefficients specific to the
+Runge-Kutta instance being calculated. Given the results of the
+stage calculations, the  total integration step can be calculated
+using another set of coefficients, $c_j$ and the formula
+
+\[ r^{(n)}(t+\delta t) = r^{(n)}(t) + \sum_{j=1}^{stages}c_j k_j^{(n)} \]
+
+The error control for these propagators is implemented by
+comparing the  results of two different orders of integration. The
+difference between the  two steps provides an estimate of the
+accuracy of the step; a second set of  coefficients corresponding
+to this second integration scheme can be used to obtain a solution
+
+\[r'^{(n)}(t+\delta t) = r^{(n)}(t) + \sum_{j=1}^{stages}c_j^* k_j^{*(n)}\]
+
+With care, the stage estimates $k_j$ and $k_j^*$ can be selected
+so  that they are the same; in that case, the estimate of the
+error in the  integration $\Delta^{(n)}$ can be written
+
+\[ \Delta^{(n)} = \left| \sum_{j=1}^{stages}(c_j - c_j^*) k_j^{(n)} \right| \]
+
+(The difference between the coefficients $c_j - c_j^*$ is the
+array of  error estimate coefficients (ee) in this code.)
+
+Once the estimated error has been calculated, the size of the
+integration  step can be adapted to a size more appropriate to the
+desired accuracy of the  integration. If the step results in a
+solution that is not accurate enough, the step needs to be
+recalculated with a smaller step size. Labeling the desired
+accuracy $\alpha$ and the obtained accuracy $\epsilon$
+(calculated, for instance, as the largest element of the array
+$\Delta$), the new step used by the Runge-Kutta integrator is
+
+\[\delta t_{new}= \sigma\delta t\left({{\alpha}\over{\epsilon}}\right)^{1/(m-1)}\]
+
+where $m$ is the order of truncation of the series expansion of
+the  differential equations being solved. The factor $\sigma$ is a
+safety  factor incorporated into the calculation to avoid
+unnecessary iteration over attempted steps. Common practice is to
+set this factor to 0.9; that is the default value used in this
+implementation.
+
+Similarly, if the step taken does not result in the desired
+accuracy, you may  want to increase the step size parameter for
+the next integration step. The  new estimate for the desired
+stepsize is given by
+
+\[\delta t_{new}= \sigma\delta t\left({{\alpha}\over{\epsilon}}\right)^{1/(m)}\]
+
+Sometimes you do not want to increase the stepsize in this manner;
+for example,  you may want to keep the maximum step taken at some
+fixed value. This  implementation provides a mechanism for
+specifying a maximum allowed step.
+
+Sometimes it is convenient to request steps of a specified size,
+regardless  of the stepsize control algorithm or the calculation
+of the \char`\"{}best step\char`\"{}  described above. This
+implementation accomplishes that task by taking  multiple error
+controlled steps is necessary to step across the requested
+interval.
+
+Both of these features are implemented using the boolean flags
+described in  the base class for the integrators. See the
+documentation for the {\bf Integrator} {\rm
+(p.\,\pageref{classIntegrator})} class for more information about
+these flags.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\subsubsection{\setlength{\rightskip}{0pt plus 5cm}Runge\-Kutta::Runge\-Kutta (int {\em st}, int {\em order})}\label{classRungeKutta_a0}
+
+
+
+Provides the greatest relative error in the state vector.
+
+This method takes the state vector and calculates the error in
+each  component. The error is then divided by the change in the
+component. The function returns the largest of the resulting
+relative errors.
+
+Override this method if you want a different error estimate for
+the stepsize  control. For example, we are using
+
+\[error_i = \left({{\Delta_i(t+\delta t)}\over {r_i(t+\delta t) - r_i(t)}}\right)\]
+
+Another popular approach is to divide the estimated error
+$\Delta_i$ by  the norm of the corresponding 3-vector; for
+instance, divide the error in x  by the magnitude of the
+displacement in position for the step.
+
+
+\section{Prince-Dormand Integrators}
+
+\section{Adams Bashforth Moulton}  \index{Numerical
+integrators!Adams-Bashforth-Moulton}
+
+Implementation of the Adams-Bashford-Moulton Predictor-Corrector.
+
+This code implements a fourth-order Adams-Bashford predictor /
+Adams-Moulton corrector pair to integrate a set of first order
+differential equations. The algorithm is found at  {\tt
+http://chemical.caeds.eng.uml.edu/onlinec/white/math/s1/s1num/s1num.html}
+or in Bate, Mueller and White, pp. 415-417.
+
+The predictor step extrapolates the next state $r_{i+1}$ of the
+variables using the the derivative information $(f)$ at the
+current state and three  previous states of the variables, by
+applying the equation
+
+\[ r_{i+1}^{*j} = r_i^j + {{h}\over{24}}\left[55 f_n^j - 59 f_{n-1}^j + 37 f_{n-2}^j - 9 f_{n-3}^j \right] \]
+
+The corrector uses derivative information evaluated for this
+state, along  with the derivative information at the original
+state and two preceding  states, to tune this state, giving the
+final, corrected state:
+
+\[ r_{i+1}^{j} = r_i^j + {{h}\over{24}}\left[9 f_{n+1}^{*j} + 19 f_{n}^j - 5 f_{n-1}^j + 1 f_{n-2}^j \right] \]
+
+Bate, Mueller and White give the estimated accuracy of this
+solution to be
+
+\[ee = {{19}\over{270}} \left|r_{i+1}^{*j} - r_{i+1}^{j}\right|\]
+
+Method used to fire the step refinement (the corrector phase).
+
+\section{Bulirsch-Stoer} \index{Numerical integrators!Bulirsch-Stoer}
+
+\section{Stopping Condition Algorithm} \index{Numerical integrators!Stopping condition algorithm}
+\index{Stopping condition algorithm}
+
+\section{Integrator Coefficients} \index{Numerical integrators!Coefficients}
+
+
+\input{PD45Coefficients}
+\input{PD56Coefficients}
+\input{RKF56Coefficients}
+%\clearpage
+\input{PD78Coefficients}

@@ -1,0 +1,541 @@
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+
+%----------------------------------------
+%---------- Spacecrafts
+%----------------------------------------
+
+Create Spacecraft Sat;
+GMAT Sat.DateFormat = UTCGregorian;
+GMAT Sat.Epoch = '01 Dec 2017 01:07:06.978';
+GMAT Sat.CoordinateSystem = EarthMJ2000Eq;
+GMAT Sat.DisplayStateType = Keplerian;
+GMAT Sat.SMA = 6563.421890530313;
+GMAT Sat.ECC = 0.001999999999998803;
+GMAT Sat.INC = 28.68369284287024;
+GMAT Sat.RAAN = 263.0110331380765;
+GMAT Sat.AOP = 138.5702976743709;
+GMAT Sat.TA = 349.187892842056;
+GMAT Sat.DryMass = 831;
+GMAT Sat.Cd = 2.2;
+GMAT Sat.Cr = 1.3;
+GMAT Sat.DragArea = 20.438;
+GMAT Sat.SRPArea = 20.438;
+
+Create Spacecraft InitSat;
+GMAT InitSat.DateFormat = TAIModJulian;
+GMAT InitSat.Epoch = '21545.000000000';
+GMAT InitSat.CoordinateSystem = EarthMJ2000Eq;
+GMAT InitSat.DisplayStateType = Cartesian;
+GMAT InitSat.X = 7100;
+GMAT InitSat.Y = 0;
+GMAT InitSat.Z = 1300;
+GMAT InitSat.VX = 0;
+GMAT InitSat.VY = 7.35;
+GMAT InitSat.VZ = 1;
+GMAT InitSat.DryMass = 850;
+GMAT InitSat.Cd = 2.2;
+GMAT InitSat.Cr = 1.8;
+GMAT InitSat.DragArea = 15;
+GMAT InitSat.SRPArea = 1;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel NearEarthProp_ForceModel;
+GMAT NearEarthProp_ForceModel.CentralBody = Earth;
+GMAT NearEarthProp_ForceModel.PointMasses = {Earth, Sun, Luna};
+GMAT NearEarthProp_ForceModel.Drag = None;
+GMAT NearEarthProp_ForceModel.SRP = Off;
+GMAT NearEarthProp_ForceModel.ErrorControl = RSSStep;
+
+%%  Create a force model for near Lunar propagation
+Create ForceModel NearMoonProp_ForceModel;
+GMAT NearMoonProp_ForceModel.CentralBody = Luna;
+GMAT NearMoonProp_ForceModel.PrimaryBodies = {Luna};
+GMAT NearMoonProp_ForceModel.PointMasses = {Sun, Earth, Jupiter};
+GMAT NearMoonProp_ForceModel.Drag = None;
+GMAT NearMoonProp_ForceModel.SRP = On;
+GMAT NearMoonProp_ForceModel.ErrorControl = RSSStep;
+GMAT NearMoonProp_ForceModel.GravityField.Luna.Degree = 10;
+GMAT NearMoonProp_ForceModel.GravityField.Luna.Order = 10;
+GMAT NearMoonProp_ForceModel.GravityField.Luna.PotentialFile = 'LP165P.cof';
+GMAT NearMoonProp_ForceModel.SRP.Flux = 1367;
+GMAT NearMoonProp_ForceModel.SRP.Nominal_Sun = 149597870.691;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator NearMoonProp;
+GMAT NearMoonProp.FM = NearMoonProp_ForceModel;
+GMAT NearMoonProp.Type = RungeKutta89;
+GMAT NearMoonProp.InitialStepSize = 60;
+GMAT NearMoonProp.Accuracy = 9.999999999999999e-012;
+GMAT NearMoonProp.MinStep = 0.001;
+GMAT NearMoonProp.MaxStep = 86400;
+GMAT NearMoonProp.MaxStepAttempts = 50;
+
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator NearEarthProp;
+GMAT NearEarthProp.FM = NearEarthProp_ForceModel;
+GMAT NearEarthProp.Type = RungeKutta89;
+GMAT NearEarthProp.InitialStepSize = 60;
+GMAT NearEarthProp.Accuracy = 1e-012;
+GMAT NearEarthProp.MinStep = 1e-008;
+GMAT NearEarthProp.MaxStep = 160000;
+GMAT NearEarthProp.MaxStepAttempts = 50;
+
+
+%----------------------------------------
+%---------- Calculated Points
+%----------------------------------------
+
+Create Barycenter EarthMoonBary;
+GMAT EarthMoonBary.BodyNames = {Earth, Luna};
+
+Create LibrationPoint ESML2;
+GMAT ESML2.Primary = Sun;
+GMAT ESML2.Secondary = Earth;
+GMAT ESML2.Point = 'L2';
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TOI;
+GMAT TOI.Origin = Earth;
+GMAT TOI.Axes = VNB;
+GMAT TOI.VectorFormat = Cartesian;
+GMAT TOI.Element1 = 3.1;
+GMAT TOI.Element2 = 0;
+GMAT TOI.Element3 = 0;
+
+Create ImpulsiveBurn P1;
+GMAT P1.Origin = Earth;
+GMAT P1.Axes = VNB;
+GMAT P1.VectorFormat = Cartesian;
+GMAT P1.Element1 = 0;
+GMAT P1.Element2 = 0;
+GMAT P1.Element3 = 0;
+
+Create ImpulsiveBurn P2;
+GMAT P2.Origin = Earth;
+GMAT P2.Axes = VNB;
+GMAT P2.VectorFormat = Cartesian;
+GMAT P2.Element1 = 0;
+GMAT P2.Element2 = 0;
+GMAT P2.Element3 = 0;
+
+%----------------------------------------
+%---------- Variables, Arrays, Strings
+%----------------------------------------
+
+Create Variable YAmp I SMA ECC INC TA RAAN AOP Epoch EnergyError;
+Create Variable FLow FHigh Prod c DesiredEnergy Error BdotT LowerBound UpperBound LB;
+Create Variable UB BoxSize LowerBoxSize UpperBoxSize;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthMJ2000Eq;
+GMAT EarthMJ2000Eq.Origin = Earth;
+GMAT EarthMJ2000Eq.Axes = MJ2000Eq;
+GMAT EarthMJ2000Eq.UpdateInterval = 60;
+GMAT EarthMJ2000Eq.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthMJ2000Ec;
+GMAT EarthMJ2000Ec.Origin = Earth;
+GMAT EarthMJ2000Ec.Axes = MJ2000Ec;
+GMAT EarthMJ2000Ec.UpdateInterval = 60;
+GMAT EarthMJ2000Ec.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthFixed;
+GMAT EarthFixed.Origin = Earth;
+GMAT EarthFixed.Axes = BodyFixed;
+GMAT EarthFixed.UpdateInterval = 60;
+GMAT EarthFixed.OverrideOriginInterval = false;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthMoonRot;
+GMAT EarthMoonRot.Origin = Earth;
+GMAT EarthMoonRot.Axes = ObjectReferenced;
+GMAT EarthMoonRot.UpdateInterval = 60;
+GMAT EarthMoonRot.OverrideOriginInterval = false;
+GMAT EarthMoonRot.XAxis = R;
+GMAT EarthMoonRot.ZAxis = N;
+GMAT EarthMoonRot.Primary = Luna;
+GMAT EarthMoonRot.Secondary = Earth;
+
+Create CoordinateSystem EarthSunRotCS;
+GMAT EarthSunRotCS.Origin = Earth;
+GMAT EarthSunRotCS.Axes = ObjectReferenced;
+GMAT EarthSunRotCS.UpdateInterval = 60;
+GMAT EarthSunRotCS.OverrideOriginInterval = false;
+GMAT EarthSunRotCS.XAxis = R;
+GMAT EarthSunRotCS.ZAxis = N;
+GMAT EarthSunRotCS.Primary = Sun;
+GMAT EarthSunRotCS.Secondary = Earth;
+
+Create CoordinateSystem ESML2Centered;
+GMAT ESML2Centered.Origin = ESML2;
+GMAT ESML2Centered.Axes = ObjectReferenced;
+GMAT ESML2Centered.UpdateInterval = 0;
+GMAT ESML2Centered.OverrideOriginInterval = false;
+GMAT ESML2Centered.XAxis = R;
+GMAT ESML2Centered.ZAxis = N;
+GMAT ESML2Centered.Primary = Sun;
+GMAT ESML2Centered.Secondary = Earth;
+
+Create CoordinateSystem MoonInertial;
+GMAT MoonInertial.Origin = Luna;
+GMAT MoonInertial.Axes = BodyInertial;
+GMAT MoonInertial.UpdateInterval = 60;
+GMAT MoonInertial.OverrideOriginInterval = false;
+GMAT MoonInertial.Epoch = 21544.99962789778;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC1;
+GMAT DC1.ShowProgress = true;
+GMAT DC1.ReportStyle = 'Normal';
+GMAT DC1.TargeterTextFile = 'DifferentialCorrectorDC1.data';
+GMAT DC1.MaximumIterations = 45;
+GMAT DC1.UseCentralDifferences = false;
+
+%----------------------------------------
+%---------- Plots and Reports
+%----------------------------------------
+
+Create ReportFile Data;
+GMAT Data.SolverIterations = Current;
+GMAT Data.Filename = './output/SampleMissions/Ex_FindL2TransferWithLunar.report';
+GMAT Data.Precision = 16;
+GMAT Data.WriteHeaders = On;
+GMAT Data.LeftJustify = On;
+GMAT Data.ZeroFill = Off;
+GMAT Data.ColumnWidth = 20;
+
+%----------------------------------------
+%---------- Plots and Reports
+%----------------------------------------
+
+Create OpenGLPlot SystemView;
+GMAT SystemView.SolverIterations = All;
+GMAT SystemView.Add = {Sat, Earth, Luna};
+GMAT SystemView.OrbitColor = [ 255 32768 12632256 ];
+GMAT SystemView.TargetColor = [ 8421440 0 0 ];
+GMAT SystemView.CoordinateSystem = EarthMoonRot;
+GMAT SystemView.ViewPointReference = Earth;
+GMAT SystemView.ViewPointVector = [ 10000 10000 10000 ];
+GMAT SystemView.ViewDirection = Earth;
+GMAT SystemView.ViewScaleFactor = 40;
+GMAT SystemView.ViewUpCoordinateSystem = EarthMoonRot;
+GMAT SystemView.ViewUpAxis = Z;
+GMAT SystemView.CelestialPlane = Off;
+GMAT SystemView.XYPlane = Off;
+GMAT SystemView.WireFrame = Off;
+GMAT SystemView.Axes = On;
+GMAT SystemView.Grid = Off;
+GMAT SystemView.SunLine = Off;
+GMAT SystemView.UseInitialView = On;
+GMAT SystemView.DataCollectFrequency = 3;
+GMAT SystemView.UpdatePlotFrequency = 50;
+GMAT SystemView.NumPointsToRedraw = 100;
+GMAT SystemView.ShowPlot = true;
+
+Create OpenGLPlot EarthView;
+GMAT EarthView.SolverIterations = None;
+GMAT EarthView.Add = {Sat, Earth, Luna, ESML2};
+GMAT EarthView.OrbitColor = [ 255 32768 4227327 65280 ];
+GMAT EarthView.TargetColor = [ 8421440 0 0 8421440 ];
+GMAT EarthView.CoordinateSystem = EarthSunRotCS;
+GMAT EarthView.ViewPointReference = Earth;
+GMAT EarthView.ViewPointVector = [ 0 0 30000 ];
+%GMAT EarthView.ViewPointVector = [ 0 0 30000 ];
+GMAT EarthView.ViewDirection = Earth;
+GMAT EarthView.ViewScaleFactor = 75;
+GMAT EarthView.ViewUpCoordinateSystem = EarthSunRotCS;
+GMAT EarthView.ViewUpAxis = Y;
+GMAT EarthView.CelestialPlane = Off;
+GMAT EarthView.XYPlane = Off;
+GMAT EarthView.WireFrame = Off;
+GMAT EarthView.Axes = Off;
+GMAT EarthView.Grid = Off;
+GMAT EarthView.SunLine = Off;
+GMAT EarthView.UseInitialView = On;
+GMAT EarthView.DataCollectFrequency = 5;
+GMAT EarthView.UpdatePlotFrequency = 50;
+GMAT EarthView.NumPointsToRedraw = 0;
+GMAT EarthView.ShowPlot = true;
+
+Create OpenGLPlot EarthView2;
+GMAT EarthView2.SolverIterations = All;
+GMAT EarthView2.Add = {Sat, Earth, Luna, ESML2};
+GMAT EarthView2.OrbitColor = [ 255 32768 4227327 65280 ];
+GMAT EarthView2.TargetColor = [ 8421440 0 0 8421440 ];
+GMAT EarthView2.CoordinateSystem = EarthSunRotCS;
+GMAT EarthView2.ViewPointReference = Earth;
+GMAT EarthView2.ViewPointVector = [ 0 0 30000 ];
+GMAT EarthView2.ViewDirection = Earth;
+GMAT EarthView2.ViewScaleFactor = 75;
+GMAT EarthView2.ViewUpCoordinateSystem = EarthSunRotCS;
+GMAT EarthView2.ViewUpAxis = Y;
+GMAT EarthView2.CelestialPlane = Off;
+GMAT EarthView2.XYPlane = Off;
+GMAT EarthView2.WireFrame = Off;
+GMAT EarthView2.Axes = Off;
+GMAT EarthView2.Grid = Off;
+GMAT EarthView2.SunLine = Off;
+GMAT EarthView2.UseInitialView = On;
+GMAT EarthView2.DataCollectFrequency = 5;
+GMAT EarthView2.UpdatePlotFrequency = 50;
+GMAT EarthView2.NumPointsToRedraw = 0;
+GMAT EarthView2.ShowPlot = true;
+
+Create OpenGLPlot MoonView;
+GMAT MoonView.SolverIterations = None;
+GMAT MoonView.Add = {Sat, Luna, Earth};
+GMAT MoonView.OrbitColor = [ 255 1092262094 32768 ];
+GMAT MoonView.TargetColor = [ 8421440 0 0 ];
+GMAT MoonView.CoordinateSystem = MoonInertial;
+GMAT MoonView.ViewPointReference = Luna;
+GMAT MoonView.ViewPointVector = [ 30000 30000 30000 ];
+GMAT MoonView.ViewDirection = Luna;
+GMAT MoonView.ViewScaleFactor = 1;
+GMAT MoonView.ViewUpCoordinateSystem = MoonInertial;
+GMAT MoonView.ViewUpAxis = Z;
+GMAT MoonView.CelestialPlane = Off;
+GMAT MoonView.XYPlane = Off;
+GMAT MoonView.WireFrame = Off;
+GMAT MoonView.Axes = On;
+GMAT MoonView.Grid = Off;
+GMAT MoonView.SunLine = Off;
+GMAT MoonView.UseInitialView = On;
+GMAT MoonView.DataCollectFrequency = 5;
+GMAT MoonView.UpdatePlotFrequency = 50;
+GMAT MoonView.NumPointsToRedraw = 150;
+GMAT MoonView.ShowPlot = true;
+
+Create OpenGLPlot EarthInertial;
+GMAT EarthInertial.SolverIterations = None;
+GMAT EarthInertial.Add = {Sat, Luna, ESML2, Earth, Sun};
+GMAT EarthInertial.OrbitColor = [ 3808428287 1743054 2316998862 32768 4227327 ];
+GMAT EarthInertial.TargetColor = [ 8421440 0 8421440 0 0 ];
+GMAT EarthInertial.CoordinateSystem = EarthMJ2000Eq;
+GMAT EarthInertial.ViewPointReference = Earth;
+GMAT EarthInertial.ViewPointVector = [ 0 0 30000 ];
+GMAT EarthInertial.ViewDirection = Earth;
+GMAT EarthInertial.ViewScaleFactor = 100;
+GMAT EarthInertial.ViewUpCoordinateSystem = EarthMJ2000Eq;
+GMAT EarthInertial.ViewUpAxis = Y;
+GMAT EarthInertial.CelestialPlane = Off;
+GMAT EarthInertial.XYPlane = Off;
+GMAT EarthInertial.WireFrame = Off;
+GMAT EarthInertial.Axes = Off;
+GMAT EarthInertial.Grid = Off;
+GMAT EarthInertial.SunLine = On;
+GMAT EarthInertial.UseInitialView = On;
+GMAT EarthInertial.DataCollectFrequency = 5;
+GMAT EarthInertial.UpdatePlotFrequency = 50;
+GMAT EarthInertial.NumPointsToRedraw = 150;
+GMAT EarthInertial.ShowPlot = true;
+
+Create OpenGLPlot AboveL2;
+GMAT AboveL2.SolverIterations = All;
+GMAT AboveL2.Add = {Sat, Earth, ESML2, Luna};
+GMAT AboveL2.OrbitColor = [ 255 1743054 1743054 1743054 ];
+GMAT AboveL2.TargetColor = [ 8421440 8421440 8421440 8421440 ];
+GMAT AboveL2.CoordinateSystem = ESML2Centered;
+GMAT AboveL2.ViewPointReference = ESML2;
+GMAT AboveL2.ViewPointVector = [ 0 0 30000 ];
+GMAT AboveL2.ViewDirection = ESML2;
+GMAT AboveL2.ViewScaleFactor = 75;
+GMAT AboveL2.ViewUpCoordinateSystem = ESML2Centered;
+GMAT AboveL2.ViewUpAxis = Y;
+GMAT AboveL2.CelestialPlane = Off;
+GMAT AboveL2.XYPlane = Off;
+GMAT AboveL2.WireFrame = Off;
+GMAT AboveL2.Axes = Off;
+GMAT AboveL2.Grid = Off;
+GMAT AboveL2.SunLine = Off;
+GMAT AboveL2.UseInitialView = On;
+GMAT AboveL2.DataCollectFrequency = 5;
+GMAT AboveL2.UpdatePlotFrequency = 50;
+GMAT AboveL2.NumPointsToRedraw = 150;
+GMAT AboveL2.ShowPlot = true;
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+Toggle EarthView2 AboveL2 Off;
+
+Maneuver TOI(Sat);
+GMAT SMA = Sat.SMA;
+GMAT ECC = Sat.ECC;
+GMAT INC = Sat.INC;
+GMAT TA = Sat.TA;
+
+
+%---------------------------------------------------------
+%  First Target RAAN and AOP to get close to the moon
+%--------------------------------------------------------- 
+GMAT Epoch = 28025.00;
+GMAT Sat.A1Epoch = Epoch;
+GMAT InitSat = Sat;
+
+Target DC1;
+   
+   Vary DC1(Sat.RAAN = 45.1, {Perturbation = .1, MaxStep = 45, Lower = -360, Upper = 360});
+   Vary DC1(Sat.AOP = 2.5, {Perturbation = .1, MaxStep = 45, Lower = -360, Upper = 360});
+   
+   GMAT RAAN = Sat.RAAN;
+   GMAT AOP = Sat.AOP;
+   
+   Propagate NearEarthProp(Sat) {Sat.Earth.RMAG = 340000, Sat.ElapsedDays = 4, Sat.Luna.RMAG = 1000};
+   
+   Achieve DC1(Sat.EarthMoonRot.RA = 180, {Tolerance = 1});
+   Achieve DC1(Sat.EarthMoonRot.DEC = 0, {Tolerance = 1});
+   
+EndTarget;  % For targeter DC1
+
+GMAT Sat = InitSat;
+GMAT Sat.RAAN = RAAN;
+GMAT Sat.AOP = AOP;
+GMAT Sat.A1Epoch = Epoch;
+GMAT InitSat = Sat;
+
+
+%---------------------------------------------------------
+%  Determine BdotT value to get desired energy
+%---------------------------------------------------------
+%  First Target RAAN and AOP to get closed to the moon 
+GMAT DesiredEnergy = -0.2076893509448376;
+GMAT BdotT = 10000;
+GMAT c = 0;
+GMAT LB = 10000;
+GMAT UB = 11000;
+GMAT Error = 1e10;
+While Error >= 0.000001 & c < 20
+   
+   GMAT c = c + 1;
+   
+   %  Perform algorithm starup calculations
+   If c == 1
+      GMAT BdotT = LB;
+   EndIf;
+   
+   If c == 2
+      GMAT BdotT = UB;
+   EndIf;
+   
+   GMAT Sat = InitSat;
+   
+   %---------------------------------------------------------
+   %  Now Target on BdotT and BdotR
+   %---------------------------------------------------------  
+   Target DC1;
+      
+      Vary DC1(P1.Element1 = 0.01, {Perturbation = .00001, MaxStep = .05, Lower = -360, Upper = 360});
+      Vary DC1(P1.Element3 = 0.001, {Perturbation = .00001, MaxStep = .05, Lower = -360, Upper = 360});
+      Maneuver P1(Sat);
+      
+      Propagate NearEarthProp(Sat) {Sat.ElapsedDays = 1.0};
+      Propagate NearMoonProp(Sat) {Sat.Luna.Periapsis};
+      
+      Achieve DC1(Sat.MoonInertial.BdotT = BdotT, {Tolerance = .0001});
+      Achieve DC1(Sat.MoonInertial.BdotR = 0, {Tolerance = .0001});
+      
+   EndTarget;  % For targeter DC1
+   Propagate NearMoonProp(Sat) {Sat.ESML2Centered.X = -500000, Sat.ESML2Centered.X = 500000, StopTolerance = 0.0001};
+   Propagate NearMoonProp(Sat) {Sat.ElapsedDays = 160, Sat.ESML2Centered.X = -1000000, Sat.ESML2Centered.X = 1000000, StopTolerance = 0.0001};
+   
+   %  Calculate different between actual and desired energy
+   GMAT EnergyError = Sat.Energy - DesiredEnergy;
+   
+   %  Perform algorithm starup calculations
+   If c == 1
+      GMAT FLow = EnergyError;
+   EndIf;
+   If c == 2
+      GMAT FHigh = EnergyError;
+   EndIf;
+   
+   %  If on pass 3 Prod is positive, the the original values
+   %  of UB and LB did not bracket the root.  Try a larger spread
+   %  for UB and LB and run again.
+   If c == 3
+      GMAT Prod = FLow*FHigh;
+      If Prod > 0
+         Stop;
+      EndIf;
+   EndIf;
+   
+   %  Find next root estimate
+   If c > 2
+      
+      GMAT Prod = FLow*EnergyError;
+      
+      If Prod < 0
+         GMAT UB = BdotT;
+      Else
+         GMAT LB = BdotT;
+      EndIf;
+   
+   EndIf;
+   
+   Report Data Error UB BdotT LB EnergyError Sat.Energy DesiredEnergy;
+   GMAT Error = sqrt( (EnergyError)^2 );
+   GMAT BdotT = ( UB + LB ) / 2;
+
+EndWhile;
+
+GMAT Sat = InitSat;
+Maneuver P1(Sat);
+GMAT InitSat = Sat;
+Toggle EarthView2 AboveL2 On;
+
+
+%%---------------------------------------------------------
+%%  Target to get desired velocity at second Y crossing
+%%---------------------------------------------------------
+GMAT LowerBoxSize = -500000;
+GMAT UpperBoxSize = 500000;
+Target DC1;
+   
+   Vary DC1(P2.Element1 = 0, {Perturbation = -.00000001, MaxStep = .00000001, Lower = -.000005, Upper = .0000001});
+   Maneuver P2(Sat);
+   
+   Propagate NearEarthProp(Sat) {Sat.ElapsedDays = 1.0};
+   Propagate NearMoonProp(Sat) {Sat.Luna.Periapsis};
+   Propagate NearMoonProp(Sat) {Sat.ElapsedDays = 8.0};
+   
+   
+   %  Propagate into the box
+   Propagate NearMoonProp(Sat) {Sat.ElapsedDays = 160};% {Sat.ElapsedDays = 160, Sat.ESML2Centered.X = LowerBoxSize, Sat.ESML2Centered.X = UpperBoxSize, Sat.ESML2Centered.Y = LowerBoxSize, Sat.ESML2Centered.Y = UpperBoxSize, StopTolerance = 1e-4});  
+   Report Data Sat.ESML2Centered.X Sat.ESML2Centered.Y;
+   
+   %  Prop for several revs, checking to see if we're still in the box; 
+   For I = 1:1:1;
+      GMAT LowerBoxSize = LowerBoxSize - 50;
+      GMAT UpperBoxSize = UpperBoxSize + 50;
+      If Sat.ESML2Centered.X > LowerBoxSize & Sat.ESML2Centered.X < UpperBoxSize & Sat.ESML2Centered.Y > LowerBoxSize & Sat.ESML2Centered.Y < UpperBoxSize
+         Propagate NearMoonProp(Sat) {Sat.ElapsedDays = 220, Sat.ESML2Centered.Y = 0, Sat.ESML2Centered.X = LowerBoxSize, Sat.ESML2Centered.X = UpperBoxSize, Sat.ESML2Centered.Y = LowerBoxSize, Sat.ESML2Centered.Y = UpperBoxSize, StopTolerance = 0.0001};
+      EndIf;
+   EndFor;
+   
+   Achieve DC1(Sat.ESML2Centered.VX = -.001, {Tolerance = .001});
+   
+EndTarget;  % For targeter DC1

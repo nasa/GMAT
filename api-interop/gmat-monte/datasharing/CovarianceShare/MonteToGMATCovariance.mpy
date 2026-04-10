@@ -1,0 +1,186 @@
+# File: BuildLunarTransferOrbit.mpy
+#
+# Steps 1 and 2 of the Ephemeris Sharing Example 
+
+# Load a basic set of libraries to use 
+import Monte as M
+import numpy as np
+import sys
+import csv
+sys.settrace
+from scipy import linalg
+import mpy.io.data as defaultData
+import mpy.traj.force.grav.basic as basicGrav
+from mpy.units import *
+
+#from ShowTrajectories import *
+from load_gmat import *
+gmat.Clear()
+monteCovFile = open("inputs/monteCovWarmStartLEOSAT.csv",'w')
+monteCovFile.write("Epoch.UTCGregorian,LEOSAT.MJ2000Eq.X,LEOSAT.MJ2000Eq.Y,LEOSAT.MJ2000Eq.Z,LEOSAT.MJ2000Eq.VX,LEOSAT.MJ2000Eq.VY,LEOSAT.MJ2000Eq.VZ,Covariance_1_1,Covariance_2_1,Covariance_2_2,Covariance_3_1,Covariance_3_2,Covariance_3_3,Covariance_4_1,Covariance_4_2,Covariance_4_3,Covariance_4_4,Covariance_5_1,Covariance_5_2,Covariance_5_3,Covariance_5_4,Covariance_5_5,Covariance_6_1,Covariance_6_2,Covariance_6_3,Covariance_6_4,Covariance_6_5,Covariance_6_6\n")
+
+##########################################################
+########### Step 1 - Set up the System and propagate #####
+##########################################################
+
+# Load planetary ephemeris de405 from default data
+boa = defaultData.load( ["ephem/planet/de405",'./inputs/computed-final.boa','ephem/planet/de430'] )
+
+basicGrav.add( boa, 'LEOSAT', [ "Sun", "Earth"] )
+
+BeginTime  = Epoch('25-JAN-2014 19:01:07.1846 ET')
+EndTime    = Epoch('25-MAR-2014 19:01:07.1846 ET')
+Body   = 'LEOSAT'
+Center = "Earth"
+inputFrame = "EME2000"
+integFrame = "EME2000"
+s = State(
+    -6429.439955 * km,
+     2874.907490 * km,
+    -762.976473 * km,
+    -0.280992 * km/s,
+     1.308479 * km/s,
+     7.382127 * km/s,
+   )
+integState = M.IntegState( boa, BeginTime, EndTime, [], Body, Center,
+                    inputFrame, integFrame, s, [], False,[], [] )
+
+integ = M.IntegSetup( boa )
+integ.add( integState )
+
+prop = M.DivaPropagator( boa, "DIVA", integ )
+prop.create( boa, BeginTime, EndTime )
+##########################################################
+########### Step 2 - Create the Cov in Monte #############
+##########################################################
+
+config = M.CovarianceConfig( boa, "InitialCov" )
+
+Params = [
+      "State / LEOSAT / Earth / EME2000 / X",
+      "State / LEOSAT / Earth / EME2000 / Y",
+      "State / LEOSAT / Earth / EME2000 / Z",
+      "State / LEOSAT / Earth / EME2000 / DX",
+      "State / LEOSAT / Earth / EME2000 / DY",
+      "State / LEOSAT / Earth / EME2000 / DZ"
+      ]
+Units = [km,km,km,km/sec,km/sec,km/sec]
+UnitsType = []
+for i in range(len(Units)):
+   UnitsType.append(Units[i].type())
+Scale = 1.0
+
+LowerLeft = [
+        1.0000000000000000,
+        0.0000000000000000,1.0000000000000000,
+        0.0000000000000000,0.0000000000000000,1.0000000000000000,
+        0.0000000000000000,0.0000000000000000,0.0000000000000000,1.0000000000000000,
+        0.0000000000000000,0.0000000000000000,0.0000000000000000,0.0000000000000000,1.0000000000000000,
+        0.0000000000000000,0.0000000000000000,0.0000000000000000,0.0000000000000000,0.0000000000000000,1.0000000000000000
+       ]
+
+c1 = M.Covariance( UnitsType, LowerLeft, Covariance.LOWER_LEFT )
+config.insert( Params, [0,0,0,0,0,0], c1 )
+
+##########################################################
+# Step 3 - Run Filter and Map Covariance to end time #####
+##########################################################
+
+# Create the block named State.
+stateBlock = FilterBlock( boa, "State", Params, c1 )
+RefTime = Epoch('25-JAN-2014 19:01:07.1846 ET')
+setup = FilterSetup( boa, BeginTime, [stateBlock] )
+filter12 = UdFilter( boa, "Filter", setup )
+#print(sol.cov())
+
+# Construct the measurement with the raw data
+
+msrSet = ComputedMsrRead(boa)
+# Loop over each measurement and build a FilterPrefit structure.
+for i in range( len( msrSet ) ):
+   # Get the residual and partials with respect to the filter parameters.
+   z = msrSet.residual( i, filter12.params() )
+
+   # Get the time at which the signal was received at the spacecraft.
+   t = msrSet[i].timeTag
+
+   # Get one-sigma uncertainty of the measurement noise.  In this case,
+   # all measurements are equally weighted (weight = 1 / sigma^2).
+   sigma = 1.0
+   
+   prefit = FilterPrefit( t, BeginTime, z[0], sigma )
+   filter12.begin()
+   filter12.process( prefit )
+
+sol = filter12.solution( RefTime )
+query = TrajQuery( boa, "LEOSAT", "Earth", "EME2000" )
+coords = [
+   Cartesian.x(),
+   Cartesian.y(),
+   Cartesian.z(),
+   Cartesian.dx(),
+   Cartesian.dy(),
+   Cartesian.dz()
+   ]
+result = sol.map(query,coords)
+CovArray = sol.cov().toArray()
+print("--------Initial Covariance in Monte--------")
+print(CovArray)
+
+
+##########################################################
+# Step 4 - Import Monte Cov into GMAT ######
+##########################################################
+
+ScriptName = "./inputs/warmstartLEOSAT.script"
+gmat.LoadScript(ScriptName)
+sat = gmat.GetObject("EstSat")
+UTCtime = RefTime.format('UTC')[:len(RefTime.format('UTC'))-5]
+UTCtime= UTCtime.replace("-", " ")
+UTCtime= UTCtime[:4]+UTCtime[4:].lower()
+sat.SetField('Epoch', str(UTCtime))
+sat.SetField("X", result[0].corrected().value())
+sat.SetField("Y", result[1].corrected().value())
+sat.SetField("Z", result[2].corrected().value())
+sat.SetField("VX", result[3].corrected().value())
+sat.SetField("VY", result[4].corrected().value())
+sat.SetField("VZ", result[5].corrected().value())
+
+estData = gmat.GetObject("EstData")
+estData.SetField("FileName", "inputs/LEOSATMeasEarth.gmd")
+
+rmat = gmat.Rmatrix(6,6)
+r =0
+c =0
+for r in range(6):
+   for c in range(6):
+      rmat[r,c] = CovArray[r,c]
+
+sat.SetRmatrixParameter("OrbitErrorCovariance",rmat )
+newMat = sat.GetRmatrixParameter("OrbitErrorCovariance")
+print("--------Initial Covariance in GMAT--------")
+print(newMat)
+print("########Starting GMAT########")
+gmat.RunScript()
+
+with open('Output/KalmanFilter_WarmStartEpoch.csv', newline='') as csv_file:
+    csv_reader  = csv.reader(csv_file, delimiter=',')
+    for covariance in csv_reader:
+        pass
+
+print("--------Final Covariance values from GMAT--------")
+print(covariance)
+
+##########################################################
+########### Step 5 - Return the Cov to Monte #############
+##########################################################
+
+gmatLowerLeft = list(map(float, covariance[7:28]))
+c2 = M.Covariance( UnitsType, gmatLowerLeft, Covariance.LOWER_LEFT )
+config2 = M.CovarianceConfig( boa, "FinalCov" )
+config2.insert( Params, [0,0,0,0,0,0], c2 )
+CovArray2 = config2.cov(Params).toArray() 
+print("--------Final Covariance in MONTE--------")
+print(CovArray2)
+
+

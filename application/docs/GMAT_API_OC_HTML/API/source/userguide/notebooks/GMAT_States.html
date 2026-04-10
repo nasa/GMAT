@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>State Management with the GMAT API &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Propagation with the GMAT API" href="GMAT_Propagation.html" />
+    <link rel="prev" title="API Notebook Walkthroughs" href="notebooks.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="GMAT_Propagation.html" title="Propagation with the GMAT API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="notebooks.html" title="API Notebook Walkthroughs"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="notebooks.html" accesskey="U">API Notebook Walkthroughs</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">State Management with the GMAT API</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="state-management-with-the-gmat-api">
+<h1>State Management with the GMAT API<a class="headerlink" href="#state-management-with-the-gmat-api" title="Link to this heading">¶</a></h1>
+<p>The state data in GMAT can be a bit confusing. This notebook introduces
+the state variables as used for a GMAT Spacecraft, and provides some
+pointers on the manipulation of the state data.</p>
+<section id="prepare-the-gmat-environment">
+<h2>Prepare the GMAT Environment<a class="headerlink" href="#prepare-the-gmat-environment" title="Link to this heading">¶</a></h2>
+<p>Before the API can be used, it needs to be loaded into the Python system
+and initialized using a GMAT startup file. This can be done from the
+GMAT bin folder by importing the gmatpy module, but using that approach
+tends to leave pieces in the bin folder that may annoy other users.
+Running from an outside folder takes a few steps, which have been
+captured in the run_gmat.py file imported here:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from run_gmat import *
+</pre></div>
+</div>
+</section>
+<section id="configure-a-spacecraft">
+<h2>Configure a Spacecraft<a class="headerlink" href="#configure-a-spacecraft" title="Link to this heading">¶</a></h2>
+<p>We’ll need an object that provides the state. Here’s a basic spacecraft,
+along with a reference to the state data inside of the spacecraft:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sat = gmat.Construct(&quot;Spacecraft&quot;,&quot;MySat&quot;)
+iState = sat.GetState()
+</pre></div>
+</div>
+<p>The state reference here, iState, operates on the member of the
+Spacecraft object that GMAT uses when running a simulation. The
+“internal state,” referenced by iState here, is the Earth-centered
+mean-of-J2000 equatorial representation of position and velocity of the
+spacecraft MySat. The data is contained in a GmatState object:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>iState
+</pre></div>
+</div>
+<pre class="literal-block">&lt;gmatpy.gmat_py.GmatState; proxy of &lt;Swig Object of type 'GmatState *' at 0x7f13ceed97e0&gt; &gt;</pre>
+<p>GmatState objects are used to collect together an epoch and a vector of
+data. These data can be accessed directly:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;The state epoch is &quot;, iState.GetEpoch(), &quot;, the state has &quot;, iState.GetSize(), &quot; elements, and contains the data &quot;, iState.GetState())
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">state</span> <span class="n">epoch</span> <span class="ow">is</span>  <span class="mf">21545.000000397937</span> <span class="p">,</span> <span class="n">the</span> <span class="n">state</span> <span class="n">has</span>  <span class="mi">6</span>  <span class="n">elements</span><span class="p">,</span> <span class="ow">and</span> <span class="n">contains</span> <span class="n">the</span> <span class="n">data</span>  <span class="p">[</span><span class="o">-</span><span class="mf">999.999</span><span class="p">,</span> <span class="o">-</span><span class="mf">999.999</span><span class="p">,</span> <span class="o">-</span><span class="mf">999.999</span><span class="p">,</span> <span class="o">-</span><span class="mf">999.999</span><span class="p">,</span> <span class="o">-</span><span class="mf">999.999</span><span class="p">,</span> <span class="o">-</span><span class="mf">999.999</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The data shown here is the default GmatState vector data for a
+spacecraft. The epoch is January 1, 2000 at 12:00:00.000 in TAIModJulian
+time, or 21545.00000039794 in A.1 ModJulian time. Note that GMAT uses
+A.1 Mod Julian as its internal epoch system. The state has 6 elements
+The position and velocity data are filled in with the dummy entries
+-999.999. Working with Cartesian and Keplerian Representations a
+spacecraft in GMAT has a second collection of data: the state data for
+the spacecraft in the coordinate system set on the spacecraft. These
+data are the spacecraft’s “display state,” named that way because they
+are the data displayed to the user. Users interact with the display
+state similarly to the way they interact with the scripting language.
+Data for a Keplerian state can be set using the SetField() method, as
+shown here:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sat.SetField(&quot;StateType&quot;, &quot;Keplerian&quot;)
+sat.SetField(&quot;SMA&quot;, 7015)
+sat.SetField(&quot;ECC&quot;, 0.0011)
+sat.SetField(&quot;INC&quot;, 98.6)
+sat.SetField(&quot;RAAN&quot;, 75)
+sat.SetField(&quot;AOP&quot;, 90)
+sat.SetField(&quot;TA&quot;, 33.333)
+</pre></div>
+</div>
+<p>At this point it can appear at first glance that the data is set, but it
+really is not. The spacecraft object cannot interpret the state data.
+The data set using SetField needs more information than a spacecraft
+object can provide by itself. Specifically, the spacecraft here does not
+have a connected coordinate system. Cartesian state data set on the
+spacecraft does not have connections defining the coordinate origin, nor
+the structures needed to set the orientation of the axes defining
+directions. Additionally, the spacecraft does not have the the
+gravitational constant needed to interpret Keplerian data.</p>
+<p>In this uninitialized state, the spacecraft uses its GmatState buffer to
+hold the data entries. We can see that the data is not yet fully
+populated by posting queries to the spacecraft:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;The internal state buffer just holds preinitialization data (Keplerian here):  &quot;, iState.GetState())
+print(&quot;but access to the Keplerian state shows that it is not correct:&quot;, sat.GetKeplerianState())
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">internal</span> <span class="n">state</span> <span class="n">buffer</span> <span class="n">just</span> <span class="n">holds</span> <span class="n">preinitialization</span> <span class="n">data</span> <span class="p">(</span><span class="n">Keplerian</span> <span class="n">here</span><span class="p">):</span>   <span class="p">[</span><span class="mf">7015.0</span><span class="p">,</span> <span class="mf">0.0011</span><span class="p">,</span> <span class="mf">98.6</span><span class="p">,</span> <span class="mf">75.0</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">,</span> <span class="mf">33.333</span><span class="p">]</span>
+<span class="n">but</span> <span class="n">access</span> <span class="n">to</span> <span class="n">the</span> <span class="n">Keplerian</span> <span class="n">state</span> <span class="n">shows</span> <span class="n">that</span> <span class="n">it</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">correct</span><span class="p">:</span> <span class="mi">0</span>                <span class="mi">0</span>                <span class="mi">0</span>                <span class="mi">0</span>                <span class="mi">0</span>                <span class="mi">0</span>
+</pre></div>
+</div>
+<p>The GMAT objects are not yet initialized, so the Keplerian state data is
+not correct. Once we initialize the system, the Keplerian state will be
+correct, and the internal state will be updated to the EarthMJ2000Eq
+system. The interobject connections necessary for these settings are
+made by calling the API Initialize() function:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>gmat.Initialize()
+print(&quot;The initialized internal state buffer is EarthMJ2000Eq:  &quot;, iState.GetState())
+print(&quot;and the Keplerian state is correct:  &quot;, sat.GetKeplerianState())
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">initialized</span> <span class="n">internal</span> <span class="n">state</span> <span class="n">buffer</span> <span class="ow">is</span> <span class="n">EarthMJ2000Eq</span><span class="p">:</span>   <span class="p">[</span><span class="o">-</span><span class="mf">150.99058171804361</span><span class="p">,</span> <span class="o">-</span><span class="mf">3946.626071010534</span><span class="p">,</span> <span class="mf">5789.742898439815</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.23046049968889</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.931020059857665</span><span class="p">,</span> <span class="o">-</span><span class="mf">4.095581409074377</span><span class="p">]</span>
+<span class="ow">and</span> <span class="n">the</span> <span class="n">Keplerian</span> <span class="n">state</span> <span class="ow">is</span> <span class="n">correct</span><span class="p">:</span>   <span class="mf">7015.000000000001</span> <span class="mf">0.00110000000000004</span> <span class="mf">98.59999999999999</span> <span class="mi">75</span>               <span class="mf">90.00000000000402</span> <span class="mf">33.33299999999598</span>
+</pre></div>
+</div>
+<p>Changes made to the state variables are now applied to the state as
+expected:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sat.SetField(&quot;SMA&quot;, 8000)
+print(&quot;Internal state:  &quot;, iState.GetState())
+print(&quot;Cartesianian     &quot;, sat.GetCartesianState())
+print(&quot;Keplerian:       &quot;, sat.GetKeplerianState())
+print()
+sat.SetField(&quot;INC&quot;, 45)
+print(&quot;Internal state:  &quot;, iState.GetState())
+print(&quot;Cartesianian     &quot;, sat.GetCartesianState())
+print(&quot;Keplerian:       &quot;, sat.GetKeplerianState())
+print()
+sat.SetField(&quot;TA&quot;, 50)
+print(&quot;Internal state:  &quot;, iState.GetState())
+print(&quot;Cartesianian     &quot;, sat.GetCartesianState())
+print(&quot;Keplerian:       &quot;, sat.GetKeplerianState())
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Internal</span> <span class="n">state</span><span class="p">:</span>   <span class="p">[</span><span class="o">-</span><span class="mf">172.19168264352888</span><span class="p">,</span> <span class="o">-</span><span class="mf">4500.785255607168</span><span class="p">,</span> <span class="mf">6602.700383110265</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.088638988531676</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.553902317709759</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.835168124650226</span><span class="p">]</span>
+<span class="n">Cartesianian</span>      <span class="o">-</span><span class="mf">172.1916826435289</span> <span class="o">-</span><span class="mf">4500.785255607168</span> <span class="mf">6602.700383110265</span> <span class="o">-</span><span class="mf">2.088638988531676</span> <span class="o">-</span><span class="mf">5.553902317709759</span> <span class="o">-</span><span class="mf">3.835168124650226</span>
+<span class="n">Keplerian</span><span class="p">:</span>        <span class="mf">8000.000000000007</span> <span class="mf">0.001100000000000707</span> <span class="mf">98.59999999999999</span> <span class="mi">75</span>               <span class="mf">90.00000000001161</span> <span class="mf">33.3329999999884</span>
+
+<span class="n">Internal</span> <span class="n">state</span><span class="p">:</span>   <span class="p">[</span><span class="o">-</span><span class="mf">5697.7414619496</span><span class="p">,</span> <span class="o">-</span><span class="mf">3020.2186545041395</span><span class="p">,</span> <span class="mf">4721.90552145557</span><span class="p">,</span> <span class="mf">1.1208679033712874</span><span class="p">,</span> <span class="o">-</span><span class="mf">6.413887097497282</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.7427113896944304</span><span class="p">]</span>
+<span class="n">Cartesianian</span>      <span class="o">-</span><span class="mf">5697.7414619496</span> <span class="o">-</span><span class="mf">3020.21865450414</span> <span class="mf">4721.90552145557</span> <span class="mf">1.120867903371287</span> <span class="o">-</span><span class="mf">6.413887097497282</span> <span class="o">-</span><span class="mf">2.74271138969443</span>
+<span class="n">Keplerian</span><span class="p">:</span>        <span class="mf">8000.000000000011</span> <span class="mf">0.001100000000000964</span> <span class="mf">45.00000000000001</span> <span class="mf">75.00000000000001</span> <span class="mf">90.00000000001836</span> <span class="mf">33.33299999998167</span>
+
+<span class="n">Internal</span> <span class="n">state</span><span class="p">:</span>   <span class="p">[</span><span class="o">-</span><span class="mf">5094.78342738948</span><span class="p">,</span> <span class="o">-</span><span class="mf">4974.9069027511405</span><span class="p">,</span> <span class="mf">3633.5822378210464</span><span class="p">,</span> <span class="mf">2.5169011956354206</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.379735538828468</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.8235178821457656</span><span class="p">]</span>
+<span class="n">Cartesianian</span>      <span class="o">-</span><span class="mf">5094.78342738948</span> <span class="o">-</span><span class="mf">4974.90690275114</span> <span class="mf">3633.582237821046</span> <span class="mf">2.516901195635421</span> <span class="o">-</span><span class="mf">5.379735538828468</span> <span class="o">-</span><span class="mf">3.823517882145766</span>
+<span class="n">Keplerian</span><span class="p">:</span>        <span class="mf">8000.000000000012</span> <span class="mf">0.001100000000001075</span> <span class="mf">45.00000000000001</span> <span class="mf">75.00000000000001</span> <span class="mf">90.00000000002314</span> <span class="mf">49.99999999999523</span>
+</pre></div>
+</div>
+</section>
+<section id="changing-coordinate-systems">
+<h2>Changing Coordinate Systems<a class="headerlink" href="#changing-coordinate-systems" title="Link to this heading">¶</a></h2>
+<p>The previous section shows how to access Cartesian and Keplerian
+representations of the system. In this section we will work with a
+couple of different coordinate systems: an Earth fixed coordinate system
+named “ECF” and accessed using the Python reference ecf, and a solar
+ecliptic system named “SolarEcliptic,” referenced as sec. These
+coordinate systems are built using the code</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ecf = gmat.Construct(&quot;CoordinateSystem&quot;, &quot;ECF&quot;, &quot;Earth&quot;, &quot;BodyFixed&quot;)
+sec = gmat.Construct(&quot;CoordinateSystem&quot;, &quot;SolarEcliptic&quot;, &quot;Sun&quot;, &quot;MJ2000Ec&quot;)
+</pre></div>
+</div>
+<p>In this section, the spacecraft sat defined previously will be used with
+the Earth fixed coordinate system, and a copy of that spacecraft will be
+used with the solar ecliptic system. GMAT’s objects support a method,
+Copy(), that copies an object into another object of the same type.
+Rather than set up a new spacecraft from scratch, we’ll use that
+framework to get started by creating a new spacecraft and then setting
+the coordinate systems so that the original spacecraft uses the ECI
+coordinate system and the new spacecraft uses the solar ecliptic system.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>solsat = gmat.Construct(&quot;Spacecraft&quot;,&quot;SolarSat&quot;)
+solsat.Copy(sat)
+
+# Now set coordinate systems
+sat.SetField(&quot;CoordinateSystem&quot;,&quot;ECF&quot;)
+solsat.SetField(&quot;CoordinateSystem&quot;,&quot;SolarEcliptic&quot;)
+</pre></div>
+</div>
+<p>We’ve reset the coordinate system names on the spacecraft at this point,
+but have yet to reset the associated objects because the Initialize()
+function that connects objects together has not been called since making
+the reassignment. The data reflects this state of the system:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Show the data after setting the new coordinate systems, before initialization
+print(&quot;The spacecraft &quot;, sat.GetName(), &quot; initialization state is &quot;, sat.IsInitialized())
+print(&quot;The internal state buffer:  &quot;, iState.GetState())
+print(&quot;The ECF Cartesian State:    &quot;, sat.GetCartesianState())
+print(&quot;The ECF Keplerian State:    &quot;, sat.GetKeplerianState())
+print()
+print(&quot;The spacecraft &quot;, solsat.GetName(), &quot; initialization state is &quot;, sat.IsInitialized())
+print(&quot;The internal state buffer (SolarSat):  &quot;, solsat.GetState().GetState())
+print(&quot;The SolarEcliptic Cartesian State:     &quot;, solsat.GetCartesianState())
+print(&quot;The SolarEcliptic Keplerian State:     &quot;, solsat.GetKeplerianState())
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">spacecraft</span>  <span class="n">MySat</span>  <span class="n">initialization</span> <span class="n">state</span> <span class="ow">is</span>  <span class="kc">True</span>
+<span class="n">The</span> <span class="n">internal</span> <span class="n">state</span> <span class="n">buffer</span><span class="p">:</span>   <span class="p">[</span><span class="o">-</span><span class="mf">5094.78342738948</span><span class="p">,</span> <span class="o">-</span><span class="mf">4974.9069027511405</span><span class="p">,</span> <span class="mf">3633.5822378210464</span><span class="p">,</span> <span class="mf">2.5169011956354206</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.379735538828468</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.8235178821457656</span><span class="p">]</span>
+<span class="n">The</span> <span class="n">ECF</span> <span class="n">Cartesian</span> <span class="n">State</span><span class="p">:</span>     <span class="o">-</span><span class="mf">5094.78342738948</span> <span class="o">-</span><span class="mf">4974.90690275114</span> <span class="mf">3633.582237821046</span> <span class="mf">2.516901195635421</span> <span class="o">-</span><span class="mf">5.379735538828468</span> <span class="o">-</span><span class="mf">3.823517882145766</span>
+<span class="n">The</span> <span class="n">ECF</span> <span class="n">Keplerian</span> <span class="n">State</span><span class="p">:</span>     <span class="mf">8000.000000000012</span> <span class="mf">0.001100000000001075</span> <span class="mf">45.00000000000001</span> <span class="mf">75.00000000000001</span> <span class="mf">90.00000000002314</span> <span class="mf">49.99999999999523</span>
+
+<span class="n">The</span> <span class="n">spacecraft</span>  <span class="n">SolarSat</span>  <span class="n">initialization</span> <span class="n">state</span> <span class="ow">is</span>  <span class="kc">True</span>
+<span class="n">The</span> <span class="n">internal</span> <span class="n">state</span> <span class="n">buffer</span> <span class="p">(</span><span class="n">SolarSat</span><span class="p">):</span>   <span class="p">[</span><span class="o">-</span><span class="mf">5094.78342738948</span><span class="p">,</span> <span class="o">-</span><span class="mf">4974.9069027511405</span><span class="p">,</span> <span class="mf">3633.5822378210464</span><span class="p">,</span> <span class="mf">2.5169011956354206</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.379735538828468</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.8235178821457656</span><span class="p">]</span>
+<span class="n">The</span> <span class="n">SolarEcliptic</span> <span class="n">Cartesian</span> <span class="n">State</span><span class="p">:</span>      <span class="o">-</span><span class="mf">5094.78342738948</span> <span class="o">-</span><span class="mf">4974.90690275114</span> <span class="mf">3633.582237821046</span> <span class="mf">2.516901195635421</span> <span class="o">-</span><span class="mf">5.379735538828468</span> <span class="o">-</span><span class="mf">3.823517882145766</span>
+<span class="n">The</span> <span class="n">SolarEcliptic</span> <span class="n">Keplerian</span> <span class="n">State</span><span class="p">:</span>      <span class="mf">8000.000000000012</span> <span class="mf">0.001100000000001075</span> <span class="mf">45.00000000000001</span> <span class="mf">75.00000000000001</span> <span class="mf">90.00000000002314</span> <span class="mf">49.99999999999523</span>
+</pre></div>
+</div>
+<p><em>Note that the initialization state reported here is a bug: resetting
+object references should toggle the initialization flag, but did not.</em></p>
+<p>Once we initialize the system, replacing the coordinate system
+references with the correct objects, the data is once again correct:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Connect the GMAT objects together
+gmat.Initialize()
+
+# And show the data in the new coordinate systems
+print(&quot;The internal state buffer:  &quot;, iState.GetState())
+print(&quot;The ECF Cartesian State:    &quot;, sat.GetCartesianState())
+print(&quot;The ECF Keplerian State:    &quot;, sat.GetKeplerianState())
+print()
+print(&quot;The internal state buffer (SolarSat):  &quot;, solsat.GetState().GetState())
+print(&quot;The SolarEcliptic Cartesian State:     &quot;, solsat.GetCartesianState())
+print(&quot;The SolarEcliptic Keplerian State:     &quot;, solsat.GetKeplerianState())
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">internal</span> <span class="n">state</span> <span class="n">buffer</span><span class="p">:</span>   <span class="p">[</span><span class="o">-</span><span class="mf">5094.78342738948</span><span class="p">,</span> <span class="o">-</span><span class="mf">4974.9069027511405</span><span class="p">,</span> <span class="mf">3633.5822378210464</span><span class="p">,</span> <span class="mf">2.5169011956354206</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.379735538828468</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.8235178821457656</span><span class="p">]</span>
+<span class="n">The</span> <span class="n">ECF</span> <span class="n">Cartesian</span> <span class="n">State</span><span class="p">:</span>     <span class="mf">3980.769626359613</span> <span class="o">-</span><span class="mf">5904.072200723337</span> <span class="mf">3633.84663580491</span> <span class="mf">5.31337371013498</span> <span class="mf">1.221190102125526</span> <span class="o">-</span><span class="mf">3.82343374194999</span>
+<span class="n">The</span> <span class="n">ECF</span> <span class="n">Keplerian</span> <span class="n">State</span><span class="p">:</span>     <span class="mf">7197.708272712511</span> <span class="mf">0.1106817774544226</span> <span class="mf">47.10837940070086</span> <span class="mf">152.2889386356222</span> <span class="mf">322.0637563061007</span> <span class="mf">179.5887814511714</span>
+
+<span class="n">The</span> <span class="n">internal</span> <span class="n">state</span> <span class="n">buffer</span> <span class="p">(</span><span class="n">SolarSat</span><span class="p">):</span>   <span class="p">[</span><span class="o">-</span><span class="mf">5094.78342738948</span><span class="p">,</span> <span class="o">-</span><span class="mf">4974.9069027511405</span><span class="p">,</span> <span class="mf">3633.5822378210464</span><span class="p">,</span> <span class="mf">2.5169011956354206</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.379735538828468</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.8235178821457656</span><span class="p">]</span>
+<span class="n">The</span> <span class="n">SolarEcliptic</span> <span class="n">Cartesian</span> <span class="n">State</span><span class="p">:</span>      <span class="o">-</span><span class="mf">26505087.9080278</span> <span class="mf">144694001.6268158</span> <span class="mf">4700.442019894719</span> <span class="o">-</span><span class="mf">27.27732399951776</span> <span class="o">-</span><span class="mf">11.92620879192113</span> <span class="o">-</span><span class="mf">1.367891168160935</span>
+<span class="n">The</span> <span class="n">SolarEcliptic</span> <span class="n">Keplerian</span> <span class="n">State</span><span class="p">:</span>      <span class="mf">144849901.1130946</span> <span class="mf">0.2292154440704447</span> <span class="mf">2.702016602265948</span> <span class="mf">280.4191667873194</span> <span class="mf">286.9680459339144</span> <span class="mf">252.9931176051724</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">State Management with the GMAT API</a><ul>
+<li><a class="reference internal" href="#prepare-the-gmat-environment">Prepare the GMAT Environment</a></li>
+<li><a class="reference internal" href="#configure-a-spacecraft">Configure a Spacecraft</a></li>
+<li><a class="reference internal" href="#changing-coordinate-systems">Changing Coordinate Systems</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="notebooks.html"
+                          title="previous chapter">API Notebook Walkthroughs</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="GMAT_Propagation.html"
+                          title="next chapter">Propagation with the GMAT API</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../../_sources/API/source/userguide/notebooks/GMAT_States.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="GMAT_Propagation.html" title="Propagation with the GMAT API"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="notebooks.html" title="API Notebook Walkthroughs"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="notebooks.html" >API Notebook Walkthroughs</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">State Management with the GMAT API</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

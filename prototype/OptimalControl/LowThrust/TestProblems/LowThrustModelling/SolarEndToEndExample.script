@@ -1,0 +1,101 @@
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft DefaultSC;
+DefaultSC.DateFormat  = A1ModJulian;
+DefaultSC.Epoch       = '21548.0299479207';
+DefaultSC.X           = -6515.97236231483;
+DefaultSC.Y           =  931.372927012761;
+DefaultSC.Z           = -1066.34795707823;
+DefaultSC.VX          =  -0.888689684465484;
+DefaultSC.VY          =  -7.58686200413001;
+DefaultSC.VZ          = -1.1949439525609;
+DefaultSC.PowerSystem = SolarPowerSystem1;
+%%DefaultSC.Thrusters = {aThruster,aTank};
+DefaultSC.Thrusters   = {aThruster};
+DefaultSC.Tanks       = {aTank};
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+Create SolarPowerSystem SolarPowerSystem1;
+GMAT SolarPowerSystem1.InitialMaxPower = 1.2124;
+GMAT SolarPowerSystem1.EpochFormat = 'A1ModJulian';
+GMAT SolarPowerSystem1.InitialEpoch = '21547.00000039794';
+GMAT SolarPowerSystem1.AnnualDecayRate = 5.123;
+GMAT SolarPowerSystem1.Margin = 4.998;
+GMAT SolarPowerSystem1.BusCoeff1 = .32;
+GMAT SolarPowerSystem1.BusCoeff2 = 0.0001;
+GMAT SolarPowerSystem1.BusCoeff3 = 0.0001;
+GMAT SolarPowerSystem1.ShadowModel = 'DualCone';
+GMAT SolarPowerSystem1.SolarCoeff1 = 1.33;
+GMAT SolarPowerSystem1.SolarCoeff2 = -0.11;
+GMAT SolarPowerSystem1.SolarCoeff3 = -0.12;
+GMAT SolarPowerSystem1.SolarCoeff4 = 0.11;
+GMAT SolarPowerSystem1.SolarCoeff5 = -0.02;
+
+Create ElectricThruster aThruster
+aThruster.CoordinateSystem   = Local;
+aThruster.Origin             = Earth;
+aThruster.Axes               = VNB;
+aThruster.ThrustDirection1   = 1;
+aThruster.ThrustDirection2   = 0;
+aThruster.ThrustDirection3   = 0;
+aThruster.ThrustModel        = 'ConstantThrustAndIsp';    
+aThruster.MaximumUsablePower = 7.4;
+aThruster.MinimumUsablePower = 0.81;
+aThruster.ThrustCoeff1       = 1.92E-06 ;
+aThruster.ThrustCoeff2       =  54.05382 ;
+aThruster.ThrustCoeff3       = -14.41789;
+aThruster.ThrustCoeff4       =  2.96519 ;
+aThruster.ThrustCoeff5       = -0.19082; %  milli - Newton
+aThruster.MassFlowCoeff1     = 2.13781  ;
+aThruster.MassFlowCoeff2     = 0.03211  ;
+aThruster.MassFlowCoeff3     =  -0.09956;
+aThruster.MassFlowCoeff4     = 0.05717 ;
+aThruster.MassFlowCoeff5     = -0.004776; %  milligrams/sec
+aThruster.FixedEfficiency    = 0.654321;
+aThruster.GravitationalAccel = 9.82;
+aThruster.Isp                = 3219.12314;
+aThruster.ConstantThrust     = 0.01243;
+aThruster.DutyCycle          = .98;
+aThruster.ThrustScaleFactor  = .87;
+aThruster.Tank               = {aTank};
+
+Create ElectricTank aTank
+aTank.FuelMass = 567.89;
+
+Create FiniteBurn aFiniteBurn
+aFiniteBurn.Thrusters              = {aThruster};
+aFiniteBurn.ThrottleLogicAlgorithm = 'MaximumPowerUsage';
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+Create ForceModel DefaultProp_ForceModel;
+GMAT DefaultProp_ForceModel.CentralBody = Earth;
+GMAT DefaultProp_ForceModel.PointMasses = {Earth};
+GMAT DefaultProp_ForceModel.Drag = None;
+GMAT DefaultProp_ForceModel.SRP = Off;
+GMAT DefaultProp_ForceModel.RelativisticCorrection = Off;
+GMAT DefaultProp_ForceModel.ErrorControl = RSSStep;
+Create Propagator DefaultProp;
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+Create ReportFile ReportFile1;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+BeginFiniteBurn aFiniteBurn(DefaultSC)
+Report ReportFile1 DefaultSC.A1ModJulian DefaultSC.SolarPowerSystem1.RequiredBusPower DefaultSC.SolarPowerSystem1.ThrustPowerAvailable DefaultSC.SolarPowerSystem1.TotalPowerAvailable
+Report ReportFile1 DefaultSC.TotalMass DefaultSC.X DefaultSC.Y DefaultSC.Z
+Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedDays=.2}
+Report ReportFile1 DefaultSC.TotalMass DefaultSC.X DefaultSC.Y DefaultSC.Z

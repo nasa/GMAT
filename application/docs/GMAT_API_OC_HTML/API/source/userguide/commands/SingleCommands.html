@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Configuring a Command &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Usage Examples" href="../usage/Examples.html" />
+    <link rel="prev" title="API Access to GMAT Commands" href="TopLevelInterface.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../usage/Examples.html" title="Usage Examples"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="TopLevelInterface.html" title="API Access to GMAT Commands"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../apiIndex.html" accesskey="U">GMAT API Design and User’s Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Configuring a Command</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="configuring-a-command">
+<span id="commands"></span><h1>Configuring a Command<a class="headerlink" href="#configuring-a-command" title="Link to this heading">¶</a></h1>
+<p>GmatCommand objects are the building blocks of the Mission Control Sequence.  The mission sequence is coded as a doubly linked list of GmatCommands, with, for some commands, branching enabled that into a subsequence of commands that perform a specific task for the main command.  This design means that there are two elements of the GMAT command structure needed by API users: the ability to configure commands that they need to run, and the ability to chain together commands to build a full mission timeline.</p>
+<p>This chapter focuses on the procedure that makes a single GMAT command accessible to an API user.  The Propagate command is used to illustrate the procedure.  Information about sequences of commands can be found in <span class="xref std std-ref">CommandSequences</span>.</p>
+<section id="command-categories">
+<h2>Command Categories<a class="headerlink" href="#command-categories" title="Link to this heading">¶</a></h2>
+<p>GMAT commands can be grouped into five different types of commands exposed to the command API:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Basic sequence actions</dt><dd><ul>
+<li><p>GMAT (used for Assignments)</p></li>
+<li><p>Maneuver</p></li>
+<li><p>Propagate (Base class PropagationEnabledCommand)</p></li>
+<li><p>Report</p></li>
+<li><p>Toggle</p></li>
+<li><p>Write</p></li>
+<li><p>BeginFiniteBurn</p></li>
+<li><p>EndFiniteBurn</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Commands with subsequences, with base classes BranchCommand and ConditionalBranch</dt><dd><ul>
+<li><p>For / EndFor</p></li>
+<li><p>If / Else / EndIf</p></li>
+<li><p>While / EndWhile</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Solver commands, with base classes SolverSequenceCommand, SolverBranchCommand, or RunSolver</dt><dd><p>Target / EndTarget
+Optimize / EndOptimize</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Solver action commands</dt><dd><ul>
+<li><p>Vary</p></li>
+<li><p>Achieve</p></li>
+<li><p>Minimize</p></li>
+<li><p>NonlinearConstraint</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Function calling commands</dt><dd><ul>
+<li><p>BeginFunction / EndFunction</p></li>
+<li><p>CallFunction</p></li>
+<li><p>CallBuiltinGmatFunction</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>The basic sequence action commands provide many of the core building blocks of a mission sequence.  These commands can be used as stand alone calls by API users to perform specific actions: Propagate to a stopping condition, maneuver a spacecraft, toggle writing for published data, and so forth.</p>
+<p>The remaining commands all use a command sequence in one way or another.</p>
+<p>In addition to these command types, there are commands that are not exposed to the API at this time, for a variety of reasons stated below:</p>
+<ul>
+<li><dl class="simple">
+<dt>Sequence Management commands</dt><dd><ul class="simple">
+<li><p>BeginMissionSequence</p></li>
+<li><p>NoOp</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Sequence utility commands</dt><dd><ul class="simple">
+<li><p>BeginScript / EndScript</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Commands that interact with the GMAT GUI</dt><dd><ul class="simple">
+<li><p>ClearPlot</p></li>
+<li><p>PenDown</p></li>
+<li><p>PenUp</p></li>
+<li><p>MarkPoint</p></li>
+<li><p>PlotCommand</p></li>
+<li><p>SaveMission</p></li>
+<li><p>Stop</p></li>
+<li><p>UpdateDynamicData</p></li>
+<li><p>FindEvents</p></li>
+</ul>
+</dd>
+</dl>
+<p>The command API does not expose the sequence management commands because they are not needed for API users. The BeginScript and EndScript commands are used to group together GMAT commands so that they can be hidden on the Mission tab of the GMAT GUI.  The final set of commands are designed to manipulate the GMAT GUI in a variety of ways.  Since API users are not running the GUI, they are not needed.</p>
+</li>
+</ul>
+<p>Commands that are built into GMAT plugin code are not included in this list.  Of particular for many API users are the RunSimulator and RunEstimator commands.  Those commands are configured as single commands that are executed, and are covered by the design described in this chapter.  Simulation and Estimation are complex processes, so users that need API access to those two commands in particular, should pay careful attention to the resource creation process for the components needed for orbit determination configurations.</p>
+</section>
+<section id="setting-up-a-command">
+<h2>Setting up a Command<a class="headerlink" href="#setting-up-a-command" title="Link to this heading">¶</a></h2>
+<p>While Resources built with the API use the Construct function.  Commands are built using command function.  <a class="reference internal" href="#constructsyntax"><span class="std std-numref">Listing 6</span></a> illustrates the difference by summarizing the syntax followed by an example.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<span id="constructsyntax"></span><div class="code-block-caption"><span class="caption-number">Listing 6 </span><span class="caption-text">Syntax for the Construct command</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Resource creation:  gmat.Construct(&lt;Resource Type&gt;, &lt;Resource Name&gt;)</span>
+<span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;Sat&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span>  <span class="mf">6600.0</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span>     <span class="mf">0.0</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span>   <span class="mf">300.0</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;VX&quot;</span><span class="p">,</span>    <span class="mf">0.0</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;VY&quot;</span><span class="p">,</span>    <span class="mf">8.0</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;VZ&quot;</span><span class="p">,</span>    <span class="mf">0.0</span><span class="p">)</span>
+
+<span class="c1"># Command creation:  gmat.Command(&lt;Command Type&gt;, &lt;Command text&gt;)</span>
+<span class="n">evolve</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Command</span><span class="p">(</span><span class="s2">&quot;Propagate&quot;</span><span class="p">,</span> <span class="s2">&quot;Prop(Sat) {Sat.RMAG = 7200}&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In GMAT, resources are objects that have separate script entries for each element that is being built.  Those settings are configured in the API using SetField() method calls like those shown in the listing.  Commands are scripted using a single line of text with all of the command configuration data on the line of script.  The API follows this approach, building resources through construction and field setting and commands in a single construction step.  The GMAT scripting that corresponds to <a class="reference internal" href="#constructsyntax"><span class="std std-numref">Listing 6</span></a> is shown in <a class="reference internal" href="#scriptsyntax"><span class="std std-numref">Listing 7</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<span id="scriptsyntax"></span><div class="code-block-caption"><span class="caption-number">Listing 7 </span><span class="caption-text">GMAT scripting corresponding to the API calls in <a class="reference internal" href="#constructsyntax"><span class="std std-numref">Listing 6</span></a>.</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Create</span> <span class="n">Spacecraft</span> <span class="n">Sat</span>
+<span class="n">Sat</span><span class="o">.</span><span class="n">X</span>  <span class="o">=</span> <span class="mf">6600.0</span><span class="p">;</span>
+<span class="n">Sat</span><span class="o">.</span><span class="n">Y</span>  <span class="o">=</span>    <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">Sat</span><span class="o">.</span><span class="n">Z</span>  <span class="o">=</span>  <span class="mf">300.0</span><span class="p">;</span>
+<span class="n">Sat</span><span class="o">.</span><span class="n">VX</span> <span class="o">=</span>    <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">Sat</span><span class="o">.</span><span class="n">VY</span> <span class="o">=</span>    <span class="mf">8.0</span><span class="p">;</span>
+<span class="n">Sat</span><span class="o">.</span><span class="n">VZ</span> <span class="o">=</span>    <span class="mf">0.0</span><span class="p">;</span>
+
+<span class="n">Propagate</span> <span class="n">Prop</span><span class="p">(</span><span class="n">Sat</span><span class="p">)</span> <span class="p">{</span><span class="n">Sat</span><span class="o">.</span><span class="n">RMAG</span> <span class="o">=</span> <span class="mi">7200</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>APIInterpreter is a new interpreter introduced in the GMAT R2024a code base. It provides, for commands constructed through the API, the same functionality as is provided by the ScriptInterrpter</p>
+</section>
+<section id="command-initialization-and-execution">
+<h2>Command Initialization and Execution<a class="headerlink" href="#command-initialization-and-execution" title="Link to this heading">¶</a></h2>
+<p>The Initialize() method in the GMAT API initializes the objects created and named by the user, and stored in GMAT’s configuration.  Commands are also stored in the configuration, so this method does  initialize Mission Control Sequence commands. Command sequences are initialized by the same Initialize() function call.</p>
+<p>After initialization, the command or command sequence is run by calling the Execute() method.  That method fires current command sequence, running to completion of the passed in sequence and returning a int indicating the result:</p>
+<ul class="simple">
+<li><p>1 if run was successful</p></li>
+<li><p>-1 if sandbox number is invalid</p></li>
+<li><p>-2 if exception thrown during sandbox initialization</p></li>
+<li><p>-3 if unknown error occurred during sandbox initialization</p></li>
+<li><p>-4 if execution interrupted by user</p></li>
+<li><p>-5 if exception thrown during the sandbox execution</p></li>
+<li><p>-6 if unknown error occurred during sandbox execution</p></li>
+<li><p>-7 if unkown error at the API level</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Configuring a Command</a><ul>
+<li><a class="reference internal" href="#command-categories">Command Categories</a></li>
+<li><a class="reference internal" href="#setting-up-a-command">Setting up a Command</a></li>
+<li><a class="reference internal" href="#command-initialization-and-execution">Command Initialization and Execution</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="TopLevelInterface.html"
+                          title="previous chapter">API Access to GMAT Commands</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../usage/Examples.html"
+                          title="next chapter">Usage Examples</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../../_sources/API/source/userguide/commands/SingleCommands.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../usage/Examples.html" title="Usage Examples"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="TopLevelInterface.html" title="API Access to GMAT Commands"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Configuring a Command</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

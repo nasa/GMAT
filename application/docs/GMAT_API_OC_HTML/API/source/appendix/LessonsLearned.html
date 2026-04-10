@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>GMAT API Prototypes &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GMAT API Prototypes</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="gmat-api-prototypes">
+<h1>GMAT API Prototypes<a class="headerlink" href="#gmat-api-prototypes" title="Link to this heading">¶</a></h1>
+<p>The GMAT development team has experimented with making the GMAT code available
+for external use two previous times, targeting information gathering leading to
+a production GMAT API.  These experiments provide lessons that are incorporated
+into the design presented in this document.</p>
+<section id="a-short-history-of-the-gmat-api">
+<h2>A short history of the GMAT API<a class="headerlink" href="#a-short-history-of-the-gmat-api" title="Link to this heading">¶</a></h2>
+<p>In 2011, core features of GMAT were exposed for access to internal projects at
+Goddard Space Flight Center (GSFC) using a plugin library
+<a class="reference internal" href="../Bibliography.html#cinterfaceapi"><span class="std std-ref">[CInterfaceAPI]</span></a>.  That plugin, libCInterface, allows
+access to objects initialized in the GMAT Sandbox.  Calls to those objects
+provide derivative information used by the Orbit Determination
+Toolbox (ODTBX) project at GSFC, and by other system users.  This application
+was the first attempt at an API into GMAT computations for external users.
+While this early interface provided a needed piece of functionality, the nature
+of the C Interface plugin required code changes and a system rebuild when a new
+component needed to be accessed by users of the plugin.  The C Interface code
+generated during this development cycle is exposed for MATLAB access using the
+MATLAB shared library loading mechanism.  The C Interface plugin is still part
+of the GMAT delivery packages at this writing.  Once the API is sufficiently
+complete, the C Interface plugin will be eligible for replacement by the newer,
+more complete API.</p>
+<p>A new experiment building a GMAT API prototype was built as an internal research
+and development project at GSFC in 2016 <a class="reference internal" href="../Bibliography.html#prototypeapi"><span class="std std-ref">[SWIGExperiment]</span></a>.
+The results of that study identified
+the <a class="reference external" href="http://www.swig.org/">Simplified Wrapper and Interface Generator (SWIG)</a>
+as a useful mechanism for creating a robust GMAT API capable of exporting most
+of the GMAT code for use by external projects.  The 2016 API prototype has been
+used to test interfaces with ODTBX, and works as expected in that context.
+Users of the new approach to access of GMAT capabilities can create and use a
+much more complete set of components than were available in the C Interface
+plugin.  The component exposure using this interface opens GMAT’s code to more
+general use, and allows access from a variety of programming languages including
+Python, Java, and C#.  The SWIG approach allows API generation from both core
+GMAT code and from GMAT plugin components, a feature unavailable with the
+prototype C Interface plugin.  The SWIG API generated from this work is
+available in an API branch of the GMAT repository at GSFC.</p>
+</section>
+<section id="user-experiences">
+<span id="lessonslearned"></span><h2>User Experiences<a class="headerlink" href="#user-experiences" title="Link to this heading">¶</a></h2>
+<p>Users at GSFC were surveyed at the start of the production API work that
+produced the design documented here.  The users surveyed include users familiar
+with both of the API experiments described above.  Feedback was collected for
+the usability of the earlier API systems, and for projected needs at GSFC.  The
+highlights of the user experiences informed the API design process.  Key elements
+that are targeted for the production API can be grouped into three use styles,
+three application frameworks (four if C++ is included), two near term needs, and
+a single overriding usage requirement:</p>
+<ul class="simple">
+<li><p>Use Styles</p>
+<ul>
+<li><p>Users of GMAT scripts that want to change scripted data during a run</p></li>
+<li><p>Analysts that want an easy-to-use toolbox of validated astrodynamics components</p></li>
+<li><p>Users that want to interact at a detailed level with instances of GMAT classes</p></li>
+</ul>
+</li>
+<li><p>GSFC Desired Application Frameworks</p>
+<ul>
+<li><p>Python</p></li>
+<li><p>Java</p></li>
+<li><p>MATLAB (via Java)</p></li>
+<li><p>C++ (See note below)</p></li>
+</ul>
+</li>
+<li><p>Near Term Needs</p>
+<ul>
+<li><p>Dynamics Modeling and Propagation</p>
+<ul>
+<li><p>Dynamics models must include Jacobian data</p></li>
+<li><p>Propagation should be available for all of GMAT’s propagators</p></li>
+</ul>
+</li>
+<li><p>Measurement Models from the Estimation Plugin</p></li>
+</ul>
+</li>
+<li><p>Usage</p>
+<ul>
+<li><p>Users need to be able to use the API without detailed knowledge of GMAT code</p>
+<ul>
+<li><p>The API needs usage documentation</p></li>
+<li><p>Users need online access to available API and object settings</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>These feedback considerations provide guidance for the GMAT API described here.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>C++ and the API</strong></p>
+<p>GMAT is coded in C++.  The tool used to generate the API, SWIG, provides
+interface code that exposes the native C++ code to users on other development
+platforms.  SWIG presumes that C++ coders will simply call into the native
+code directly.  There is no “C++ API” per se, but the functions added to GMAT
+to support the API on the target platforms  can be called from a developer’s
+C++ code.  Some functionality, like the help system, designed for interactive
+platform use, is of limited use for users of compiled C++ code.</p>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">GMAT API Prototypes</a><ul>
+<li><a class="reference internal" href="#a-short-history-of-the-gmat-api">A short history of the GMAT API</a></li>
+<li><a class="reference internal" href="#user-experiences">User Experiences</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../_sources/API/source/appendix/LessonsLearned.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GMAT API Prototypes</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+%  Create a s/c
+Create Spacecraft Sat;
+
+Create ForceModel Propagator1_ForceModel;
+GMAT Propagator1_ForceModel.PrimaryBodies = {Earth};
+
+Create Propagator Prop;
+GMAT Prop.FM = Propagator1_ForceModel;
+
+% Variables and arrays needed in calculations
+Create Variable SMA ECC RAAN;
+Create Variable r v pi2 mu d2r Energy;
+Create Variable SMAError ECCError RAANError;
+Create Variable x y z vx vy vz
+Create Array rv[3,1] vv[3,1] ev[3,1] nv[3,1];
+
+%  Create a report to output error data
+Create ReportFile Cart2KepConvert;
+GMAT Cart2KepConvert.Filename = FunctDiffs.report;
+GMAT Cart2KepConvert.ZeroFill = On;
+
+mu = 398600.4415;
+pi2 = 6.283185307179586232;
+d2r = 0.01745329251994329509
+
+While Sat.ElapsedDays < 1
+
+   Propagate Prop(Sat)
+   x = Sat.X
+   y = Sat.Y
+   z = Sat.Z
+   vx = Sat.VX
+   vy = Sat.VY
+   vz = Sat.VZ
+
+   % Put the state data into some data structures
+   [rv, vv, r, v] = LoadCartState(Sat); 
+
+   % Calculate the Energy and SMA
+   Energy = v^2/2 - mu/r;
+   SMA = -mu/2/Energy;
+
+   % Eccentricity built from the eccentricity vector
+   ev = cross(vv, cross(rv, vv)) / mu - rv / r;
+   [ECC] = magnitude(ev);
+
+   % Next the ascending node, using the node vector
+   nv(1,1)  =  x*vz-z*vx;
+   nv(2,1)  =  y*vz-z*vy;
+   nv(3,1)  =  0;
+   [n] = magnitude(nv);
+   RAAN = acos( nv(1,1)/n );
+   If nv(2,1) < 0;
+      RAAN = (pi2 - RAAN) / d2r;
+   EndIf;
+
+   SMAError  = Sat.SMA  - SMA;
+   ECCError  = Sat.ECC  - ECC;
+   RAANError = Sat.RAAN - RAAN;
+
+   Report Cart2KepConvert Sat.SMA SMA SMAError ...
+      Sat.ECC ECC ECCError Sat.RAAN RAAN RAANError;
+EndWhile
+

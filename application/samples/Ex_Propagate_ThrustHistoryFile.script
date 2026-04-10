@@ -1,0 +1,104 @@
+%
+%   Ex_Propagate_ThrustHistoryFile
+%
+%   Propagate a satellite and apply a finite manuever.
+%
+%   Released: R2020a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat       = UTCGregorian;
+SimSat.Epoch            = '01 Jan 2000 00:00:00.000';
+SimSat.CoordinateSystem = EarthMJ2000Eq;
+SimSat.DisplayStateType = Cartesian;
+SimSat.X                = 8000.0;
+SimSat.Y                = 0.0;
+SimSat.Z                = 0.0;
+SimSat.VX               = 0.0;
+SimSat.VY               = 8.7;
+SimSat.VZ               = 4.2;
+SimSat.DryMass          = 850;
+SimSat.Cd               = 2.2;
+SimSat.Cr               = 1.4;
+SimSat.DragArea         = 15;
+SimSat.SRPArea          = 15;
+SimSat.Id               = 'LEOSat';
+SimSat.Tanks            = {PropTank};
+
+Create ChemicalTank PropTank;
+
+PropTank.FuelMass      = 500;
+PropTank.PressureModel = PressureRegulated;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+Create Propagator Prop;
+
+FM.CentralBody       = Earth;
+FM.PrimaryBodies     = {Earth};
+FM.SRP               = Off;
+FM.Drag              = None
+FM.ErrorControl      = None;
+
+Prop.FM              = FM;
+Prop.Type            = RungeKutta89;
+Prop.InitialStepSize = 60;
+Prop.Accuracy        = 1e-13;
+Prop.MinStep         = 0;
+Prop.MaxStep         = 2700;
+Prop.MaxStepAttempts = 50;
+
+ 
+%----------------------------------------
+%----  Thrust history file
+%----------------------------------------
+
+%   Here we create the simulated finite burn and apply a thrust scale factor of
+%   0.8, or 20% cold.
+
+Create ThrustSegment ThrustSegmentCold;  
+
+ThrustSegmentCold.ThrustScaleFactor          = 0.8
+ThrustSegmentCold.ApplyThrustScaleToMassFlow = False
+ThrustSegmentCold.MassFlowScaleFactor        = 1.0
+ThrustSegmentCold.SolveFors                  = {};
+ThrustSegmentCold.MassSource                 = {PropTank}
+
+Create ThrustHistoryFile FiniteBurnModel
+
+FiniteBurnModel.AddThrustSegment = {ThrustSegmentCold}   
+FiniteBurnModel.FileName         = '../samples/SupportFiles/Thrust_Sim.thf'
+
+
+
+%----------------------------------------
+%   This report will show the mass depletion during and after the maneuver
+%----------------------------------------
+
+Create ReportFile rf;
+
+rf.Filename     = 'Ex_R2020a_Propagate_ThrustHistoryFile.txt';
+rf.WriteHeaders = True;
+rf.LeftJustify  = On;
+rf.Add          = {SimSat.UTCGregorian, ...
+    SimSat.EarthMJ2000Eq.X, SimSat.EarthMJ2000Eq.Y, SimSat.EarthMJ2000Eq.Z, ...
+    SimSat.EarthMJ2000Eq.VX, SimSat.EarthMJ2000Eq.VY, SimSat.EarthMJ2000Eq.VZ, ...
+    SimSat.TotalMass};
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+BeginFileThrust FiniteBurnModel(SimSat);
+Propagate Prop(SimSat) {SimSat.ElapsedDays = 1.0};
+EndFileThrust FiniteBurnModel(SimSat);

@@ -1,0 +1,23 @@
+   % PropagateMonteLunarTransfer.script
+
+   %---------- Spacecraft
+   Create Spacecraft LunarExpedition;
+   GMAT LunarExpedition.NAIFId = -421;
+   GMAT LunarExpedition.NAIFIdReferenceFrame = -9000001;
+   GMAT LunarExpedition.OrbitSpiceKernelName = {'LunarExpedition.bsp'};
+
+   %---------- Propagator
+   Create Propagator DefaultProp;
+   GMAT DefaultProp.Type = SPK;
+   GMAT DefaultProp.StepSize = 300;
+   GMAT DefaultProp.CentralBody = Earth;
+   GMAT DefaultProp.EpochFormat = 'UTCGregorian';
+   GMAT DefaultProp.StartEpoch = '24 Jul 2014 00:00:00.000';
+
+   %---------- Visualization
+   Create OpenFramesInterface EarthMJ2000EqView;
+   GMAT EarthMJ2000EqView.Add = {LunarExpedition, Earth, Luna};
+
+   %---------- Mission Timeline
+   BeginMissionSequence;
+   Propagate DefaultProp(LunarExpedition) {LunarExpedition.ElapsedDays = 9};

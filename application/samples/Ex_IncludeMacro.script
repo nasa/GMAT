@@ -1,0 +1,69 @@
+%
+%  Ex_IncludeMacro
+%
+%  Load a propagator instance from an external "included" file.
+%
+%  Released: R2016a
+% 
+
+
+
+%  Load the propagator from an external file
+#Include './SupportFiles/Ex_IncludeFile.script'
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+%(Already defined in Ex_IncludeFile.script)
+%Create ForceModel DefaultProp_ForceModel;
+%Create Propagator DefaultProp;
+
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OpenFrames1; 
+
+OpenFrames1.Add                     = {DefaultSC, Earth};
+OpenFrames1.View                    = {OpenFrames_View};
+OpenFrames1.CoordinateSystem        = EarthMJ2000Eq;
+							        
+OpenFrames1.DrawObject              = [ true true ];
+OpenFrames1.DrawXYPlane             = [ false false ];
+OpenFrames1.DrawLabel               = [ true true ];
+OpenFrames1.DrawGrid                = [ false false ];
+							        
+OpenFrames1.Axes                    = On;
+OpenFrames1.XYPlane                 = On;
+OpenFrames1.EclipticPlane           = Off;
+OpenFrames1.EnableStars             = On;
+OpenFrames1.StarCount               = 40000;
+OpenFrames1.ShowPlot                = true;
+
+Create OpenFramesView OpenFrames_View;
+
+OpenFrames_View.ViewFrame           = CoordinateSystem;
+OpenFrames_View.SetDefaultLocation  = On;
+OpenFrames_View.SetCurrentLocation  = Off;
+
+OpenFrames_View.DefaultEye          = [ 0 0 30000 ];
+OpenFrames_View.DefaultCenter       = [ 0 0 0 ];
+OpenFrames_View.DefaultUp           = [ 1 0 0 ];  
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 12000.0};

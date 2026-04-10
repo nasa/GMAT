@@ -1,0 +1,319 @@
+%
+%   Ex_Estimate_TDRSUserTracking
+%
+%   Batch least-squared OD using TDRS user range and Doppler tracking.
+%
+%   In this script, we estimate the orbit of a LEO satellite using tracking 
+%   from two TDRS satellites. The TDRS satellite orbits are known and not 
+%   estimated.
+%
+%   This example uses propagated states for the TDRS orbits. By configuring an 
+%   ephemeris propagator a precomupted ephemeris could also be used.
+%
+%   Released: R2025a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimUserSat
+
+SimUserSat.DateFormat       = UTCGregorian
+SimUserSat.Epoch            = '01 Mar 2005 00:00:00.000'
+SimUserSat.CoordinateSystem = EarthMJ2000Eq
+SimUserSat.DisplayStateType = Cartesian
+SimUserSat.X                =   576.869556
+SimUserSat.Y                = -5701.142761
+SimUserSat.Z                = -4170.593691
+SimUserSat.VX               =    -1.76450794
+SimUserSat.VY               =     4.18128798
+SimUserSat.VZ               =    -5.96578986
+SimUserSat.DryMass          = 850
+SimUserSat.Cd               = 2.2
+SimUserSat.Cr               = 1.8
+SimUserSat.DragArea         = 15
+SimUserSat.SRPArea          = 15
+SimUserSat.Id               = 'LEOSat'
+SimUserSat.AddHardware      = {UserTransponder, UserAntenna}
+
+Create Spacecraft EstUserSat
+
+EstUserSat.DateFormat       = UTCGregorian
+EstUserSat.Epoch            = '01 Mar 2005 00:00:00.000'
+EstUserSat.CoordinateSystem = EarthMJ2000Eq
+EstUserSat.DisplayStateType = Cartesian
+EstUserSat.X                =   576.8
+EstUserSat.Y                = -5701.1
+EstUserSat.Z                = -4170.5
+EstUserSat.VX               =    -1.7645
+EstUserSat.VY               =     4.1813
+EstUserSat.VZ               =    -5.9658
+EstUserSat.DryMass          = 850
+EstUserSat.Cd               = 2.2
+EstUserSat.Cr               = 1.8
+EstUserSat.DragArea         = 15
+EstUserSat.SRPArea          = 15
+EstUserSat.Id               = 'LEOSat'
+EstUserSat.AddHardware      = {UserTransponder, UserAntenna}
+EstUserSat.SolveFors        = {CartesianState}     
+
+%----------------------------------------
+%------ Spacecraft electronics
+%----------------------------------------
+
+Create Antenna UserAntenna
+Create Transponder UserTransponder
+
+UserTransponder.PrimaryAntenna  = UserAntenna
+UserTransponder.HardwareDelay   = 1.0e-06
+UserTransponder.TurnAroundRatio = '240/221' 
+
+%----------------------------------------
+%---------- TDRS Spacecraft
+%----------------------------------------
+
+Create Spacecraft TDW
+
+TDW.DateFormat         = UTCGregorian
+TDW.Epoch              = '01 Mar 2005 00:00:00.000'
+TDW.CoordinateSystem   = EarthMJ2000Eq
+TDW.DisplayStateType   = Cartesian
+TDW.X                  = 41671.0
+TDW.Y                  =  6478.0
+TDW.Z                  =   -20.0
+TDW.VX                 = -0.470
+TDW.VY                 =  3.027
+TDW.VZ                 =  0.270
+TDW.DryMass            = 1000.
+TDW.Cd                 = 2.2
+TDW.Cr                 = 1.4
+TDW.DragArea           = 20.0
+TDW.SRPArea            = 20.0
+TDW.Id                 = 'TD10'
+TDW.AddHardware        = {TdrsSnTransponder, TdrsToSgltAntenna, TdrsToUserAntenna}
+TDW.SolveFors          = {}     
+
+Create Spacecraft SimTDW
+SimTDW = TDW
+
+Create Spacecraft TDE
+
+TDE.DateFormat        = UTCGregorian
+TDE.Epoch             = '01 Mar 2005 00:00:00.000'
+TDE.CoordinateSystem  = EarthMJ2000Eq
+TDE.DisplayStateType  = Cartesian
+TDE.X                 = -16369.0
+TDE.Y                 =  38864.0
+TDE.Z                 =      6.0
+TDE.VX                = -2.795
+TDE.VY                = -1.176
+TDE.VZ                =  0.500
+TDE.DryMass           = 1000.
+TDE.Cd                = 2.2
+TDE.Cr                = 1.0
+TDE.DragArea          = 20.0
+TDE.SRPArea           = 20.0
+TDE.Id                = 'TD13'
+TDE.AddHardware       = {TdrsSnTransponder, TdrsToSgltAntenna, TdrsToUserAntenna}
+TDE.SolveFors         = {}     
+
+Create Spacecraft SimTDE
+SimTDE = TDE
+
+%----------------------------------------
+%---- TDRS spacecraft electronics
+%----------------------------------------
+
+Create Antenna TdrsToSgltAntenna
+Create Antenna TdrsToUserAntenna
+Create Transponder TdrsSnTransponder
+
+TdrsSnTransponder.PrimaryAntenna  = TdrsToSgltAntenna
+TdrsSnTransponder.HardwareDelay   = 0
+TdrsSnTransponder.TurnAroundRatio = '1/1' 
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel SNDopplerModel
+
+SNDopplerModel.Type       = 'SN_Doppler'
+SNDopplerModel.NoiseSigma = 0.250
+SNDopplerModel.Bias       = 0.0
+SNDopplerModel.SolveFors  = {}
+
+Create ErrorModel SNRangeModel
+
+SNRangeModel.Type         = 'SN_Range'
+SNRangeModel.NoiseSigma   = 0.010
+SNRangeModel.Bias         = 0.0
+SNRangeModel.SolveFors    = {}
+
+%----------------------------------------
+%---------- Ground Station hardware
+%----------------------------------------
+
+Create Antenna SgltAntenna
+Create Transmitter SgltTransmitter
+Create Receiver SgltReceiver
+
+SgltTransmitter.PrimaryAntenna = SgltAntenna
+SgltTransmitter.Frequency      = 2067.5
+SgltReceiver.PrimaryAntenna    = SgltAntenna
+
+%----------------------------------------
+%----- Space-to-Ground Link Antennas
+%----------------------------------------
+
+Create GroundStation SGLT1
+
+SGLT1.CentralBody           = Earth
+SGLT1.StateType             = Spherical
+SGLT1.HorizonReference      = Ellipsoid
+SGLT1.Latitude              =  40.853
+SGLT1.Longitude             = -74.663
+SGLT1.Altitude              =  0.100
+SGLT1.Id                    = 'SGLT1'
+SGLT1.AddHardware           = {SgltTransmitter, SgltAntenna, SgltReceiver}
+SGLT1.MinimumElevationAngle = 7.0
+SGLT1.TroposphereModel      = 'None'
+SGLT1.IonosphereModel       = 'None'
+SGLT1.ErrorModels           = {SNRangeModel, SNDopplerModel}
+
+Create GroundStation SGLT2
+
+SGLT2.CentralBody           = Earth
+SGLT2.StateType             = Spherical
+SGLT2.HorizonReference      = Ellipsoid
+SGLT2.Latitude              =   42.9
+SGLT2.Location2             = -123.8
+SGLT2.Location3             =  0.100
+SGLT2.Id                    = 'SLGT2'
+SGLT2.AddHardware           = {SgltTransmitter, SgltAntenna, SgltReceiver}
+SGLT2.MinimumElevationAngle = 7.0
+SGLT2.TroposphereModel      = 'None'
+SGLT2.IonosphereModel       = 'None'
+SGLT2.ErrorModels           = {SNRangeModel, SNDopplerModel}
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet SimData
+
+SimData.AddTrackingConfig        = {{SGLT1, SimTDE, SimUserSat, SimTDE, SGLT1}, 'SN_Range', 'SN_Doppler'}
+SimData.AddTrackingConfig        = {{SGLT2, SimTDW, SimUserSat, SimTDW, SGLT2}, 'SN_Range', 'SN_Doppler'}
+SimData.FileName                 = {'Ex_Estimate_TDRSUserTracking.gmd'}
+SimData.RampTable                = {}
+SimData.UseLightTime             = True
+SimData.UseRelativityCorrection  = False
+SimData.UseETminusTAI            = False
+SimData.SimDopplerCountInterval  = 10.  
+SimData.DataFilters              = {}
+SimData.SimTDRSServiceAccessList = {MA, SA1}
+
+Create TrackingFileSet EstData
+
+EstData.AddTrackingConfig        = {{SGLT1, TDE, EstUserSat, TDE, SGLT1}, 'SN_Range', 'SN_Doppler'}
+EstData.AddTrackingConfig        = {{SGLT2, TDW, EstUserSat, TDW, SGLT2}, 'SN_Range', 'SN_Doppler'}
+EstData.FileName                 = {'Ex_Estimate_TDRSUserTracking.gmd'}
+EstData.RampTable                = {}
+EstData.UseLightTime             = True
+EstData.UseRelativityCorrection  = False
+EstData.UseETminusTAI            = False
+EstData.DataFilters              = {}
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM_LEO
+
+FM_LEO.CentralBody                      = Earth
+FM_LEO.PrimaryBodies                    = {Earth}
+FM_LEO.GravityField.Earth.Degree        = 30
+FM_LEO.GravityField.Earth.Order         = 30
+FM_LEO.GravityField.Earth.PotentialFile = 'JGM2.cof'
+FM_LEO.SRP                              = Off
+FM_LEO.Drag.AtmosphereModel             = 'JacchiaRoberts'
+FM_LEO.Drag.HistoricWeatherSource       = 'CSSISpaceWeatherFile'
+FM_LEO.Drag.CSSISpaceWeatherFile        = 'SpaceWeather-All-v1.2.txt'
+FM_LEO.ErrorControl                     = None
+
+Create Propagator PropLEO
+
+PropLEO.FM                              = FM_LEO
+PropLEO.Type                            = RungeKutta89
+PropLEO.InitialStepSize                 = 60
+PropLEO.Accuracy                        = 1e-13
+PropLEO.MinStep                         = 0
+PropLEO.MaxStep                         = 60
+PropLEO.MaxStepAttempts                 = 50
+
+Create ForceModel FM_GEO
+
+FM_GEO.CentralBody                      = Earth
+FM_GEO.PrimaryBodies                    = {Earth}
+FM_GEO.GravityField.Earth.Degree        = 8
+FM_GEO.GravityField.Earth.Order         = 8
+FM_GEO.GravityField.Earth.PotentialFile = 'JGM2.cof'
+FM_GEO.SRP                              = On
+FM_GEO.Drag.AtmosphereModel             = None
+FM_GEO.ErrorControl                     = None
+
+Create Propagator PropGEO
+
+PropGEO.FM                              = FM_GEO
+PropGEO.Type                            = RungeKutta89
+PropGEO.InitialStepSize                 = 300
+PropGEO.Accuracy                        = 1e-13
+PropGEO.MinStep                         = 0
+PropGEO.MaxStep                         = 300
+PropGEO.MaxStepAttempts                 = 50
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator Sim
+
+Sim.AddData                    = {SimData}
+Sim.EpochFormat                = UTCGregorian
+Sim.InitialEpoch               = '01 Mar 2005 00:00:00.000'
+Sim.FinalEpoch                 = '02 Mar 2005 00:00:00.000'
+Sim.MeasurementTimeStep        = 60
+Sim.Propagator                 = {PropLEO, SimUserSat}
+Sim.Propagator                 = {PropGEO, SimTDE, SimTDW}
+Sim.AddNoise                   = On
+
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create BatchEstimator BLS
+
+BLS.ShowProgress               = True
+BLS.Measurements               = {EstData} 
+BLS.AbsoluteTol                = 0.005
+BLS.RelativeTol                = 0.001
+BLS.MaximumIterations          = 10
+BLS.MaxConsecutiveDivergences  = 5
+BLS.Propagator                 = {PropLEO, EstUserSat}
+BLS.Propagator                 = {PropGEO, TDE, TDW}
+BLS.ShowAllResiduals           = On
+BLS.OLSEInitialRMSSigma        = 1000
+BLS.OLSEMultiplicativeConstant = 3
+BLS.OLSEAdditiveConstant       = 0
+BLS.OLSEUseRMSP                = False
+BLS.ReportFile                 = 'Ex_Estimate_TDRSUserTracking.txt'
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+RunSimulator Sim
+RunEstimator BLS

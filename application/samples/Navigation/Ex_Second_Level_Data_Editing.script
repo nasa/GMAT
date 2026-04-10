@@ -1,0 +1,271 @@
+%
+%   Ex_Second_Level_Data_Editing
+%
+%   AcceptFilter_Level2_Multiple_Accept_Reject
+%
+%   Use multiple accept and reject filters simultaneously.
+%
+%   Released: R2017a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat       = UTCGregorian;
+SimSat.Epoch            = '10 Jun 2010 00:00:00.000';
+SimSat.CoordinateSystem = EarthMJ2000Eq;
+SimSat.DisplayStateType = Cartesian;
+SimSat.X                = 576.869556
+SimSat.Y                = -5701.142761
+SimSat.Z                = -4170.593691
+SimSat.VX               = -1.76450794
+SimSat.VY               = 4.18128798
+SimSat.VZ               = -5.96578986
+SimSat.DryMass          = 850;
+SimSat.Cd               = 2.2;
+SimSat.Cr               = 1.8;
+SimSat.DragArea         = 15;
+SimSat.SRPArea          = 15;
+SimSat.Id               = 'LEOSat';
+SimSat.AddHardware      = {Transponder1, Antenna2};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat       = UTCGregorian;
+EstSat.Epoch            = '10 Jun 2010 00:00:00.000';
+EstSat.CoordinateSystem = EarthMJ2000Eq;
+EstSat.DisplayStateType = Cartesian;
+EstSat.X                = 576.869556
+EstSat.Y                = -5701.142761
+EstSat.Z                = -4170.593691
+EstSat.VX               = -1.76450794
+EstSat.VY               = 4.18128798
+EstSat.VZ               = -5.96578986
+EstSat.DryMass          = 850;
+EstSat.Cd               = 2.2;
+EstSat.Cr               = 1.8;
+EstSat.DragArea         = 15;
+EstSat.SRPArea          = 15;
+EstSat.Id               = 'LEOSat';
+EstSat.AddHardware      = {Transponder1, Antenna2};
+EstSat.SolveFors        = {CartesianState};     
+
+%----------------------------------------
+%----- Error models
+%----------------------------------------
+
+Create ErrorModel Range;
+
+Range.Type           = 'Range';
+Range.NoiseSigma     = 0.010;
+Range.Bias           = 0.0;
+Range.SolveFors      = {};
+
+Create ErrorModel RangeRate;
+
+RangeRate.Type       = 'RangeRate';
+RangeRate.NoiseSigma = 0.00005;
+RangeRate.Bias       = 0.0;
+RangeRate.SolveFors  = {};
+
+Create ErrorModel DsnSeqRange;
+
+DsnSeqRange.Type       = 'DSN_SeqRange';
+DsnSeqRange.NoiseSigma = 0.010;
+DsnSeqRange.Bias       = 0.0;
+DsnSeqRange.SolveFors  = {};
+
+Create ErrorModel DsnTcp;
+
+DsnTcp.Type            = 'DSN_TCP';
+DsnTcp.NoiseSigma      = 0.00010;
+DsnTcp.Bias            = 0.0;
+DsnTcp.SolveFors       = {};
+
+
+%----------------------------------------
+%----- Ground stations
+%----------------------------------------
+
+Create GroundStation GDS;
+
+GDS.CentralBody           = Earth;
+GDS.StateType             = Cartesian;
+GDS.HorizonReference      = Ellipsoid;
+GDS.Location1             = -2353.621251;
+GDS.Location2             = -4641.341542;
+GDS.Location3             =  3677.052370;
+GDS.Id                    = 'GDS';
+GDS.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+GDS.MinimumElevationAngle = 10;
+GDS.ErrorModels           = {Range, RangeRate};
+
+Create GroundStation CAN;
+
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514;
+CAN.Location2             =  2682.281745;
+CAN.Location3             = -3674.570392;
+CAN.Id                    = 'CAN';
+CAN.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+CAN.MinimumElevationAngle = 10;
+CAN.ErrorModels           = {DsnSeqRange, DsnTcp};
+
+Create GroundStation MAD;
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4849.519988;
+MAD.Location2             = -360.641653;
+MAD.Location3             = 4114.504590;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+MAD.MinimumElevationAngle = 10;
+MAD.ErrorModels           = {Range, DsnTcp};
+
+
+%----------------------------------------
+%----- Tracking file sets.
+%----------------------------------------
+
+Create TrackingFileSet simData;
+
+simData.AddTrackingConfig       = {{GDS, SimSat, GDS}, 'Range', 'RangeRate'};
+simData.AddTrackingConfig       = {{CAN, SimSat, CAN}, 'DSN_SeqRange', 'DSN_TCP'};
+simData.AddTrackingConfig       = {{MAD, SimSat, MAD}, 'Range', 'DSN_TCP'};
+simData.FileName                = {'AcceptFilter_Level2_Multiple_Accept_Reject.gmd'};
+simData.RampTable               = {};
+simData.UseLightTime            = True;
+simData.UseRelativityCorrection = False;
+simData.UseETminusTAI           = False;
+simData.SimRangeModuloConstant  = 67108864;
+simData.SimDopplerCountInterval = 10.;  
+simData.DataFilters             = {};
+
+Create TrackingFileSet estData;
+
+estData.AddTrackingConfig       = {{GDS, EstSat, GDS}, 'Range', 'RangeRate'};
+estData.AddTrackingConfig       = {{CAN, EstSat, CAN}, 'DSN_SeqRange', 'DSN_TCP'};
+estData.AddTrackingConfig       = {{MAD, EstSat, MAD}, 'Range', 'DSN_TCP'};
+estData.FileName                = {'AcceptFilter_Level2_Multiple_Accept_Reject.gmd'};
+estData.RampTable               = {};
+estData.UseLightTime            = True;
+estData.UseRelativityCorrection = False;
+estData.UseETminusTAI           = False;
+estData.SimRangeModuloConstant  = 67108864;
+estData.SimDopplerCountInterval = 10.;  
+estData.DataFilters             = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel fm;
+
+fm.CentralBody  = Earth;
+fm.PointMasses  = {Earth};
+fm.Drag         = None;
+fm.SRP          = Off;
+fm.ErrorControl = None;
+
+Create Propagator ODProp;
+
+ODProp.FM              = fm;
+ODProp.Type            = 'RungeKutta56';
+ODProp.InitialStepSize = 60;
+ODProp.Accuracy        = 1e-13;
+ODProp.MinStep         = 0;
+ODProp.MaxStep         = 60;
+ODProp.MaxStepAttempts = 50;
+
+
+%----------------------------------------
+%---- Communications Hardware
+%----------------------------------------
+
+Create Antenna Antenna1 Antenna2;
+Create Transmitter Transmitter1;
+Create Receiver Receiver1;
+
+Receiver1.PrimaryAntenna    = Antenna1;
+Transmitter1.PrimaryAntenna = Antenna1;
+Transmitter1.Frequency      = 2067.5;
+
+Create Transponder Transponder1;
+
+Transponder1.PrimaryAntenna  = Antenna2;
+Transponder1.HardwareDelay   = 0.0;
+Transponder1.TurnAroundRatio = '240/221' 
+
+ 
+%----------------------------------------
+%-------- Simulator
+%----------------------------------------
+
+Create Simulator sim;
+
+sim.AddData                    = {simData};
+sim.EpochFormat                = 'UTCGregorian';
+sim.InitialEpoch               = '10 Jun 2010 00:00:00.000';
+sim.FinalEpoch                 = '11 Jun 2010 00:00:00.000';
+sim.MeasurementTimeStep        = 60;
+sim.Propagator                 = ODProp;
+sim.AddNoise                   = On;
+
+
+%----------------------------------------
+%-------- Reject filter
+%----------------------------------------
+
+Create AcceptFilter af1 af2;
+Create RejectFilter rf1;
+
+af1.Trackers     = {'MAD'};
+af2.Trackers     = {'CAN'};
+
+rf1.Trackers     = {'MAD'};
+rf1.DataTypes    = {'Range'};
+rf1.EpochFormat  = UTCGregorian;
+rf1.InitialEpoch = '10 Jun 2010 02:56:00.000';
+rf1.FinalEpoch   = '10 Jun 2010 13:59:00.000';
+
+
+
+%----------------------------------------
+%-------- Estimator
+%----------------------------------------
+
+Create BatchEstimator bat
+
+bat.ShowProgress               = True;
+bat.Measurements               = {estData};
+bat.DataFilters                = {af1, af2, rf1};
+bat.AbsoluteTol                = 0.0001;
+bat.RelativeTol                = 0.0001;
+bat.MaximumIterations          = 1;
+bat.MaxConsecutiveDivergences  = 3;
+bat.Propagator                 = ODProp;
+bat.ShowAllResiduals           = On;
+bat.OLSEInitialRMSSigma        = 1000;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant       = 0;
+bat.InversionAlgorithm         = 'Internal';
+bat.ReportStyle                = 'Normal';
+bat.ReportFile                 = 'AcceptFilter_Level2_Multiple_Accept_Reject.txt';
+
+
+%----------------------------------------
+%-------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence
+
+RunSimulator sim;
+RunEstimator bat;

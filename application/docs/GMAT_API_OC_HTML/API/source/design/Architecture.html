@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>GMAT Architectural Components &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="The API Design" href="APIDesign.html" />
+    <link rel="prev" title="System Design" href="Design.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="APIDesign.html" title="The API Design"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Design.html" title="System Design"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="Design.html" accesskey="U">System Design</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GMAT Architectural Components</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="gmat-architectural-components">
+<h1>GMAT Architectural Components<a class="headerlink" href="#gmat-architectural-components" title="Link to this heading">¶</a></h1>
+<p>The GMAT API exposes core GMAT classes and processes to API users.  In order to
+understand the API, it is useful to understand at a high level how GMAT works,
+and how the API encapsulates the GMAT design for use outside of the program.</p>
+<section id="the-gmat-architecture">
+<h2>The GMAT Architecture<a class="headerlink" href="#the-gmat-architecture" title="Link to this heading">¶</a></h2>
+<p>The GMAT system consists of a set of components that set up a framework for
+executing spacecraft mission analysis simulations, and a set of components used
+to define and run the simulation.  The former is referred to as the GMAT engine.
+The latter defines the components that users script when they run a simulation.
+<a class="reference internal" href="#gmatflow"><span class="std std-numref">Fig. 1</span></a> shows the connections between the components of the GMAT engine.
+The main control element of GMAT is a component called the Moderator.  GMAT’s
+Moderator provides an interface into the inner working of GMAT, and manages user
+interactions with the system.  Simulations are run in a Sandbox, using clones of
+user objects created in factories and stored in the GMAT configuration.  Users
+interact with GMAT through interpreters that convert script or GUI descriptions
+of simulation components into the objects used for the simulation.  The results
+of a simulation are passed, through a Publisher, to subscribing components,
+which write files or display data for the user.  In a nutshell, that is the
+architecture shown in <a class="reference internal" href="#gmatflow"><span class="std std-numref">Fig. 1</span></a>.</p>
+<figure class="align-center" id="id1">
+<span id="gmatflow"></span><a class="reference internal image-reference" href="../../../_images/GMAT_Engine_Flow.png"><img alt="../../../_images/GMAT_Engine_Flow.png" src="../../../_images/GMAT_Engine_Flow.png" style="width: 445.0px; height: 448.5px;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 1 </span><span class="caption-text">The GMAT engine, showing interactions between the components.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Another view of the components used in GMAT is shown in the component stack
+diagram in <a class="reference internal" href="#gmatstack"><span class="std std-numref">Fig. 2</span></a>.  GMAT is built on a set of utility functions used for
+string, vector and matrix manipulations, core numerical operations, file manipulations,
+and general purpose time and state representations.  The GMAT Engine components
+are built on these utilities, as are the classes defining the objects used in
+a GMAT simulation.  User interfaces into the GMAT system are built on top of
+these core elements of the system.</p>
+<figure class="align-center" id="id2">
+<span id="gmatstack"></span><a class="reference internal image-reference" href="../../../_images/GMATStack.png"><img alt="../../../_images/GMATStack.png" src="../../../_images/GMATStack.png" style="width: 464.09999999999997px; height: 272.29999999999995px;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 2 </span><span class="caption-text">The GMAT component stack.</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>All of the user configured simulation components are built on a class, GmatBase,
+that provides the serialization interfaces used to set the properties of the
+components through object fields.  GmatBase provides the interfaces used when
+reading and writing simulation objects, either to script files or to panels on
+the GMAT graphical user interface.  Resources - objects like the spacecraft
+model, coordinate systems, force models, propagators, environmental elements,
+hardware components, and numerical engines used for estimating, targeting, and
+optimizing - are all built on top of the GmatBase class, as is the mission
+timeline scripted as a sequence of GMAT commands.  The mission timeline is
+referred to as the GMAT mission control sequence in the documentation.</p>
+<p>Most users of the GMAT API do not interact directly with the components of the
+GMAT engine.  Those components are described in the GMAT Architectural
+Specification <a class="reference internal" href="../Bibliography.html#archspec"><span class="std std-ref">[Architecture]</span></a>.  Typical users of the GMAT API
+fall into two groups: users that use GMAT components in their work, and users
+that manipulate scripted components prior to, during, or after the execution of
+a script.  The API design documented below focuses on these users.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">GMAT Architectural Components</a><ul>
+<li><a class="reference internal" href="#the-gmat-architecture">The GMAT Architecture</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="Design.html"
+                          title="previous chapter">System Design</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="APIDesign.html"
+                          title="next chapter">The API Design</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../_sources/API/source/design/Architecture.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="APIDesign.html" title="The API Design"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Design.html" title="System Design"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="Design.html" >System Design</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GMAT Architectural Components</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

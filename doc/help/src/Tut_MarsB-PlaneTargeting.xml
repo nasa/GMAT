@@ -1,0 +1,1192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="MarsB-PlaneTargeting"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Mars B-Plane Targeting</title>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>The goal of this mission is to show how to target a transfer
+    trajectory from an Earth parking orbit to a Mars orbit via B-Plane
+    targeting. Given a specified inclination for the final orbit, we solve for
+    the velocity of the spacecraft in certain directions in order to determine
+    a transfer trajectory.</para>
+
+    <para>You can download the script file and run it beforehand to see the
+    final results of this tutorial: <link
+    xlink:href="scripts/MarsBPlaneTutorial.script">MarsBPlaneTutorial.script</link></para>
+
+    <section>
+      <title>Prerequisites</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Basic understanding of B-Planes and their usage in targeting a
+          position.</para>
+        </listitem>
+
+        <listitem>
+          <para>Tutorials:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><link linkend="CreatingandPropagatingaSpacecraft">Creating
+              and Propagating a Spacecraft</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="DesigningaHohmannTransfer">Designing a
+              Hohmann Transfer</link></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Mission Description</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Objective: Target a Martian transfer trajectory using B-Plane
+          Targeting, to achieve a final inclination of 24.677°.</para>
+        </listitem>
+
+        <listitem>
+          <para>Assume:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Parking orbit SMA = 10000 km</para>
+            </listitem>
+
+            <listitem>
+              <para>Parking orbit ECC = 0.1</para>
+            </listitem>
+
+            <listitem>
+              <para>INC = 25.0°</para>
+            </listitem>
+
+            <listitem>
+              <para>RAAN = 332.5°</para>
+            </listitem>
+
+            <listitem>
+              <para>AOP = 90.0°</para>
+            </listitem>
+
+            <listitem>
+              <para>TA = 360°</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Find:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>INC</para>
+            </listitem>
+
+            <listitem>
+              <para>BdotT</para>
+            </listitem>
+
+            <listitem>
+              <para>BdotR</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Resource Tree</title>
+
+    <para>For this tutorial, four impulsive burns are used to maneuver a
+    single spacecraft, and three propagators are used for different portions
+    of the spacecraft's propagation. The propagators use different point
+    masses to account for the dominant gravity fields during the spacecraft's
+    trajectory. Two OpenGL plots are used to track the path at the starting
+    point and ending point of the mission. Finally, four coordinate systems
+    are used to define the spacecraft's position - based, accordingly, on
+    Earth, Mars, the ecliptic, and the equatorial plane of the Earth.</para>
+
+    <section>
+      <title>Objects Required</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft: MarsSupply</para>
+        </listitem>
+
+        <listitem>
+          <para>Impulsive Burns: TOI, MarsMCC, MarsBPlane, and MarsOI</para>
+        </listitem>
+
+        <listitem>
+          <para>Propagators: EarthProp, SunProp, and MarsProp</para>
+        </listitem>
+
+        <listitem>
+          <para>Differential Corrector: MarsTOIDC</para>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports: EarthView and MarsView and a data report</para>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems: MarsMJ2000Eq, SunMJ2kEc, SunMJ2kEq, and
+          EarthSunRot</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Creating and Modifying Objects</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add a spacecraft to the resource tree and rename it
+              MarsSupply</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the epoch format to TAIModJulian</para>
+            </listitem>
+
+            <listitem>
+              <para>Use an Epoch of 21160</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the State Type to Keplerian</para>
+            </listitem>
+
+            <listitem>
+              <para>See Assumptions to modify spacecraft element
+              properties</para>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: MarsSupply Spacecraft Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_MarsBPlane_MarsSupplySpacecraftObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: MarsSupply Spacecraft Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Propagators</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Remove all primary bodies and gravity models from all
+              propagators</para>
+            </listitem>
+
+            <listitem>
+              <para>EarthProp</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Use an Integrator max step size of 86400 sec</para>
+                </listitem>
+
+                <listitem>
+                  <para>Include only a Geocentric point mass</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: EarthProp Propagator Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MarsBPlane_EarthPropPropagatorObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: EarthProp Propagator Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>SunProp</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Set the Integrator max step size to 160000 sec</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Integrator max step attempts to 500</para>
+                </listitem>
+
+                <listitem>
+                  <para>Include heliocentric, geocentric, and lunar point
+                  masses</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>MarsProp includes only a martian point mass</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Set the Integrator max step size to 86400 sec</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Integrator max step attempts to 100</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Burns</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Change the TOI vector V to 2.85 km/s</para>
+
+              <screenshot>
+                <info>
+                  <title>Figure: TOI Impulsive Burn Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MarsBPlane_TOIImpulsiveBurnObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: TOI Impulsive Burn Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>Change the MarsMCC vector N to - 0.8593 km/s with a
+              heliocentric origin</para>
+            </listitem>
+
+            <listitem>
+              <para>Change the MarsBPlane vector V to - 0.3309 km/s and B to
+              0.6917 km/s with a heliocentric origin</para>
+            </listitem>
+
+            <listitem>
+              <para>Change the MarsOI vector V to - 4 km/s with a martian
+              origin</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>EarthSunRot</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Set the Type of Axes to ObjectReferenced</para>
+                </listitem>
+
+                <listitem>
+                  <para>Make Sun the Primary body and Earth the Secondary
+                  body</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: EarthSunCoord Coordinate System
+                  Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MarsBPlane_EarthSunCoordCoordinateSystemObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: EarthSunCoord Coordinate System
+                    Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>SunMJ2kEc</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Apply a heliocentric origin to the system</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use MJ2000Ec as the Type of Axes</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>SunMJ2kEq</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Apply a heliocentric origin to the system</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use MJ2000Eq as the Type of Axes</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>MarsMJ2000Eq</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Apply a martian origin to the system</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use MJ2000Eq as the Type of Axes</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Solvers</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add a differential corrector to the Boundary Value Solvers
+              folder in the Solvers folder under the resource tree and rename
+              it MarsTOIDC</para>
+            </listitem>
+
+            <listitem>
+              <para>Use the Targeter Text File targeter_MarsTOIDC.data</para>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: MarsTOIDC Differential Corrector Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_MarsBPlane_MarsTOIDCDifferentialCorrectorObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: MarsTOIDC Differential Corrector Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add a Report file to the Plots/Reports folder under the
+              resource tree</para>
+
+              <screenshot>
+                <info>
+                  <title>Figure: Data Data Report Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MarsBPlane_DataDataReportObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: Data Data Report Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>EarthView</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add the Sun to the Selected Celestial Objects
+                  field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Check the Draw Grid and Draw Sun Line boxes in the
+                  Drawing Option group box</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: MarsView OpenGL Plot Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MarsBPlane_MarsviewOpenGLPlotObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: MarsView OpenGL Plot Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>MarsView</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add the Sun and Mars to the Selected Celestial Objects
+                  field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use MarsMJ2000Eq coordinate system in the View
+                  Definition and View Up Definition group boxes</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use a View Scale Factor of 2</para>
+                </listitem>
+
+                <listitem>
+                  <para>Check the Draw Grid and Draw Sun Line boxes in the
+                  Drawing Option group box</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Mission Sequence</title>
+
+    <para>This mission begins at the spacecraft orbit's Earth periapsis point,
+    then moves to a Mars transfer trajectory, and ends in an elliptical orbit
+    about Mars. The transfer trajectory calls two targeting sequences, one to
+    obtain an inclination, and the other to obtain a B-Plane position. In the
+    first targeting sequence, the inclination is achieved, and is then used
+    when the second sequence targets a distinct B-Plane parameter. After the
+    second targeting sequence is accomplished, the spacecraft is slowed by a
+    final maneuver that puts it into the elliptical orbit and continues to
+    propagate for another half day. During each Propagate and Maneuver command
+    before and after the targeting sequences, reports are added for tracking
+    and analysis purposes, to monitor the spacecraft's Cartesian coordinates
+    and velocity vectors.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>Initial Propagate and Maneuver Sequence</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>For Equation 1, adding a report automatically turns the
+            headers on, so be sure the setting is off to avoid including
+            unnecessary text in the report.</para>
+          </listitem>
+
+          <listitem>
+            <para>Propagate 1 simply propagates the spacecraft to Earth's
+            periapsis.</para>
+          </listitem>
+
+          <listitem>
+            <para>Maneuver 1 applies a ΔV in the V direction, to propel the
+            spacecraft for 160 days through Propagate commands 2 and 3. When
+            the propagators switch, the dominant point mass gravity field
+            changes from Earth to Sun.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Targeting Sequences</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Target 1 includes Vary, Maneuver, and Achieve commands, to
+            prompt GMAT into achieving the desired inclination. The maneuver
+            applies the MarsMCC impulsive burn to achieve a ΔV in the N
+            direction, so the spacecraft can reach 24.677° and begin its final
+            maneuver.</para>
+          </listitem>
+
+          <listitem>
+            <para>Target 2 includes two Vary, two Propagate, two Achieve, and
+            one Maneuver commands, to target a BdotT of 10,000 km and BdotR of
+            – 10,000 km about Mars' periapsis. The maneuver applies the
+            MarsBPlane impulsive burn, to achieve a ΔV in both the V and B
+            velocity directions.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Final Propagate and Maneuver Sequence</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Maneuver 4 applies a ΔV in the V direction, to slow the
+            spacecraft to the velocity that is necessary to obtain an
+            elliptical orbit about Mars.</para>
+          </listitem>
+
+          <listitem>
+            <para>The final command, Propagate 6, propagates the spacecraft
+            for an additional half day, so the plot can show the entire
+            elliptical trajectory around Mars.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+    </itemizedlist>
+
+    <section>
+      <title>Creating and Modifying Sequences</title>
+
+      <section>
+        <title>Initial Propagate and Maneuver Sequence</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Report 1:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Add the Cartesian coordinates X, Y, and Z, and all
+                velocity vectors, VX, VY, and VZ, to the parameters list, to
+                report them for the MarsSupply spacecraft</para>
+              </listitem>
+
+              <listitem>
+                <para>Do not remove the A1ModJulian parameter</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Equation 1: set Data.WriteHeaders = Off</para>
+          </listitem>
+
+          <listitem>
+            <para>Propagate 1:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Use the EarthProp propagator</para>
+              </listitem>
+
+              <listitem>
+                <para>Set the stopping condition parameter to be Earth's
+                periapsis</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Report 2: refer to Report 1 for parameters list</para>
+          </listitem>
+
+          <listitem>
+            <para>Maneuver 1: utilize the TOI burn</para>
+          </listitem>
+
+          <listitem>
+            <para>Propagate 2:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Use the EarthProp propagator</para>
+              </listitem>
+
+              <listitem>
+                <para>Set the stopping condition to 25 elapsed days</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Report 4: refer to Report 1 for parameters list</para>
+          </listitem>
+
+          <listitem>
+            <para>Propagate 3:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Use the SunProp propagator</para>
+              </listitem>
+
+              <listitem>
+                <para>Set the stopping condition to 135 elapsed days</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Report 5: refer to Report 1 for parameters list</para>
+          </listitem>
+        </itemizedlist>
+
+        <screenshot>
+          <info>
+            <title>Figure: Report1 Report Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MarsBPlane_Report1ReportCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Report1 Report Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Equation1 Equation Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MarsBPlane_Equation1EquationCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Equation1 Equation Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Propagate1 Propagate Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MarsBPlane_Propagate1PropagateCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Propagate1 Propagate Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Maneuver1 Maneuver Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MarsBPlane_Maneuver1ManeuverCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Maneuver1 Maneuver Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>Targeting Sequences</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Target 1:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Vary 1:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the variable to N using the MarsMCC impulsive
+                    burn</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Initial Value to 0 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Perturbation to 0.1</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Lower (Limit) to be - 8 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Upper (Limit) to be 8 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Use a Max Step of 0.5 km/s</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Maneuver 2: utilize the MarsMCC impulsive burn</para>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 1:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Goal:</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Highlight MarsSupply in the Object List
+                        menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Select the SunMJ2kEq coordinate system from the
+                        drop down menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Add INC to the Selected Value(s) field</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                </itemizedlist>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the Value to 24.677°</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Use a Tolerance of 0.001°</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Report 6: refer to Report 1 for parameters list</para>
+              </listitem>
+            </itemizedlist>
+
+            <screenshot>
+              <info>
+                <title>Figure: Target1 Target Command</title>
+              </info>
+
+              <mediaobject>
+                <imageobject>
+                  <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                             fileref="files/images/Tut_MarsBPlane_Target1TargetCommand.jpeg"></imagedata>
+                </imageobject>
+
+                <caption>
+                  <para>Figure: Target1 Target Command</para>
+                </caption>
+              </mediaobject>
+            </screenshot>
+
+            <screenshot>
+              <info>
+                <title>Figure: Vary1 Vary Command</title>
+              </info>
+
+              <mediaobject>
+                <imageobject>
+                  <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                             fileref="files/images/Tut_MarsBPlane_Vary1VaryCommand.jpeg"></imagedata>
+                </imageobject>
+
+                <caption>
+                  <para>Figure: Vary1 Vary Command</para>
+                </caption>
+              </mediaobject>
+            </screenshot>
+
+            <screenshot>
+              <info>
+                <title>Figure: Achieve1 Achieve Command</title>
+              </info>
+
+              <mediaobject>
+                <imageobject>
+                  <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                             fileref="files/images/Tut_MarsBPlane_Achieve1AchieveCommand.jpeg"></imagedata>
+                </imageobject>
+
+                <caption>
+                  <para>Figure: Achieve1 Achieve Command</para>
+                </caption>
+              </mediaobject>
+            </screenshot>
+          </listitem>
+
+          <listitem>
+            <para>Target 2:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Vary 2:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the second Variable to V using the MarBPlane
+                    impulsive burn</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Use an Initial Value to - 0.2338 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Change the Perturbation to 0.001</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Lower (Limit) to be - 3 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Upper (Limit) to be 3 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Use a Max Step of 0.1 km/s</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Vary 3:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the third Variable to B using the MarsBPlane
+                    impulsive burn</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Use an Initial Value of 0.6683 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Change the Perturbation to 0.001</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Lower (Limit) to be - 3 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Define the Upper (Limit) to be 3 km/s</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Use a Max Step of 0.12 km/s</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Maneuver 3: Utilizes the MarsBPlane impulsive
+                burn</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate 4:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Use the SunProp propagator</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the stopping condition parameter to 50 elapsed
+                    days</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Propagate 5:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Use the MarsProp propagator</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the stopping condition parameter to be Mars'
+                    periapsis</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 2:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Goal:</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Highlight BdotT</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Select the MarsMJ2000Eq coordinate system from
+                        the drop down menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Add BdotT to the Selected Value(s) field</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+
+                  <listitem>
+                    <para>Value = 10000 km</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Tolerance = 50 km</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Achieve 3:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Goal:</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Highlight BdotR</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Select the MarsMJ2000Eq coordinate system from
+                        the drop down menu</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>Add BdotR to the Selected Value(s) field</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+
+                  <listitem>
+                    <para>Value = -10000 km</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Tolerance = 50 km</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+      </section>
+
+      <section>
+        <title>Final Propagate and Maneuver Sequence</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Report 7: refer to Report 1 for parameters list</para>
+          </listitem>
+
+          <listitem>
+            <para>Maneuver 4: utilize the MarsOI impulsive burn</para>
+          </listitem>
+
+          <listitem>
+            <para>Report 8: refer to Report 1 for parameters list</para>
+          </listitem>
+
+          <listitem>
+            <para>Propagate 6:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Use the MarsProp propagator</para>
+              </listitem>
+
+              <listitem>
+                <para>Set the stopping condition to 25 elapsed days</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Report 9: refer to Report 1 for the parameter list</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+    </section>
+  </section>
+
+  <section>
+    <title>The resulting view of Resource, Mission, and Output Trees</title>
+
+    <informaltable colsep="0" frame="none">
+      <tgroup cols="3">
+	  <colspec colname='c1'/>
+	  <colspec colname='c2'/>
+	  <colspec colname='c3'/>
+        <tbody>
+          <row>
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Resource, Mission, and Output Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MarsBPlane_ResourceMissionandOutputTrees1.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Resource, Mission, and Output Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MarsBPlane_ResourceMissionandOutputTrees2.jpeg"></imagedata>
+                  </imageobject>
+
+                </mediaobject>
+              </screenshot></entry>
+
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Resource, Mission, and Output Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MarsBPlane_ResourceMissionandOutputTrees3.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+          </row>
+		  <row>
+			<entry namest="c1" nameend="c3" align='center'>Figure: Resource, Mission, and Output Trees</entry>
+		  </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
+
+  <section>
+    <title>Running the Mission</title>
+
+    <para>You have now configured the mission, and it is time to run it and
+    see the results. First, save the changes you've made and then click the
+    Run button (green arrow on the tool bar) to run the mission. The screen
+    capture below summarizes what you should see after correctly completing
+    this tutorial.</para>
+
+    <screenshot>
+      <info>
+        <title>Figure: Output</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_MarsBPlane_Output.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Output</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+</section>

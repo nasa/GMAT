@@ -1,0 +1,320 @@
+%$% subfigure.sty
+%$% Subfigure/table command for use with the LaTeX figure environment.
+%$% $Header: /SAMBA/GMAT/doc/cvs/GMATDocuments/SystemDocs/MathemeticalSpecification/subfigure.sty,v 1.1 2008/01/24 21:55:30 shughes Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% @LaTeX-style-file{
+%%%    Author              = "Steven Douglas Cochran",
+%%%    Version             = "1.6",
+%%%    Date                = "13 May 1993",
+%%%    Time                = "12:58:34 EDT",
+%%%    Filename            = "subfigure.sty",
+%%%    Address             = "Digital Mapping Laboratory
+%%%                           School of Computer Science
+%%%                           Carnegie-Mellon University
+%%%                           5000 Forbes Avenue
+%%%                           Pittsburgh, PA 15213-3891
+%%%                           USA",
+%%%    Telephone           = "(412) 268-5654",
+%%%    FAX                 = "(412) 681-5739",
+%%%    checksum            = "32478 314 1501 13334",
+%%%    Email               = "sdc+@CS.CMU.EDU (Internet)",
+%%%    CodeTable           = "ISO/ASCII",
+%%%    Keywords            = "LaTeX, float, figure, table",
+%%%    Supported           = "yes",
+%%%    Abstract            = "LaTeX document-style option for
+%%%                           providing support for the inclusion of
+%%%                           small `sub' figures and tables.  It
+%%%                           simplifies the positioning, captioning
+%%%                           and labeling of them within a single
+%%%                           figure or table environment.",
+%%%    DocString           = "The checksum field above contains a CRC-16
+%%%                           checksum as the first value, followed by
+%%%                           the equivalent of the standard UNIX wc
+%%%                           (word count) utility output of lines,
+%%%                           words, and characters.  This is produced
+%%%                           by Robert Solovay's checksum utility."
+%%% }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% $Log: subfigure.sty,v $
+%%% Revision 1.1  2008/01/24 21:55:30  shughes
+%%% *** empty log message ***
+%%%
+%%% Revision 1.1  2006/09/12 21:22:45  shughes
+%%% Added math spec files
+%%%
+%$%  Revision 1.6  93/05/13  12:58:34  sdc
+%$%  Changed to use the \thefigure macro in building the referenced
+%$%  label.  The old form caused a problem when used with the
+%$%  report.sty as pointed out by Andrew Anselmo
+%$%  (anselmo@cumesb.mech.columbia.edu).  Also modified to restrict
+%$%  the scope of the subfigure \label to the body of the subfigure.
+%$%  Added \@thesubfigure to allow a separate labeling of the
+%$%  subfigure in the figure and in the text.  By default it is the
+%$%  same as \thesubfigure with space appended.  Added some hooks to
+%$%  print the subfigure captions to the list-of-figures file if
+%$%  desired.  Finally, added the corresponding support for sub-tables
+%$%  as well as sub-figures.  NOTE: the optional caption is now a
+%$%  moving argument and any fragile commands that appear in the
+%$%  caption must be preceded by a \protect (just like that of the
+%$%  \caption command).
+%$%  
+%$%  Revision 1.5  92/08/11  23:13:12  sdc
+%$%  Fixed a bug which caused an problem with captions that contained 
+%$%  expressions like \sqrt;  This was pointed out by Tom Scavo
+%$%  (scavo@cie.uoregon.edu).  A separate bug was fixed which caused
+%$%  different sized captions to be misaligned;  This problem was
+%$%  pointed out by Simon Marshall (S.Marshal@Hull.ac.uk).  Also
+%$%  cleaned up the code a mite and *changed* the figure spacing so that
+%$%  if no optional section is given, then the figure is only followed
+%$%  by \subfigbottomskip and not that plus (\subfigcapskip + \strut
+%$%  height).  This should make it easier to adjust spacing as desired.
+%$%  
+%$%  Revision 1.4  92/06/27  10:40:34  sdc
+%$%  Added a hack to allow the \label command to be used within the
+%$%  body of the subfigure giving a reference label in the form
+%$%  \arabic{thefigure}\thesubfigure.  Added standard file header for
+%$%  style. 
+%$%  
+%$%  Revision 1.3  90/10/22  17:04:28  cochran
+%$%  Changed test for empty caption inside of \@subfigure to compare
+%$%  tokens and not the caption vs. \@empty.  The former (incorrect)
+%$%  test caused an error when the first two letters of the caption
+%$%  were the same.
+%$%
+%$%  Revision 1.2  89/08/30  07:18:29  cochran
+%$%  Added a separate bottom margin and expanded the comments.
+%$%
+%$%  Revision 1.1  88/11/02  11:03:46  cochran
+%$%  Initial revision.
+%$%
+%$%  05 Mar 86  cochran@dworkin.usc.edu (USC-IRIS)
+%$%  Created.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%$% Usage:  \documentstyle[...,subfigure,...]{...}
+%$%
+%$%             \subfigure[CAPTIONtext]{FIGUREbox}
+%%%
+%%% Creates a subfigure box with an optional CAPTION under a FIGURE.
+%%% The FIGURE is centered with \subfigtopskip of vertical space added
+%%% above.  If there is a CAPTION, then \subfigcapskip vertical space
+%%% is added below the FIGURE followed by the CAPTION.  Finally,
+%%% \subfigbottomskip of vertical space added at the bottom. 
+%%%
+%%% If a CAPTION is given (including a null CAPTION `[]') then the
+%%% subfigure is labeled with a counter formatted by the macro
+%%% `\thesubfigure' which returns `(a)', `(b)', etc.  If desired,
+%%% this macro may be redefined.  The counter used for labeling the
+%%% subfigures is `subfigure' and is incremented for each subfigure
+%%% regardless of whether a CAPTION was printed.
+%%%
+%$%             \subfigure[CAPTIONtext]{FIGUREbox}
+%%%
+%%% The subtable command is symmetric to the subfigure command defined
+%%% above.  
+%%%
+%%% One example of use is to surround the figure in a tabular
+%%% environment (this preserves alignment along the bottom of the
+%%% figures when the figures and/or the captions are different
+%%% heights):                     
+%%%
+%%%   \def\goodgap{%                         *---------*  
+%%%     \hspace{\subfigtopskip}%             |  ..   . |   *---------* 
+%%%     \hspace{\subfigbottomskip}}          |  .   .  |   | . .  .  | 
+%%%   ...                                    | .. . .  |   | .  . .. | 
+%%%   \begin{figure}%                        *---------*   *---------*   
+%%%     \centering                            (a) First     (b) Second  
+%%%     \begin{tabular[t]{c}%                               Figure
+%%%       \subfigure[First]{...}\goodgap            
+%%%       \subfigure[Second Figure]{...}\\         *---------*
+%%%       \subfigure[Third]{\label{3figs-c}...}%   | . .. .  |
+%%%     \end{tabular}%                             | . .. .  |
+%%%     \caption{Three Subfigures.}                *---------*
+%%%     \label{3figs}                               (c) Third
+%%%   \end{figure}                          Figure 1. Three Subfigures.  
+%%%   ...                                
+%%%   Figure~\ref{3figs} contains        Figure 1 contains two top `sub-
+%%%   two top `subfigures' and           figures' and Figure 1(c).
+%%%   Figure~\ref{3figs-c}.
+%%%
+%%% A second example is to change the way that the subfigures are labeled
+%%% and to have the subfigure captions printed in the list-of-figures.
+%%%
+%%%   \def\thesubfigure{\thefigure.\arabic{subfigure}}
+%%%   \makeatletter
+%%%     \def\@thesubfigure{\thesubfigure:\space}
+%%%     \let\p@subfigure\relax
+%%%   \makeatother
+%%%   ...
+%%%   \setcounter{lofdepth}{2}
+%%%   \listoffigures
+%%%   ...
+%%%   \begin{figure}%
+%%%     \begin{center}%
+%%%       \subfigure[First]{%         *--------------*  *--------------*  
+%%%         \label{fig:first}%        |  ..   .  .   |  | . ... .. . . | 
+%%%         ...}%                     |  .  .   .  . |  | .  .  . . .. | 
+%%%       \goodgap                    | .. . .  . .  |  | . . . .. ..  |
+%%%      \subfigure[Second]{%         *--------------*  *--------------*  
+%%%         \label{fig:second}% 
+%%%         ...}%                        1.1: First        1.2: Second
+%%%     \end{center}%
+%%%     \caption{Two Subfigures.}          Figure 1. Two Subfigures.
+%%%   \end{figure}                  
+%%%   ...                             See subfigures 1.1 and 1.2. 
+%%%   See subfigures \ref{fig:first} 
+%%%   and \ref{fig:second}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%
+%%%  Setup hooks and constants
+%%%
+
+%%
+%% Subfigure values
+%%
+\newcounter{subfigure}[figure]          % Subfigure counter.
+\def\thesubfigure{(\alph{subfigure})}   % Generate CAPTION label (text).
+\def\@thesubfigure{\thesubfigure\space} % Generate CAPTION label (figure).
+\def\p@subfigure{\thefigure}            % Figure number for \label.
+
+\let\ext@subfigure\ext@figure           % Default SubFigure file extension.
+\newcounter{lofdepth}                   % LOF depth counter.
+\setcounter{lofdepth}{1}                % Default is to NOT print an LOF line.
+\def\l@subfigure{%                      % How to print an LOF subfigure line.
+  \@dottedxxxline{\ext@subfigure}{2}{3.9em}{2.3em}}
+
+%%
+%% Subtable values
+%%
+\newcounter{subtable}[table]            % Subtable counter.
+\def\thesubtable{(\alph{subtable})}     % Generate CAPTION label (text).
+\def\@thesubtable{\thesubtable\space}   % Generate CAPTION label (figure).
+\def\p@subtable{\thetable}              % Figure number for \label.
+
+\let\ext@subtable\ext@table             % Default SubTable file extension.
+\newcounter{lotdepth}                   % LOT depth counter.
+\setcounter{lotdepth}{1}                % Default is to NOT print an LOT line.
+\def\l@subtable{%                       % How to print an LOT subtable line.
+  \@dottedxxxline{\ext@subtable}{2}{3.9em}{2.3em}}
+
+%%
+%% Common values (mention of `subfig' in names is for upward compatibility)
+%%
+\def\subcapsize{\footnotesize} % Size of the CAPTION font.
+\def\subfigtopskip{10pt}       % Length from the top of the subfloat
+                               %   box to the begining of the FIGURE box.
+\def\subfigbottomskip{10pt}    % Length from the bottom of the CAPTION to 
+                               %   the bottom of the subfloat.
+\def\subfigcapskip{10pt}       % Length from the bottom of the FIGURE box
+                               %   to the begining of the CAPTION.
+\def\subfigcapmargin{10pt}     % Indentation of the caption from the
+                               %   sides of the subfloat box (This
+                               %   should always be positive).
+\def\@subfigcaptionlist{}      % This is for storing the local list of
+			       %   sub-captions.
+
+
+%%%
+%%% Define the subfigure command
+%%%
+\def\subfigure{%
+  \bgroup                     % Since the figure caption is usually 
+    \advance\c@figure\@ne     %   generated later, we must locally
+    \refstepcounter{subfigure}%   anticipate the future value of its
+    \leavevmode               %   counter. 
+    \@ifnextchar [%
+      {\@subfloat{subfigure}}%
+      {\@subfloat{subfigure}[\@empty]}}
+
+
+%%%
+%%% Define the subtable command
+%%%
+\def\subtable{%
+  \bgroup                     % Since the table caption is usually 
+    \advance\c@table\@ne      %   generated later, we must locally
+    \refstepcounter{subtable}%%   anticipate the future value of its
+    \leavevmode               %   counter. 
+    \@ifnextchar [%
+      {\@subfloat{subtable}}%
+      {\@subfloat{subtable}[\@empty]}}
+
+
+%%%
+%%% Define the common subfloat macro
+%%%
+\def\@subfloat#1[#2]#3{%
+    \setbox\@tempboxa \hbox{#3}%
+    \@tempdima=\wd\@tempboxa
+    \vtop{%
+      %% Put the top spacing and the figure in the top box
+      \vbox{%
+        \vskip\subfigtopskip
+        \box\@tempboxa}%
+      %% Now skip down and add the caption paragraph
+      %%   (unless #2 == \@empty)
+      \ifx \@empty#2\relax \else
+        %% Add the caption information to the \@subfigcaptionlist.
+	\@subcaption{#1}{#2}%
+        %% Insert some glue; then measure and insert the caption.
+        \vskip\subfigcapskip
+        \setbox\@tempboxa \hbox{\subcapsize\csname @the#1\endcsname #2}%
+        \@tempdimb=-\subfigcapmargin
+        \multiply\@tempdimb\tw@
+        \advance\@tempdimb\@tempdima
+        \hbox to\@tempdima{%
+          \hfil
+          \ifdim \wd\@tempboxa >\@tempdimb
+            %% Comment too long for one line
+            \parbox[t]{\@tempdimb}{\subcapsize\csname @the#1\endcsname #2}%
+          \else
+            \box\@tempboxa
+          \fi
+          \hfil}%
+      \fi
+      %% Finally add the bottom spacing.
+      \vskip\subfigbottomskip}%
+  \egroup}
+
+\def\@subcaption#1#2{%
+  \begingroup
+    \def\protect{\string\string\string}%
+    \xdef\@subfigcaptionlist{%
+      \@subfigcaptionlist,%
+      {\protect\numberline {\@currentlabel}%
+       \noexpand{\ignorespaces #2}}}%
+  \endgroup}
+
+
+%%%
+%%% Generalized wrapper for the \@dottedtocline macro.  This checks for
+%%% the level based on the output file (#1) and not using only
+%%% \@tocdepth. 
+%%%
+\def\@dottedxxxline#1#2#3#4#5#6{%
+  \ifnum #2>\csname c@#1depth\endcsname \else
+    \@dottedtocline{0}{#3}{#4}{#5}{#6}
+  \fi}
+
+
+%%%
+%%% Finally, wrap the \@caption macro to dump any sub-captions saved
+%%% after calling the standard \@caption.
+%%%
+\let\@@caption\@caption
+
+\long\def\@caption#1[#2]#3{%
+  %% Call the standard \@caption macro.
+  \@@caption{#1}[{#2}]{#3}
+  %% For each entry in the \@subfigcaptionlist call \addcontentsline.
+  \@for \@tempa:=\@subfigcaptionlist \do {
+    \ifx\@empty\@tempa\relax \else
+      \addcontentsline
+        {\csname ext@sub#1\endcsname}%
+	{sub#1}%
+        {\@tempa}%
+    \fi}%
+  %% Finally, clean out the \@subfigcaptionlist.
+  \gdef\@subfigcaptionlist{}}
+
+

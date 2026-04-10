@@ -1,0 +1,350 @@
+%
+%  Ex_DoubleLunarSwingby
+%
+%  Script Mission - Double Lunar Swingby Example
+%
+%  This script demonstrates how to set up a double Lunar swingby with
+%  multiple targeting sequences.
+%
+
+%--------------------------------------------------------------------------
+%----------------- SpaceCraft, Formations, Constellations -----------------
+%--------------------------------------------------------------------------
+
+Create Spacecraft MMSRef;
+
+MMSRef.DateFormat       = UTCGregorian;
+MMSRef.Epoch            = '24 May 2014 15:17:21.927';
+MMSRef.CoordinateSystem = EarthMJ2000Eq;
+MMSRef.DisplayStateType = Keplerian;
+MMSRef.SMA              = 83230.75058999992;
+MMSRef.ECC              = 0.89643283;
+MMSRef.INC              = 15.50000000000001;
+MMSRef.RAAN             = 15.96879432999999;
+MMSRef.AOP              = 289.7205240999998;
+MMSRef.TA               = 179.9999987925817;
+MMSRef.DryMass          = 400;
+MMSRef.Cd               = 2.2;
+MMSRef.Cr               = 1.7;
+MMSRef.DragArea         = 5;
+MMSRef.SRPArea          = 5;
+
+%----------------------------------------
+%---------- Force Model
+%----------------------------------------
+
+Create ForceModel LunarSB_ForceModel;
+
+LunarSB_ForceModel.CentralBody            = Earth;
+LunarSB_ForceModel.PointMasses            = {Earth, Sun, Luna};
+LunarSB_ForceModel.Drag                   = None;
+LunarSB_ForceModel.SRP                    = Off;
+LunarSB_ForceModel.RelativisticCorrection = Off;
+LunarSB_ForceModel.ErrorControl           = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator LunarSB;
+
+LunarSB.FM                       = LunarSB_ForceModel;
+LunarSB.Type                     = RungeKutta89;
+LunarSB.InitialStepSize          = 60;
+LunarSB.Accuracy                 = 1e-011;
+LunarSB.MinStep                  = 0.001;
+LunarSB.MaxStep                  = 30000;
+LunarSB.MaxStepAttempts          = 50;
+LunarSB.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TOI;
+
+TOI.CoordinateSystem = Local;
+TOI.Origin           = Earth;
+TOI.Axes             = VNB;
+TOI.Element1         = 0.01;
+TOI.Element2         = 0;
+TOI.Element3         = 0;
+TOI.DecrementMass    = false;
+TOI.Isp              = 300;
+TOI.GravitationalAccel = 9.810000000000001;
+
+Create ImpulsiveBurn LST;
+LST.CoordinateSystem = Local;
+LST.Origin           = Earth;
+LST.Axes             = VNB;
+LST.Element1         = 0;
+LST.Element2         = 0;
+LST.Element3         = 0;
+LST.DecrementMass    = false;
+LST.Isp              = 300;
+LST.GravitationalAccel = 9.810000000000001;
+
+Create ImpulsiveBurn ALM;
+
+ALM.CoordinateSystem = Local;
+ALM.Origin           = Earth;
+ALM.Axes             = VNB;
+ALM.Element1         = -0.354;
+ALM.Element2         = 0;
+ALM.Element3         = 0;
+ALM.DecrementMass    = false;
+ALM.Isp              = 300;
+ALM.GravitationalAccel = 9.810000000000001;
+
+Create ImpulsiveBurn LunarPhasedV;
+
+LunarPhasedV.CoordinateSystem = Local;
+LunarPhasedV.Origin           = Earth;
+LunarPhasedV.Axes             = VNB;
+LunarPhasedV.Element1         = 0.027;
+LunarPhasedV.Element2         = 0;
+LunarPhasedV.Element3         = 0;
+LunarPhasedV.DecrementMass    = false;
+LunarPhasedV.Isp              = 300;
+LunarPhasedV.GravitationalAccel = 9.810000000000001;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthSunRot;
+
+EarthSunRot.Origin    = Earth;
+EarthSunRot.Axes      = ObjectReferenced;
+EarthSunRot.XAxis     = R;
+EarthSunRot.ZAxis     = N;
+EarthSunRot.Primary   = Sun;
+EarthSunRot.Secondary = Earth;
+
+Create CoordinateSystem MoonMJ2000Eq;
+
+MoonMJ2000Eq.Origin = Luna;
+MoonMJ2000Eq.Axes   = MJ2000Eq;
+
+Create CoordinateSystem EarthMoonRot;
+
+EarthMoonRot.Origin    = Luna;
+EarthMoonRot.Axes      = ObjectReferenced;
+EarthMoonRot.XAxis     = R;
+EarthMoonRot.ZAxis     = N;
+EarthMoonRot.Primary   = Earth;
+EarthMoonRot.Secondary = Luna;
+
+Create CoordinateSystem GSE;
+
+GSE.Origin    = Earth;
+GSE.Axes      = ObjectReferenced;
+GSE.XAxis     = R;
+GSE.ZAxis     = N;
+GSE.Primary   = Sun;
+GSE.Secondary = Earth;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC1;
+
+DC1.ShowProgress      = true;
+DC1.ReportStyle       = Normal;
+DC1.ReportFile        = 'DifferentialCorrectorDC1.data';
+DC1.MaximumIterations = 10;
+DC1.DerivativeMethod  = ForwardDifference;
+DC1.Algorithm         = NewtonRaphson;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create XYPlot EarthDistance;
+
+EarthDistance.SolverIterations = None;
+EarthDistance.UpperLeft        = [ 0.3035294117647059 0.02917771883289125 ];
+EarthDistance.Size             = [ 0.34 0.4509283819628647 ];
+EarthDistance.RelativeZOrder   = 190;
+EarthDistance.Maximized        = false;
+EarthDistance.XVariable        = MMSRef.A1ModJulian;
+EarthDistance.YVariables       = {MMSRef.Earth.RMAG};
+EarthDistance.ShowGrid         = true;
+EarthDistance.ShowPlot         = true;
+
+
+Create OpenFramesInterface OFI_OGL_EarthMJ2K;
+
+OFI_OGL_EarthMJ2K.SolverIterations     = All;
+OFI_OGL_EarthMJ2K.UpperLeft            = [ 0.3011764705882353 0.4854111405835544 ];
+OFI_OGL_EarthMJ2K.Size                 = [ 0.34 0.4509283819628647 ];
+OFI_OGL_EarthMJ2K.RelativeZOrder       = 148;
+OFI_OGL_EarthMJ2K.Maximized            = false;
+
+OFI_OGL_EarthMJ2K.Add                  = {MMSRef, Earth, Luna};
+OFI_OGL_EarthMJ2K.View                 = {OGL_EarthMJ2K_View};
+
+OFI_OGL_EarthMJ2K.CoordinateSystem     = EarthMJ2000Eq;
+OFI_OGL_EarthMJ2K.DrawObject           = [ true true true];
+OFI_OGL_EarthMJ2K.DrawXYPlane          = [ false false false];
+OFI_OGL_EarthMJ2K.DrawLabel            = [ true true true];
+OFI_OGL_EarthMJ2K.DrawGrid             = [ false false false];
+
+OFI_OGL_EarthMJ2K.Axes                 = On;
+OFI_OGL_EarthMJ2K.XYPlane              = On;
+OFI_OGL_EarthMJ2K.EclipticPlane        = Off;
+OFI_OGL_EarthMJ2K.EnableStars          = On;
+OFI_OGL_EarthMJ2K.StarCount            = 40000;
+OFI_OGL_EarthMJ2K.ShowPlot             = true;
+
+Create OpenFramesView OGL_EarthMJ2K_View;
+
+OGL_EarthMJ2K_View.ViewFrame          = CoordinateSystem;
+OGL_EarthMJ2K_View.SetDefaultLocation = On;
+OGL_EarthMJ2K_View.SetCurrentLocation = Off;
+
+OGL_EarthMJ2K_View.DefaultEye         = [ 0 0 1140000 ]; 
+OGL_EarthMJ2K_View.DefaultCenter      = [ 0 0 0 ];
+OGL_EarthMJ2K_View.DefaultUp          = [ 1 0 0 ];
+
+
+Create OpenFramesInterface OFI_OGL_EarthMoonRot;
+
+OFI_OGL_EarthMoonRot.SolverIterations    = All;
+OFI_OGL_EarthMoonRot.UpperLeft           = [ 0.6447058823529411 0.4840848806366048 ];
+OFI_OGL_EarthMoonRot.Size                = [ 0.3405882352941176 0.4522546419098144 ];
+OFI_OGL_EarthMoonRot.RelativeZOrder      = 164;
+OFI_OGL_EarthMoonRot.Maximized           = false;
+
+OFI_OGL_EarthMoonRot.Add                 = {MMSRef, Earth, Luna};
+OFI_OGL_EarthMoonRot.View                = {OGL_EarthMoonRot_View};
+
+OFI_OGL_EarthMoonRot.CoordinateSystem    = EarthMoonRot;
+OFI_OGL_EarthMoonRot.DrawObject          = [ true true true];
+OFI_OGL_EarthMoonRot.DrawXYPlane         = [ false false false];
+OFI_OGL_EarthMoonRot.DrawLabel           = [ true true true];
+OFI_OGL_EarthMoonRot.DrawGrid            = [ false false false];
+
+OFI_OGL_EarthMoonRot.Axes                = On;
+OFI_OGL_EarthMoonRot.XYPlane             = On;
+OFI_OGL_EarthMoonRot.EclipticPlane       = Off;
+OFI_OGL_EarthMoonRot.EnableStars         = On;
+OFI_OGL_EarthMoonRot.StarCount           = 40000;
+OFI_OGL_EarthMoonRot.ShowPlot            = true;
+
+Create OpenFramesView OGL_EarthMoonRot_View;
+
+OGL_EarthMoonRot_View.ViewFrame          = CoordinateSystem;
+OGL_EarthMoonRot_View.SetDefaultLocation = On;
+OGL_EarthMoonRot_View.SetCurrentLocation = Off;
+
+OGL_EarthMoonRot_View.DefaultEye         = [ 0 0 300000 ]; 
+OGL_EarthMoonRot_View.DefaultCenter      = [ 0 0 0 ];
+OGL_EarthMoonRot_View.DefaultUp          = [ 1 0 0 ];
+
+
+Create OpenFramesInterface OFI_OGL_EarthGSE;
+
+OFI_OGL_EarthGSE.SolverIterations    = None;
+OFI_OGL_EarthGSE.UpperLeft           = [ 0.6435294117647059 0.02917771883289125 ];
+OFI_OGL_EarthGSE.Size                = [ 0.34 0.4482758620689655 ];
+OFI_OGL_EarthGSE.RelativeZOrder      = 188;
+OFI_OGL_EarthGSE.Maximized           = false;
+
+OFI_OGL_EarthGSE.Add                 = {MMSRef, Earth, Luna};
+OFI_OGL_EarthGSE.View                = {OGL_EarthGSE_View};
+
+OFI_OGL_EarthGSE.CoordinateSystem    = GSE;
+OFI_OGL_EarthGSE.DrawObject          = [ true true true];
+OFI_OGL_EarthGSE.DrawXYPlane         = [ false false false];
+OFI_OGL_EarthGSE.DrawLabel           = [ true true true];
+OFI_OGL_EarthGSE.DrawGrid            = [ false false false];
+
+OFI_OGL_EarthGSE.Axes                = On;
+OFI_OGL_EarthGSE.XYPlane             = On;
+OFI_OGL_EarthGSE.EclipticPlane       = Off;
+OFI_OGL_EarthGSE.EnableStars         = On;
+OFI_OGL_EarthGSE.StarCount           = 40000;
+OFI_OGL_EarthGSE.ShowPlot            = true;
+
+Create OpenFramesView OGL_EarthGSE_View;
+
+OGL_EarthGSE_View.ViewFrame          = CoordinateSystem;
+OGL_EarthGSE_View.SetDefaultLocation = On;
+OGL_EarthGSE_View.SetCurrentLocation = Off;
+
+OGL_EarthGSE_View.DefaultEye         = [ 0 0 1950000 ]; 
+OGL_EarthGSE_View.DefaultCenter      = [ 0 0 0 ];
+OGL_EarthGSE_View.DefaultUp          = [ 1 0 0 ];
+
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable I;
+
+
+%**************************************************************************
+%**************************The Mission Sequence****************************
+%**************************************************************************
+BeginMissionSequence;
+BeginScript
+   Toggle OFI_OGL_EarthMoonRot Off;
+   Toggle OFI_OGL_EarthMJ2K    Off;
+   Toggle OFI_OGL_EarthGSE     Off;
+   
+   Toggle OFI_OGL_EarthMoonRot On;
+   Toggle OFI_OGL_EarthMJ2K    On;
+   Toggle OFI_OGL_EarthGSE     On;
+EndScript;
+
+%------------------------------
+%  Waiting Loops
+%------------------------------
+For 'For I = 1:14' I = 1:1:14;
+   Propagate 'Prop to Periapsis' LunarSB(MMSRef) {MMSRef.Periapsis};
+EndFor;
+
+%------------------------------
+%  Phasing Loops
+%------------------------------
+For 'For I = 1:5' I = 1:1:5;
+   Propagate 'Prop to Periapsis' LunarSB(MMSRef) {MMSRef.Periapsis};
+   Maneuver 'Apply LunarPhasedV' LunarPhasedV(MMSRef);
+EndFor;
+
+%%------------------------------
+%%  Prop to periapsis for LSI
+%%------------------------------
+Maneuver 'Apply TOI' TOI(MMSRef);
+Propagate 'Prop to Apogee' LunarSB(MMSRef) {MMSRef.Apoapsis};
+
+%------------------------------
+%  Target Lunar B-plane
+%------------------------------
+Target 'Target Flyby' DC1 {SolveMode  = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+   Vary 'Vary LST.N' DC1(LST.Element2 = 0.03413111106956, {Perturbation = 1e-005, Lower = -.5, Upper = .5, MaxStep = .02, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary 'Vary LST.B' DC1(LST.Element3 = -0.09078959728280001, {Perturbation = 1e-004, Lower = -.5, Upper = .5, MaxStep = .01, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Maneuver 'Apply LST' LST(MMSRef);
+   Propagate 'Prop to Periselene' LunarSB(MMSRef) {MMSRef.Luna.Periapsis};
+   Achieve 'Achieve BdotT' DC1(MMSRef.MoonMJ2000Eq.BdotT = 150000, {Tolerance = .001});
+   Achieve 'Acheive BdotR' DC1(MMSRef.MoonMJ2000Eq.BdotR = -10000, {Tolerance = .001});
+EndTarget;  % For targeter DC1
+
+
+%%------------------------------
+%% Propagate to Earth Periapsis
+%%------------------------------
+Propagate 'Prop to Perigee' LunarSB(MMSRef) {MMSRef.Periapsis};
+
+%------------------------------
+% Target to lower Apogee
+%------------------------------
+Target 'Lower Apogee' DC1 {SolveMode  = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+   Vary 'Vary ALM.V' DC1(ALM.Element1 = -0.3198120104, {Perturbation = 1e-006, Lower = -.5, Upper = .5, MaxStep = .08, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Maneuver 'Apply ALM' ALM(MMSRef);
+   Achieve 'Achieve RadApo' DC1(MMSRef.Earth.RadApo = 191344.0, {Tolerance = .00001});
+EndTarget;  % For targeter DC1
+
+Propagate LunarSB(MMSRef) {MMSRef.ElapsedDays = 10};

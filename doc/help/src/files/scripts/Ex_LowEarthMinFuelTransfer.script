@@ -1,0 +1,324 @@
+%  Script Mission - Optimization Example
+%
+%  This script demonstrates how to use an Optimize sequence
+%
+%  REVSION HISTORY
+%  $Id: Ex_LowEarthMinFuelTransfer.script,v 1.5 2007/11/20 22:37:15 edove Exp $
+
+%-----------------------------------------------------------------
+%------------------Create The Spacecraft--------------------------
+%-----------------------------------------------------------------
+Create Spacecraft Sat;
+GMAT Sat.DateFormat = TAIModJulian;
+GMAT Sat.Epoch = '21545';
+GMAT Sat.CoordinateSystem = EarthMJ2000Eq;
+GMAT Sat.DisplayStateType = Keplerian;
+GMAT Sat.SMA = 7500;
+GMAT Sat.ECC = 1.996098186553081e-016;
+GMAT Sat.INC = 0;
+GMAT Sat.RAAN = 0;
+GMAT Sat.AOP = 0;
+GMAT Sat.TA = 44.99999999999998;
+GMAT Sat.DryMass = 850;
+GMAT Sat.Cd = 2.2;
+GMAT Sat.Cr = 1.8;
+GMAT Sat.DragArea = 15;
+GMAT Sat.SRPArea = 1;
+
+Create Spacecraft DummySat;
+GMAT DummySat.DateFormat = TAIModJulian;
+GMAT DummySat.Epoch = '21545.000000000';
+GMAT DummySat.CoordinateSystem = EarthMJ2000Eq;
+GMAT DummySat.DisplayStateType = Cartesian;
+GMAT DummySat.X = 7100;
+GMAT DummySat.Y = 0;
+GMAT DummySat.Z = 1300;
+GMAT DummySat.VX = 0;
+GMAT DummySat.VY = 7.35;
+GMAT DummySat.VZ = 1;
+GMAT DummySat.DryMass = 850;
+GMAT DummySat.Cd = 2.2;
+GMAT DummySat.Cr = 1.8;
+GMAT DummySat.DragArea = 15;
+GMAT DummySat.SRPArea = 1;
+
+%-----------------------------------------------------------------
+%--------------------Create The Force Model-----------------------
+%-----------------------------------------------------------------
+Create ForceModel DefaultProp_ForceModel;
+GMAT DefaultProp_ForceModel.CentralBody = Earth;
+GMAT DefaultProp_ForceModel.PointMasses = {Earth};
+GMAT DefaultProp_ForceModel.Drag = None;
+GMAT DefaultProp_ForceModel.SRP = Off;
+GMAT DefaultProp_ForceModel.ErrorControl = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+GMAT DefaultProp.FM = DefaultProp_ForceModel;
+GMAT DefaultProp.Type = RungeKutta89;
+GMAT DefaultProp.InitialStepSize = 60;
+GMAT DefaultProp.Accuracy = 1e-012;
+GMAT DefaultProp.MinStep = 0.001;
+GMAT DefaultProp.MaxStep = 2700;
+GMAT DefaultProp.MaxStepAttempts = 50;
+
+%-----------------------------------------------------------------
+%--------------------------Create Maneuvers-----------------------
+%-----------------------------------------------------------------
+
+Create ImpulsiveBurn dv1;
+GMAT dv1.Origin = Earth;
+GMAT dv1.Axes = VNB;
+GMAT dv1.VectorFormat = Cartesian;
+GMAT dv1.Element1 = 0;
+GMAT dv1.Element2 = 0;
+GMAT dv1.Element3 = 0;
+
+Create ImpulsiveBurn dv2;
+GMAT dv2.Origin = Earth;
+GMAT dv2.Axes = VNB;
+GMAT dv2.VectorFormat = Cartesian;
+GMAT dv2.Element1 = 0;
+GMAT dv2.Element2 = 0;
+GMAT dv2.Element3 = 0;
+
+%----------------------------------------
+%---------- Variables, Arrays, Strings
+%----------------------------------------
+
+Create Variable TOF dV1Time Cost Constraint1 Constraint2 Constraint3 dV1mag dV2mag RefEpoch PropEpoch;
+Create Variable Iterate;
+Create String SolutionData;
+GMAT SolutionData = ------------- Solution Data -----------------;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthMJ2000Eq;
+GMAT EarthMJ2000Eq.Origin = Earth;
+GMAT EarthMJ2000Eq.Axes = MJ2000Eq;
+GMAT EarthMJ2000Eq.UpdateInterval = 60;
+GMAT EarthMJ2000Eq.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthMJ2000Ec;
+GMAT EarthMJ2000Ec.Origin = Earth;
+GMAT EarthMJ2000Ec.Axes = MJ2000Ec;
+GMAT EarthMJ2000Ec.UpdateInterval = 60;
+GMAT EarthMJ2000Ec.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthFixed;
+GMAT EarthFixed.Origin = Earth;
+GMAT EarthFixed.Axes = BodyFixed;
+GMAT EarthFixed.UpdateInterval = 60;
+GMAT EarthFixed.OverrideOriginInterval = false;
+
+%-----------------------------------------------------------------
+%-----------------Create and Setup the Optimizer------------------
+%-----------------------------------------------------------------
+Create FminconOptimizer SQPfmincon;
+GMAT SQPfmincon.ShowProgress = true;
+GMAT SQPfmincon.ReportStyle = 'Normal';
+GMAT SQPfmincon.TargeterTextFile = 'FminconOptimizerSQPfmincon.data';
+GMAT SQPfmincon.MaximumIterations = 25;
+GMAT SQPfmincon.Tolerance = 0;
+GMAT SQPfmincon.FunctionPath = '';
+GMAT SQPfmincon.SourceType = 'MATLAB';
+GMAT SQPfmincon.DiffMaxChange = '0.1';
+GMAT SQPfmincon.DiffMinChange = '0.00001';
+GMAT SQPfmincon.MaxFunEvals = '1000';
+GMAT SQPfmincon.MaxIter = '100';
+GMAT SQPfmincon.TolX = '0.001';
+GMAT SQPfmincon.TolFun = '0.00001';
+GMAT SQPfmincon.TolCon = '0.00001';
+GMAT SQPfmincon.DerivativeCheck = 'Off';
+GMAT SQPfmincon.Diagnostics = 'On';
+GMAT SQPfmincon.Display = 'Iter';
+GMAT SQPfmincon.GradObj = 'Off';
+GMAT SQPfmincon.GradConstr = 'Off';
+
+%-----------------------------------------------------------------
+%------------------------------OutPut-----------------------------
+%-----------------------------------------------------------------
+Create OpenGLPlot DefaultOpenGL;
+GMAT DefaultOpenGL.SolverIterations = All;
+GMAT DefaultOpenGL.Add = {Sat, Earth};
+GMAT DefaultOpenGL.OrbitColor = [ 255 32768 ];
+GMAT DefaultOpenGL.TargetColor = [ 8421440 0 ];
+GMAT DefaultOpenGL.CoordinateSystem = EarthMJ2000Eq;
+GMAT DefaultOpenGL.ViewPointReference = Earth;
+GMAT DefaultOpenGL.ViewPointVector = [ 0 0 30000 ];
+GMAT DefaultOpenGL.ViewDirection = Earth;
+GMAT DefaultOpenGL.ViewScaleFactor = 1;
+GMAT DefaultOpenGL.ViewUpCoordinateSystem = EarthMJ2000Eq;
+GMAT DefaultOpenGL.ViewUpAxis = X;
+GMAT DefaultOpenGL.CelestialPlane = Off;
+GMAT DefaultOpenGL.XYPlane = On;
+GMAT DefaultOpenGL.WireFrame = Off;
+GMAT DefaultOpenGL.Axes = Off;
+GMAT DefaultOpenGL.Grid = Off;
+GMAT DefaultOpenGL.SunLine = Off;
+GMAT DefaultOpenGL.UseInitialView = On;
+GMAT DefaultOpenGL.DataCollectFrequency = 6;
+GMAT DefaultOpenGL.UpdatePlotFrequency = 50;
+GMAT DefaultOpenGL.NumPointsToRedraw = 100;
+GMAT DefaultOpenGL.ShowPlot = true;
+
+Create ReportFile IterateData;
+GMAT IterateData.SolverIterations = Current;
+GMAT IterateData.Filename = './output/SampleMissions/Ex_LowEarthMinFuelTransfer.report';
+GMAT IterateData.Precision = 10;
+GMAT IterateData.WriteHeaders = On;
+GMAT IterateData.LeftJustify = On;
+GMAT IterateData.ZeroFill = Off;
+GMAT IterateData.ColumnWidth = 16;
+
+Create XYPlot CostPlot;
+GMAT CostPlot.SolverIterations = Current;
+GMAT CostPlot.IndVar = Iterate;
+GMAT CostPlot.Add = {Cost};
+GMAT CostPlot.Grid = On;
+GMAT CostPlot.ShowPlot = true;
+
+Create XYPlot SMAPlot;
+GMAT SMAPlot.SolverIterations = Current;
+GMAT SMAPlot.IndVar = Iterate;
+GMAT SMAPlot.Add = {Sat.SMA};
+GMAT SMAPlot.Grid = On;
+GMAT SMAPlot.ShowPlot = true;
+
+Create XYPlot ECCPlot;
+GMAT ECCPlot.SolverIterations = Current;
+GMAT ECCPlot.IndVar = Iterate;
+GMAT ECCPlot.Add = {Sat.ECC};
+GMAT ECCPlot.Grid = On;
+GMAT ECCPlot.ShowPlot = true;
+
+Create XYPlot INCPlot;
+GMAT INCPlot.SolverIterations = Current;
+GMAT INCPlot.IndVar = Iterate;
+GMAT INCPlot.Add = {Sat.INC};
+GMAT INCPlot.Grid = On;
+GMAT INCPlot.ShowPlot = true;
+
+%*****************************************************************
+%-----------------------------------------------------------------
+%-------------------The Mission Sequence--------------------------
+%-----------------------------------------------------------------
+%*****************************************************************
+
+%  This can be removed when Plot Command is implemented.
+Toggle CostPlot Off;
+Toggle SMAPlot Off;
+Toggle ECCPlot Off;
+Toggle INCPlot Off;
+
+
+Propagate DefaultProp(Sat) {Sat.ElapsedSecs = Sat.OrbitPeriod};
+GMAT RefEpoch = Sat.A1ModJulian;
+
+%  The optimization sequence below demonstrates how to use an SQP 
+%  routine in GMAT to solve a minimum fuel orbit transfer using 
+%  two impulsive maneuvers.  The optimization variables are the 
+%  the components of both delta vs (6 variables).... and the TOF
+GMAT Iterate = 0;
+Optimize SQPfmincon;
+   
+   %  Increment the loop counter
+   GMAT Iterate = Iterate + 1;
+   
+   %------------------------------
+   %  Propagate to location of the 
+   %  second maneuver
+   %------------------------------
+   %  Vary the tranfer time of flight 
+   Vary SQPfmincon(dV1Time = 0.1, {Lower = -.5, Upper = 0.5, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 10});
+   GMAT PropEpoch = RefEpoch + dV1Time;
+   If dV1Time > 0
+      Propagate DefaultProp(Sat) {Sat.A1ModJulian = PropEpoch};
+   EndIf;
+   If dV1Time < 0
+      Propagate BackProp DefaultProp(Sat) {Sat.A1ModJulian = PropEpoch};
+   EndIf;
+   
+   %-------------------------------------------------
+   %  Vary all three components of the first maneuver
+   %  Using the optimizer
+   %-------------------------------------------------
+   Vary SQPfmincon(dv1.Element1 = 0.1, {Lower = -5, Upper = 5, AdditiveScaleFactor = 0, MultiplicativeScaleFactor = 1});
+   Vary SQPfmincon(dv1.Element2 = 0.01, {Lower = -5, Upper = 5, AdditiveScaleFactor = 0, MultiplicativeScaleFactor = 1});
+   Vary SQPfmincon(dv1.Element3 = 0.01, {Lower = -5, Upper = 5, AdditiveScaleFactor = 0, MultiplicativeScaleFactor = 1});
+   Maneuver dv1(Sat);
+   
+   %------------------------------
+   %  Propagate to location of the 
+   %  second maneuver
+   %------------------------------
+   %  Vary the tranfer time of flight 
+   Vary SQPfmincon(TOF = 0.3, {Lower = 0, Upper = 1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 10});
+   GMAT PropEpoch = RefEpoch + TOF;
+   Propagate DefaultProp(Sat) {Sat.A1ModJulian = PropEpoch};
+   
+   %-------------------------------------------------
+   %  Vary all three components of the second maneuver
+   %  Using the optimizer
+   %-------------------------------------------------
+   Vary SQPfmincon(dv2.Element1 = 0.1, {Lower = -5, Upper = 5, AdditiveScaleFactor = 0, MultiplicativeScaleFactor = 1});
+   Vary SQPfmincon(dv2.Element2 = 0.01, {Lower = -5, Upper = 5, AdditiveScaleFactor = 0, MultiplicativeScaleFactor = 1});
+   Vary SQPfmincon(dv2.Element3 = 0.01, {Lower = -5, Upper = 5, AdditiveScaleFactor = 0, MultiplicativeScaleFactor = 1});
+   Maneuver dv2(Sat);
+   
+   %-------------------------------------------------
+   %  Apply constraints to be satisfied
+   %  After the maneuvers sequence is complete
+   %-------------------------------------------------
+   %  Apply constraints on final orbit
+   GMAT Constraint1 = Sat.SMA/10000;
+   GMAT Constraint2 = Sat.ECC;
+   GMAT Constraint3 = Sat.INC;
+   %  The variables Constraint* are only necessary until bug 846 us fixed.
+   NonlinearConstraint SQPfmincon(Constraint1=1);    % SMA Constraint
+   NonlinearConstraint SQPfmincon(Constraint2=0.05);    % ECC Constraint 
+   NonlinearConstraint SQPfmincon(Constraint3=5);    % INC Constraint
+   
+   %-------------------------------------------------
+   %  Calculate the cost function
+   %-------------------------------------------------
+   GMAT dV1mag = sqrt( dv1.Element1^2 + dv1.Element2^2 + dv1.Element3^2 );
+   GMAT dV2mag = sqrt( dv2.Element1^2 + dv2.Element2^2 + dv2.Element3^2 );
+   GMAT Cost = ( dV1mag + dV2mag );
+   Minimize SQPfmincon(Cost);
+   
+   
+   %-------------------------------------------------
+   %  Update Reports and Plots
+   %-------------------------------------------------
+   BeginScript
+      Report IterateData dV1Time TOF Cost Sat.SMA Sat.ECC Sat.INC;
+      
+      %  This can be removed when Plot Command is implemented.
+      Toggle CostPlot On;
+      Toggle SMAPlot On;
+      Toggle ECCPlot On;
+      Toggle INCPlot On;
+      Propagate DefaultProp(DummySat);
+      Toggle CostPlot Off;
+      Toggle SMAPlot Off;
+      Toggle ECCPlot Off;
+      Toggle INCPlot Off;
+   EndScript;
+
+EndOptimize;  % For optimizer SQPfmincon
+
+Report IterateData SolutionData;
+Report IterateData TOF Cost;
+Report IterateData Sat.SMA Sat.ECC Sat.INC;
+Report IterateData dv1.Element1 dv1.Element2 dv1.Element3;
+Report IterateData dv2.Element1 dv2.Element2 dv2.Element3;
+
+Propagate DefaultProp(Sat) {Sat.ElapsedSecs = Sat.OrbitPeriod};
+
+

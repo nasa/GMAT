@@ -1,0 +1,283 @@
+
+%----------------------------------------
+%---------- Spacecrafts
+%----------------------------------------
+
+Create Spacecraft Sat;
+GMAT Sat.DateFormat = UTCGregorian;
+GMAT Sat.Epoch = '01 Jan 2000 11:59:28.000';
+GMAT Sat.CoordinateSystem = EarthMJ2000Eq;
+GMAT Sat.DisplayStateType = Keplerian;
+GMAT Sat.SMA = 6555.000000000006;
+GMAT Sat.ECC = 0.001000000000000092;
+GMAT Sat.INC = 28.50000000000003;
+GMAT Sat.RAAN = 306.6148021947984;
+GMAT Sat.AOP = 314.1905515360377;
+GMAT Sat.TA = 99.88774933200318;
+GMAT Sat.DryMass = 850;
+GMAT Sat.Cd = 2.2;
+GMAT Sat.Cr = 1.8;
+GMAT Sat.DragArea = 15;
+GMAT Sat.SRPArea = 1;
+
+%  Set InitSat equal to sat so we have the initial conditions saved for later use
+Create Spacecraft InitSat;
+GMAT InitSat.DateFormat = UTCGregorian;
+GMAT InitSat.Epoch = '01 Jan 2000 11:59:28.000';
+GMAT InitSat.CoordinateSystem = EarthMJ2000Eq;
+GMAT InitSat.DisplayStateType = Keplerian;
+GMAT InitSat.SMA = 6555.000000000006;
+GMAT InitSat.ECC = 0.001000000000000092;
+GMAT InitSat.INC = 28.50000000000003;
+GMAT InitSat.RAAN = 306.6148021947984;
+GMAT InitSat.AOP = 314.1905515360377;
+GMAT InitSat.TA = 99.88774933200318;
+GMAT InitSat.DryMass = 850;
+GMAT InitSat.Cd = 2.2;
+GMAT InitSat.Cr = 1.8;
+GMAT InitSat.DragArea = 15;
+GMAT InitSat.SRPArea = 1;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel EarthProp_ForceModel;
+GMAT EarthProp_ForceModel.CentralBody = Earth;
+GMAT EarthProp_ForceModel.PrimaryBodies = {Earth};
+GMAT EarthProp_ForceModel.PointMasses = {Sun};
+GMAT EarthProp_ForceModel.Drag = None;
+GMAT EarthProp_ForceModel.SRP = Off;
+GMAT EarthProp_ForceModel.ErrorControl = RSSStep;
+GMAT EarthProp_ForceModel.GravityField.Earth.Degree = 4;
+GMAT EarthProp_ForceModel.GravityField.Earth.Order = 4;
+GMAT EarthProp_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+
+Create ForceModel EarthMoonProp_ForceModel;
+GMAT EarthMoonProp_ForceModel.CentralBody = Earth;
+GMAT EarthMoonProp_ForceModel.PrimaryBodies = {Earth};
+GMAT EarthMoonProp_ForceModel.PointMasses = {Sun, Luna};
+GMAT EarthMoonProp_ForceModel.Drag = None;
+GMAT EarthMoonProp_ForceModel.SRP = Off;
+GMAT EarthMoonProp_ForceModel.ErrorControl = RSSStep;
+GMAT EarthMoonProp_ForceModel.GravityField.Earth.Degree = 4;
+GMAT EarthMoonProp_ForceModel.GravityField.Earth.Order = 4;
+GMAT EarthMoonProp_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+
+Create ForceModel MoonProp_ForceModel;
+GMAT MoonProp_ForceModel.CentralBody = Luna;
+GMAT MoonProp_ForceModel.PrimaryBodies = {Luna};
+GMAT MoonProp_ForceModel.PointMasses = {Sun, Earth};
+GMAT MoonProp_ForceModel.Drag = None;
+GMAT MoonProp_ForceModel.SRP = Off;
+GMAT MoonProp_ForceModel.ErrorControl = RSSStep;
+GMAT MoonProp_ForceModel.GravityField.Luna.Degree = 4;
+GMAT MoonProp_ForceModel.GravityField.Luna.Order = 4;
+GMAT MoonProp_ForceModel.GravityField.Luna.PotentialFile = 'LP165P.cof';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator EarthProp;
+GMAT EarthProp.FM = EarthProp_ForceModel;
+GMAT EarthProp.Type = RungeKutta89;
+GMAT EarthProp.InitialStepSize = 60;
+GMAT EarthProp.Accuracy = 9.999999999999999e-012;
+GMAT EarthProp.MinStep = 0.001;
+GMAT EarthProp.MaxStep = 2700;
+GMAT EarthProp.MaxStepAttempts = 50;
+
+Create Propagator EarthMoonProp;
+GMAT EarthMoonProp.FM = EarthMoonProp_ForceModel;
+GMAT EarthMoonProp.Type = RungeKutta89;
+GMAT EarthMoonProp.InitialStepSize = 60;
+GMAT EarthMoonProp.Accuracy = 9.999999999999999e-012;
+GMAT EarthMoonProp.MinStep = 0.001;
+GMAT EarthMoonProp.MaxStep = 2700;
+GMAT EarthMoonProp.MaxStepAttempts = 50;
+
+Create Propagator MoonProp;
+GMAT MoonProp.FM = MoonProp_ForceModel;
+GMAT MoonProp.Type = RungeKutta89;
+GMAT MoonProp.InitialStepSize = 60;
+GMAT MoonProp.Accuracy = 9.999999999999999e-012;
+GMAT MoonProp.MinStep = 0.001;
+GMAT MoonProp.MaxStep = 2700;
+GMAT MoonProp.MaxStepAttempts = 50;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TOI;
+GMAT TOI.Origin = Earth;
+GMAT TOI.Axes = VNB;
+GMAT TOI.VectorFormat = Cartesian;
+GMAT TOI.Element1 = 2;
+GMAT TOI.Element2 = 0;
+GMAT TOI.Element3 = 0;
+
+Create ImpulsiveBurn LOI;
+GMAT LOI.Origin = Luna;
+GMAT LOI.Axes = VNB;
+GMAT LOI.VectorFormat = Cartesian;
+GMAT LOI.Element1 = 0;
+GMAT LOI.Element2 = 0;
+GMAT LOI.Element3 = 0;
+
+%----------------------------------------
+%---------- Variables, Arrays, Strings
+%----------------------------------------
+
+Create Variable RAAN AOP V;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthMJ2000Eq;
+GMAT EarthMJ2000Eq.Origin = Earth;
+GMAT EarthMJ2000Eq.Axes = MJ2000Eq;
+GMAT EarthMJ2000Eq.UpdateInterval = 60;
+GMAT EarthMJ2000Eq.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthMJ2000Ec;
+GMAT EarthMJ2000Ec.Origin = Earth;
+GMAT EarthMJ2000Ec.Axes = MJ2000Ec;
+GMAT EarthMJ2000Ec.UpdateInterval = 60;
+GMAT EarthMJ2000Ec.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthFixed;
+GMAT EarthFixed.Origin = Earth;
+GMAT EarthFixed.Axes = BodyFixed;
+GMAT EarthFixed.UpdateInterval = 60;
+GMAT EarthFixed.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthToMoon;
+GMAT EarthToMoon.Origin = Luna;
+GMAT EarthToMoon.Axes = ObjectReferenced;
+GMAT EarthToMoon.UpdateInterval = 60;
+GMAT EarthToMoon.OverrideOriginInterval = false;
+GMAT EarthToMoon.XAxis = R;
+GMAT EarthToMoon.ZAxis = N;
+GMAT EarthToMoon.Primary = Luna;
+GMAT EarthToMoon.Secondary = Earth;
+
+Create CoordinateSystem LunaFixed;
+GMAT LunaFixed.Origin = Luna;
+GMAT LunaFixed.Axes = BodyFixed;
+GMAT LunaFixed.UpdateInterval = 60;
+GMAT LunaFixed.OverrideOriginInterval = false;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DefaultDC;
+GMAT DefaultDC.ShowProgress = true;
+GMAT DefaultDC.ReportStyle = 'Normal';
+GMAT DefaultDC.TargeterTextFile = 'DifferentialCorrectorDefaultDC.data';
+GMAT DefaultDC.MaximumIterations = 15;
+GMAT DefaultDC.UseCentralDifferences = false;
+
+%----------------------------------------
+%---------- Plots and Reports
+%----------------------------------------
+
+Create OpenGLPlot EarthOGL;
+GMAT EarthOGL.SolverIterations = All;
+GMAT EarthOGL.Add = {Sat, Earth, Luna};
+GMAT EarthOGL.OrbitColor = [ 255 32768 1743054 ];
+GMAT EarthOGL.TargetColor = [ 8421440 8421440 8421440 ];
+GMAT EarthOGL.CoordinateSystem = EarthMJ2000Eq;
+GMAT EarthOGL.ViewPointReference = Earth;
+GMAT EarthOGL.ViewPointVector = [ 0 0 30000 ];
+GMAT EarthOGL.ViewDirection = Earth;
+GMAT EarthOGL.ViewScaleFactor = 15;
+GMAT EarthOGL.ViewUpCoordinateSystem = EarthMJ2000Eq;
+GMAT EarthOGL.ViewUpAxis = X;
+GMAT EarthOGL.CelestialPlane = Off;
+GMAT EarthOGL.XYPlane = On;
+GMAT EarthOGL.WireFrame = Off;
+GMAT EarthOGL.Axes = On;
+GMAT EarthOGL.Grid = Off;
+GMAT EarthOGL.SunLine = Off;
+GMAT EarthOGL.UseInitialView = On;
+GMAT EarthOGL.DataCollectFrequency = 1;
+GMAT EarthOGL.UpdatePlotFrequency = 50;
+GMAT EarthOGL.NumPointsToRedraw = 0;
+GMAT EarthOGL.ShowPlot = true;
+
+Create OpenGLPlot EarthMoonOGL;
+GMAT EarthMoonOGL.SolverIterations = All;
+GMAT EarthMoonOGL.Add = {Sat, Luna, Earth};
+GMAT EarthMoonOGL.OrbitColor = [ 255 1743054 35297486 ];
+GMAT EarthMoonOGL.TargetColor = [ 1065386048 8421440 8421440 ];
+GMAT EarthMoonOGL.CoordinateSystem = EarthToMoon;
+GMAT EarthMoonOGL.ViewPointReference = Luna;
+GMAT EarthMoonOGL.ViewPointVector = [ 0 0 30000 ];
+GMAT EarthMoonOGL.ViewDirection = Luna;
+GMAT EarthMoonOGL.ViewScaleFactor = 1;
+GMAT EarthMoonOGL.ViewUpCoordinateSystem = EarthToMoon;
+GMAT EarthMoonOGL.ViewUpAxis = Z;
+GMAT EarthMoonOGL.CelestialPlane = Off;
+GMAT EarthMoonOGL.XYPlane = On;
+GMAT EarthMoonOGL.WireFrame = Off;
+GMAT EarthMoonOGL.Axes = On;
+GMAT EarthMoonOGL.Grid = Off;
+GMAT EarthMoonOGL.SunLine = Off;
+GMAT EarthMoonOGL.UseInitialView = Off;
+GMAT EarthMoonOGL.DataCollectFrequency = 1;
+GMAT EarthMoonOGL.UpdatePlotFrequency = 50;
+GMAT EarthMoonOGL.NumPointsToRedraw = 0;
+GMAT EarthMoonOGL.ShowPlot = true;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+%************** Sequence 1 **************
+
+%  Set Sat equal to InitSat so we have the initial conditions saved for later use
+GMAT InitSat = Sat;
+
+% Parking orbit target orientation and TLI maneuver to align line of apsides with moon at lunar encounter
+Target DefaultDC;
+   Vary DefaultDC(TOI.Element1 = 3.15, {Perturbation = 0.0001, MaxStep = 0.01, Lower = 3.05, Upper = 3.25});
+   Vary DefaultDC(Sat.AOP = 0, {Perturbation = 0.2, MaxStep = 15, Lower = -9.999999e300, Upper = 9.999999e300});
+   Vary DefaultDC(Sat.RAAN = 320, {Perturbation = 0.2, MaxStep = 15, Lower = -9.999999e300, Upper = 9.999999e300});
+   Maneuver TOI(Sat);
+   Propagate EarthProp(Sat) {Sat.Earth.Apoapsis};
+   Achieve DefaultDC(Sat.EarthToMoon.X = 16000, {Tolerance = 0.1});
+   Achieve DefaultDC(Sat.EarthToMoon.Y = 0, {Tolerance = 0.1});
+   Achieve DefaultDC(Sat.EarthToMoon.Z = 0, {Tolerance = 0.1});
+EndTarget;  % For targeter DefaultDC
+
+%************** Sequence 2 **************
+
+%  Set Sat equal to InitSat so we have the initial conditions saved for later use
+GMAT Sat.RAAN = RAAN;
+GMAT Sat.AOP = AOP;
+GMAT Sat = InitSat;
+
+Target DefaultDC;
+   Vary DefaultDC(TOI.Element1 = TOI.Element1, {Perturbation = 0.0001, MaxStep = 0.2, Lower = -9.999999e300, Upper = 9.999999e300});
+   Vary DefaultDC(Sat.AOP = AOP, {Perturbation = 0.1, MaxStep = 15, Lower = -9.999999e300, Upper = 9.999999e300});
+   Vary DefaultDC(Sat.RAAN = RAAN, {Perturbation = 0.1, MaxStep = 15, Lower = -9.999999e300, Upper = 9.999999e300});
+   Maneuver TOI(Sat);
+   Propagate EarthMoonProp(Sat) {Sat.ElapsedDays = 2.0};
+   Propagate MoonProp(Sat) {Sat.Luna.Periapsis};
+   Achieve DefaultDC(Sat.Luna.Altitude = 300, {Tolerance = 1.0});
+   Achieve DefaultDC(Sat.EarthToMoon.BdotT = 0.0, {Tolerance = 1.0});
+EndTarget;  % For targeter DefaultDC
+
+%************** Sequence 3 **************
+
+Target DefaultDC;
+   Vary DefaultDC(LOI.V = -0.5, {Perturbation = 0.0001, MaxStep = 0.2, Lower = -4, Upper = 3.14});
+   Maneuver LOI(Sat);
+   Propagate MoonProp(Sat) {Sat.Luna.Apoapsis};
+   Achieve DefaultDC(Sat.Luna.ECC = 0, {Tolerance = 0.1});
+EndTarget;  % For targeter DefaultDC
+Propagate MoonProp(Sat) {Sat.ElapsedDays = 2.0};

@@ -1,0 +1,2538 @@
+%
+% \iffalse
+%% Description: LaTeX package for AIAA technical conference papers.
+%% Keywords: LaTeX, class, AIAA, BibTeX, bibliographic-style
+%% Author: Bil Kleb, Bill Wood, Erich Knausenberger
+%% Maintainer: same
+%%
+%% Run (PDF)LaTeX on `aiaa.dtx' to obtain a Users Manual and code
+%% documentation.  Note: to get detailed code documentation you need to
+%% comment out the \OnlyDescription line in `aiaa.dtx'.
+%%
+%% See `aiaa.ins' and the Users Manual for installation instructions.
+%%
+%% Developer note: synchronize version and date with class code.
+%%
+% \fi
+%
+% \def\filename{aiaa.dtx}
+% \def\fileversion{3.8}
+% \def\filedate{2004/11/23}
+% \def\docdate{\filedate}
+% \date{\docdate}
+%
+% \newcommand*{\cls}[1]{\textsf{#1}}
+% \newcommand*{\pkg}[1]{\textsf{#1}}
+% \newcommand*{\file}[1]{\texttt{#1}}
+% \newcommand*{\kbd}[1]{\texttt{#1}}
+%
+% \MakeShortVerb{\|}
+%
+% \CheckSum{911}
+%
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%
+% \title{%
+%  AIAA\thanks{American Institute of Aeronautics and Astronautics.}\ \ 
+%  \LaTeX{} Package Users Manual\thanks{This document describes
+%  \textsf{aiaa} version \fileversion\ that came of age on \docdate.}
+% }
+%
+% \author{%
+%  Bil Kleb\thanks{Research Scientist}
+%  \ and Bill Wood\textsuperscript{\ensuremath{\ddagger}}\\
+%  {\normalsize\itshape NASA, Hampton, Viriginia}\\
+%  \and
+%  Erich Knausenberger\thanks{Business Developer}\\
+%  {\normalsize\itshape AIAA, Reston, Virginia}
+% }
+%
+% \date{\vspace{-5ex}}
+%
+% \maketitle
+%
+% \begin{abstract}
+% This document describes the \textsf{aiaa} \LaTeX\ package that
+% provides a \LaTeX\ class (\file{aiaa-tc.cls}) and \BibTeX\
+% bibliography style file (\file{aiaa.bst}).
+% The files in this package are used to create AIAA technical conference
+% papers.
+% The package also contains a users manual (you are looking at it),
+% a bare-bones sample template, and an advanced example.
+% \end{abstract}
+%
+% \tableofcontents
+%
+% \section{Introduction}
+%
+% The AIAA class works by loading the standard \LaTeX\ article class and
+% several LaTeX packages, and then making modifications and extensions
+% to suit the AIAA layout requirements.\footnote{%
+% The older, unofficial AIAA distribution that yields two-column layout
+% is available in the distribution's `pre2004' subdirectory.}
+% The AIAA \BibTeX\ style file was created with Daly's makebst program
+% and then tweaked according to AIAA conventions.
+% In addition, abbreviations for the AIAA journals and more common
+% aerospace journals were added.
+%
+% \subsection{Requirements}
+%
+% To make use of the AIAA technical conferenece paper class and process
+% the AIAA bare-bones template, you will need the following files:\\[3pt]
+% \begin{tabular}{llll}
+%  \cls{article.cls} &\pkg{graphicx.sty}&\pkg{array.sty}   &\pkg{setspace.sty}\\
+%  \pkg{overcite.sty}&\pkg{lastpage.sty}&\pkg{fancyhdr.sty} 
+% \end{tabular}\\[3pt]
+% These should be included as part of your \TeX\ distribution.
+% Note: \pkg{setspace} is only necessary if using the |submit| class
+% option described below.
+%
+% To explore some of \LaTeX's more advanced features such as imbedded
+% figures, tables with footnotes, hyperlinks, subfigures, dropped
+% capitals at the beginning of paragraphs, automatic nomenclature
+% collection and sorting, and bibliography generation that are
+% demonstrated in the advanced example, you will need the following
+% \LaTeX\ packages,\\[3pt]
+% \begin{tabular}{rl}
+%          \pkg{ifthen} & plain text conditionals \\
+%         \pkg{dcolumn} & decimal-aligned tabular math columns \\
+%        \pkg{fancyvrb} & extended verbatim environments \\
+%       \pkg{subfigure} & subcaptions for subfigures \\
+%         \pkg{nomencl} & nomenclature generation via Makeindex \\
+%        \pkg{hyperref} & hyperlinks such as email or URLs \\
+%  \pkg{threeparttable} & tables with footnotes \\
+%         \pkg{wrapfig} & integrate figures and tables in text
+%                         (i.e., DiVinci style) \\ 
+%
+%        \pkg{lettrine} & dropped capital letter at beginning of paragraph \\
+%       \pkg{subfigmat} & matrices of similar subfigures, aka small multiples \\
+%        \pkg{dropping} & an alternative dropped capital letter package
+% \end{tabular}\\[3pt]
+% \noindent The above packages are ordered according to the likelihood
+% that they are included with any given \TeX\ distribution.
+% The last three you will most likely have to download from CTAN
+% (\href{http://www.ctan.org}{www.ctan.org}) and add to your \TeX\
+% distribution according to its instructions for adding new packages, or
+% just place them in your local working directory.
+% Please read the Known Problems section before exploring the advanced
+% example. 
+%
+% \subsection{User's Manual}
+%
+% A PDF version of this Users Manual is provided as part of the distribution.
+% It was created by processing \file{aiaa.dtx} with \kbd{pdflatex}.
+% Of course a PostScript version can be made by using \kbd{latex}.
+%
+% If you are new to LaTeX, you should first read {\it A (not so) Short
+% Introduction to \LaTeX, or \LaTeX\ in 131 minutes}, which is
+% available in a variety of languages from the Comprehensive \TeX\
+% Archive Network (CTAN) website,
+% \href{http://www.ctan.org/tex-archive/info/lshort/}%
+%      {www.ctan.org/tex-archive/info/lshort/}.
+%
+% \subsection{Installation and Setup}
+%
+% If you have not already run \file{aiaa.ins} through \LaTeX{}, do so.
+% Running \kbd{latex aiaa.ins} will extract the 
+% class file \file{aiaa-tc.cls} and bibliography style file
+% \file{aiaa.bst} out of the file \file{aiaa.dtx} using the
+% \pkg{docscript} utility (part of \LaTeX{}).
+% If you encounter an error on installation like:\\[5pt]
+% | ! Undefined control sequence|\\
+% | \batchLine -> generate|\\
+% |          {\file {aiaa-tc.cls}{\from{aiaa.dtx}{class}}}|\\
+% |  1.728 \processbatchFile|\\[5pt]
+% it means that your \pkg{docstrip} is very old and that you will need
+% to update your \TeX\ distribution to take advantage of the AIAA package.
+%
+% Move \file{aiaa-tc.cls} to a directory searched by \TeX\footnote{%
+% For a Unix te\TeX{} installation, a privileged user could
+% put these files in a directory named something like
+% \kbd{/usr/local/share/texmf/tex/latex/aiaa}\ for the entire site to
+% use, remembering to run \kbd{texhash} to reconfigure te\TeX{} to
+% search the new directory; or, a lowly user could make their own
+% directory, e.g., \kbd{$\sim$/tex/inputs}, put the files in
+% there, and set the environment variable \kbd{TEXINPUTS} via
+% `\kbd{setenv TEXINPUTS $\sim$/tex/inputs:}'.
+% The colon represents the system search path so, in this case, the user
+% files take precedence.
+% On a Mac or PC installation put these files in a folder named
+% something like \file{TeX-inputs}.}
+% and the file \file{aiaa.bst} to a directory searched by
+% \BibTeX.\footnote{%
+% Similar to preceding footnote, only on Unix, use the 
+% environment variable \kbd{BSTINPUTS} for the bibliographic style file
+% and \kbd{BIBINPUTS} for the bibliographic database; for Mac's, use the
+% \file{BibTeX-inputs} folder, failing that try using the
+% \file{TeX-inputs} folder.}
+% Once things are installed, try to \LaTeX\ the bare-bones template.
+% It should produce something similar to the existing PDF copy.
+% 
+% \section{Usage}
+%
+% The AIAA class is envoked by including\\[5pt]
+% |   \documentclass[|{\itshape options}|]{aiaa-tc}|\\[5pt]
+% at the beginning of your document.
+% The AIAA class recognizes a |handcarry| option that places paper
+% number, conference information, and copyright information in the paper
+% when hand carrying papers to a ``loose papers'' conference, and a
+% `submit' option that increases font size and line spacing.
+% Other cptions are passed on to \LaTeX's \cls{article} class that is
+% subsequently loaded by the AIAA class.\footnote{%
+% For example, the \kbd{draft} option replaces figures with a
+% labeled box of the appropriate size and graphically depicts lines that
+% overrun the right margin (overfull boxes).} 
+% The document is written just like one were using the standard \LaTeX{}
+% \cls{article} document class; and thus, usage is well documented by
+% others in various \LaTeX{} books~\cite{companion,guide,latex}.
+% However, some of the stock commands have slightly different behaviors
+% and there are a few new commands designed to make life a little brighter;
+% these are discussed in the following sections.
+%
+% \subsection{General Commands}
+%
+% Several standard \LaTeX{} commands have been modified to behave
+% slightly differently in the \cls{aiaa-tc} class.
+% In addition, several new commands have been introduced to ease
+% document preparation.
+% Both types are discussed in the following subsections.
+%
+% \subsubsection{New Behavior from Standard Commands}
+%
+% \DescribeMacro{\date}
+% \DescribeMacro{\maketitle}
+% The \cls{aiaa-tc} class does not typeset the |\date| command as part of
+% |\maketitle|.
+% Standard \LaTeX{} behavior of |\maketitle| is to typeset the current
+% date as part of the title section.
+%  one would have to issue a command like, |\date{\vspace{-5ex}}|,
+% to eliminate the date and removed the space created for it.
+%
+% \DescribeEnv{abstract}
+% The |abstract| environment has been redefined within the \cls{aiaa-tc}
+% class to produce slightly different typesetting.
+% It now produces an indented block of text set in a smaller, bold font.
+% This environment should be placed after your |\maketitle|.
+% 
+% \DescribeMacro{\section}
+% \DescribeMacro{\subsection}
+% \DescribeMacro{\subsubsection}
+% \DescribeMacro{\paragraph}
+% \DescribeMacro{\subparagraph}
+% The counters, fonts, sizes, and positions normally produced by
+% these commands have been modified to produce AIAA layout guidelines.
+%
+% \subsubsection{New Command}
+%
+% \DescribeMacro{\thanksibid}
+% The command |\thanksibid| is very similar to the standard
+% |\thanks| command which is used when footnoting
+% the author affliations within the |\author| field.
+% The distinction is that the |\thanksibid| command allows one
+% to repeat a given footnote symbol without repeating the associated
+% footnote text.  For example,\\[3pt]
+% | \author{%|\\
+% |  Peter Gnoffo,%|\\
+% |   \thanks{Title, department, address, and member grade.}|\\
+% |  Bil Kleb,%|\\
+% |   \thanks{Title, department B, address, and member grade.}|\\
+% |  Bill Wood,%|\\
+% |   \thanksibid{2}%| \textit{use the same footnote as the second author.}\\
+% |  \ and|\\
+% |  Marge Myth%|\\
+% |   \thanks{Title, department C, address, and member grade.}|\\
+% | }|\\[3pt]
+% Thus, |\thanksibid{2}| would only produce a footnote symbol
+% at the end of Bill Wood's name and it would not generate
+% any footnote text.
+% Note that using the |\thanksibid| command does not increment the
+% footnote counter, so for the case given above, an argument of |4|
+% would not be a valid choice.
+%
+% \subsection{Hand Carry Information}
+%
+% \DescribeMacro{handcarry}
+% The following commands are used to load information that is
+% used by the |handcarry| class option.
+% For example,\\[3pt]
+% | \documentclass[handcarry]{aiaa-tc}|\\[3pt]
+% The following commands are used produce appropriate headers and footers
+% All of these commands are normally set in the preamble
+% of your document (similar to |\author| and |\title|).\footnote{%
+% The preamble is defined as anywhere between the 
+% \cs{documentclass}\texttt{\string{\string}} and
+% \cs{begin}\texttt{\string{document\string}} commands.}
+%
+% \DescribeMacro{\AIAApapernumber}
+% \DescribeMacro{\AIAAconference}
+% \DescribeMacro{\AIAAcopyright}
+% The commands |\AIAApapernumber|, |\AIAAconference|, and |\AIAAcopyright|
+% are used to put appropriate items in the header and footer of each page.
+% The contents of |\AIAApapernumber| is placed in the footer while the
+% contents of |\AIAAconference| is placed in the header.
+% For example,\\[3pt]
+% |  \AIAAapernumber{2004-3932}|\\
+% |  \AIAAConference{16th AIAA Fluid Dynamics Conference,|\\
+% |                  June 6--8, Portland, Oregon}|\\[3pt]
+% A footnote describing the copyright conditions
+% and other information about the document are incorporated via the
+% |\AIAAcopyright|.
+% This command should be loaded with one of the the copyright series
+% of commands: |\CopyrightA|, |\CopyrightB|, |\CopyrightC|, 
+% |\CopyrightD|, or |\CopyrightD-APL| described below.
+% To use, simply include something like the following in
+% the your document's preamble:\\[3pt]
+% |  \AIAAcopyright{\CopyrightA{2004}}|\\[3pt]
+% \DescribeMacro{\CopyrightA}
+% \DescribeMacro{\CopyrightB}
+% \DescribeMacro{\CopyrightC}
+% \DescribeMacro{\CopyrightD}
+% \DescribeMacro{\CopyrightDAPL}
+% where the specific copyright commands will expand to one of the standard AIAA
+% forms: A, B, C, D, or D-APL.
+% Note: they each have different arguments, or no arguments, depending
+% on their requirements,\\[3pt]
+% |  \CopyrightA{|\textit{year}|}|\\
+% |  \CopyrightB{|\textit{year}|}{|\textit{full name or company}|}|\\
+% |  \CopyrightC|\\
+% |  \CopyrightD{|\textit{year}|}|\\
+% |  \CopyrightDAPL{|\textit{year}|}|\\[3pt]
+% See AIAA copyright instructions for which form to use.
+%
+% \subsection{Journal Submission}
+%
+% \DescribeMacro{submit}
+% The |submit| option class option that is invoked as follows,\\[3pt]
+% | \documentclass[submit]{aiaa-tc}|\\[3pt]
+% \DescribeMacro{\AIAAsubmitinfo}
+% will increase the font size and line spacing as well as place a
+% running footer according to the contents of |\AIAAsubmitinfo|.
+% For example,\\[3pt]
+% | \AIAAsubmitinfo{Abbreviated Title, AuthorsLastName et al}|\\[3pt]
+% will place an abbreviated title and the authors last name at the
+% bottom of each page.
+%
+% \subsection{Making Modifications}
+%
+% If you feel the need to modify the behavior of items in
+% \cls{aiaa-tc.cls}, simply cut the section you want to change and save
+% it to a file named \file{myaiaamods.sty}.
+% Then modify the code in \file{myaiaamods.sty} to suit your needs and
+% include it in your document via |\usepackage{myaiaamods}| in the
+% preamble.
+%
+% \subsection{Getting Help}
+%
+% For general questions related to AIAA papers, procedures, and guidelines,
+% send email to
+% \href{mailto:Paper_Tech_Support@AIAA.Org}{Paper\_Tech\_Support@AIAA.Org}.
+% For help /specific/ to this AIAA \LaTeX\ distribution, send email to
+% \href{mailto:LaTeX_Support@AIAA.Org}{LaTeX\_Support@AIAA.Org}.
+%
+% For general \LaTeX\ help, see the {\it The (not so) Short Introduction
+% to \LaTeX} mentioned above, {\it \LaTeX: A Document Preparation
+% System} (2nd ed.) by Lamport, and {\it The LaTeX Companion} (2nd ed.)
+% by Mittelbach et al.~\cite{companion}
+% For more specific \LaTeX\ help, do a Google `groups' search on the
+% comp.text.tex USENET newsgroup and explore the \TeX\ User Group's frequently
+% asked questions site last seen at
+% \href{http://www.tex.ac.uk/cgi-bin/texfaq2html}%
+%             {www.tex.ac.uk/cgi-bin/texfaq2html}.
+% If these avenues fail to answer your question, read
+% \href{http://www.tex.ac.uk/cgi-bin/texfaq2html?label=askquestion}%
+%             {www.tex.ac.uk/cgi-bin/texfaq2html?label=askquestion}
+% and post a question to the \href{news:comp.text.tex}{comp.text.tex}
+% USENET newsgroup.
+% (Posting is available through \href{http://www.google.com/}{Google}.)
+%
+% For an extensive guide to using Encapsulated PostScript in \LaTeX, see
+% Keith Reckdahl's \file{epslatex} document available from CTAN's \file{info}
+% directory,
+% \href{http://www.ctan.org/tex-archive/info/}{www.ctan.org/tex-archive/info/}
+% or various \LaTeX{} reference books.
+%
+% Especially helpful in locating various \LaTeX{} packages is
+% the \kbd{Catalogue.html} web page found in the \file{help/Catalogue}
+% directory of CTAN.
+%
+% \subsection{Known Problems}
+% 
+% The bibliographic style sheet |aiaa.bst| isn't fully tested; and thus,
+% you may need to fiddle with your |.bbl| file for your final copy,
+% i.e., edit |file.bbl| after running a \LaTeX{}, \BibTeX, \LaTeX\
+% sequence, but before running \LaTeX{} the final time.
+% Note: If you run \BibTeX\ after modifying |file.bbl|, you will lose
+% your modifications when \LaTeX\ is run again.
+%
+% To typeset the advanced example, you will need a fairly complete \LaTeX{}
+% distribution, and even then you will probably need to download packages
+% like \pkg{dropping} or \pkg{lettine} as described in the Requirements
+% section. 
+% Also, some packages will need to be newer than 2002 or so.
+% For example, older versions of the \pkg{nomenclature} package will
+% given an error like\\[3pt]
+% | ! Undefined control sequence.|
+% | <argument> \nomitemsep |
+% while older versions of the \pkg{geometry} package will give\\[3pt]
+% | ERROR: Package keyval Error: No value specified for paper.|
+%
+% \subsection{Sending a Bug Report}
+%
+% Reports of bugs in the AIAA package are most welcome.
+% Before filing a bug report, please take the following actions:
+% \begin{enumerate}
+%  \item Verify your problem is not due to your own input file(s)
+%        styles sheet(s), or package(s);
+%  \item Check to see if your problem is documented in the preceeding
+%        section;
+%  \item Try to isolate the problem by writing a {\it minimal} \LaTeX\
+%        input file which reproduces the unexpected behavior and then:
+%   \begin{enumerate}
+%    \item Include the command\\
+%          |     \setcounter{errorcontextlines}{50}|\\ 
+%          in the preamble of your document to provide extra context when
+%          things go awry;
+%    \item Run your file through \LaTeX{};
+%    \item Send a description of your problem, the input file and the
+%          log file via e-mail to:
+%          \href{mailto:LaTeX_Support@AIAA.Org?subject=bug}%
+%               {LaTeX\_Support@AIAA.Org}. 
+%  \end{enumerate}
+% \end{enumerate}
+% 
+% \section{Acknowledgments}
+%
+% Foremost, the authors would like to thank all of those that took the
+% time to ask questions, give comments, or provide suggestions:
+% Karen Bibb, Steve Alter, Meelan Choudhari, Donald Arseneau, Ed Kerschen,
+% Paolo Lisandrin, Mark Woodmansee, Dominique Pelletier, Manual Cruz,
+% Martin Sanchez, Chris Rumsey, Ray Chase, Tadashi Minowa, Dominique
+% Charbonnier,  Shawn Gano, Chris Karlgaard, Sushma Gujjula, Sham Gurav,
+% Lealon Martin, Byoung Hun Kang, Chunlei Zhang,
+% Al Crosbie, Fred Nelson, Dinesh Prabhu, Michael Yovanovich, and
+% Sanghyuk Park.
+% Without their feedback, this package would wither.\footnote{%
+% Hint: If you want to be listed in future versions of this document,
+% send kudos, comments, and so on to
+%  \href{mailto:LaTeX_Support@AIAA.Org}{LaTeX\_Support@AIAA.Org}.
+%  Alternatively, show up for a birds-of-a-feather gathering at a conference
+%  the authors attend---watch the local bulletin board at the conference
+%  for the time/place.} 
+%
+% Bundling and documenting this \pkg{aiaa} package in docstrip
+% format was done by using other packages as a model,
+% particularly, Mats Dahlgren's \pkg{dropping}~\cite{dropping}
+% and Jeff Goldberg et al.'s \pkg{endfloat}~\cite{endfloat}.
+%
+% Finally, the first author would like to thank the people of the
+% |comp.text.tex| newsgroup,  the \TeX\ Users Group Frequently Asked
+% Questions maintainers, and various package authors for patiently
+% answering my inane questions, in particular, but in no particular order:
+% Donald Arsenau, Robin Fairbairns, Piet van Oostrum, Jeroen Nijhof,
+% Steven Douglas Cochran, Herbert Voss, Jeffrey Goldberg, Mark Wooding,
+% Paul Foley, David Kastrup, Jerry Leichter, Patrick Daly, David
+% Carlisle, Edward Sznyter, and Jim Hefferon.
+%
+% \begin{thebibliography}{1}
+%
+% \bibitem{companion}
+% Frank Mittelbach, Michel Goossens, Johannes Bramms, David Carlisle,
+% and Chris Rowley.
+% \newblock{\em The {\LaTeX} Companion}.
+% \newblock 2nd ed.
+% \newblock Addison-Wesley, Reading, Massachusetts, 2004.
+%
+% \bibitem{guide}
+% Helmut Kopka and Patrick W. Daly.
+% \newblock{\em A Guide to {\LaTeXe}: Tools and Techniques for Computer
+% Typesetting}.
+% \newblock 4th ed.
+% \newblock Addison-Wesley, Reading, Massachusetts, 2003.
+%
+% \bibitem{latex}
+% Leslie Lamport.
+% \newblock{\em {\LaTeX}: A Document Preparation System}.
+% \newblock 2nd ed.
+% \newblock Addison-Wesley, Reading, Massachusetts, 1994.
+%
+% \bibitem{dropping}
+% Mats Dahlgren.
+% \newblock \pkg{dropping}---A \LaTeX{} Macro for Dropping
+%           the First Character(s) of a Paragraph.
+% \newblock June 1996. (version~0.1)
+% \newblock Electronic Documentation.
+%
+% \bibitem{graphicx}
+% David Carlisle.
+% \newblock Packages in the `graphics' bundle.
+% \newblock December 1995.
+% \newblock Electronic Documentation.
+%
+% \bibitem{endfloat}
+% James Darrell McCauley and Jeff Goldberg.
+% \newblock The \texttt{endfloat} Package.
+% \newblock October 1995. (version~2.4i)
+% \newblock Electronic Documentation.
+%
+% \end{thebibliography}
+%
+% \section{Code Documentation}
+%
+% For the interested reader, the following sections can be made to
+% contain a documented verion of the class code and bibliographic style file.
+% These detailed coding bits are not included in the Users Manual by
+% default.
+% If you want to see these in typeset form, you need to comment
+% out the |\OnlyDescription| line in the |<driver>| section of
+% \file{aiaa.dtx} and process \file{aiaa.dtx} with (PDF)\LaTeX.
+%
+%    \begin{macrocode}
+%<*driver>
+\documentclass{ltxdoc}
+ \usepackage[colorlinks]{hyperref}
+ \OnlyDescription % comment out to typeset class and bibstyle code
+\begin{document}
+ \DocInput{aiaa.dtx}
+\end{document}
+%</driver>
+%    \end{macrocode}
+%
+% \StopEventually{\PrintChanges}
+%
+% \subsection{The Class}
+%
+% First, the opening header:
+%    \begin{macrocode}
+%<*class>
+%%
+%%  `aiaa-tc.cls' - A LaTeX class to create AIAA technical conference papers.
+%%
+%%  The basic approach is to load the LaTeX article class and various
+%%  standard LaTeX packages, and then make modifications and extensions to
+%%  conform to AIAA's guidelines.
+%%
+%%  To use, simply select this class file in your LaTeX document.  For example,
+%%
+%%    \documentclass{aiaa-tc}
+%%
+%%  Class options:
+%%
+%%   handcarry - used for hand carrying a paper to a 'loose papers'
+%%               conference.  It adds the conference name to the
+%%               top of the first page, paper number to the bottom
+%%               of each page, and a copyright notice on the bottom
+%%               of the first
+%%
+%%      submit - produces output typically required for journal submission,
+%%               that is, 12pt font and 'double spacing'.
+%%
+%%     handout - Edward Tufte-style format: footnotes and citations become
+%%               sidenotes, column width is reduced to give ~60 characters-
+%%               per-line to improve readibility, ragged-right used
+%%               for improved readibility, and less-obtrusive sectioning
+%%               styles.
+%%
+%%               Note: you will need to move your bibliography section to
+%%               the beginning of your document per instructions for the
+%%               bibentry LaTeX package.
+%%
+%%  plus those accepted by the standard article class such as 'draft'.
+%%
+%%  Class-specific commands:
+%%
+%%   \thanksibid{} - Reuses \thanks footnote symbol from previous
+%%                   author specified by position in \author command.
+%%                   For example, `someone\thanksibid{2}' will reuse the
+%%                   footnote symbol from the second author for 'someone'
+%%                   without producing a repeated footnote at the bottom.
+%%
+%%   \AIAApapernumber{} - For use with 'handcarry' option.
+%%    \AIAAconference{} - Ditto.
+%%     \AIAAcopyright{} - Ditto.  Must be filled with one of the
+%%                        various copyright types: \AIAAcopyrightA{year},
+%%                        \AIAAcopyrightB{year}{holder}, \AIAAcopyrightC,
+%%                        \AIAAcopyrightD{year}, or \AIAAcopyrightDAPL{year}.
+%%
+%%   \AIAAsubmitinfo{} - Footer information used by 'submit' option.
+%%
+%%  For support, further details, and a documented version of this class,
+%%  please read the Users Manual, aiaa.pdf, and the templates that come
+%%  with the AIAA LaTeX distribution.
+%%
+%%  Wish list:
+%%
+%%  o fine tune hyperref behavior, especially footnote behavior
+%%
+%%  o an \appendix command to switch section styles, counters, etc.
+%%
+%% o leave space for copyright notice so that handcarry option does
+%%   not alter pagination.
+%%
+%    \end{macrocode}
+% The class identifies itself:
+%    \begin{macrocode}
+\NeedsTeXFormat{LaTeX2e}
+\def\AIAAversion{3.8}
+\ProvidesClass{aiaa-tc}[2004/11/23 v3.8 AIAA technical conference paper]
+%    \end{macrocode}
+% \begin{macro}{handcarry}
+% \begin{macro}{submit}
+% \begin{macro}{handout}
+% Option and associated flag.
+% Note that the flag is set when an option is processed, so that it is
+% overrides the default.
+%    \begin{macrocode}
+\newif\if@aiaa@handcarry
+\newif\if@aiaa@submit
+\newif\if@aiaa@handout
+\@aiaa@handcarryfalse
+\@aiaa@submitfalse
+\@aiaa@handoutfalse
+\DeclareOption{handcarry}%
+ {\@aiaa@handcarrytrue\@aiaa@submitfalse\@aiaa@handoutfalse}
+\DeclareOption{submit}%
+ {\@aiaa@submittrue\@aiaa@handcarryfalse\@aiaa@handoutfalse}
+\DeclareOption{handout}%
+ {\@aiaa@handouttrue\@aiaa@handcarryfalse\@aiaa@submitfalse}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% Pass all unknown options on to the \LaTeX\ article class
+% and process them.
+% Note: Options are processed in order of the |\DeclareOption|
+% commands in this file, so if you want one to take precedence
+% over all the other options, process it last.
+%    \begin{macrocode}
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}%
+                \typeout{Unknown option: passing ``\CurrentOption"
+                         option on to the standard LaTeX article class.}}
+\ProcessOptions
+%    \end{macrocode}
+% Load the standard \LaTeX{} article class with the appropriate options
+% depending on which class option is present.
+% Also load packages according to the option.
+%    \begin{macrocode}
+\if@aiaa@handout
+  \LoadClass[11pt]{article}
+  \RequirePackage[margin=1in,includemp, letterpaper,%
+                  marginparsep=0.375in,
+                  marginparwidth=2in,
+                  footskip=23pt]{geometry}
+  \RequirePackage{paralist}% for compact lists
+  \RequirePackage[strict]{chngpage}% for changing page width
+  \RequirePackage{bibentry}%  inline citations
+\else
+ \if@aiaa@submit
+  \LoadClass[letterpaper,12pt]{article}
+  \RequirePackage{setspace}% control line spacing
+ \else
+  \LoadClass[letterpaper,10pt]{article}
+ \fi
+ \RequirePackage[margin=1in,top=0.75in,headheight=\baselineskip]%
+                {geometry}% page layout
+ \RequirePackage{overcite}% superscript, sorted, compressed citation commands
+\fi
+\RequirePackage{fancyhdr}% simple control of headers and footers
+\RequirePackage{lastpage}% to get reference for last page number
+\RequirePackage{graphicx}% images
+\RequirePackage{array}%    extra row height
+%    \end{macrocode}
+%
+% \begin{macro}{\AIAApapernumber}
+% \begin{macro}{\AIAAconference}
+% \begin{macro}{\AIAAcopyright}
+% \begin{macro}{\AIAAsubmitinfo}
+% Define AIAA-specific fields:
+%    \begin{macrocode}
+\newcommand*{\AIAApapernumber}[1]{\def\aiaa@papernumber{#1}}\AIAApapernumber{}
+\newcommand*{\AIAAconference}[1]{\def\aiaa@conference{#1}}\AIAAconference{}
+\newcommand*{\AIAAprinting}[1]{\def\aiaa@printing{#1}}\AIAAprinting{}
+\newcommand*{\AIAAcopyright}[1]{\def\aiaa@copyright{#1}}\AIAAcopyright{}
+\newcommand*{\AIAAsubmitinfo}[1]{\def\aiaa@submitinfo{#1}}\AIAAsubmitinfo{}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% Tie |\intextsep| to |\baselineskip| to more tightly integrate layout
+%    \begin{macrocode}
+\setlength{\intextsep}{0.7\baselineskip \@plus 2\p@ \@minus 1\p@}
+%    \end{macrocode}
+%
+% Change floating defaults to include `here' to promote text/float integration
+%    \begin{macrocode}
+\def\fps@figure{htbp}
+\def\fps@table{htbp}
+%    \end{macrocode}
+%
+% Set vertical space between margin paragraphs.
+%    \begin{macrocode}
+\setlength\marginparpush{1.6\parsep}
+%    \end{macrocode}
+%
+% Font hook to control marginal items
+%    \begin{macrocode}
+\if@aiaa@handout
+ \newcommand{\aiaa@marginfont}{\normalfont\scriptsize}
+\fi
+%    \end{macrocode}
+%
+% Shrink above and below display skips.
+%    \begin{macrocode}
+\setlength\abovedisplayskip{3pt plus 1pt minus 1pt}
+\setlength\belowdisplayskip{3pt plus 1pt minus 1pt}
+%    \end{macrocode}
+%
+% Shrink above and below caption skips.
+%    \begin{macrocode}
+\setlength\abovecaptionskip{3pt}
+\setlength\belowcaptionskip{3pt}
+%    \end{macrocode}
+%
+% Create a variable to hold margin overhang length for use with \pkg{wrapfig}.
+%    \begin{macrocode}
+\newlength{\aiaa@overhang}
+\setlength{\aiaa@overhang}{\marginparwidth}
+\addtolength{\aiaa@overhang}{\marginparsep}
+%    \end{macrocode}
+%
+% Create a modified version \raggedright that allows hyphenation per
+% Donald Arseneau.
+%    \begin{macrocode}
+\def\aiaa@raggedright{% resides in latex.ltx
+  \let\\\@centercr\@rightskip\z@ plus 0.08\hsize%
+  \rightskip\@rightskip
+  \leftskip\z@skip
+  \parindent\z@}
+%    \end{macrocode}
+%
+% \begin{macro}{\AIAAcopyrightA}
+% \begin{macro}{\AIAAcopyrightB}
+% \begin{macro}{\AIAAcopyrightC}
+% \begin{macro}{\AIAAcopyrightD}
+% \begin{macro}{\AIAAcopyrightDAPL}
+% Define AIAA copyright clauses for use when hand carrying
+%    \begin{macrocode}
+\newcommand{\AIAAcopyrightA}[1]{Copyright \copyright\ #1 by the
+  American Institute of Aeronautics and Astronautics, Inc. All
+  rights reserved.}% rev 01/01/2002
+\newcommand{\AIAAcopyrightB}[2]{Copyright \copyright\ #1 by
+  #2. Published by the American Institute of Aeronautics
+  and Astronautics, Inc.\ with permission.}% rev 01/01/2002
+\newcommand{\AIAAcopyrightC}{This material is declared a work of the U.S.
+  Government and is not subject to copyright protection in the
+  United States.}% rev 01/01/2002
+\newcommand{\AIAAcopyrightD}[1]{Copyright \copyright\ #1 by the American
+  Institute of Aeronautics and Astronautics, Inc.  The U.S. Government
+  has a royalty-free license to exercise all rights under the copyright
+  claimed herein for Governmental purposes. All other rights are
+  reserved by the copyright owner.}% rev 01/01/2002
+\newcommand{\AIAAcopyrightDAPL}[1]{Copyright \copyright\ #1 by the American
+  Institute of Aeronautics and Astronautics, Inc.  Under the copyright
+  claimed herein, the U.S. Government has a royalty-free license to
+  exercise all rights for Governmental purposes. All other rights are
+  reserved by the copyright owner.}% rev 01/01/2002
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\aiaa@makecopyright}
+% Typeset copyright notice as a footnote of the first page
+%    \begin{macrocode}
+\newcommand\aiaa@makecopyright{%
+  \begingroup
+   \renewcommand\thefootnote{}
+   \if@aiaa@handcarry\footnotetext{\aiaa@copyright}\fi
+   \if@aiaa@handout\footnotetext{\scriptsize\aiaa@copyright}\fi
+  \endgroup
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\thanksibid}
+% Define |\thanksibid| command to reuse \thanks footnote symbol of a
+% previous author 
+%    \begin{macrocode}
+\if@aiaa@handout
+ \renewcommand{\thanks}[2][0pt]%
+   {\footnotemark%
+     \renewcommand\thefootnote{\@fnsymbol\c@footnote}
+     \marginpar{\aiaa@marginfont
+                \vspace*{#1}
+                \textsuperscript{\thefootnote}%
+                \hspace{1pt}%
+                \aiaa@raggedright #2}%
+ }
+\fi
+%\protected@xdef\@thanks{\@thanks
+%         \protect\footnotetext[\the\c@footnote]{#1}}}%
+\newcounter{aiaa@cthanks}
+\newcounter{aiaa@cfootnote}
+\newcommand{\thanksibid}[1]{%
+  \begingroup
+    \setcounter{aiaa@cfootnote}{\value{footnote}}% store original
+    \setcounter{aiaa@cthanks}{#1}%
+    \renewcommand\thefootnote{\fnsymbol{aiaa@cthanks}}%
+    \footnotemark%
+    \setcounter{footnote}{\value{aiaa@cfootnote}}% reset to original
+  \endgroup
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\maketitle}
+% Rework |\maketitle| a bit and remove its |\pagestyle{plain}| [article.cls]
+%    \begin{macrocode}
+\if@aiaa@handout
+ \renewcommand\maketitle{\par
+  \renewcommand{\and}{\vskip 4pt}
+  \begingroup
+    \parindent 0pt
+    \renewcommand\thefootnote{\@fnsymbol\c@footnote}%
+    \def\@makefnmark{\rlap{\@textsuperscript{\normalfont\@thefnmark}}}%
+    \long\def\@makefntext##1{\parindent 1em\noindent
+            \hb@xt@1.8em{%
+                \hss\@textsuperscript{\normalfont\@thefnmark}}##1}%
+    \newpage
+    \global\@topnum\z@   % Prevents figures from going at top of page.
+    \@maketitle
+    \thispagestyle{plain}\@thanks
+  \endgroup
+  \setcounter{footnote}{0}%
+  \aiaa@makecopyright
+  \global\let\thanks\relax
+  \global\let\maketitle\relax
+  \global\let\@maketitle\relax
+  \global\let\@thanks\@empty
+  \global\let\@author\@empty
+  \global\let\@date\@empty
+  \global\let\@title\@empty
+  \global\let\title\relax
+  \global\let\author\relax
+  \global\let\date\relax
+  \global\let\and\relax
+ }
+\else
+ \renewcommand\maketitle{\par
+  \begingroup
+    \renewcommand\thefootnote{\@fnsymbol\c@footnote}%
+    \def\@makefnmark{\rlap{\@textsuperscript{\normalfont\@thefnmark}}}%
+    \long\def\@makefntext##1{\parindent 1em\noindent
+            \hb@xt@1.8em{%
+                \hss\@textsuperscript{\normalfont\@thefnmark}}##1}%
+    \newpage
+    \global\@topnum\z@   % Prevents figures from going at top of page.
+    \@maketitle
+    \@thanks
+  \endgroup
+  \setcounter{footnote}{0}%
+  \renewcommand\thefootnote{\@alph\c@footnote}% change to alpha style footnote
+  \aiaa@makecopyright
+  \global\let\thanks\relax
+  \global\let\thanksibid\relax
+  \global\let\maketitle\relax
+  \global\let\@maketitle\relax
+  \global\let\@thanks\@empty
+  \global\let\@author\@empty
+  \global\let\@date\@empty
+  \global\let\@title\@empty
+  \global\let\title\relax
+  \global\let\author\relax
+  \global\let\date\relax
+  \global\let\and\relax
+ }
+\fi
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@maketitle}
+% Add conference name at top and remove date [article.cls]
+%    \begin{macrocode}
+\if@aiaa@handout
+ \def\@maketitle{%
+  \newpage
+  \null
+  {\LARGE\bfseries\slshape\raggedright \@title \par}%
+  \vskip 10pt%
+  {\large\slshape \@author \par}
+  \vskip 6pt%
+  {\normalsize\slshape AIAA Paper \aiaa@papernumber\par}%
+  \vskip 12pt \@plus 3pt \@minus 1pt
+ }
+\else
+ \def\@maketitle{%
+  \newpage
+  \null
+  \begin{center}%
+  \if@aiaa@handcarry
+    \vspace{-0.25in}
+    {\hfill\aiaa@papernumber\par}
+    {\sffamily\scriptsize\aiaa@conference}
+    \vskip1em
+  \else
+    \vskip\baselineskip
+    \vskip1em
+  \fi
+  \let \footnote \thanks
+    {\LARGE\bfseries \@title \par}%
+    \vskip 1.5em%
+    {\large
+      \lineskip .5em%
+      \begin{tabular}[t]{c}%
+        \@author
+      \end{tabular}\par}%
+  \end{center}%
+  \par
+  \vskip 1.5ex}
+\fi
+%    \end{macrocode}
+% \end{macro}
+%
+% Reduce the quantity of overfull warnings
+%    \begin{macrocode}
+\setlength\hfuzz{2pt}
+%    \end{macrocode}
+%
+% Setup page headers and footers [fancyhdr.sty]
+%    \begin{macrocode}
+\fancyhf{}% clear defaults
+\renewcommand{\headrulewidth}{0pt}% turn off default headrule
+\if@aiaa@handout
+  \fancypagestyle{plain}{%
+   \fancyhf{}% clear defaults
+   \renewcommand{\headrulewidth}{0pt}% turn off default headrule
+   \lhead{\sffamily\scriptsize\aiaa@conference}
+   \cfoot{\sffamily\scriptsize\aiaa@printing}
+  }
+\fi
+\cfoot{
+ \if@aiaa@handout
+   \scriptsize\scshape
+ \else
+   \footnotesize\normalfont
+ \fi
+ \thepage\ of \pageref{LastPage}\\
+ \rule[.2\baselineskip]{0.5in}{0.2pt}\\
+ \if@aiaa@submit
+   \aiaa@submitinfo
+ \else
+   \if@aiaa@handout
+     \ifx\aiaa@papernumber\@empty
+       \relax
+     \else
+       AIAA Paper \aiaa@papernumber
+     \fi
+   \else
+     American Institute of Aeronautics and Astronautics
+     \ifx\aiaa@papernumber\@empty
+       \relax
+     \else
+       \if@aiaa@handcarry Paper \aiaa@papernumber\fi
+     \fi
+   \fi
+ \fi
+}
+\pagestyle{fancy}
+%    \end{macrocode}
+%
+% Set graphic defaults [graphicx.sty]
+%    \begin{macrocode}
+\setkeys{Gin}{width=\linewidth,totalheight=\textheight,keepaspectratio}
+%    \end{macrocode}
+%
+% Add some extra space between tabular rows [array.sty]
+%    \begin{macrocode}
+\setlength{\extrarowheight}{2pt}
+%    \end{macrocode}
+%
+% \begin{environment}{\abstract}
+% Remove abstract name and add bold font [article.cls]
+%    \begin{macrocode}
+\if@aiaa@handout
+ \renewenvironment{abstract}%
+   {\footnotesize\quotation\sffamily\slshape}%
+   {\normalfont\endquotation\normalsize}
+\else
+ \renewenvironment{abstract}%
+   {\small\quotation\bfseries}%
+   {\normalfont\endquotation\normalsize}
+\fi
+%    \end{macrocode}
+% \end{environment}
+%
+% \begin{macro}{\@makecaption}
+% Change font and delimeter for captions [article.cls]
+%    \begin{macrocode}
+\long\def\@makecaption#1#2{%
+  \vskip\abovecaptionskip
+  \sbox\@tempboxa{\scriptsize\bfseries #1.~~#2}%
+  \ifdim \wd\@tempboxa >\hsize
+    \scriptsize\bfseries #1.~~#2\par
+  \else
+    \global \@minipagefalse
+    \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+  \vskip\belowcaptionskip}
+%    \end{macrocode}
+% \end{macro}
+%
+% Add some belowcaptionskip to make table captions look better [article.cls]
+%    \begin{macrocode}
+\setlength\belowcaptionskip{5pt plus 1pt minus 1pt}
+%    \end{macrocode}
+%
+% Change style of section numbering [article.cls]
+%    \begin{macrocode}
+\if@aiaa@handout
+ \setcounter{secnumdepth}{1}
+\else
+ \renewcommand\thesection      {\@Roman\c@section}
+ \renewcommand\thesubsection   {\thesection.\@Alph\c@subsection}
+ \renewcommand\thesubsubsection{\thesubsection.\@arabic\c@subsubsection}
+ \renewcommand\theparagraph    {\thesubsubsection.\@alph\c@paragraph}
+ \renewcommand\thesubparagraph {\theparagraph.\@roman\c@subparagraph}
+ \setcounter{secnumdepth}{3}% no counters \paragraph and below
+\fi
+%    \end{macrocode}
+%
+% \begin{macro}{\@seccntformat}
+% Add period after the section counter [latex.ltx]
+%    \begin{macrocode}
+\if@aiaa@handout\relax\else
+ \def\@seccntformat#1{\csname the#1\endcsname.\quad}
+\fi
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\section}
+% \begin{macro}{\subsection}
+% \begin{macro}{\subsubsection}
+% \begin{macro}{\paragraph}
+% \begin{macro}{\subparagraph}
+%
+% Change style of sections [article.cls]
+%    \begin{macrocode}
+\if@aiaa@handout
+ \renewcommand\section{\@startsection {section}{1}{\z@}%
+                                      {-2.2ex \@plus -0.5ex \@minus -0.1ex}%
+                                      {1.1ex \@plus.1ex}%
+                                      {\normalfont\normalsize%
+                                       \Large\bfseries\slshape}}
+ \renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+                                        {-1.625ex\@plus -0.5ex \@minus -0.1ex}%
+                                        {0.75ex \@plus 0.1ex}%
+                                        {\normalfont\normalsize\large\slshape}}
+ \renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
+                                           {-1.5ex\@plus -0.4ex \@minus -0.1ex}%
+                                           {0.65ex \@plus 0.1ex}%
+                                           {\normalfont\normalsize\slshape}}
+ \renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
+                                       {2.25ex \@plus1ex \@minus.2ex}%
+                                       {-1em}%
+                                       {\normalfont\normalsize\slshape}}
+ \renewcommand\subparagraph{\@startsection{subparagraph}{5}{\parindent}%
+                                          {2.25ex \@plus1ex \@minus .2ex}%
+                                          {-1em}%
+                                          {\normalfont\normalfont}}
+\else
+ \renewcommand\section{\@startsection {section}{1}{\z@}%
+                                      {3.5ex \@plus -1ex \@minus -.2ex}%
+                                      {2.3ex \@plus.2ex}%
+                                      {\center\normalfont\large\bfseries}}
+ \renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+                                        {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                        {1.5ex \@plus .2ex}%
+                                        {\normalfont\normalsize\bfseries}}
+ \renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
+                                           {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                           {1.5ex \@plus .2ex}%
+                                           {\normalfont\normalsize\itshape}}
+ \renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
+                                       {2.25ex \@plus1ex \@minus.2ex}%
+                                       {-1em}%
+                                       {\normalfont\normalsize\scshape}}
+ \renewcommand\subparagraph{\@startsection{subparagraph}{5}{\parindent}%
+                                          {2.25ex \@plus1ex \@minus .2ex}%
+                                          {-1em}%
+                                          {\normalfont\normalfont}}
+\fi
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\@biblabel}
+% \begin{environment}{thebibliography}
+% Redefine bibliography behavior for superscripts and smaller font
+% [article.cls]
+%    \begin{macrocode}
+\if@aiaa@handout\relax\else
+ \renewcommand{\@biblabel}[1]{$^{#1}$}
+ \renewenvironment{thebibliography}[1]%
+     {\section*{\refname\@mkboth{\MakeUppercase\refname}%
+                                 {\MakeUppercase\refname}}%
+      \list{\@biblabel{\@arabic\c@enumiv}}%
+           {\setlength{\leftmargin}{0pt}%
+            \settowidth{\labelwidth}{\@biblabel{#1}}%
+            \setlength{\itemindent}{\parindent}%
+            \advance\itemindent by \labelwidth%
+            \setlength{\labelsep}{0.0em}%
+            \setlength{\itemsep}{-\smallskipamount}%
+            \@openbib@code%
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty%
+            \renewcommand\theenumiv{\@arabic\c@enumiv}%
+            \footnotesize%
+            }
+      \sloppy\clubpenalty4000\widowpenalty4000%
+      \sfcode`\.\@m}
+      {\def\@noitemerr
+        {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+\fi
+%    \end{macrocode}
+% \end{environment}
+% \end{macro}
+%
+% \begin{macro}{\aiaa@captionfont}
+% \begin{macro}{\aiaa@captionfont}
+% \begin{macro}{\@makecaption}
+% Add caption font and style hooks.
+%    \begin{macrocode}
+\if@aiaa@handout
+ \newcommand{\aiaa@captionfont}{\scriptsize\sffamily}
+ \newcommand{\aiaa@captionfill}{\aiaa@raggedright}
+ \long\def\@makecaption#1#2{%
+   \vskip\abovecaptionskip
+   \sbox\@tempboxa{\aiaa@captionfont\aiaa@captionfill #1: #2}%
+   \ifdim \wd\@tempboxa >\hsize
+     {\aiaa@captionfont\aiaa@captionfill #1: #2\par}
+   \else
+     \global \@minipagefalse
+     \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+   \fi
+    \vskip\belowcaptionskip}
+\fi
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% redefine the float* commands to spans column width
+% plus marginparwidth [article.cls] using chngpage.sty
+%    \begin{macrocode}
+\if@aiaa@handout
+ \renewenvironment{figure*}[1][htbp]
+                {\@float{figure}[#1]
+                  \begin{adjustwidth}{}{-\aiaa@overhang}%
+                   \begin{minipage}{\linewidth}}
+                {  \end{minipage}%
+                  \end{adjustwidth}%
+                 \end@float}
+ \renewenvironment{table*}[1][htbp]
+                {\@float{table}[#1]
+                  \begin{adjustwidth}{}{-\aiaa@overhang}%
+                   \begin{minipage}{\linewidth}}
+                {  \end{minipage}%
+                  \end{adjustwidth}%
+                 \end@float}
+\fi
+%    \end{macrocode}
+%
+%
+%    \begin{macrocode}
+\if@aiaa@handout
+ \providecommand\newthought[1]{\vspace{2\parsep}{\noindent\scshape #1}}
+\fi
+%    \end{macrocode}
+%
+% An environment that allows things to span the full page width
+%    \begin{macrocode}
+\if@aiaa@handout
+ \newenvironment{fullwidth}% uses [chngpage.sty]
+  {\begin{adjustwidth}{}{-\aiaa@overhang}}%
+  {\end{adjustwidth}}
+\fi
+%    \end{macrocode}
+%
+% sidenotes
+%    \begin{macrocode}
+\if@aiaa@handout
+ \newcommand{\sidenote}[2][0pt]%
+   {\footnotemark%
+    \marginpar{\aiaa@marginfont
+               \vspace*{#1}
+               \textsuperscript{\thefootnote}%
+               \hspace{1pt}%
+               \aiaa@raggedright #2}%
+   }
+\fi
+%    \end{macrocode}
+%
+% usurp |\footnotes| while we're at it
+%    \begin{macrocode}
+\if@aiaa@handout
+ \let\footnote\sidenote
+\fi
+%    \end{macrocode}
+%
+% marginfigure
+%    \begin{macrocode}
+\if@aiaa@handout
+ \newcommand{\marginfigure}[2][0pt]%
+  {\marginpar{\def\@captype{figure}
+              \aiaa@marginfont
+              \vspace*{#1}
+              \aiaa@raggedright #2}%
+  }
+\fi
+%    \end{macrocode}
+%
+% margintable
+%    \begin{macrocode}
+\if@aiaa@handout
+ \newcommand{\margintable}[2][0pt]%
+  {\marginpar{\def\@captype{table}
+              \aiaa@marginfont
+              \vspace*{#1}
+              \aiaa@raggedright #2}%
+  }
+\fi
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\AtBeginDocument{%
+%
+% AIAA handout tweaks.
+%    \begin{macrocode}
+ \if@aiaa@handout
+  \aiaa@raggedright%
+  \setlength\parindent{1em}%
+  \@ifundefined{wrapoverhang}{}% else wrapfig package loaded
+    {\setlength{\wrapoverhang}{\aiaa@overhang}}
+  \@ifundefined{captionnamefont}{}% else ccaption package loaded
+    {\captionnamefont{\aiaa@captionfont}
+     \captiontitlefont{\aiaa@captionfont}
+     \captionstyle{\aiaa@raggedright}
+    }
+ \fi
+%    \end{macrocode}
+%
+% Change line spacing if using |submit| option:
+%
+%    \begin{macrocode}
+ \if@aiaa@submit\onehalfspacing\fi
+%    \end{macrocode}
+%
+% \begin{macro}{\tablenotes}
+% |threeparttable.sty|---|\footnotesize| notes, reduce the space between
+% the superscript and the note, and increase some spacing (|\itemsep| and
+% |\topsep|) in the tablenotes environment
+%    \begin{macrocode}
+ \@ifundefined{TPT@hsize}{}{%
+  \def\tablenotes{%
+    \TPT@hsize
+    \list{}%
+         {\footnotesize\topsep4pt \partopsep\z@skip
+          \itemsep2pt \parsep\z@ \itemindent\z@ \leftmargin1.5em
+          \def\makelabel##1{\tnote{##1}\hfil}\labelwidth0.5em\labelsep1pt%
+          \relax}}
+ }%
+%    \end{macrocode}
+% \end{macro}
+%
+% |nomencl.sty|
+%    \begin{macrocode}
+ \@ifundefined{nomgroup}{}{%
+  \RequirePackage{ifthen}% for typesetting groups within nomenclature
+%    \end{macrocode}
+%
+% Single-space nomenclature
+%    \begin{macrocode}
+  \setlength{\nomitemsep}{-\parsep}
+%    \end{macrocode}
+%
+% \begin{macro}{\nomgroup}
+% Sort nomenclature according to types
+%    \begin{macrocode}
+  \renewcommand{\nomgroup}[1]{%
+   \medskip%
+   \ifthenelse{\equal{#1}{A}}%
+    {\relax}%
+    {\ifthenelse{\equal{#1}{G}}%
+      {\item []\hspace*{-\leftmargin}%
+       \emph{Symbols}\hfill\smallskip}%
+      {\ifthenelse{\equal{#1}{B}}%
+        {\item []\hspace*{-\leftmargin}%
+         \emph{Subscripts}\hfill\smallskip}%
+        {\ifthenelse{\equal{#1}{C}}%
+          {\item []\hspace*{-\leftmargin}%
+           \emph{Conventions}\hfill\smallskip}%
+          {\ifthenelse{\equal{#1}{T}}%
+            {\item []\hspace*{-\leftmargin}%
+             \emph{Superscripts}\hfill\smallskip}{}%
+          }%
+        }%
+      }%
+    }%
+  }% \nomgroup
+ }% @ifundefined
+}% \AtBeginDocument
+%
+% - Release $Name:  $
+%
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+%</class>
+%    \end{macrocode}
+%
+% This concludes \cls{aiaa-tc.cls}.
+%
+%
+% \subsection{The Bibliography Style}
+%
+%    \begin{macrocode}
+%<*bibstyle>
+%
+% Note: this file originally created with Daly's custom-bib software.
+%
+ENTRY
+  { address
+    author
+    booktitle
+    chapter
+    edition
+    editor
+    howpublished
+    institution
+    journal
+    key
+    month
+    note
+    number
+    organization
+    pages
+    publisher
+    school
+    series
+    title
+    type
+    volume
+    year
+  }
+  {}
+  { label }
+
+INTEGERS { output.state before.all mid.sentence after.sentence after.block }
+
+FUNCTION {init.state.consts}
+{ #0 'before.all :=
+  #1 'mid.sentence :=
+  #2 'after.sentence :=
+  #3 'after.block :=
+}
+
+STRINGS { s t }
+
+FUNCTION {output.nonnull}
+{ 's :=
+  output.state mid.sentence =
+    { ", " * write$ }
+    { output.state after.block =
+        { add.period$ write$
+          newline$
+          "\newblock " write$
+        }
+        { output.state before.all =
+            'write$
+            { add.period$ " " * write$ }
+          if$
+        }
+      if$
+      mid.sentence 'output.state :=
+    }
+  if$
+  s
+}
+
+FUNCTION {output}
+{ duplicate$ empty$
+    'pop$
+    'output.nonnull
+  if$
+}
+
+FUNCTION {output.check}
+{ 't :=
+  duplicate$ empty$
+    { pop$ "empty " t * " in " * cite$ * warning$ }
+    'output.nonnull
+  if$
+}
+
+FUNCTION {fin.entry}
+{ add.period$
+  write$
+  newline$
+}
+
+FUNCTION {new.block}
+{ output.state before.all =
+    'skip$
+    { after.block 'output.state := }
+  if$
+}
+
+FUNCTION {new.sentence}
+{ output.state after.block =
+    'skip$
+    { output.state before.all =
+        'skip$
+        { after.sentence 'output.state := }
+      if$
+    }
+  if$
+}
+
+FUNCTION {add.blank}
+{  " " * before.all 'output.state :=
+}
+
+FUNCTION {date.block}
+{
+  skip$
+}
+
+FUNCTION {not}
+{   { #0 }
+    { #1 }
+  if$
+}
+
+FUNCTION {and}
+{   'skip$
+    { pop$ #0 }
+  if$
+}
+
+FUNCTION {or}
+{   { pop$ #1 }
+    'skip$
+  if$
+}
+
+FUNCTION {non.stop}
+{ duplicate$
+   "}" * add.period$
+   #-1 #1 substring$ "." =
+}
+
+FUNCTION {new.block.checka}
+{ empty$
+    'skip$
+    'new.block
+  if$
+}
+
+FUNCTION {new.block.checkb}
+{ empty$
+  swap$ empty$
+  and
+    'skip$
+    'new.block
+  if$
+}
+
+FUNCTION {new.sentence.checka}
+{ empty$
+    'skip$
+    'new.sentence
+  if$
+}
+
+FUNCTION {new.sentence.checkb}
+{ empty$
+  swap$ empty$
+  and
+    'skip$
+    'new.sentence
+  if$
+}
+
+FUNCTION {field.or.null}
+{ duplicate$ empty$
+    { pop$ "" }
+    'skip$
+  if$
+}
+
+FUNCTION {emphasize}
+{ duplicate$ empty$
+    { pop$ "" }
+    { "{\em " swap$ * "\/}" * }
+  if$
+}
+
+FUNCTION {capitalize}
+{ "u" change.case$ "t" change.case$ }
+
+FUNCTION {space.word}
+{ " " swap$ * " " * }
+
+FUNCTION {bbl.and}
+{ "and"}
+
+FUNCTION {bbl.editors}
+{ "editors" }
+
+FUNCTION {bbl.editor}
+{ "editor" }
+
+FUNCTION {bbl.edby}
+{ "edited by" }
+
+FUNCTION {bbl.edition}
+{ "ed." }
+
+FUNCTION {bbl.volume}
+{ "Vol." }
+
+FUNCTION {bbl.of}
+{ "of" }
+
+FUNCTION {bbl.number}
+{ "No." }
+
+FUNCTION {bbl.nr}
+{ "No." }
+
+FUNCTION {bbl.in}
+{ "in" }
+
+FUNCTION {bbl.pages}
+{ "pp." }
+
+FUNCTION {bbl.page}
+{ "p." }
+
+FUNCTION {bbl.chapter}
+{ "chap." }
+
+FUNCTION {bbl.techrep}
+{ "Tech. Rep." }
+
+FUNCTION {bbl.mthesis}
+{ "Master's thesis" }
+
+FUNCTION {bbl.phdthesis}
+{ "Ph.D. thesis" }
+
+FUNCTION {bbl.first}
+{ "1st" }
+
+FUNCTION {bbl.second}
+{ "2nd" }
+
+FUNCTION {bbl.third}
+{ "3rd" }
+
+FUNCTION {bbl.fourth}
+{ "4th" }
+
+FUNCTION {bbl.fifth}
+{ "5th" }
+
+FUNCTION {bbl.st}
+{ "st" }
+
+FUNCTION {bbl.nd}
+{ "nd" }
+
+FUNCTION {bbl.rd}
+{ "rd" }
+
+FUNCTION {bbl.th}
+{ "th" }
+
+MACRO {jan} {"Jan."}
+
+MACRO {feb} {"Feb."}
+
+MACRO {mar} {"March"}
+
+MACRO {apr} {"April"}
+
+MACRO {may} {"May"}
+
+MACRO {jun} {"June"}
+
+MACRO {jul} {"July"}
+
+MACRO {aug} {"Aug."}
+
+MACRO {sep} {"Sept."}
+
+MACRO {oct} {"Oct."}
+
+MACRO {nov} {"Nov."}
+
+MACRO {dec} {"Dec."}
+
+MACRO {jan-feb} {"Jan.-Feb."}
+
+MACRO {mar-apr} {"Mar.-Apr."}
+
+MACRO {may-jun} {"May-Jun."}
+
+MACRO {jul-aug} {"Jul.-Aug."}
+
+MACRO {sep-oct} {"Sep.-Oct."}
+
+MACRO {nov-dec} {"Nov.-Dec."}
+
+FUNCTION {eng.ord}
+{ duplicate$ "1" swap$ *
+  #-2 #1 substring$ "1" =
+     { bbl.th * }
+     { duplicate$ #-1 #1 substring$
+       duplicate$ "1" =
+         { pop$ bbl.st * }
+         { duplicate$ "2" =
+             { pop$ bbl.nd * }
+             { "3" =
+                 { bbl.rd * }
+                 { bbl.th * }
+               if$
+             }
+           if$
+          }
+       if$
+     }
+   if$
+}
+
+MACRO {jsr} {"Journal of Spacecraft and Rockets"}
+
+MACRO {aa} {"Aerospace America"}
+
+MACRO {Sb} {"Space News"}
+
+MACRO {awst} {"Aviation Week \& Space Technology"}
+
+MACRO {jcp} {"Journal of Computational Physics"}
+
+MACRO {ijcfd} {"International Journal of Computational Fluid Dynamics"}
+
+MACRO {ijnme} {"International Journal for Numerical Methods in Engineering"}
+
+MACRO {acmcs} {"ACM Computing Surveys"}
+
+MACRO {acta} {"Acta Informatica"}
+
+MACRO {cacm} {"Communications of the ACM"}
+
+MACRO {ibmjrd} {"IBM Journal of Research and Development"}
+
+MACRO {ibmsj} {"IBM Systems Journal"}
+
+MACRO {ieeese} {"IEEE Transactions on Software Engineering"}
+
+MACRO {ieeetc} {"IEEE Transactions on Computers"}
+
+MACRO {ieeetcad}
+ {"IEEE Transactions on Computer-Aided Design of Integrated Circuits"}
+
+MACRO {ipl} {"Information Processing Letters"}
+
+MACRO {jacm} {"Journal of the ACM"}
+
+MACRO {jcss} {"Journal of Computer and System Sciences"}
+
+MACRO {scp} {"Science of Computer Programming"}
+
+MACRO {sicomp} {"SIAM Journal on Computing"}
+
+MACRO {tocs} {"ACM Transactions on Computer Systems"}
+
+MACRO {tods} {"ACM Transactions on Database Systems"}
+
+MACRO {tog} {"ACM Transactions on Graphics"}
+
+MACRO {toms} {"ACM Transactions on Mathematical Software"}
+
+MACRO {toois} {"ACM Transactions on Office Information Systems"}
+
+MACRO {toplas} {"ACM Transactions on Programming Languages and Systems"}
+
+MACRO {tcs} {"Theoretical Computer Science"}
+
+INTEGERS { nameptr namesleft numnames }
+
+FUNCTION {format.names}
+{ 's :=
+  #1 'nameptr :=
+  s num.names$ 'numnames :=
+  numnames 'namesleft :=
+    { namesleft #0 > }
+    { s nameptr
+      "{vv~}{ll}{, jj}{, f.}" format.name$ 't :=
+      nameptr #1 >
+        {
+          namesleft #1 >
+            { ", " * t * }
+            {
+              numnames #2 >
+                { "," * }
+                'skip$
+              if$
+              t "others" =
+                { " et~al." * }
+                { bbl.and space.word * t * }
+              if$
+            }
+          if$
+        }
+        't
+      if$
+      nameptr #1 + 'nameptr :=
+      namesleft #1 - 'namesleft :=
+    }
+  while$
+}
+
+FUNCTION {format.names.ed}
+{ 's :=
+  #1 'nameptr :=
+  s num.names$ 'numnames :=
+  numnames 'namesleft :=
+    { namesleft #0 > }
+    { s nameptr
+      "{f.~}{vv~}{ll}{, jj}"
+      format.name$ 't :=
+      nameptr #1 >
+        {
+          namesleft #1 >
+            { ", " * t * }
+            {
+              numnames #2 >
+                { "," * }
+                'skip$
+              if$
+              t "others" =
+                { " et~al." * }
+                { bbl.and space.word * t * }
+              if$
+            }
+          if$
+        }
+        't
+      if$
+      nameptr #1 + 'nameptr :=
+      namesleft #1 - 'namesleft :=
+    }
+  while$
+}
+
+FUNCTION {format.authors}
+{ author empty$
+    { "" }
+    {
+      author format.names
+    }
+  if$
+}
+
+FUNCTION {format.editors}
+{ editor empty$
+    { "" }
+    {
+      editor format.names
+      editor num.names$ #1 >
+        { ", " * bbl.editors * }
+        { ", " * bbl.editor * }
+      if$
+    }
+  if$
+}
+
+FUNCTION {format.in.editors}
+{ editor empty$
+    { "" }
+    { editor format.names.ed
+    }
+  if$
+}
+
+FUNCTION {format.title}
+{ title empty$
+    { "" }
+    { title
+      "\enquote{" swap$ *
+      non.stop
+        { ",} " * }
+        { "} " * }
+      if$
+    }
+  if$
+}
+
+FUNCTION {end.quote.title}
+{ title empty$
+    'skip$
+    { before.all 'output.state := }
+  if$
+}
+
+FUNCTION {output.bibitem}
+{ newline$
+  "\bibitem{" write$
+  cite$ write$
+  "}" write$
+  newline$
+  ""
+  before.all 'output.state :=
+}
+
+FUNCTION {n.dashify}
+{ 't :=
+  ""
+    { t empty$ not }
+    { t #1 #1 substring$ "-" =
+        { t #1 #2 substring$ "--" = not
+            { "--" *
+              t #2 global.max$ substring$ 't :=
+            }
+            {   { t #1 #1 substring$ "-" = }
+                { "-" *
+                  t #2 global.max$ substring$ 't :=
+                }
+              while$
+            }
+          if$
+        }
+        { t #1 #1 substring$ *
+          t #2 global.max$ substring$ 't :=
+        }
+      if$
+    }
+  while$
+}
+
+FUNCTION {word.in}
+{ "" }
+
+FUNCTION {format.date}
+{ year empty$
+    { month empty$
+        { "" }
+        { "there's a month but no year in " cite$ * warning$
+          month
+        }
+      if$
+    }
+    { month empty$
+        'year
+        { month " " * year * }
+      if$
+    }
+  if$
+}
+
+FUNCTION {format.btitle}
+{ title emphasize
+}
+
+FUNCTION {tie.or.space.connect}
+{ duplicate$ text.length$ #3 <
+    { "~" }
+    { " " }
+  if$
+  swap$ * *
+}
+
+FUNCTION {either.or.check}
+{ empty$
+    'pop$
+    { "can't use both " swap$ * " fields in " * cite$ * warning$ }
+  if$
+}
+
+FUNCTION {format.bvolume}
+{ volume empty$
+    { "" }
+    { bbl.volume volume tie.or.space.connect
+      series empty$
+        'skip$
+        { bbl.of space.word * series emphasize * }
+      if$
+      "volume and number" number either.or.check
+    }
+  if$
+}
+
+FUNCTION {format.number.series}
+{ volume empty$
+    { number empty$
+        { series field.or.null }
+        { output.state mid.sentence =
+            { bbl.number }
+            { bbl.number capitalize }
+          if$
+          number tie.or.space.connect
+          series empty$
+            { "there's a number but no series in " cite$ * warning$ }
+            { bbl.in space.word * series * }
+          if$
+        }
+      if$
+    }
+    { "" }
+  if$
+}
+
+FUNCTION {is.num}
+{ chr.to.int$
+  duplicate$ "0" chr.to.int$ < not
+  swap$ "9" chr.to.int$ > not and
+}
+
+FUNCTION {extract.num}
+{ duplicate$ 't :=
+  "" 's :=
+  { t empty$ not }
+  { t #1 #1 substring$
+    t #2 global.max$ substring$ 't :=
+    duplicate$ is.num
+      { s swap$ * 's := }
+      { pop$ "" 't := }
+    if$
+  }
+  while$
+  s empty$
+    'skip$
+    { pop$ s }
+  if$
+}
+
+FUNCTION {convert.edition}
+{ edition extract.num "l" change.case$ 's :=
+  s "first" = s "1" = or
+    { bbl.first 't := }
+    { s "second" = s "2" = or
+        { bbl.second 't := }
+        { s "third" = s "3" = or
+            { bbl.third 't := }
+            { s "fourth" = s "4" = or
+                { bbl.fourth 't := }
+                { s "fifth" = s "5" = or
+                    { bbl.fifth 't := }
+                    { s #1 #1 substring$ is.num
+                        { s eng.ord 't := }
+                        { edition 't := }
+                      if$
+                    }
+                  if$
+                }
+              if$
+            }
+          if$
+        }
+      if$
+    }
+  if$
+  t
+}
+
+FUNCTION {format.edition}
+{ edition empty$
+    { "" }
+    { output.state mid.sentence =
+        { convert.edition "l" change.case$ " " * bbl.edition * }
+        { convert.edition "t" change.case$ " " * bbl.edition * }
+      if$
+    }
+  if$
+}
+
+INTEGERS { multiresult }
+
+FUNCTION {multi.page.check}
+{ 't :=
+  #0 'multiresult :=
+    { multiresult not
+      t empty$ not
+      and
+    }
+    { t #1 #1 substring$
+      duplicate$ "-" =
+      swap$ duplicate$ "," =
+      swap$ "+" =
+      or or
+        { #1 'multiresult := }
+        { t #2 global.max$ substring$ 't := }
+      if$
+    }
+  while$
+  multiresult
+}
+
+FUNCTION {format.pages}
+{ pages empty$
+    { "" }
+    { pages multi.page.check
+        { bbl.pages pages n.dashify tie.or.space.connect }
+        { bbl.page pages tie.or.space.connect }
+      if$
+    }
+  if$
+}
+
+FUNCTION {format.journal.pages}
+{
+  pages empty$
+    'skip$
+    { duplicate$ empty$
+        { pop$ format.pages }
+        { ", " * bbl.pages "~" * * pages n.dashify * }
+      if$
+    }
+  if$
+}
+
+FUNCTION {format.vol.num.pages}
+{ volume field.or.null
+  volume empty$
+    'skip$
+    { bbl.volume "~" * swap$ * }
+  if$
+  number empty$
+    'skip$
+    {
+      ", " bbl.nr * number tie.or.space.connect *
+      volume empty$
+        { "there's a number but no volume in " cite$ * warning$ }
+        'skip$
+      if$
+    }
+  if$
+}
+
+FUNCTION {format.chapter.pages}
+{ chapter empty$
+    { "" }
+    { type empty$
+        { bbl.chapter }
+        { type "l" change.case$ }
+      if$
+      chapter tie.or.space.connect
+    }
+  if$
+}
+
+FUNCTION {format.in.ed.booktitle}
+{ booktitle empty$
+    { "" }
+    { editor empty$
+        { word.in booktitle emphasize * }
+        { word.in booktitle emphasize *
+          ", " *
+          bbl.edby
+          *
+          " " *
+          format.in.editors *
+        }
+      if$
+    }
+  if$
+}
+
+FUNCTION {empty.misc.check}
+{ author empty$ title empty$ howpublished empty$
+  month empty$ year empty$ note empty$
+  and and and and and
+    { "all relevant fields are empty in " cite$ * warning$ }
+    'skip$
+  if$
+}
+
+FUNCTION {format.thesis.type}
+{ type empty$
+    'skip$
+    { pop$
+      type "t" change.case$
+    }
+  if$
+}
+
+FUNCTION {format.tr.number}
+{ type empty$
+    { bbl.techrep }
+    'type
+  if$
+  number empty$
+    { "t" change.case$ }
+    { number tie.or.space.connect }
+  if$
+}
+
+FUNCTION {format.article.crossref}
+{
+  key empty$
+    { journal empty$
+        { "need key or journal for " cite$ * " to crossref " * crossref *
+          warning$
+          ""
+        }
+        { word.in journal emphasize * }
+      if$
+    }
+    { word.in key * " " *}
+  if$
+  " \cite{" * crossref * "}" *
+}
+
+FUNCTION {format.crossref.editor}
+{ editor #1 "{vv~}{ll}" format.name$
+  editor num.names$ duplicate$
+  #2 >
+    { pop$ " et~al." * }
+    { #2 <
+        'skip$
+        { editor #2 "{ff }{vv }{ll}{ jj}" format.name$ "others" =
+            { " et~al." * }
+            { bbl.and space.word * editor #2 "{vv~}{ll}" format.name$ * }
+          if$
+        }
+      if$
+    }
+  if$
+}
+
+FUNCTION {format.book.crossref}
+{ volume empty$
+    { "empty volume in " cite$ * "'s crossref of " * crossref * warning$
+      word.in
+    }
+    { bbl.volume volume tie.or.space.connect
+      bbl.of space.word *
+    }
+  if$
+  editor empty$
+  editor field.or.null author field.or.null =
+  or
+    { key empty$
+        { series empty$
+            { "need editor, key, or series for " cite$ * " to crossref " *
+              crossref * warning$
+              "" *
+            }
+            { series emphasize * }
+          if$
+        }
+        { key * }
+      if$
+    }
+    { format.crossref.editor * }
+  if$
+  " \cite{" * crossref * "}" *
+}
+
+FUNCTION {format.incoll.inproc.crossref}
+{
+  editor empty$
+  editor field.or.null author field.or.null =
+  or
+    { key empty$
+        { booktitle empty$
+            { "need editor, key, or booktitle for " cite$ * " to crossref " *
+              crossref * warning$
+              ""
+            }
+            { word.in booktitle emphasize * }
+          if$
+        }
+        { word.in key * " " *}
+      if$
+    }
+    { word.in format.crossref.editor * " " *}
+  if$
+  " \cite{" * crossref * "}" *
+}
+
+FUNCTION {format.publisher}
+{ publisher empty$
+    { "empty publisher in " cite$ * warning$ }
+    'skip$
+  if$
+  ""
+  address empty$ publisher empty$ and
+    'skip$
+    {
+      publisher empty$
+        { address empty$
+          'skip$
+          { address * }
+          if$
+        }
+        { publisher *
+          address empty$
+            'skip$
+            { ", " * address * }
+          if$
+        }
+      if$
+    }
+  if$
+  output
+}
+
+FUNCTION {article}
+{ output.bibitem
+  format.authors "author" output.check
+  format.title "title" output.check
+  end.quote.title
+  crossref missing$
+    { journal
+      emphasize
+      "journal" output.check
+      format.vol.num.pages output
+      format.date "year" output.check
+    }
+    { format.article.crossref output.nonnull
+      format.pages output
+    }
+  if$
+  format.journal.pages
+  note output
+  fin.entry
+}
+
+FUNCTION {book}
+{ output.bibitem
+  author empty$
+    { format.editors "author and editor" output.check
+    }
+    { format.authors output.nonnull
+      crossref missing$
+        { "author and editor" editor either.or.check }
+        'skip$
+      if$
+    }
+  if$
+  format.btitle "title" output.check
+  crossref missing$
+    { format.bvolume output
+      format.number.series output
+      format.publisher
+    }
+    {
+      format.book.crossref output.nonnull
+    }
+  if$
+  format.edition output
+  format.date "year" output.check
+  note output
+  fin.entry
+}
+
+FUNCTION {booklet}
+{ output.bibitem
+  format.authors output
+  format.title "title" output.check
+  end.quote.title
+  howpublished output
+  address output
+  format.date output
+  note output
+  fin.entry
+}
+
+FUNCTION {inbook}
+{ output.bibitem
+  author empty$
+    { format.editors "author and editor" output.check
+    }
+    { format.authors output.nonnull
+      crossref missing$
+        { "author and editor" editor either.or.check }
+        'skip$
+      if$
+    }
+  if$
+  format.btitle "title" output.check
+  crossref missing$
+    {
+      format.bvolume output
+      format.chapter.pages "chapter and pages" output.check
+      format.number.series output
+      format.publisher
+    }
+    {
+      format.chapter.pages "chapter and pages" output.check
+      format.book.crossref output.nonnull
+    }
+  if$
+  format.edition output
+  format.date "year" output.check
+  format.pages "pages" output.check
+  note output
+  fin.entry
+}
+
+FUNCTION {incollection}
+{ output.bibitem
+  format.authors "author" output.check
+  format.title "title" output.check
+  end.quote.title
+  crossref missing$
+    { format.in.ed.booktitle "booktitle" output.check
+      format.bvolume output
+      format.number.series output
+      format.chapter.pages output
+      format.publisher
+      format.edition output
+      format.date "year" output.check
+    }
+    { format.incoll.inproc.crossref output.nonnull
+      format.chapter.pages output
+    }
+  if$
+  format.pages "pages" output.check
+  note output
+  fin.entry
+}
+
+FUNCTION {inproceedings}
+{ output.bibitem
+  format.authors "author" output.check
+  format.title "title" output.check
+  end.quote.title
+  crossref missing$
+    { format.in.ed.booktitle "booktitle" output.check
+      format.bvolume output
+      format.number.series output
+      publisher empty$
+        { organization output
+          address output
+        }
+        { organization output
+          format.publisher
+        }
+      if$
+      format.date "year" output.check
+    }
+    { format.incoll.inproc.crossref output.nonnull
+      format.pages output
+    }
+  if$
+  format.pages "pages" output.check
+  note output
+  fin.entry
+}
+
+FUNCTION {conference} { inproceedings }
+
+FUNCTION {manual}
+{ output.bibitem
+  author empty$
+    { organization empty$
+        'skip$
+        { organization output.nonnull
+          address output
+        }
+      if$
+    }
+    { format.authors output.nonnull }
+  if$
+  format.btitle "title" output.check
+  author empty$
+    { organization empty$
+    {
+          address output
+        }
+        'skip$
+      if$
+    }
+    {
+      organization output
+      address output
+    }
+  if$
+  format.edition output
+  format.date output
+  note output
+  fin.entry
+}
+
+FUNCTION {mastersthesis}
+{ output.bibitem
+  format.authors "author" output.check
+  format.btitle "title" output.check
+  bbl.mthesis format.thesis.type output.nonnull
+  school "school" output.check
+  address output
+  format.date "year" output.check
+  note output
+  fin.entry
+}
+
+FUNCTION {misc}
+{ output.bibitem
+  format.authors output
+  format.title output
+  end.quote.title
+  howpublished output
+  format.date output
+  note output
+  fin.entry
+  empty.misc.check
+}
+
+FUNCTION {phdthesis}
+{ output.bibitem
+  format.authors "author" output.check
+  format.btitle "title" output.check
+  bbl.phdthesis format.thesis.type output.nonnull
+  school "school" output.check
+  address output
+  format.date "year" output.check
+  note output
+  fin.entry
+}
+
+FUNCTION {proceedings}
+{ output.bibitem
+  editor empty$
+    { organization output }
+    { format.editors output.nonnull }
+  if$
+  format.btitle "title" output.check
+  format.bvolume output
+  format.number.series output
+  address empty$
+    { editor empty$
+        { publisher new.sentence.checka }
+        { organization publisher new.sentence.checkb
+          organization output
+        }
+      if$
+      publisher output
+      format.date "year" output.check
+    }
+    { address output.nonnull
+      format.date "year" output.check
+      editor empty$
+        'skip$
+        { organization output }
+      if$
+      publisher output
+    }
+  if$
+  note output
+  fin.entry
+}
+
+FUNCTION {techreport}
+{ output.bibitem
+  format.authors "author" output.check
+  format.title "title" output.check
+  end.quote.title
+  format.tr.number output.nonnull
+  institution "institution" output.check
+  address output
+  format.date "year" output.check
+  note output
+  fin.entry
+}
+
+FUNCTION {unpublished}
+{ output.bibitem
+  format.authors "author" output.check
+  format.title "title" output.check
+  end.quote.title
+  note "note" output.check
+  fin.entry
+}
+
+FUNCTION {default.type} { misc }
+
+READ
+
+STRINGS { longest.label }
+
+INTEGERS { number.label longest.label.width }
+
+FUNCTION {initialize.longest.label}
+{ "" 'longest.label :=
+  #1 'number.label :=
+  #0 'longest.label.width :=
+}
+
+FUNCTION {longest.label.pass}
+{ number.label int.to.str$ 'label :=
+  number.label #1 + 'number.label :=
+  label width$ longest.label.width >
+    { label 'longest.label :=
+      label width$ 'longest.label.width :=
+    }
+    'skip$
+  if$
+}
+
+EXECUTE {initialize.longest.label}
+
+ITERATE {longest.label.pass}
+
+FUNCTION {begin.bib}
+{ preamble$ empty$
+    'skip$
+    { preamble$ write$ newline$ }
+  if$
+  "\begin{thebibliography}{"  longest.label  * "}" *
+  write$ newline$
+  "\newcommand{\enquote}[1]{``#1''}"
+  write$ newline$
+}
+
+EXECUTE {begin.bib}
+
+EXECUTE {init.state.consts}
+
+ITERATE {call.type$}
+
+FUNCTION {end.bib}
+{ newline$
+  "\end{thebibliography}" write$ newline$
+}
+
+EXECUTE {end.bib}
+%
+%</bibstyle>
+%    \end{macrocode}
+% This concludes \file{aiaa.bst}.
+%
+% \Finale
+%
+% - Release $Name:  $ -

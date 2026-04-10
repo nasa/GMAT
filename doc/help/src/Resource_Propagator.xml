@@ -1,0 +1,3693 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="Propagator"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>Propagator</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Propagator</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Propagator</refname>
+
+    <refpurpose>A propagator models spacecraft motion</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Overview of Propagator Components</title>
+
+    <para>A <guilabel>Propagator</guilabel> is the GMAT component used to
+    model spacecraft motion. GMAT contains two types of propagators: a
+    numerical integrator type, and an ephemeris type. When using a numerical
+    integrator type <guilabel>Propagator</guilabel>, you can choose among a
+    suite of numerical integrators implementing Runge-Kutta and predictor
+    corrector methods. Numeric <guilabel>Propagators</guilabel> also require a
+    <guilabel>ForceModel</guilabel>. Additionally, you can configure a
+    <guilabel>Propagator</guilabel> to use SPICE kernels, and Code500, STK,
+    and CCSDS ephemeris files for propagation. This resource cannot be
+    modified in the Mission Sequence. However, you can set one
+    <guilabel>Propagator</guilabel> equal to another
+    <guilabel>Propagator</guilabel> in the mission,( i.e.
+    <literal>myPropagator = yourPropagator</literal> ).</para>
+
+    <para>GMAT's documentation for <guilabel>Propagator</guilabel> components
+    is broken down into these sections:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>For numerical <guilabel>Propagator</guilabel> documentation see
+        <xref linkend="Propagator_NumericalPropagator"
+        xrefstyle="select:title"/></para>
+      </listitem>
+
+      <listitem>
+        <para>For SPICE <guilabel>Propagator</guilabel> documentation see
+        <xref linkend="Propagator_SPKPropagator"
+        xrefstyle="select:title"/></para>
+      </listitem>
+
+      <listitem>
+        <para>For Code500 ephemeris <guilabel>Propagator</guilabel>
+        documentation see <xref linkend="Propagator_Code500Propagator"
+        xrefstyle="select:title"/></para>
+      </listitem>
+
+      <listitem>
+        <para>For STK ephemeris <guilabel>Propagator</guilabel> documentation
+        see <xref linkend="Propagator_STKPropagator"
+        xrefstyle="select:title"/></para>
+      </listitem>
+
+      <listitem>
+        <para>For CCSDS OEM ephemeris <guilabel>Propagator</guilabel>
+        documentation see <xref linkend="Propagator_OEMPropagator"
+        xrefstyle="select:title"/></para>
+      </listitem>
+
+      <listitem>
+        <para>For TLE <guilabel>Propagator</guilabel> documentation see <xref
+        linkend="Propagator_TLEPropagator" xrefstyle="select:title"/></para>
+      </listitem>
+    </itemizedlist>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="Spacecraft"/> and <xref linkend="Propagate"/>. For special
+    considerations regarding configuration of propagators for orbit
+    determination, see <xref linkend="NavPropagatorConfiguration"
+    xrefstyle="quotedtitle"/>.</para>
+  </refsection>
+
+  <refsection xml:id="Propagator_NumericalPropagator">
+    <title>Numerical Propagator</title>
+
+    <indexterm>
+      <primary>Numerical Integrator</primary>
+    </indexterm>
+
+    <refsection>
+      <title>Overview</title>
+
+      <para>A <guilabel>Propagator</guilabel> object that uses a numerical
+      integrator (as opposed to an ephemeris propagator) is one of a few
+      objects in GMAT that is configured differently in the scripting and in
+      the GUI. In the GUI, you configure the integrator and force model
+      setting on the same dialog box. See the <xref
+      linkend="Propagator_Numeric_Remarks" xrefstyle="select:title"/> section
+      below for detailed discussion of GMAT’s numerical integrators as well as
+      performance and accuracy comparisons, and usage recommendations. This
+      resource cannot be modified in the Mission Sequence. However, you can do
+      whole object assignment in the mission,( i.e. <literal>myPropagator =
+      yourPropagator</literal> ).</para>
+
+      <para>When working in the script, you must create a
+      <guilabel>ForceModel</guilabel> object separately from the
+      <guilabel>Propagator</guilabel> and specify the force model using the
+      “<guilabel>FM</guilabel>” field on the propagator object. See the <xref
+      linkend="Propagator_Numeric_Examples" xrefstyle="select:title"/> section
+      later in this section for details.</para>
+    </refsection>
+
+    <refsection>
+      <title>Options</title>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colnum="1" colwidth="1.0*"/>
+
+          <colspec colnum="2" colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Option</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>Accuracy</guilabel></entry>
+
+              <entry><para>The desired accuracy for an integration step. GMAT
+              uses the method selected in the
+              <guibutton>ErrorControl</guibutton> field on the Force Model to
+              determine a metric of the integration accuracy. For each step,
+              the integrator ensures that the error in accuracy is smaller
+              than the value defined by the
+              <guibutton>ErrorControl</guibutton> metric.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0 AND Real &lt; 1</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>1e-11 except for ABM integrator which is
+                      1e-10</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>FM</guilabel></entry>
+
+              <entry><para>Identifies the force model used by an integrator.
+              If no force model is provided, GMAT uses an Earth centered
+              propagator with a 4x4 gravity model.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Resource reference</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>ForceModel</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>InitialStepSize</guilabel></entry>
+
+              <entry><para>The size of the first step attempted by the
+              integrator. </para><para>Warning: The order of assignment of
+              propagator parameters affects the results. Specifically, the
+              <guilabel>Type</guilabel> must be specified before
+              <guilabel>InitialStepSize</guilabel>, or
+              <guilabel>InitialStepSize</guilabel> will reset back to the
+              default value. </para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0.0001</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>60</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>sec.</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>LowerError</guilabel></entry>
+
+              <entry><para>The lower bound on integration error, used to
+              determine when to make the step size larger. Applies only to
+              <guilabel>AdamsBashforthMoulton</guilabel>
+              integrator.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0 AND 0 &lt;
+                      <guilabel>LowerError</guilabel>
+                      &lt;<guilabel>TargetError</guilabel> &lt;
+                      <guilabel>Accuracy</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>1e-13</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>MaxStep</guilabel></entry>
+
+              <entry><para>The maximum allowable step
+              size.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0 AND <guilabel>MinStep</guilabel> &lt;=
+                      <guilabel>MaxStep</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>2700</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>MaxStepAttempts</guilabel></entry>
+
+              <entry><para>The number of attempts the integrator takes to meet
+              the tolerance defined by the <guibutton>Accuracy</guibutton>
+              field.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Integer</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Integer &gt;= 1</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>50</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>MinStep</guilabel></entry>
+
+              <entry><para>The minimum allowable step size.
+              </para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0 AND <guibutton>MinStep</guibutton>
+                      &lt;= <guibutton>MaxStep</guibutton></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>0.001</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>sec.</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StopIfAccuracyIsViolated</guilabel></entry>
+
+              <entry><para>Flag to stop propagation if integration error value
+              defined by <guilabel>Accuracy</guilabel> is not
+              satisfied.</para> <variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Boolean</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>true, false</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>true</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>TargetError</guilabel></entry>
+
+              <entry><para>The nominal bound on integration error, used to set
+              the target integration accuracy when adjusting step size.
+              Applies only to <guilabel>AdamsBashforthMoulton</guilabel>
+              integrator.</para> <variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0 AND 0 &lt;
+                      <guilabel>LowerError</guilabel> &lt;
+                      <guilabel>TargetError</guilabel> &lt;
+                      <guilabel>Accuracy</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>1e-11</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Type</guilabel></entry>
+
+              <entry><para>Specifies the integrator or analytic propagator
+              used to model the time evolution of spacecraft motion.
+              </para><para>Warning: The order of assignment of propagator
+              parameters affects the results. Specifically, the
+              <guilabel>Type</guilabel> must be specified before
+              <guilabel>InitialStepSize</guilabel>, or
+              <guilabel>InitialStepSize</guilabel> will reset back to the
+              default value. </para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guibutton>PrinceDormand78</guibutton>,
+                      <guilabel>PrinceDormand853</guilabel>,
+                      <guibutton>PrinceDormand45</guibutton>,
+                      <guibutton>RungeKutta89</guibutton>,<guibutton>RungeKutta68</guibutton>,
+                      <guibutton>RungeKutta56</guibutton>,
+                      <guibutton>AdamsBashforthMoulton, SPK, CCSDS-OEM,
+                      Code500, STK</guibutton></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guibutton>RungeKutta89</guibutton></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>GUI</title>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Resource_NumericalIntegrators_GUI_1.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+
+      <para>Settings for the embedded Runge-Kutta integrators. Select the
+      desired integrator from the <guilabel>Type</guilabel> menu.</para>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Resource_NumericalIntegrators_GUI_2.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+
+      <para>The Adams-Bashforth-Moulton integrator has additional settings as
+      shown.</para>
+    </refsection>
+  </refsection>
+
+  <refsection xml:id="Propagator_Numeric_Remarks">
+    <title>Remarks</title>
+
+    <refsection>
+      <title>Best Practices for Using Numerical Integrators</title>
+
+      <para>The comparison data presented in a later section suggest that the
+      <guilabel>PrinceDormand78</guilabel> integrator is the best all purpose
+      integrator in GMAT. When in doubt, use the
+      <guilabel>PrinceDormand78</guilabel> integrator, and set
+      <guilabel>MinStep</guilabel> to zero so that the integrator’s adaptive
+      step algorithm controls the minimum integration step size. Below are
+      some important comments on GMAT’s step size control algorithms and the
+      dangers of using a non-zero value for the minimum integration step size.
+      The <guilabel>AdamsBashforthMoulton</guilabel> integrator is a low order
+      integrator and we only recommend its use for low precision analysis when
+      a predictor-corrector algorithm is required. We recommend that you study
+      the performance and accuracy analysis documented later in this section
+      to select a numerical integrator for your application. You may need to
+      perform further analysis and comparisons for your application.</para>
+
+      <caution>
+        <para>Caution: GMAT’s default error computation mode is
+        <guilabel>RSSStep</guilabel> and this is a more stringent error
+        control method than <guilabel>RSSState</guilabel> that is often used
+        as the default in other software such as STK. If you set Accuracy to a
+        very small number, 1e-13 for example, and leave
+        <guilabel>ErrorControl</guilabel> set to <guilabel>RSSStep</guilabel>,
+        integrator performance will be poor, for little if any improvement in
+        the accuracy of the orbit integration. To find the best balance
+        between integration accuracy and performance, we recommend you
+        experiment with the accuracy setting for your selected integrator for
+        your application. You can start with a relatively high setting of
+        <guilabel>Accuracy</guilabel>, say 1e-9, and lower the accuracy by an
+        order of magnitude at a time and compare the final orbital states to
+        determine where smaller values of <guilabel>Accuracy</guilabel> result
+        in longer propagation times without providing more accurate orbital
+        solutions.</para>
+      </caution>
+
+      <caution>
+        <para>Caution: GMAT allows you to set a minimum step on numerical
+        integrators. It is possible that the requested
+        <guilabel>Accuracy</guilabel> cannot be achieved given the
+        <guilabel>MinimumStep</guilabel> setting. The
+        <guilabel>Propagator</guilabel> flag
+        <guilabel>StopIfAccuracyIsViolated</guilabel> determines the behavior
+        if <guilabel>Accuracy</guilabel> cannot be satisfied. If
+        <guilabel>StopIfAccuracyIsViolated</guilabel> is true, GMAT will throw
+        an error and stop execution if integration accuracy is not satisfied.
+        If <guilabel>StopIfAccuracyIsViolated</guilabel> is false, GMAT will
+        only throw a warning that the integration accuracy was not satisfied
+        but will continue to propagate the orbit.</para>
+      </caution>
+    </refsection>
+
+    <refsection>
+      <title>Numerical Integrators Overview</title>
+
+      <para>The table below describes each numerical integrator in
+      detail.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colnum="1" colwidth="1.5*"/>
+
+          <colspec colnum="2" colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Option</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>RungeKutta89</guilabel></entry>
+
+              <entry><para>An adaptive step, ninth order Runge-Kutta
+              integrator with eighth order error control. The coefficients
+              were derived by J. Verner. Verner developed several sets of
+              coefficients for an 89 integrator and we have chosen the
+              coefficients that are the most robust but not necessarily the
+              most efficient.</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>PrinceDormand78</guilabel></entry>
+
+              <entry><para>An adaptive step, eighth order Runge-Kutta
+              integrator with seventh order error control. The coefficients
+              were derived by Prince and Dormand.</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>PrinceDormand853</guilabel></entry>
+
+              <entry><para>An adaptive step, eighth order Runge-Kutta
+              integrator with 5th order error control that incorporates a 3rd
+              order correction, as described in section II.10 of "Solving
+              Ordinary Differential Equations I: Nonstiff Problems" by Hairer,
+              Norsett and Warner. The coefficients were derived by Prince and
+              Dormand. This integrator performs surprisingly well at loose
+              Accuracy settings.</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>PrinceDormand45</guilabel></entry>
+
+              <entry>An adaptive step, fifth order Runge-Kutta integrator with
+              fourth order error control. The coefficients were derived by
+              Prince and Dormand.</entry>
+            </row>
+
+            <row>
+              <entry><guilabel>RungeKutta68</guilabel></entry>
+
+              <entry><para>A second order Runge-Kutta-Nystrom type integrator
+              with coefficients developed by by Dormand, El-Mikkawy and
+              Prince. The integrator is a 9-stage Nystrom integrator, with
+              error control on both the dependent variables and their
+              derivatives. This second order implementation will correctly
+              integrate forces that are non-conservative but it is not
+              recommended for this use. See the integrator comparisons below
+              for numerical comparisons. You cannot use this integrator to
+              integrate mass during a finite maneuver because the mass flow
+              rate is a first order differential equation not supported by
+              this integrator.</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>RungeKutta56</guilabel></entry>
+
+              <entry><para>An adaptive step, sixth order Runge-Kutta
+              integrator with fifth order error control. The coefficients were
+              derived by E. Fehlberg.</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>AdamsBashforthMoulton</guilabel></entry>
+
+              <entry><para>A fourth-order Adams-Bashford predictor /
+              Adams-Moulton corrector as described in Fundamentals of
+              Astrodynamics by Bate, Mueller, and White. The predictor step
+              extrapolates the next state of the variables using the the
+              derivative information at the current state and three previous
+              states of the variables. The corrector uses derivative
+              information evaluated for this state, along with the derivative
+              information at the original state and two preceding states, to
+              tune this state, giving the final, corrected state. The ABM
+              integrator uses the RungeKutta89 integrator to start the
+              integration process. The ABM is a low order integrator and
+              should not be used for precise applications or for highly
+              nonlinear applications such as celestial body
+              flybys.</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>Performance and Accuracy Comparison of Numerical
+      Integrators</title>
+
+      <para>The tables below contain performance comparison data for GMAT's
+      numerical integrators. The first table shows the orbit types, dynamics
+      models, and propagation duration for each test case included in the
+      comparison. Five orbit types were compared: low earth orbit, Molniya,
+      Mars transfer (Type 2), Lunar transfer, and finite burn (case 1 is blow
+      down, and case 2 is pressure regulated). For each test case, the orbit
+      was propagated forward for a duration and then back-propagated to the
+      intial epoch. The error values in the table are the RSS difference of
+      the final position after forward and backward propagation to the initial
+      position. The run time data for each orbit type is normalized on the
+      integrator with the fastest run time for that orbit type. For all test
+      cases the <guilabel>ErrorControl</guilabel> setting was set to
+      <guilabel>RSSStep</guilabel>. <guilabel>Accuracy</guilabel> was set to
+      1e-12 for all integrators except for
+      <guilabel>AdamsBashfourthMoulton</guilabel> which was set to 1e-11
+      because of poor performance when <guilabel>Accuracy</guilabel> was set
+      to 1e-12.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="3">
+          <colspec colnum="1" colwidth="1.0*"/>
+
+          <colspec colnum="2" colwidth="1.5*"/>
+
+          <colspec colnum="3" colwidth="0.75*"/>
+
+          <thead>
+            <row>
+              <entry>Orbit</entry>
+
+              <entry>Dynamics Model</entry>
+
+              <entry>Duration</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>LEO</guilabel></entry>
+
+              <entry><para>Earth 20x20, Sun, Moon, drag using MSISE90 density,
+              SRP </para></entry>
+
+              <entry><para> 1 day </para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Molniya</guilabel></entry>
+
+              <entry><para>Earth 20x20, Sun, Moon, drag using Jacchia Roberts
+              density, SRP </para></entry>
+
+              <entry><para> 3 days </para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Mars Transfer</guilabel></entry>
+
+              <entry><para>Near Earth: Earth 8x8, Sun, Moon,
+              SRP</para><para>Deep Space: All planets as point mass
+              perturbations</para><para>Near Mars: Mars 8x8 SRP</para></entry>
+
+              <entry><para> 333 days </para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Lunar Transfer</guilabel></entry>
+
+              <entry><para>Earth central body with all planets as point mass
+              perturbations</para></entry>
+
+              <entry><para> 5.8 days </para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Finite Burn (case 1 and 2)</guilabel></entry>
+
+              <entry><para>Point mass gravity </para></entry>
+
+              <entry><para> 7200 sec. </para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>Comparing the run time data for each integrator shown in the table
+      below we see that the <guilabel>PrinceDormand78</guilabel> integrator
+      was the fastest for 4 of the 6 cases and tied with the
+      <guilabel>RungeKutta89</guilabel> integrator for LEO test case. For the
+      Lunar flyby case, the <guilabel>RungeKutta89</guilabel> was the fastest
+      integrator, however, in this case the
+      <guilabel>PrinceDormand78</guilabel> integrator was at least 2 orders of
+      magnitude more accurate given equivalent <guilabel>Accuracy</guilabel>
+      settings. Notice that the <guilabel>AdamsBashforthMoulton</guilabel>
+      integrator has km level errors for some orbits because it is a low-order
+      integrator.</para>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/IntegratorComparisonTable2.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </refsection>
+
+    <refsection>
+      <title>Fields Unique to the AdamsBashforthMoulton Integrator</title>
+
+      <para>The <guilabel>AdamsBashforthMoulton</guilabel> integrator has two
+      additional fields named <guilabel>TargetError</guilabel> and
+      <guilabel>LowerError</guilabel> that are only active when
+      <guilabel>Type</guilabel> is set to
+      <guilabel>AdamsBashforthMoulton</guilabel>. If you are using another
+      integrator type, those fields must be removed from your script file to
+      avoid parsing errors. When working in the GUI, this is performed
+      automatically. See examples below for more details.</para>
+    </refsection>
+  </refsection>
+
+  <refsection xml:id="Propagator_Numeric_Examples">
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Propagate an orbit using a general purpose Runge-Kutta
+      integrator:</para>
+
+      <programlisting><code>Create Spacecraft aSat
+Create ForceModel aForceModel
+
+Create Propagator aProp
+aProp.FM              = aForceModel
+aProp.Type            = PrinceDormand78
+aProp.InitialStepSize = 60
+aProp.Accuracy        = 1e-011
+aProp.MinStep         = 0
+aProp.MaxStep         = 86400
+aProp.MaxStepAttempts = 50
+aProp.StopIfAccuracyIsViolated = true
+
+BeginMissionSequence
+
+Propagate aProp(aSat) {aSat.ElapsedDays = .2}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Propagate using a fixed step configuration. Do this by setting
+      <guilabel>InitialStepSize</guilabel> to the desired fixed step size and
+      setting <guilabel>ErrorControl</guilabel> to <guilabel>None</guilabel>.
+      This example propagates in constant steps of 30 seconds:</para>
+
+      <programlisting><code>Create Spacecraft aSat
+Create ForceModel aForceModel
+aForceModel.ErrorControl = None
+
+Create Propagator aProp
+aProp.FM              = aForceModel
+aProp.Type            = PrinceDormand78
+aProp.InitialStepSize = 30
+
+BeginMissionSequence
+
+Propagate aProp(aSat) {aSat.ElapsedDays = .2}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Propagate an orbit using an Adams-Bashforth-Moulton
+      predictor-corrector integrator:</para>
+
+      <programlisting><code>Create Spacecraft aSat
+Create ForceModel aForceModel
+aForceModel.ErrorControl = RSSStep
+
+Create Propagator aProp
+aProp.FM              = aForceModel
+aProp.Type            = AdamsBashforthMoulton
+aProp.InitialStepSize = 60
+aProp.MinStep         = 0
+aProp.MaxStep         = 86400
+aProp.MaxStepAttempts = 50
+%  Note the following fields must be set with decreasing values!
+aProp.Accuracy        = 1e-010
+aProp.TargetError     = 1e-011
+aProp.LowerError      = 1e-013
+aProp.StopIfAccuracyIsViolated = true
+
+BeginMissionSequence
+
+Propagate aProp(aSat) {aSat.ElapsedDays = .2}</code></programlisting>
+    </informalexample>
+  </refsection>
+
+  <refsection xml:id="Propagator_SPKPropagator">
+    <title>SPK-Configured Propagator</title>
+
+    <indexterm>
+      <primary>SPICE Orbit Propagation</primary>
+    </indexterm>
+
+    <indexterm>
+      <primary>Ephemeris propagator</primary>
+
+      <secondary>SPICE ephemeris</secondary>
+    </indexterm>
+
+    <refsection>
+      <title>Description</title>
+
+      <para>An SPK-configured <guilabel>Propagator</guilabel> propagates a
+      spacecraft by interpolating user-provided SPICE kernels. You configure a
+      <guilabel>Propagator</guilabel> to use an SPK kernel by setting the
+      <guilabel>Type</guilabel> field to <guilabel>SPK</guilabel>. SPK kernels
+      and the <guilabel>NAIFId</guilabel> are defined on the
+      <guilabel>Spacecraft</guilabel> Resource. You control propagation,
+      including stopping conditions, using the <guilabel>Propagate</guilabel>
+      command. This resource cannot be modified in the Mission Sequence.
+      However, you can do whole object assignment in the mission,( i.e.
+      <literal>myPropagator = yourPropagator</literal> ).</para>
+
+      <para><phrase role="ref_seealso">See Also</phrase>: <xref
+      linkend="Spacecraft"/>, <xref linkend="Propagate"/></para>
+    </refsection>
+
+    <refsection>
+      <title>Fields</title>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colnum="1" colwidth="1.3*"/>
+
+          <colspec colnum="2" colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Field</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>CentralBody</guilabel></entry>
+
+              <entry><para>The central body of propagation. This field has no
+              effect for SPK, Code500, CCSDS-OEM, or STK
+              propagators.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Resource reference</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Celestial body</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>Earth</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>EpochFormat</guilabel></entry>
+
+              <entry><para> Only used for an SPK, Code500, CCSDS-OEM, or STK
+              propagator. The format of the epoch contained in the
+              <guilabel>StartEpoch</guilabel> field. </para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>A1ModJulian</guilabel>,
+                      <guilabel>TAIModJulian</guilabel>,
+                      <guilabel>UTCModJulian</guilabel>,
+                      <guilabel>TTModJulian</guilabel>,
+                      <guilabel>TDBModJulian</guilabel>,
+                      <guilabel>A1Gregorian</guilabel>,
+                      <guilabel>TAIGregorian</guilabel>,
+                      <guilabel>TTGregorian</guilabel>,
+                      <guilabel>UTCGregorian</guilabel>,
+                      <guilabel>TDBGregorian</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>A1ModJulian</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A unless Mod Julian and in that case Modified
+                      Julian Date</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StartEpoch</guilabel></entry>
+
+              <entry><para>Only used for an SPK, Code500, CCSDS-OEM, or STK
+              propagator. The initial epoch of propagation. When an epoch is
+              provided that epoch is used as the initial epoch. When the
+              keyword "FromSpacecraft" is provided, the start epoch is
+              inherited from the spacecraft. If this parameter is omitted or
+              set to "EphemStart", propagation will begin at the start of the
+              ephemeris file.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>String</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>"Gregorian: 04 Oct 1957 12:00:00.000 &lt;= Epoch
+                      &lt;= 28 Feb 2100 00:00:00.000 Modified Julian: 6116.0
+                      &lt;= Epoch &lt;= 58127.5, "EphemStart", or
+                      "FromSpacecraft"</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>"EphemStart"</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StepSize</guilabel></entry>
+
+              <entry><para> The step size for an SPK, Code500, CCSDS-OEM, or
+              STK Propagator.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>300</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Type</guilabel></entry>
+
+              <entry><para>Specifies the integrator or analytic propagator
+              used to model time evolution of spacecraft motion. Specify
+              <guilabel>SPK</guilabel> for an SPK file ephemeris
+              propagator.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>PrinceDormand78</guilabel>,
+                      <guilabel>PrinceDormand45</guilabel>,
+                      <guilabel>RungeKutta89</guilabel>,<guilabel>RungeKutta68</guilabel>,
+                      <guilabel>RungeKutta56</guilabel>,
+                      <guilabel>BulirschStoer</guilabel>,
+                      <guilabel>AdamsBashforthMoulton</guilabel>,
+                      <guilabel>SPK, STK, CCSDS-OEM, Code500</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>RungeKutta89</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>GUI</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Resource_EphemerisPropagator_GUI.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+
+      <para>To configure a <guilabel>Propagator</guilabel> to use SPK files,
+      on the <guilabel>Propagator</guilabel> dialog box, select
+      <guilabel>SPK</guilabel> in the <guilabel>Type</guilabel> menu. There
+      are four fields you can configure for an SPK propagator including
+      <guilabel>StepSize</guilabel>, <guilabel>CentralBody</guilabel>,
+      <guilabel>EpochFormat</guilabel>, and <guilabel>StartEpoch</guilabel>.
+      Note that changing the <guilabel>EpochFormat</guilabel> setting converts
+      the input epoch to the selected format. You can also type
+      <userinput>FromSpacecraft</userinput> into the
+      <guilabel>StartEpoch</guilabel> field and the
+      <guilabel>Propagator</guilabel> will use the epoch of the
+      <guilabel>Spacecraft</guilabel> as the initial propagation epoch.</para>
+    </refsection>
+
+    <refsection>
+      <title>Remarks</title>
+
+      <para>To use an SPK-configured <guilabel>Propagator</guilabel>, you must
+      specify the SPK kernels and <guilabel>NAIFId</guilabel> on the
+      <guilabel>Spacecraft</guilabel>, configure a
+      <guilabel>Propagator</guilabel> to use SPK files as opposed to numerical
+      methods, and configure the <guilabel>Propagate</guilabel> command to use
+      the configured SPK propagator. The subsections and examples below
+      discuss each of these items in detail.</para>
+
+      <refsection>
+        <title>Configuring Spacecraft SPK Kernels</title>
+
+        <para>To use an SPK-configured <guilabel>Propagator</guilabel>, you
+        must add the SPK kernels to the <guilabel>Spacecraft</guilabel> and
+        define the spacecraft's <guilabel>NAIFId</guilabel>. SPK Kernels for
+        selected spacecraft are available <link
+        xlink:href="http://naif.jpl.nasa.gov/naif/data_archived.html">here.</link>
+        Two sample vehicle spk kernels, (GEOSat.bsp and MoonTransfer.bsp) are
+        distributed with GMAT for example purposes. An example of how to add
+        spacecraft kernels via the script interface is shown below.</para>
+
+        <programlisting><code>Create Spacecraft aSpacecraft
+aSpacecraft.NAIFId               = -123456789
+aSpacecraft.OrbitSpiceKernelName = {...
+                                    '..\data\vehicle\ephem\spk\GEOSat.bsp'}</code></programlisting>
+
+        <para>To add <guilabel>Spacecraft</guilabel> SPK kernels via the
+        GUI:</para>
+
+        <procedure>
+          <step>
+            <para>On the <guilabel>Spacecraft</guilabel> dialog box, click the
+            <guilabel>SPICE</guilabel> tab.</para>
+          </step>
+
+          <step>
+            <para>Under the <guilabel>SPK Files</guilabel> list, click
+            <guilabel>Add</guilabel>.</para>
+          </step>
+
+          <step>
+            <para>Browse to locate and select the desired SPK file</para>
+          </step>
+
+          <step>
+            <para>Repeat to add all necessary SPK kernels</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>NAIF ID</guilabel> field, enter the
+            spacecraft integer NAIF id number. Note: For a given mission, each
+            spacecraft should have a unique NAIF ID if the spacecraft are
+            propagated with an SPK propagator.</para>
+          </step>
+        </procedure>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Resource_EphemerisPropagator_GUI_2.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+
+        <para>You can add more than one kernel to a spacecraft as shown via
+        scripting below, where the files GEOSat1.bsp and GEOSat2.bsp are dummy
+        file names used for example purposes only and are not distributed with
+        GMAT. In the script, you can use relative path or absolute path to
+        define the location of an SPK file. Relative paths are defined with
+        respect to the GMAT bin directory of your local installation.</para>
+
+        <programlisting><code>Create Spacecraft aSpacecraft
+aSpacecraft.OrbitSpiceKernelName ={'C:\MyDataFiles\GEOSat1.bsp',...
+                                   'C:\MyDataFiles\GEOSat2.bsp'}</code></programlisting>
+      </refsection>
+
+      <refsection>
+        <title>Configuring an SPK Propagator</title>
+
+        <para>You can define the <guilabel>StartEpoch</guilabel> of
+        propagation of an SPK-configured <guilabel>Propagator</guilabel> on
+        either the <guilabel>Propagator</guilabel> Resource or inherit the
+        <guilabel>StartEpoch</guilabel> from the
+        <guilabel>Spacecraft</guilabel>. Below is a script snippet that shows
+        how to inherit the <guilabel>StartEpoch</guilabel> from the
+        <guilabel>Spacecraft</guilabel>. To inherit the
+        <guilabel>StartEpoch</guilabel> from the
+        <guilabel>Spacecraft</guilabel> using the GUI</para>
+
+        <procedure>
+          <step>
+            <para>Open the SPK propagator dialog box,</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>StartEpoch</guilabel> field., type
+            <userinput>FromSpacecraft</userinput> or select
+            <guilabel>FromSpacecraft</guilabel> from the drop-down menu</para>
+          </step>
+        </procedure>
+
+        <para>To explicitly define the <guilabel>StartEpoch</guilabel> on the
+        <guilabel>Propagator</guilabel> Resource use the following
+        syntax.</para>
+
+        <programlisting><code>Create Propagator spkProp
+spkProp.EpochFormat = 'UTCGregorian'
+spkProp.StartEpoch  = '22 Jul 2014 11:29:10.811'
+
+Create Propagator spkProp2
+spkProp2.EpochFormat = 'TAIModJulian'
+spkProp2.StartEpoch  = '23466.5'</code></programlisting>
+
+        <para>If you omit <guilabel>StartEpoch</guilabel>, propagation will
+        begin at the start time of the ephemeris file. To configure the step
+        size, use the StepSize field.</para>
+
+        <programlisting><code>Create Propagator spkProp
+spkProp.Type     = SPK
+spkProp.StepSize = 300
+</code></programlisting>
+      </refsection>
+
+      <refsection>
+        <title xml:id="Ephemeris_Prop_Interaction">Interaction with the
+        Propagate Command</title>
+
+        <para>An SPK-configured <guilabel>Propagator</guilabel> works with the
+        <guilabel>Propagate</guilabel> command in the same way numerical
+        propagators work with the <guilabel>Propagate</guilabel> command with
+        the following exceptions:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>If a <guilabel>Propagate</guilabel> command uses an SPK
+            propagator, then you can only propagate one spacecraft using that
+            propagator. You can however, mix SPK propagators and numeric
+            propagators in a single propagate command.</para>
+          </listitem>
+
+          <listitem>
+            <para>SPK-configured <guilabel>Propagators</guilabel> will not
+            propagate the STM or compute the orbit Jacobian (A matrix).</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>In the example below, we assume a
+        <guilabel>Spacecraft</guilabel> named <guilabel>aSpacecraf</guilabel>t
+        and a <guilabel>Propagator</guilabel> named
+        <guilabel>spkProp</guilabel> have been configured a-priori. An example
+        command to propagate <guilabel>aSpacecraft</guilabel> to Earth
+        Periapsis using <guilabel>spkProp</guilabel> is shown below.</para>
+
+        <programlisting><code>Propagate spkProp(aSpacecraft) {aSpacecraft.Earth.Periapsis}</code></programlisting>
+
+        <para>Below is a script snippet that demonstrates how to propagate
+        backwards using an SPK propagator.</para>
+
+        <programlisting><code>Propagate BackProp spkProp(aSpacecraft) {aSpacecraft.ElapsedDays = -1.5}</code></programlisting>
+      </refsection>
+
+      <refsection>
+        <title>Behavior Near Ephemeris Boundaries</title>
+
+        <para>In general, ephemeris interpolation is less accurate near the
+        boundaries of ephemeris files and we recommend providing ephemeris for
+        significant periods beyond the initial and final epochs of your
+        application for this and other reasons. When propagating near the
+        beginning or end of ephemeris files, the use of the double precision
+        arithmetic may affect results. For example, if an ephemeris file has
+        has an initial epoch TDBModJulian = 21545.00037249916, and you specify
+        the StartEpoch in UTC Gregorian, round off error in time conversions
+        and/or truncation of time using the Gregorian format (only accurate to
+        millisecond) may cause the requested epoch to fall slightly outside of
+        the range provided on the ephemeris file. The best solution is to
+        provide extra ephemeris data to avoid time issues at the boundaries
+        and the more subtle issue of poor interpolation.</para>
+
+        <warning>
+          <para>To locate requested stopping conditions, GMAT needs to bracket
+          the root of the stopping condition function. Then, GMAT uses
+          standard root finding techniques to locate the stopping condition to
+          the requested accuracy. If the requested stopping condition lies at
+          or near the beginning or end of the ephemeris data, then bracketing
+          the stopping condition may not be possible without stepping off the
+          ephemeris file which throw an error and execution will stop. In this
+          case, you must provide more ephemeris data to locate the desired
+          stopping condition.</para>
+        </warning>
+      </refsection>
+    </refsection>
+
+    <refsection>
+      <title>Examples</title>
+
+      <informalexample>
+        <para>Propagate a GEO spacecraft using an SPK-configured
+        <guilabel>Propagator</guilabel>. Define the
+        <guilabel>StartEpoch</guilabel> from the spacecraft. Note: the SPK
+        kernel GEOSat.bsp is distributed with GMAT.</para>
+
+        <programlisting><code>Create Spacecraft aSpacecraft;
+aSpacecraft.UTCGregorian = '02 Jun 2004 12:00:00.000'
+aSpacecraft.NAIFId       = -123456789
+aSpacecraft.OrbitSpiceKernelName = {'..\data\vehicle\ephem\spk\GEOSat.bsp'}
+
+Create Propagator spkProp
+spkProp.Type        = SPK
+spkProp.StepSize    = 300
+spkProp.CentralBody = Earth
+spkProp.StartEpoch  = FromSpacecraft
+
+Create OrbitView EarthView
+EarthView.Add             = {aSpacecraft, Earth, Luna}
+EarthView.ViewPointVector = [ 30000 -20000 10000 ]
+EarthView.ViewScaleFactor = 2.5
+
+BeginMissionSequence
+Propagate spkProp(aSpacecraft) {aSpacecraft.TA = 90}
+Propagate spkProp(aSpacecraft) {aSpacecraft.ElapsedDays = 2.4}</code></programlisting>
+      </informalexample>
+
+      <informalexample>
+        <para>Simulate a lunar transfer using an SPK-configured
+        <guilabel>Propagator</guilabel>. Define
+        <guilabel>StartEpoch</guilabel> on the
+        <guilabel>Propagator</guilabel>. Note: the SPK kernel MoonTransfer.bsp
+        is distributed with GMAT.</para>
+
+        <programlisting><code>Create Spacecraft aSpacecraft
+aSpacecraft.NAIFId = -123456789
+aSpacecraft.OrbitSpiceKernelName = {...
+                          '..\data\vehicle\ephem\spk\MoonTransfer.bsp'}
+
+Create Propagator spkProp
+spkProp.Type = SPK
+spkProp.StepSize = 300
+spkProp.CentralBody = Earth
+spkProp.EpochFormat = 'UTCGregorian'
+spkProp.StartEpoch = '22 Jul 2014 11:29:10.811'
+
+Create OrbitView EarthView
+EarthView.Add = {aSpacecraft, Earth, Luna}
+EarthView.ViewPointVector = [ 30000 -20000 10000 ]
+EarthView.ViewScaleFactor = 30
+
+BeginMissionSequence
+Propagate spkProp(aSpacecraft) {aSpacecraft.ElapsedDays = 12}</code></programlisting>
+      </informalexample>
+    </refsection>
+  </refsection>
+
+  <refsection xml:id="Propagator_Code500Propagator">
+    <title>Code500 Ephemeris-Configured Propagator</title>
+
+    <indexterm>
+      <primary>Code500 Ephemeris Orbit Propagation</primary>
+    </indexterm>
+
+    <indexterm>
+      <primary>Ephemeris propagator</primary>
+
+      <secondary>Code500 ephemeris</secondary>
+    </indexterm>
+
+    <refsection>
+      <title>Description</title>
+
+      <para>A Code500 ephemeris-configured <guilabel>Propagator</guilabel>
+      propagates a spacecraft by interpolating or stepping along a
+      user-provided Code500-format binary ephemeris file. You configure a
+      <guilabel>Propagator</guilabel> to use a Code500 ephemeris by setting
+      the <guilabel>Type</guilabel> field to <guilabel>Code500</guilabel>. The
+      Code500 ephemeris file is specified on the
+      <guilabel>Spacecraft.EphemerisName</guilabel> resource. The user
+      controls propagation, including stopping conditions, using the
+      <guilabel>Propagate</guilabel> command. This resource cannot be modified
+      in the Mission Sequence. However, you can do whole object assignment in
+      the mission sequence, (i.e. <literal>myPropagator =
+      yourPropagator</literal> ).</para>
+
+      <para>The <guilabel>Propagator</guilabel>
+      <guilabel>CentralBody</guilabel> option is not applicable to the Code500
+      propagator and should not be used with the Code500 propagator type. GMAT
+      will automatically detect and use the central body of the ephemeris
+      file. The <guilabel>Propagate</guilabel> command should be used to
+      traverse the ephemeris file. GMAT will throw an error message and
+      terminate when attempting to propagate outside the bounds of the
+      ephemeris file.</para>
+
+      <para>Code500 ephemeris files are binary-format files. As discussed in
+      the <xref linkend="EphemerisFile"/> help, GMAT can generate Code500
+      ephemeris files in both little-endian and big-endian binary format (via
+      <guilabel>EphemerisFile.OutputFormat</guilabel>). The ephemeris
+      propagator can read Code500 ephemeris files in either endian format. The
+      endian format of the ephemeris file will be automatically detected by
+      GMAT.</para>
+
+      <para><phrase role="ref_seealso">See Also</phrase>: <xref
+      linkend="Spacecraft"/>, <xref linkend="Propagate"/>, <xref
+      linkend="EphemerisFile"/></para>
+    </refsection>
+
+    <refsection>
+      <title>Fields</title>
+
+      <para>The only <guilabel>Propagator</guilabel> fields applicable to the
+      Code500 ephemeris propagator are <guilabel>EpochFormat</guilabel>,
+      <guilabel>StartEpoch</guilabel>, <guilabel>StepSize</guilabel> and
+      <guilabel>Type</guilabel>.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colwidth="1.3*"/>
+
+          <colspec colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Field</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>EpochFormat</guilabel></entry>
+
+              <entry><para> Only used for an SPK, Code500, CCSDS-OEM, or STK
+              propagator. Specifies format of the epoch contained in the
+              <guilabel>StartEpoch</guilabel> field. </para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>A1ModJulian</guilabel>,
+                      <guilabel>TAIModJulian</guilabel>,
+                      <guilabel>UTCModJulian</guilabel>,
+                      <guilabel>TTModJulian</guilabel>,
+                      <guilabel>TDBModJulian</guilabel>,
+                      <guilabel>A1Gregorian</guilabel>,
+                      <guilabel>TAIGregorian</guilabel>,
+                      <guilabel>TTGregorian</guilabel>,
+                      <guilabel>UTCGregorian</guilabel>,
+                      <guilabel>TDBGregorian</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>A1ModJulian</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A unless Mod Julian and in that case Modified
+                      Julian Date</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StartEpoch</guilabel></entry>
+
+              <entry><para>Only used for an SPK, Code500, CCSDS-OEM, or STK
+              propagator. Specifies initial epoch of propagation. When an
+              epoch is provided that epoch is used as the initial epoch. When
+              the keyword <userinput>FromSpacecraft</userinput> is provided,
+              the start epoch is inherited from the spacecraft. If this
+              parameter is omitted or set to "EphemStart", propagation will
+              begin at the start of the ephemeris file.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>String</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>"Gregorian: 04 Oct 1957 12:00:00.000 &lt;= Epoch
+                      &lt;= 28 Feb 2100 00:00:00.000 Modified Julian: 6116.0
+                      &lt;= Epoch &lt;= 58127.5, "EphemStart", or
+                      "FromSpacecraft"</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>"EphemStart"</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StepSize</guilabel></entry>
+
+              <entry><para>The step size for an Code500 Propagator. GMAT will
+              use this step size when traversing the ephemeris file,
+              regardless of the internal step size of the ephemeris. GMAT will
+              perform interpolation between vectors on the file as
+              needed.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>300</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>Seconds</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Type</guilabel></entry>
+
+              <entry><para>Specifies the integrator or analytic propagator
+              used to model time evolution of spacecraft motion. Specify
+              <guilabel>Code500</guilabel> for a Code500 ephemeris
+              propagator.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>PrinceDormand78</guilabel>,
+                      <guilabel>PrinceDormand45</guilabel>,
+                      <guilabel>RungeKutta89</guilabel>,<guilabel>RungeKutta68</guilabel>,
+                      <guilabel>RungeKutta56</guilabel>,
+                      <guilabel>BulirschStoer</guilabel>,
+                      <guilabel>AdamsBashforthMoulton</guilabel>,
+                      <guilabel>SPK, CCSDS-OEM, Code500</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>RungeKutta89</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>GUI</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Resource_EphemerisPropagator_Code500_GUI.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+
+      <para>To configure a <guilabel>Propagator</guilabel> from the GMAT GUI
+      to use Code500 ephemeris files, select and open a
+      <guilabel>Propagator</guilabel> from the Resources tree. In the
+      <guilabel>Integrator</guilabel> category select
+      <guilabel>Code500</guilabel> from the <guilabel>Type</guilabel>
+      drop-down box. This will display the Code500 propagator options dialog.
+      There are four fields displayed for a Code500 propagator -
+      <guilabel>StepSize</guilabel>, <guilabel>CentralBody</guilabel>,
+      <guilabel>EpochFormat</guilabel>, and <guilabel>StartEpoch</guilabel>.
+      Note that changing the <guilabel>EpochFormat</guilabel> setting converts
+      the input epoch to the selected format. You can also type
+      <userinput>FromSpacecraft</userinput> into the
+      <guilabel>StartEpoch</guilabel> field and the
+      <guilabel>Propagator</guilabel> will use the epoch of the
+      <guilabel>Spacecraft</guilabel> as the initial propagation epoch. The
+      <guilabel>CentralBody</guilabel> field is displayed to the user, but is
+      unused when the integrator type is Code500.</para>
+    </refsection>
+
+    <refsection>
+      <title>Remarks</title>
+
+      <para>There is currently no GUI option to assign the Code500 ephemeris
+      file to the <guilabel>Spacecraft</guilabel> resource. You must specify
+      the Code500 ephemeris file on the
+      <guilabel>Spacecraft</guilabel><guilabel>.EphemerisName</guilabel>
+      parameter via script. The subsections below provide examples of how to
+      do this.</para>
+
+      <refsection>
+        <title>Configuring Spacecraft Ephemeris Files</title>
+
+        <para>A spacecraft may have only one Code500 ephemeris assigned. There
+        is currently no GUI option to add a Code500 ephemeris file to a
+        spacecraft. To use a Code500 ephemeris-configured
+        <guilabel>Propagator</guilabel>, you must add the Code500 ephemeris
+        file to the <guilabel>Spacecraft</guilabel> in your script using the
+        <guilabel>EphemerisName</guilabel> parameter. A sample spacecraft
+        Code500 ephemeris, (<filename>sat_leo.ephem</filename>, in the
+        <filename>data/vehicle/ephem/code500</filename> directory) is
+        distributed with GMAT. This sample file has a span of 4/20/2015
+        00:00:00 to 4/30/2015 00:00:00. An example of how to assign this
+        ephemeris to a spacecraft is shown below. Relative paths are defined
+        with respect to the GMAT <filename>bin</filename> directory of your
+        local installation.</para>
+
+        <programlisting><?db-font-size 80% ?><code>Create Spacecraft aSpacecraft
+
+aSpacecraft.EphemerisName = '../data/vehicle/ephem/code500/sat_leo.ephem'
+
+BeginMissionSequence</code></programlisting>
+      </refsection>
+
+      <refsection>
+        <title>Configuring a Code500 Ephemeris Propagator</title>
+
+        <para>If you have assigned the ephemeris file to your spacecraft,
+        configuring the propagator only requires assigning the
+        <guilabel>Code500</guilabel> type and the desired step size on a
+        <guilabel>Propagator</guilabel> resource. The central body of
+        propagation will be the central body of the the ephemeris file. If
+        desired, you may also specify an <guilabel>EpochFormat</guilabel> and
+        <guilabel>StartEpoch</guilabel> on the propagator to specify an
+        initial epoch from which to start propagation. The same effect can be
+        accomplished with an independent <guilabel>Propagate</guilabel>
+        command (see <xref linkend="Propagate"/>) to the desired starting
+        epoch.</para>
+
+        <programlisting><code>Create Propagator Code500Prop
+
+Code500Prop.Type     = 'Code500'
+Code500Prop.StepSize = 60.
+
+BeginMissionSequence</code></programlisting>
+
+        <para>The same remarks mentioned in the prior section on SPK
+        propagators with regard to interaction with the
+        <guilabel>Propagate</guilabel> command and behavior near ephemeris
+        boundaries also apply to the Code500 ephemeris propagator.</para>
+      </refsection>
+    </refsection>
+
+    <refsection>
+      <title>Examples</title>
+
+      <informalexample>
+        <para>This example propagates a spacecraft using a Code500 ephemeris,
+        defining the <guilabel>StartEpoch</guilabel> from the spacecraft. The
+        ephemeris file used in this example is included in the GMAT
+        distribution at the indicated location. The code below will run if you
+        copy and paste it into a new GMAT script.</para>
+
+        <programlisting><?db-font-size 80% ?><code>Create Spacecraft aSpacecraft
+
+% Ephem file span is 4/20/2015 - 4/30/2015
+
+aSpacecraft.EphemerisName = '../data/vehicle/ephem/code500/sat_leo.ephem'
+aSpacecraft.DateFormat    = UTCGregorian
+aSpacecraft.Epoch         = '22 Apr 2015 00:00:00.000'
+
+Create Propagator Code500Prop
+
+Code500Prop.Type       = 'Code500'
+Code500Prop.StepSize   = 60.
+Code500Prop.StartEpoch = 'FromSpacecraft'
+
+Create ReportFile PropReport
+
+PropReport.Filename     = 'EphemPropagator_Code500_ForwardProp.txt'
+PropReport.WriteHeaders = True
+
+BeginMissionSequence
+
+While aSpacecraft.ElapsedDays &lt;= 1
+
+    Propagate Code500Prop(aSpacecraft)
+
+    Report PropReport aSpacecraft.UTCGregorian aSpacecraft.TAIModJulian ...
+        aSpacecraft.X aSpacecraft.Y aSpacecraft.Z ...
+        aSpacecraft.VX aSpacecraft.VY aSpacecraft.VZ
+
+EndWhile</code></programlisting>
+      </informalexample>
+
+      <para>An additional, more detailed, example of use of the Code500
+      ephemeris propagator is shown in the
+      <filename>Ex_Code500_EphemerisCompare.script</filename> file provided in
+      the <filename>samples\Navigation</filename> directory. This script
+      generates a report showing the difference, in RIC coordinates, between
+      the orbits in two different Earth-centered Code500 ephemeris
+      files.</para>
+    </refsection>
+  </refsection>
+
+  <refsection xml:id="Propagator_STKPropagator">
+    <title>STK Ephemeris-Configured Propagator</title>
+
+    <indexterm>
+      <primary>STK Ephemeris Orbit Propagation</primary>
+    </indexterm>
+
+    <indexterm>
+      <primary>Ephemeris propagator</primary>
+
+      <secondary>STK ephemeris</secondary>
+    </indexterm>
+
+    <refsection>
+      <title>Description</title>
+
+      <para>An STK ephemeris-configured <guilabel>Propagator</guilabel>
+      propagates a spacecraft by interpolating or stepping along a
+      user-provided STK-format ephemeris file. You configure a
+      <guilabel>Propagator</guilabel> to use an STK ephemeris by setting the
+      <guilabel>Type</guilabel> field to <guilabel>STK</guilabel>. The STK
+      ephemeris file is specified on a Spacecraft resource using the
+      <guilabel>Spacecraft.EphemerisName</guilabel> field. The user controls
+      propagation, including stopping conditions, using the
+      <guilabel>Propagate</guilabel> command. This resource cannot be modified
+      in the Mission Sequence. However, you can do whole object assignment in
+      the mission sequence, (i.e. <literal>myPropagator =
+      yourPropagator</literal> ).</para>
+
+      <para>The <guilabel>Propagator</guilabel>
+      <guilabel>CentralBody</guilabel> option is not applicable to the STK
+      propagator and should not be used with the STK propagator type. GMAT
+      will automatically detect and use the central body of the ephemeris
+      file. The <guilabel>Propagate</guilabel> command should be used to
+      traverse the ephemeris file. GMAT will throw an error message and
+      terminate when attempting to propagate outside the bounds of the
+      ephemeris file. The STK propagator includes code that steps the
+      spacecraft to the ephem boundary before stepping out of the span of the
+      file.</para>
+
+      <para>STK ephemeris files are ASCII files conforming to the Systems Tool
+      Kit ephemeris TimePosVel specifications. As discussed in the <xref
+      linkend="EphemerisFile"/> help, GMAT can generate STK ephemeris files
+      using the <guilabel>EphemerisFile.OutputFormat</guilabel> field. The STK
+      propagator works with STK formatted files, starting with STK 4.0, or
+      GMAT STK ephemerides.</para>
+
+      <para><phrase role="ref_seealso">See Also</phrase>: <xref
+      linkend="Spacecraft"/>, <xref linkend="Propagate"/>, <xref
+      linkend="EphemerisFile"/></para>
+    </refsection>
+
+    <refsection>
+      <title>Fields</title>
+
+      <para>The only <guilabel>Propagator</guilabel> fields applicable to the
+      STK ephemeris propagator are <guilabel>EpochFormat</guilabel>,
+      <guilabel>StartEpoch</guilabel>, <guilabel>StepSize</guilabel> and
+      <guilabel>Type</guilabel>.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colwidth="1.3*"/>
+
+          <colspec colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Field</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>EpochFormat</guilabel></entry>
+
+              <entry><para> Only used for an SPK, Code500, CCSDS-OEM, or STK
+              propagator. Specifies format of the epoch contained in the
+              <guilabel>StartEpoch</guilabel> field. </para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>A1ModJulian</guilabel>,
+                      <guilabel>TAIModJulian</guilabel>,
+                      <guilabel>UTCModJulian</guilabel>,
+                      <guilabel>TTModJulian</guilabel>,
+                      <guilabel>TDBModJulian</guilabel>,
+                      <guilabel>A1Gregorian</guilabel>,
+                      <guilabel>TAIGregorian</guilabel>,
+                      <guilabel>TTGregorian</guilabel>,
+                      <guilabel>UTCGregorian</guilabel>,
+                      <guilabel>TDBGregorian</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>A1ModJulian</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A unless Mod Julian and in that case Modified
+                      Julian Date</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StartEpoch</guilabel></entry>
+
+              <entry><para>Only used for an SPK, Code500, CCSDS-OEM, or STK
+              propagator. Specifies initial epoch of propagation. When an
+              epoch is provided that epoch is used as the initial epoch. When
+              the keyword <userinput>FromSpacecraft</userinput> is provided,
+              the start epoch is inherited from the spacecraft. If this
+              parameter is omitted or set to "EphemStart", propagation will
+              begin at the start of the ephemeris file.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>String</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>"Gregorian: 04 Oct 1957 12:00:00.000 &lt;= Epoch
+                      &lt;= 28 Feb 2100 00:00:00.000 Modified Julian: 6116.0
+                      &lt;= Epoch &lt;= 58127.5, "EphemStart", or
+                      "FromSpacecraft"</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>"EphemStart"</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StepSize</guilabel></entry>
+
+              <entry><para>The step size for the Propagator. GMAT will use
+              this step size when traversing the ephemeris file, regardless of
+              the internal step size of the ephemeris. GMAT will perform
+              interpolation between vectors on the file as
+              needed.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>300</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Type</guilabel></entry>
+
+              <entry><para>Specifies the integrator or analytic propagator
+              used to model time evolution of spacecraft motion. Specify
+              <guilabel>STK</guilabel> for an STK ephemeris
+              propagator.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>PrinceDormand78</guilabel>,
+                      <guilabel>PrinceDormand45</guilabel>,
+                      <guilabel>RungeKutta89</guilabel>,<guilabel>RungeKutta68</guilabel>,
+                      <guilabel>RungeKutta56</guilabel>,
+                      <guilabel>BulirschStoer</guilabel>,
+                      <guilabel>AdamsBashforthMoulton</guilabel>,
+                      <guilabel>SPK, CCSDS-OEM, Code500, STK</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>RungeKutta89</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>GUI</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Resource_EphemerisPropagator_STK_GUI.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+
+      <para>To configure a <guilabel>Propagator</guilabel> from the GMAT GUI
+      to use STK ephemeris files, select and open a
+      <guilabel>Propagator</guilabel> from the Resources tree. In the
+      <guilabel>Integrator</guilabel> category select <guilabel>STK</guilabel>
+      from the <guilabel>Type</guilabel> drop-down box. This will display the
+      STK propagator options dialog. There are four fields displayed for an
+      STK propagator that affect propagation - <guilabel>StepSize</guilabel>,
+      <guilabel>CentralBody</guilabel>, <guilabel>EpochFormat</guilabel>, and
+      <guilabel>StartEpoch</guilabel>. Note that changing the
+      <guilabel>EpochFormat</guilabel> setting converts the input epoch to the
+      selected format. You can also type <userinput>FromSpacecraft</userinput>
+      into the <guilabel>StartEpoch</guilabel> field and the
+      <guilabel>Propagator</guilabel> will use the epoch of the
+      <guilabel>Spacecraft</guilabel> as the initial propagation epoch. The
+      <guilabel>CentralBody</guilabel> field is displayed to the user, but is
+      unused when the integrator type is STK.</para>
+    </refsection>
+
+    <refsection>
+      <title>Implementation Notes</title>
+
+      <para>Position interpolation by default is performed using a 7th order
+      Hermite-Newton divided difference interpolator using function value only
+      data (i.e. position data for the position interpolation). Velocity
+      interpolation uses the derivative of the position polynomial to produce
+      interpolated values.</para>
+
+      <para>For segmented ephemerides, the interpolator restarts at segment
+      boundaries. If an ephemeris segment has fewer than 8 points, the
+      interpolator activates derivative information for the position
+      interpolation by including the velocity data for the interpolation. The
+      order of the interpolator changes to match the number of points in the
+      segment (for n data points, order = 2n - 1 for position and n - 1 for
+      velocity). The first time this happens, a warning notice is posted to
+      the message window indicating the order of the velocity interpolation.
+      Subsequent changes are not reported, but the interpolation order will
+      adapt to the number of points in subsequent segments.</para>
+
+      <para>Propagating with stopping conditions can show sub-millisecond
+      related differences.</para>
+
+      <para>STK ephemeris files can set an ephemeris epoch that is very
+      different from the data in the file by setting a distant in time
+      Scenario Epoch, and compensating using the time offset for each
+      ephemeris point in the file. This can lead to round-off issues in
+      propagation, particularly when propagating to the end of an ephemeris
+      (or back propagating to the start).</para>
+    </refsection>
+
+    <refsection>
+      <title>Remarks</title>
+
+      <para>A spacecraft may have only one STK ephemeris assigned. There is
+      currently no GUI option to assign the STK ephemeris file to the
+      <guilabel>Spacecraft</guilabel> resource. You must specify the STK
+      ephemeris file on the
+      <guilabel>Spacecraft</guilabel><guilabel>.EphemerisName</guilabel>
+      parameter via script. The subsections below provide examples of how to
+      do this.</para>
+
+      <para>GMAT supports reading a number of STK ephemeris reference frames,
+      but there are some limitations to be aware of. The table below shows the
+      status of GMAT support for reading STK ephemeris reference frames, and
+      the mapping between STK reference frames and GMAT equivalent
+      <guilabel>CoordinateSystem</guilabel> <guilabel>Axes</guilabel>. Any STK
+      reference frame not specifically mentioned below is not supported for an
+      STK ephemeris propagator.</para>
+
+      <informaltable>
+        <tgroup cols="3">
+          <colspec colwidth="237*"/>
+
+          <colspec colwidth="162*"/>
+
+          <colspec colwidth="601*"/>
+
+          <thead>
+            <row>
+              <entry align="center">STK Reference Frame</entry>
+
+              <entry align="center">GMAT Axes</entry>
+
+              <entry align="center">Status</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>J2000</entry>
+
+              <entry>J2000</entry>
+
+              <entry>Supported for all central bodies</entry>
+            </row>
+
+            <row>
+              <entry>J2000_Ecliptic</entry>
+
+              <entry>MJ2000Ec</entry>
+
+              <entry>Supported for Sun only</entry>
+            </row>
+
+            <row>
+              <entry>ICRF</entry>
+
+              <entry>ICRF</entry>
+
+              <entry>Supported for all central bodies</entry>
+            </row>
+
+            <row>
+              <entry>TrueOfDate</entry>
+
+              <entry>TODEq</entry>
+
+              <entry>Supported for Earth only</entry>
+            </row>
+
+            <row>
+              <entry>Fixed</entry>
+
+              <entry>BodyFixed</entry>
+
+              <entry>Supported for all central bodies. The Moon-fixed frame is
+              interpreted as the Moon Principal Axis (PA) frame. The
+              Moon-fixed Mean Earth/Polar Axis (ME) frame is not currently
+              supported. See <guilabel>CelestialBody</guilabel> <xref
+              linkend="CelestialBody_Remarks" xrefstyle="select:title"/> for
+              details on the interpretation of the body-fixed frame for Earth
+              and other central bodies.</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <refsection>
+        <title>Configuring Spacecraft Ephemeris Files</title>
+
+        <para>To use a STK ephemeris-configured
+        <guilabel>Propagator</guilabel>, you must add the STK ephemeris file
+        to the <guilabel>Spacecraft</guilabel>. A sample spacecraft STK
+        ephemeris, (<filename>SampleSTKEphem.e</filename>, in the
+        <filename>data/vehicle/ephem/stk</filename> directory) is distributed
+        with GMAT. This sample file has a span of 1 Jan 2000 11:59:28.000 to 4
+        Jan 2000 11:59:28.000. An example of how to assign this ephemeris to a
+        spacecraft is shown below. Relative paths are defined with respect to
+        the GMAT <filename>bin</filename> directory of your local
+        installation.</para>
+
+        <programlisting><?db-font-size 80% ?><code>Create Spacecraft aSpacecraft;
+
+aSpacecraft.EphemerisName = '../data/vehicle/ephem/stk/SampleSTKEphem.e';
+
+BeginMissionSequence;</code></programlisting>
+      </refsection>
+
+      <refsection>
+        <title>Configuring an STK Ephemeris Propagator</title>
+
+        <para>If you have assigned the ephemeris file to your spacecraft,
+        configuring the propagator only requires assigning the
+        <guilabel>STK</guilabel> type and the desired step size on a
+        <guilabel>Propagator</guilabel> resource. The central body of
+        propagation will be the central body of the ephemeris file. If
+        desired, you may also specify an <guilabel>EpochFormat</guilabel> and
+        <guilabel>StartEpoch</guilabel> on the propagator to specify an
+        initial epoch from which to start propagation. The same effect can be
+        accomplished with an independent <guilabel>Propagate</guilabel>
+        command (see <xref linkend="Propagate"/>) to advance the Spacecraft to
+        the desired starting epoch.</para>
+
+        <programlisting><code>Create Propagator STKProp;
+
+STKProp.Type     = 'STK';
+STKProp.StepSize = 60;
+
+BeginMissionSequence;</code></programlisting>
+
+        <para>The same remarks mentioned in the section on SPK propagators
+        with regard to interaction with the <guilabel>Propagate</guilabel>
+        command and behavior near ephemeris boundaries also apply to the STK
+        ephemeris propagator.</para>
+      </refsection>
+    </refsection>
+
+    <refsection>
+      <title>Examples</title>
+
+      <informalexample>
+        <para>This example propagates a spacecraft using an STK ephemeris,
+        defining the <guilabel>StartEpoch</guilabel> from the spacecraft. The
+        ephemeris file used in this example is included in the GMAT
+        distribution at the indicated location. The code below will run if you
+        copy and paste it into a new GMAT script.</para>
+
+        <programlisting><?db-font-size 80% ?><code>
+%----------------------------------------
+%   Spacecraft
+%----------------------------------------
+Create Spacecraft STKSat;
+
+STKSat.DateFormat    = UTCGregorian;
+STKSat.Epoch         = '01 Jan 2000 12:00:00.000';
+STKSat.EphemerisName = '../data/vehicle/ephem/stk/SampleSTKEphem.e';
+
+%----------------------------------------
+%   Propagator
+%----------------------------------------
+
+Create Propagator STKProp;
+
+STKProp.Type        = STK;
+STKProp.StepSize    = 60;
+STKProp.CentralBody = Earth;
+STKProp.EpochFormat = 'A1ModJulian';
+STKProp.StartEpoch  = 'FromSpacecraft';
+
+%----------------------------------------
+%   Output 
+%----------------------------------------
+
+Create OpenFrameInterface OFI_View1;
+
+OFI_View1.SolverIterations = Current;
+OFI_View1.UpperLeft        = [ 0 0 ];
+OFI_View1.Size             = [ 0 0 ];
+OFI_View1.RelativeZOrder   = 0;
+OFI_View1.Maximized        = false;
+OFI_View1.Add              = {STKSat, Earth};
+
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+
+Create Array initialState[6,1] finalState[6,1];
+
+%----------------------------------------
+% Miscellaneous variables.
+%----------------------------------------
+
+Create String initialEpoch finalEpoch;
+
+%
+%   Mission Sequence
+%
+
+BeginMissionSequence;
+
+[initialEpoch, initialState, finalEpoch, finalState] = ...
+   GetEphemStates('STK', STKSat, 'UTCGregorian', EarthMJ2000Eq);
+
+STKSat.Epoch = initialEpoch;
+
+While STKSat.ElapsedDays &lt;= 1
+      
+   Propagate STKProp(STKSat);
+
+EndWhile;</code></programlisting>
+      </informalexample>
+
+      <para>This example is provided in the samples directory, in the
+      <filename>Ex_STKEphemPropagation</filename> script.</para>
+    </refsection>
+  </refsection>
+
+  <refsection xml:id="Propagator_OEMPropagator">
+    <title>CCSDS OEM Ephemeris-Configured Propagator</title>
+
+    <indexterm>
+      <primary>STK Ephemeris Orbit Propagation</primary>
+    </indexterm>
+
+    <indexterm>
+      <primary>Ephemeris propagator</primary>
+
+      <secondary>OEM ephemeris</secondary>
+    </indexterm>
+
+    <refsection>
+      <title>Description</title>
+
+      <para>A CCSDS-OEM ephemeris-configured <guilabel>Propagator</guilabel>
+      propagates a spacecraft by interpolating or stepping along a
+      user-provided CCSDS OEM-format ephemeris file. You configure a
+      <guilabel>Propagator</guilabel> to use an OEM ephemeris by setting the
+      <guilabel>Type</guilabel> field to <guilabel>CCSDS-OEM</guilabel>. The
+      OEM ephemeris file is specified on a Spacecraft resource using the
+      <guilabel>Spacecraft.EphemerisName</guilabel> field. The user controls
+      propagation, including stopping conditions, using the
+      <guilabel>Propagate</guilabel> command. This resource cannot be modified
+      in the Mission Sequence. However, you can do whole object assignment in
+      the mission sequence, (i.e. <literal>myPropagator =
+      yourPropagator</literal> ).</para>
+
+      <para>The <guilabel>Propagator</guilabel>
+      <guilabel>CentralBody</guilabel> option is not applicable to the OEM
+      propagator and should not be used with the OEM propagator type. GMAT
+      will automatically detect and use the central body of the ephemeris
+      file. The <guilabel>Propagate</guilabel> command should be used to
+      traverse the ephemeris file. GMAT will throw an error message and
+      terminate when attempting to propagate outside the bounds of the
+      ephemeris file. The OEM propagator includes code that steps the
+      spacecraft to the ephemeris boundary before stepping out of the span of
+      the file.</para>
+
+      <para>OEM ephemeris files are ASCII files conforming to the Consultative
+      Committee for Space Data Systems Orbit Data Messages standard (CCSDS
+      502.0-B-2). As discussed in the <xref linkend="EphemerisFile"/> help,
+      GMAT can generate OEM ephemeris files using the
+      <guilabel>EphemerisFile.OutputFormat</guilabel> field. GMAT currently
+      only supports Version 1.0 OEM ephemeris files.</para>
+
+      <para><phrase role="ref_seealso">See Also</phrase>: <xref
+      linkend="Spacecraft"/>, <xref linkend="Propagate"/>, <xref
+      linkend="EphemerisFile"/></para>
+    </refsection>
+
+    <refsection>
+      <title>Fields</title>
+
+      <para>The only <guilabel>Propagator</guilabel> fields applicable to the
+      OEM ephemeris propagator are <guilabel>EpochFormat</guilabel>,
+      <guilabel>StartEpoch</guilabel>, <guilabel>StepSize</guilabel> and
+      <guilabel>Type</guilabel>.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colwidth="1.3*"/>
+
+          <colspec colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Field</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>EpochFormat</guilabel></entry>
+
+              <entry><para> Only used for an SPK, Code500, CCSDS-OEM, or STK
+              propagator. Specifies format of the epoch contained in the
+              <guilabel>StartEpoch</guilabel> field. </para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>A1ModJulian</guilabel>,
+                      <guilabel>TAIModJulian</guilabel>,
+                      <guilabel>UTCModJulian</guilabel>,
+                      <guilabel>TTModJulian</guilabel>,
+                      <guilabel>TDBModJulian</guilabel>,
+                      <guilabel>A1Gregorian</guilabel>,
+                      <guilabel>TAIGregorian</guilabel>,
+                      <guilabel>TTGregorian</guilabel>,
+                      <guilabel>UTCGregorian</guilabel>,
+                      <guilabel>TDBGregorian</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>A1ModJulian</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A unless Mod Julian and in that case Modified
+                      Julian Date</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StartEpoch</guilabel></entry>
+
+              <entry><para>Only used for an SPK, Code500, CCSDS-OEM, or STK
+              propagator. Specifies initial epoch of propagation. When an
+              epoch is provided that epoch is used as the initial epoch. When
+              the keyword <userinput>FromSpacecraft</userinput> is provided,
+              the start epoch is inherited from the spacecraft. If this
+              parameter is omitted or set to "EphemStart", propagation will
+              begin at the start of the ephemeris file.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>String</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>"Gregorian: 04 Oct 1957 12:00:00.000 &lt;= Epoch
+                      &lt;= 28 Feb 2100 00:00:00.000 Modified Julian: 6116.0
+                      &lt;= Epoch &lt;= 58127.5, "EphemStart", or
+                      "FromSpacecraft"</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>"EphemStart"</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>StepSize</guilabel></entry>
+
+              <entry><para>The step size for the Propagator. GMAT will use
+              this step size when traversing the ephemeris file, regardless of
+              the internal step size of the ephemeris. GMAT will perform
+              interpolation between vectors on the file as
+              needed.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>300</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Type</guilabel></entry>
+
+              <entry><para>Specifies the integrator or analytic propagator
+              used to model time evolution of spacecraft motion. Specify
+              <guilabel>CCSDS-OEM</guilabel> for an OEM ephemeris
+              propagator.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>PrinceDormand78</guilabel>,
+                      <guilabel>PrinceDormand45</guilabel>,
+                      <guilabel>RungeKutta89</guilabel>,<guilabel>RungeKutta68</guilabel>,
+                      <guilabel>RungeKutta56</guilabel>,
+                      <guilabel>BulirschStoer</guilabel>,
+                      <guilabel>AdamsBashforthMoulton</guilabel>,
+                      <guilabel>SPK, CCSDS-OEM, Code500, STK</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>RungeKutta89</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>GUI</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Resource_EphemerisPropagator_CCSDS-OEM_GUI.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+
+      <para>To configure a <guilabel>Propagator</guilabel> from the GMAT GUI
+      to use CCSDS OEM ephemeris files, select and open a
+      <guilabel>Propagator</guilabel> from the Resources tree. In the
+      <guilabel>Integrator</guilabel> category select
+      <guilabel>CCSDS-OEM</guilabel> from the <guilabel>Type</guilabel>
+      drop-down box. This will display the OEM propagator options dialog.
+      There are four fields displayed for an OEM propagator that affect
+      propagation - <guilabel>StepSize</guilabel>,
+      <guilabel>CentralBody</guilabel>, <guilabel>EpochFormat</guilabel>, and
+      <guilabel>StartEpoch</guilabel>. Note that changing the
+      <guilabel>EpochFormat</guilabel> setting converts the input epoch to the
+      selected format. You can also type <userinput>FromSpacecraft</userinput>
+      into the <guilabel>StartEpoch</guilabel> field and the
+      <guilabel>Propagator</guilabel> will use the epoch of the
+      <guilabel>Spacecraft</guilabel> as the initial propagation epoch. The
+      <guilabel>CentralBody</guilabel> field is displayed to the user, but is
+      unused when the integrator type is CCSDS-OEM.</para>
+    </refsection>
+
+    <refsection>
+      <title>Implementation Notes</title>
+
+      <para>Position interpolation by default is performed using a 7th order
+      Hermite-Newton divided difference interpolator using function value only
+      data (i.e. position data for the position interpolation). Velocity
+      interpolation uses the derivative of the position polynomial to produce
+      interpolated values.</para>
+
+      <para>For segmented ephemerides, the interpolator restarts at segment
+      boundaries. If an ephemeris segment has fewer than 8 points, the
+      interpolator activates derivative information for the position
+      interpolation by including the velocity data for the interpolation. The
+      order of the interpolator changes to match the number of points in the
+      segment (for n data points, order = 2n - 1 for position and n - 1 for
+      velocity). The first time this happens, a warning notice is posted to
+      the message window indicating the order of the velocity interpolation.
+      Subsequent changes are not reported, but the interpolation order will
+      adapt to the number of points in subsequent segments.</para>
+
+      <para>Propagating with stopping conditions can show sub-millisecond
+      related differences.</para>
+    </refsection>
+
+    <refsection>
+      <title>Remarks</title>
+
+      <para>There is currently no GUI option to assign the OEM ephemeris file
+      to the <guilabel>Spacecraft</guilabel> resource. You must assign the OEM
+      ephemeris file on the
+      <guilabel>Spacecraft</guilabel><guilabel>.EphemerisName</guilabel>
+      parameter via script. The subsections below provide examples of how to
+      do this.</para>
+
+      <para>GMAT supports reading a number of OEM ephemeris reference frames.
+      The table below shows the status of GMAT support for reading OEM
+      ephemeris reference frames, and the mapping between OEM reference frames
+      and GMAT equivalent <guilabel>CoordinateSystem</guilabel>
+      <guilabel>Axes</guilabel>. Any OEM reference frame not specifically
+      mentioned below is not supported for an OEM ephemeris propagator.</para>
+
+      <informaltable>
+        <tgroup cols="3">
+          <colspec colwidth="237*"/>
+
+          <colspec colwidth="162*"/>
+
+          <colspec colwidth="601*"/>
+
+          <thead>
+            <row>
+              <entry align="center">OEM Reference Frame</entry>
+
+              <entry align="center">GMAT Axes</entry>
+
+              <entry align="center">Status</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>EME2000</entry>
+
+              <entry>MJ2000Eq</entry>
+
+              <entry>Supported for all central bodies</entry>
+            </row>
+
+            <row>
+              <entry>TOD</entry>
+
+              <entry>TODEq</entry>
+
+              <entry>Supported for Earth only</entry>
+            </row>
+
+            <row>
+              <entry>GRC or TDR</entry>
+
+              <entry>BodyFixed</entry>
+
+              <entry>Supported for Earth only</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <refsection>
+        <title>Configuring Spacecraft Ephemeris Files</title>
+
+        <para>A spacecraft may have only one OEM ephemeris assigned. To use an
+        OEM ephemeris-configured <guilabel>Propagator</guilabel>, you must add
+        the CCSDS OEM ephemeris file to the <guilabel>Spacecraft</guilabel> in
+        your script using the <guilabel>EphemerisName</guilabel> parameter. A
+        sample spacecraft CCSDS-OEM ephemeris,
+        (<filename>SampleOEMEphem.oem</filename>, in the
+        <filename>data/vehicle/ephem/ccsds</filename> directory) is
+        distributed with GMAT. This sample file has a span of 1 Jan 2000
+        12:00:00.000 to 3 Jan 2000 12:00:00.000. An example of how to assign
+        this ephemeris to a spacecraft is shown below. Relative paths are
+        defined with respect to the GMAT <filename>bin</filename> directory of
+        your local installation.</para>
+
+        <programlisting><?db-font-size 80% ?><code>Create Spacecraft aSpacecraft;
+
+aSpacecraft.EphemerisName = '../data/vehicle/ephem/ccsds/SampleOEMEphem.oem';
+
+BeginMissionSequence;</code></programlisting>
+      </refsection>
+
+      <refsection>
+        <title>Configuring an OEM Ephemeris Propagator</title>
+
+        <para>If you have assigned the ephemeris file to your spacecraft,
+        configuring the propagator only requires assigning the
+        <guilabel>CCSDS-OEM</guilabel> type on a
+        <guilabel>Propagator</guilabel> resource. The central body of
+        propagation will be the central body of the ephemeris file. If
+        desired, you may also specify an <guilabel>EpochFormat</guilabel> and
+        <guilabel>StartEpoch</guilabel> on the propagator to specify an
+        initial epoch from which to start propagation. The same effect can be
+        accomplished with an independent <guilabel>Propagate</guilabel>
+        command (see <xref linkend="Propagate"/>) to advance the Spacecraft to
+        the desired starting epoch.</para>
+
+        <programlisting><code>Create Propagator OEMProp;
+
+OEMProp.Type     = 'CCSDS-OEM';
+OEMProp.StepSize = 60;
+
+BeginMissionSequence;</code></programlisting>
+
+        <para>The same remarks mentioned in the section on SPK propagators
+        with regard to interaction with the <guilabel>Propagate</guilabel>
+        command and behavior near ephemeris boundaries also apply to the OEM
+        ephemeris propagator.</para>
+      </refsection>
+    </refsection>
+
+    <refsection>
+      <title>Examples</title>
+
+      <informalexample>
+        <para>This example propagates a spacecraft using an OEM ephemeris,
+        beginning from the start of the ephemeris file. The ephemeris file
+        used in this example is included in the GMAT distribution at the
+        indicated location. The code below will run if you copy and paste it
+        into a new GMAT script.</para>
+
+        <programlisting><?db-font-size 80% ?><code>
+%----------------------------------------
+%   Spacecraft
+%----------------------------------------
+
+Create Spacecraft OEMSat;
+
+OEMSat.EphemerisName = '../data/vehicle/ephem/ccsds/SampleOEMEphem.oem';
+
+%----------------------------------------
+%   Propagator
+%----------------------------------------
+
+Create Propagator OEMProp;
+
+OEMProp.Type = 'CCSDS-OEM';
+
+%----------------------------------------
+%   Output 
+%----------------------------------------
+
+Create OpenFramesInterface OFI_View1;
+
+OFI_View1.SolverIterations = Current;
+OFI_View1.UpperLeft        = [ 0 0 ];
+OFI_View1.Size             = [ 0 0 ];
+OFI_View1.RelativeZOrder   = 0;
+OFI_View1.Maximized        = False;
+OFI_View1.Add              = {OEMSat, Earth};
+
+%----------------------------------------
+%   Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+While OEMSat.ElapsedDays &lt;= 1
+      
+   Propagate OEMProp(OEMSat);
+
+EndWhile;</code></programlisting>
+      </informalexample>
+    </refsection>
+  </refsection>
+
+  <refsection xml:id="Propagator_TLEPropagator">
+    <title>SPICESGP4 TLE Propagator</title>
+
+    <indexterm>
+      <primary>SGP4 TLE Orbit Propagation</primary>
+    </indexterm>
+
+    <indexterm>
+      <primary>Ephemeris propagator</primary>
+
+      <secondary>TLE</secondary>
+    </indexterm>
+
+    <refsection>
+      <title>Description</title>
+
+      <para>A <emphasis role="bold">SPICESGP4</emphasis>
+      <guilabel>Propagator</guilabel> propagates a spacecraft by processing
+      the data in a standard Two-Line element (TLE) using SPICE's
+      implementation of the SGP4 algorithm. You configure a
+      <guilabel>Propagator</guilabel> to use a TLE data file by setting the
+      <guilabel>Type</guilabel> field to <guilabel>SPICESGP4</guilabel>. The
+      TLE data is specified on a Spacecraft resource using the
+      <guilabel>Spacecraft.EphemerisName</guilabel> field with the
+      <guilabel>Spacecraft.Id</guilabel> field matching either the name of the
+      spacecraft in the TLE or matching the satellite catalog number. The user
+      controls propagation, including stopping conditions, using the
+      <guilabel>Propagate</guilabel> command. This resource can be modified in
+      the Mission Sequence, but an initial TLE must be provided before
+      beginning the Mission Sequence. However, you can change the TLE value
+      once the Mission Sequence has begun.</para>
+
+      <para>The <guilabel>Propagator</guilabel>
+      <guilabel>CentralBody</guilabel> option is not applicable to the TLE
+      propagator and should not be used with the TLE propagator type. The TLE
+      format has by definition the Earth as the central body.</para>
+
+      <para><phrase role="ref_seealso">See Also</phrase>: <xref
+      linkend="Spacecraft"/>, <xref linkend="Propagate"/></para>
+    </refsection>
+
+    <refsection>
+      <title>Fields</title>
+
+      <para>The only <guilabel>Propagator</guilabel> fields applicable to the
+      SPICESGP4 ephemeris propagator are <guilabel>StepSize</guilabel> and
+      <guilabel>Type</guilabel>.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colwidth="1.3*"/>
+
+          <colspec colwidth="3*"/>
+
+          <thead>
+            <row>
+              <entry>Field</entry>
+
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>StepSize</guilabel></entry>
+
+              <entry><para>The step size for the Propagator. GMAT will use
+              this step size when propagating the TLE.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Real</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para>Real &gt; 0</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para>300</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Type</guilabel></entry>
+
+              <entry><para>Specifies the integrator or analytic propagator
+              used to model time evolution of spacecraft motion. Specify
+              <guilabel>CCSDS-OEM</guilabel> for an OEM ephemeris
+              propagator.</para><variablelist>
+                  <varlistentry>
+                    <term>Data Type</term>
+
+                    <listitem>
+                      <para>Enumeration</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Allowed Values</term>
+
+                    <listitem>
+                      <para><guilabel>PrinceDormand78</guilabel>,
+                      <guilabel>PrinceDormand45</guilabel>,
+                      <guilabel>RungeKutta89</guilabel>,<guilabel>RungeKutta68</guilabel>,
+                      <guilabel>RungeKutta56</guilabel>,
+                      <guilabel>BulirschStoer</guilabel>,
+                      <guilabel>AdamsBashforthMoulton</guilabel>,
+                      <guilabel>SPK, CCSDS-OEM, Code500, STK,
+                      SPICESGP4</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Access</term>
+
+                    <listitem>
+                      <para>set</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Default Value</term>
+
+                    <listitem>
+                      <para><guilabel>RungeKutta89</guilabel></para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Units</term>
+
+                    <listitem>
+                      <para>N/A</para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term>Interfaces</term>
+
+                    <listitem>
+                      <para>GUI, script</para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>Implementation Notes</title>
+
+      <para>The <guilabel>SPICESGP4</guilabel> propagator is powered by the
+      SPICE implementation of the SGP4 algorithm. This approach is an based on
+      the algorithms published by Vallado et. al. in the 2006 paper
+      <emphasis>Revisiting Spacetrack Report #3.</emphasis></para>
+    </refsection>
+
+    <refsection>
+      <title>Remarks</title>
+
+      <para>There is currently no GUI option to assign a TLE to the
+      <guilabel>Spacecraft</guilabel> resource. You must assign the TLE file
+      on the
+      <guilabel>Spacecraft</guilabel><guilabel>.EphemerisName</guilabel>
+      parameter via script. The subsections below provide examples of how to
+      do this. By default, the initial epoch of the Spacecraft will be set to
+      the initial value of the TLE, but this may be changed by defining the
+      <guilabel>Spacecraft</guilabel><guilabel>.Epoch</guilabel>
+      parameter.</para>
+
+      <refsection>
+        <title>Configuring Spacecraft Ephemeris Files</title>
+
+        <para>A spacecraft may have only one TLE file assigned. To use the
+        SPICESGP4 type <guilabel>Propagator</guilabel>, you must add a TLE
+        file to the <guilabel>Spacecraft</guilabel> in your script using the
+        <guilabel>EphemerisName</guilabel> parameter. A sample spacecraft TLE,
+        (<filename>Ex_TLEPropagationTLE.otxt</filename>, in the
+        <filename>samples/SupportFiles</filename> directory) is distributed
+        with GMAT. The name of the object in the TLE should be the same as the
+        value set in the script using the <guilabel>Spacecraft.Id</guilabel>
+        parameter. An example of how to assign this TLE to a spacecraft is
+        shown below. Relative paths are defined with respect to the GMAT
+        <filename>bin</filename> directory of your local installation.</para>
+
+        <programlisting><?db-font-size 80% ?><code>Create Spacecraft aSpacecraft;
+
+aSpacecraft.EphemerisName = '../samples/SupportFiles/Ex_TLEPropagationTLE.txt';
+aSpacecraft.Id            = 'ExampleSat';
+
+BeginMissionSequence;</code></programlisting>
+      </refsection>
+
+      <refsection>
+        <title>Configuring a SPICESPG4 Ephemeris Propagator</title>
+
+        <para>If you have assigned the ephemeris file to your spacecraft,
+        configuring the propagator only requires assigning the
+        <guilabel>SPICESGP4</guilabel> type on a
+        <guilabel>Propagator</guilabel> resource. Below is a script example
+        demonstrating creation of a <guilabel>SPICESGP4</guilabel> type
+        <guilabel>Propagator</guilabel> with a 60 second step size.</para>
+
+        <programlisting><code>Create Propagator SPICESGP4Propagator;
+
+SPICESGP4Propagator.Type     = 'SPICESGP4';
+SPICESGP4Propagator.StepSize = 60;
+
+BeginMissionSequence;</code></programlisting>
+      </refsection>
+    </refsection>
+
+    <refsection>
+      <title>Examples</title>
+
+      <informalexample>
+        <para>This example propagates a spacecraft using a data from a TLE,
+        and record the state information to a report file. The file used in
+        this example is included in the GMAT distribution at the indicated
+        location. The code below will run if you copy and paste it into a new
+        GMAT script.</para>
+
+        <programlisting><?db-font-size 80% ?><code>
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft ExampleSat;
+ExampleSat.DateFormat    = UTCGregorian;
+ExampleSat.EphemerisName = '../samples/SupportFiles/Ex_TLEPropagationTLE.txt';
+ExampleSat.Id            = 'ExampleSat';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator TLEProp;
+TLEProp.Type     = SPICESGP4;
+TLEProp.StepSize = 300;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create ReportFile rf;
+rf.Filename = BasicPropagation.txt
+rf.Add      = {ExampleSat.UTCGregorian, ExampleSat.X, ExampleSat.Y, ExampleSat.Z, ExampleSat.VX, ExampleSat.VY, ExampleSat.VZ}
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+Propagate TLEProp(ExampleSat) {ExampleSat.ElapsedDays = 1.0};
+</code></programlisting>
+      </informalexample>
+    </refsection>
+  </refsection>
+</refentry>

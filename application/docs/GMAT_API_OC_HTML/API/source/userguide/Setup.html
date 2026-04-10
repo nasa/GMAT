@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Setting up the GMAT API &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Conventions in the API Examples and Use Cases" href="StyleGuide.html" />
+    <link rel="prev" title="GMAT API User’s Guide" href="UsersGuide.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="StyleGuide.html" title="Conventions in the API Examples and Use Cases"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="UsersGuide.html" title="GMAT API User’s Guide"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="UsersGuide.html" accesskey="U">GMAT API User’s Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Setting up the GMAT API</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="setting-up-the-gmat-api">
+<h1>Setting up the GMAT API<a class="headerlink" href="#setting-up-the-gmat-api" title="Link to this heading">¶</a></h1>
+<p>The GMAT API is included in the GMAT release code beginning with the GMAT R2020a
+release of the system on SourceForge.  The API subsystem included in these
+packages has been tested using Python and MATLAB calls to the API.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<p>Installation of the API is complete when the GMAT release bundle is installed on
+the user’s workstation.</p>
+<section id="direct-usage">
+<h3>Direct Usage<a class="headerlink" href="#direct-usage" title="Link to this heading">¶</a></h3>
+<p>The API can be used immediately by users that want to run it from the GMAT bin
+directory.  Simply open a session in MATLAB or Python, change directories to the
+GMAT bin folder, and load the GMAT system into the executing environment.  The
+examples shown later in this document can then be run directly in that
+environment.</p>
+</section>
+<section id="running-the-api-outside-of-the-gmat-folders">
+<span id="runningexternally"></span><h3>Running the API Outside of the GMAT Folders<a class="headerlink" href="#running-the-api-outside-of-the-gmat-folders" title="Link to this heading">¶</a></h3>
+<p>Users that want to run the API from a different location from the GMAT system
+need to perform additional steps to configure the system to address two features
+of the system:</p>
+<ol class="arabic simple">
+<li><p>GMAT uses a set of data files for its core functions.</p></li>
+<li><p>Running environments need to be able to find the GMAT API interfaces.</p></li>
+</ol>
+<p>The following paragraphs address the configuration settings for these two items.</p>
+<section id="file-location-access">
+<span id="apistartupfile"></span><h4>File Location Access<a class="headerlink" href="#file-location-access" title="Link to this heading">¶</a></h4>
+<p>GMAT uses a text data file, gmat_startup_file.txt, to identify and locate GMAT
+plug-in components, planetary ephemerides, gravitational potentials, and a large
+variety of other data files required during a run.  The GMAT API operates using
+this data file by default, but that causes problems when running outside of the
+GMAT folder structure.  Rather than change the GMAT startup file, API users can
+accomplish the folder structure definition by creating an API specific startup
+file. A python scipt to create this file, BuildApiStartupFile.py is in the api
+folder in the main GMAT folder, as well as more detailed instructions in
+API_README.txt.</p>
+<p>Once the api_startup_file is created, you are ready to configure your Python
+or MATLAB environment.</p>
+</section>
+<section id="external-access-from-python">
+<span id="pythonanyfolder"></span><h4>External Access from Python<a class="headerlink" href="#external-access-from-python" title="Link to this heading">¶</a></h4>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>External access from Python requires configuration of an API startup file, as
+described in the <a class="reference internal" href="#apistartupfile"><span class="std std-ref">File Location Access</span></a> text, above.</p>
+</div>
+<p>The API is loaded from a Python process running outside of the GMAT folders
+using the load_gmat.py module found in the GMAT api folder.  The simplest way to
+proceed is to edit that file in place:</p>
+<ol class="arabic">
+<li><p>Open load_gmat.py in a text editor.</p></li>
+<li><p>Change the “&lt;TopLevelGMATFolder&gt;” entry near the top of the file to the
+absolute path to your top level GMAT folder.  Make sure that the path is
+enclosed in quotation marks.</p>
+<p>Windows users will also need to change backslash characters in this string
+either to double backslashes or to forward slashes so that the Python
+interpreter can handle the path correctly.</p>
+</li>
+<li><p>Save the file.</p></li>
+<li><p>Copy the edited load_gmat.py file into the folder that is used for the API
+run.</p>
+<p><strong>Note</strong> one advantage of editing the load_gmat file in the api folder is
+that this file can be copied into any folder that needs access to the API.
+In other words, once the file has the absolute path set, it can be copied to
+any folder that needs to act as the home folder for an API run.</p>
+</li>
+</ol>
+<p>Test the configuration to make certain that the API can be run.  Note that,
+rather than directly importing load_gmat, you will want to preserve the imported
+symbols.  This preservation is done using the syntax “from module import *”, as
+shown in this Linux example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>APIFromHere/
+$<span class="w"> </span>python3
+&gt;&gt;&gt;<span class="w"> </span>from<span class="w"> </span>load_gmat<span class="w"> </span>import<span class="w"> </span>*
+&gt;&gt;&gt;<span class="w"> </span><span class="nv">sat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>gmat.Construct<span class="o">(</span><span class="s2">&quot;Spacecraft&quot;</span>,<span class="s2">&quot;Sat&quot;</span><span class="o">)</span>
+&gt;&gt;&gt;<span class="w"> </span>gmat.ShowObjects<span class="o">()</span>
+Current<span class="w"> </span>GMAT<span class="w"> </span>Objects
+
+<span class="w">   </span>EarthMJ2000Eq
+<span class="w">   </span>EarthMJ2000Ec
+<span class="w">   </span>EarthFixed
+<span class="w">   </span>EarthICRF
+<span class="w">   </span>SolarSystemBarycenter
+<span class="w">   </span>Sat
+
+The<span class="w"> </span>SolarSystem<span class="w"> </span>contains<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>bodies:
+
+<span class="w">   </span><span class="o">[</span>Sun,<span class="w"> </span>Mercury,<span class="w"> </span>Venus,<span class="w"> </span>Earth,<span class="w"> </span>Mars,<span class="w"> </span>Jupiter,<span class="w"> </span>Saturn,<span class="w"> </span>Uranus,<span class="w"> </span>Neptune,<span class="w"> </span>Pluto,<span class="w"> </span>Luna<span class="o">]</span>
+
+&gt;&gt;&gt;
+</pre></div>
+</div>
+</section>
+<section id="external-access-from-matlab">
+<h4>External Access from MATLAB<a class="headerlink" href="#external-access-from-matlab" title="Link to this heading">¶</a></h4>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>External access from MATLAB requires configuration of an API startup file, as
+described in the <a class="reference internal" href="#apistartupfile"><span class="std std-ref">File Location Access</span></a> text, above.</p>
+</div>
+<p>The API is loaded from a MATLAB console running outside of the GMAT folders
+using the load_gmat.m module found in the GMAT bin folder.  That file configures
+MATLAB to use the API.  The simplest way to use it is to add the GMAT bin folder
+to your MATLAB path, either in the running MATLAB environment or in the MATLAB
+configuration on your workstation.  You can test the configuration to make
+certain that the API can be run following the steps below, which run the API
+from the folder APIFromHere outside of the GMAT installation folders:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>APIFromHere/
+$<span class="w"> </span>matlab<span class="w"> </span>-nodesktop
+
+To<span class="w"> </span>get<span class="w"> </span>started,<span class="w"> </span><span class="nb">type</span><span class="w"> </span>doc.
+For<span class="w"> </span>product<span class="w"> </span>information,<span class="w"> </span>visit<span class="w"> </span>www.mathworks.com.
+
+&gt;&gt;<span class="w"> </span>addpath<span class="o">(</span><span class="s1">&#39;/&lt;TopLevelGMATFolder&gt;/bin/&#39;</span><span class="o">)</span>
+&gt;&gt;<span class="w"> </span>load_gmat
+No<span class="w"> </span>script<span class="w"> </span>provided<span class="w"> </span>to<span class="w"> </span>load.
+
+<span class="nv">ans</span><span class="w"> </span><span class="o">=</span>
+
+Instance<span class="w"> </span>of<span class="w"> </span>GMAT<span class="w"> </span>Moderator<span class="w"> </span>is<span class="w"> </span>initialized.<span class="w"> </span>No<span class="w"> </span>script<span class="w"> </span>ready<span class="w"> </span>to<span class="w"> </span>run.
+
+&gt;&gt;<span class="w"> </span><span class="nv">sat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>GMATAPI.Construct<span class="o">(</span><span class="s1">&#39;Spacecraft&#39;</span>,<span class="s1">&#39;MySat&#39;</span><span class="o">)</span>
+
+<span class="nv">sat</span><span class="w"> </span><span class="o">=</span>
+
+Object<span class="w"> </span>of<span class="w"> </span><span class="nb">type</span><span class="w"> </span>Spacecraft<span class="w"> </span>named<span class="w"> </span>MySat
+
+&gt;&gt;<span class="w"> </span>GMATAPI.ShowObjects<span class="o">()</span>
+
+<span class="nv">ans</span><span class="w"> </span><span class="o">=</span>
+
+Current<span class="w"> </span>GMAT<span class="w"> </span>Objects
+
+<span class="w">   </span>EarthMJ2000Eq
+<span class="w">   </span>EarthMJ2000Ec
+<span class="w">   </span>EarthFixed
+<span class="w">   </span>EarthICRF
+<span class="w">   </span>SolarSystemBarycenter
+<span class="w">   </span>MySat
+
+The<span class="w"> </span>SolarSystem<span class="w"> </span>contains<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>bodies:
+
+<span class="w">   </span><span class="o">[</span>Sun,<span class="w"> </span>Mercury,<span class="w"> </span>Venus,<span class="w"> </span>Earth,<span class="w"> </span>Mars,<span class="w"> </span>Jupiter,<span class="w"> </span>Saturn,<span class="w"> </span>Uranus,<span class="w"> </span>Neptune,<span class="w"> </span>Pluto,<span class="w"> </span>Luna<span class="o">]</span>
+
+
+&gt;&gt;
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="loading-the-api">
+<h2>Loading the API<a class="headerlink" href="#loading-the-api" title="Link to this heading">¶</a></h2>
+<section id="packaging">
+<h3>Packaging<a class="headerlink" href="#packaging" title="Link to this heading">¶</a></h3>
+<p>The GMAT API is packaged in a set of libraries encapsulating specific pieces of
+functionality.</p>
+<span id="id1"></span><table class="docutils align-default" id="id2">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">The component packages built for GMAT’s API</span><a class="headerlink" href="#id2" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 12.0%" />
+<col style="width: 20.0%" />
+<col style="width: 68.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Package Name</p></th>
+<th class="head"><p>Contents</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>gmat</p></td>
+<td><p>GMAT Utilities and
+Core Components</p></td>
+<td><p>Utility classes used in the rest of
+GMAT, that do not depend on other
+GMAT components, built from gmatutil
+code.</p>
+<p>Classes used for most of the GMAT
+spacecraft modeling, along with the
+GMAT “engine” that drives the main
+application, built from gmatbase
+code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>station</p></td>
+<td><p>Ground station
+models</p></td>
+<td><p>Code used to model ground stations</p></td>
+</tr>
+<tr class="row-even"><td><p>navigation</p></td>
+<td><p>Estimation
+Components</p></td>
+<td><p>Classes used for the GMAT orbit
+determination subsystem.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="initialization">
+<h3>Initialization<a class="headerlink" href="#initialization" title="Link to this heading">¶</a></h3>
+<p>There are some differences in how to initialize the API between Python, Java,
+and MATLAB, however they all follow the same basic process. The API is first
+loaded into the interfacing language, and then the GMAT executive is initialized
+through the Moderator. The process of initializing the API is detailed in the
+sections below for each supported language. The initialization example for each
+language creates an instance of the Moderator object named <code class="docutils literal notranslate"><span class="pre">myMod</span></code> that has
+been initialized. The <code class="docutils literal notranslate"><span class="pre">result</span></code> variable is a flag which returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if
+the initialization was successful, or <code class="docutils literal notranslate"><span class="pre">False</span></code> if unsuccessful.</p>
+<section id="python">
+<h4>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h4>
+<p>The API is loaded from the GMAT bin folder into Python with an import command</p>
+<p>Python initialization example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+</pre></div>
+</div>
+<p>At this point, the GMAT Python API is not initialized.  A user can initialize it
+using the Setup() command, or by making any call to an API specific function.</p>
+<p>The API can be loaded into from any folder from Python if by following the
+<a class="reference internal" href="#pythonanyfolder"><span class="std std-ref">External Access from Python</span></a> instructions, above.</p>
+</section>
+<section id="java">
+<h4>Java<a class="headerlink" href="#java" title="Link to this heading">¶</a></h4>
+<p>Java requires an extra step compared to Python. Not only does the GMAT API need
+to be imported, a shared library must also be loaded</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">gmat.*</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">main</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">        </span><span class="n">Moderator</span><span class="w"> </span><span class="n">myMod</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">boolean</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// Load the GMAT library</span>
+<span class="w">        </span><span class="n">System</span><span class="p">.</span><span class="na">loadLibrary</span><span class="p">(</span><span class="s">&quot;gmat&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// On Windows</span>
+
+<span class="w">        </span><span class="n">myMod</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Moderator</span><span class="p">.</span><span class="na">Instance</span><span class="p">();</span>
+<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">myMod</span><span class="p">.</span><span class="na">Initialize</span><span class="p">(</span><span class="s">&quot;gmat_startup_file.txt&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>At this point, the GMAT Java API is initialized.</p>
+</section>
+<section id="matlab">
+<h4>MATLAB<a class="headerlink" href="#matlab" title="Link to this heading">¶</a></h4>
+<p>While the MATLAB interface uses the Java API, there are a few extra steps
+required due to how Java packages are used inside MATLAB. The . To simplify this, a
+MATLAB script which performs all the initialization, load_gmat.m, is included
+with the GMAT installation in the <em>&lt;install-dir&gt;</em>/bin directory. The load_gmat
+script also optionally takes as an input the filename of a GMAT script to load,
+and a filename to a custom startup file.</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">myMod</span><span class="p">,</span><span class="w"> </span><span class="n">gmatStartupPath</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">load_gmat</span><span class="p">(</span><span class="s">&quot;sample.script&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The extra steps in initializing the GMAT API through MATLAB is because every
+GMAT library and JAR file needs to be loaded explicitly, and it needs to be
+loaded by the Java instance inside MATLAB instead of by MATLAB itself. For more
+details, see the comments inside the load_gmat.m file.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Setting up the GMAT API</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#direct-usage">Direct Usage</a></li>
+<li><a class="reference internal" href="#running-the-api-outside-of-the-gmat-folders">Running the API Outside of the GMAT Folders</a><ul>
+<li><a class="reference internal" href="#file-location-access">File Location Access</a></li>
+<li><a class="reference internal" href="#external-access-from-python">External Access from Python</a></li>
+<li><a class="reference internal" href="#external-access-from-matlab">External Access from MATLAB</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#loading-the-api">Loading the API</a><ul>
+<li><a class="reference internal" href="#packaging">Packaging</a></li>
+<li><a class="reference internal" href="#initialization">Initialization</a><ul>
+<li><a class="reference internal" href="#python">Python</a></li>
+<li><a class="reference internal" href="#java">Java</a></li>
+<li><a class="reference internal" href="#matlab">MATLAB</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="UsersGuide.html"
+                          title="previous chapter">GMAT API User’s Guide</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="StyleGuide.html"
+                          title="next chapter">Conventions in the API Examples and Use Cases</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../_sources/API/source/userguide/Setup.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="StyleGuide.html" title="Conventions in the API Examples and Use Cases"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="UsersGuide.html" title="GMAT API User’s Guide"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="UsersGuide.html" >GMAT API User’s Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Setting up the GMAT API</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

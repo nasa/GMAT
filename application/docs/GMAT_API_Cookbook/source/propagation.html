@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Propagation with the GMAT API &#8212; API Cookbook R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    
+    <script src="../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="State Management with the GMAT API" href="statemanagement.html" />
+    <link rel="prev" title="GMAT API Cookbook" href="../index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="statemanagement.html" title="State Management with the GMAT API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="GMAT API Cookbook"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>Propagation with the GMAT API</strong></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="propagation-with-the-gmat-api">
+<span id="spacecraftpropagation"></span><h1><strong>Propagation with the GMAT API</strong><a class="headerlink" href="#propagation-with-the-gmat-api" title="Link to this heading">¶</a></h1>
+<section id="problem">
+<h2><strong>Problem</strong><a class="headerlink" href="#problem" title="Link to this heading">¶</a></h2>
+<p>GMAT’s propagator is used to model spacecraft motion within a specified force model. The propagation can be done through either numerical integration or by an ephemeris. Duration of propagation can either be set directly or through a final goal reached by the spacecraft (i.e. propagating for 3 days, propagating to apoapsis, etc.). API users need to be able to perform a propagation through the API and be able to modify propagator settings.</p>
+</section>
+<section id="solution">
+<h2><strong>Solution</strong><a class="headerlink" href="#solution" title="Link to this heading">¶</a></h2>
+<p>For this example, we will focus on using a numerical integrator. Key objects in performing propagation are the Spacecraft, ForceModel, Integrator and Propagator. The Propagator is created with desired step settings and then a desired Integrator is attached to it. The types of integrators and analytic propagators supported by GMAT can be found in GMAT’s User Guide under the “Propagator” resource reference. The integrator is then used to perform propagation using its Step method. An example of propagator use through the API is shown below.</p>
+<section id="example-api-propagation">
+<h3>Example API Propagation<a class="headerlink" href="#example-api-propagation" title="Link to this heading">¶</a></h3>
+<p><strong>Step 1</strong>: Configure the Spacecraft</p>
+<p>We’ll need a spacecraft to propagate.  The following lines provide a basic low-Earth orbiting spacecraft configuration:</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<span id="spacecraftconfig"></span><div class="code-block-caption"><span class="caption-number">Listing 1 </span><span class="caption-text">Spacecraft setup used in some examples</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;LeoSat&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DateFormat&quot;</span><span class="p">,</span> <span class="s2">&quot;UTCGregorian&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Epoch&quot;</span><span class="p">,</span> <span class="s2">&quot;12 Mar 2020 15:00:00.000&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;EarthMJ2000Eq&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DisplayStateType&quot;</span><span class="p">,</span> <span class="s2">&quot;Keplerian&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SMA&quot;</span><span class="p">,</span> <span class="mi">7005</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;ECC&quot;</span><span class="p">,</span> <span class="mf">0.008</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;INC&quot;</span><span class="p">,</span> <span class="mf">28.5</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;RAAN&quot;</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;AOP&quot;</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;TA&quot;</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DryMass&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cd&quot;</span><span class="p">,</span> <span class="mf">2.2</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cr&quot;</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DragArea&quot;</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SRPArea&quot;</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><strong>Step 2</strong>: Configure the Force Model</p>
+<p>Next we’ll set up a force model.  For this example, we’ll use an Earth 8x8 potential model, with Sun and Moon point masses and Jacchia-Roberts drag.  In GMAT, forces are collected in the ODEModel class.  That class is scripted as a “ForceModel” in the script language.  The API accepts either class name.  The force model is built and its (empty) contents displayed using the following API commands:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create the ODEModel container</span>
+<span class="n">fm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ForceModel&quot;</span><span class="p">,</span> <span class="s2">&quot;TheForces&quot;</span><span class="p">)</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">Help</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In this example, the spacecraft is in Earth orbit.  The largest force for the model is the Earth gravity field.  We’ll set it to an 8x8 field and add it to the force model using the code</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># An 8x8 JGM-3 Gravity Model</span>
+<span class="n">earthgrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;GravityField&quot;</span><span class="p">)</span>
+<span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;BodyName&quot;</span><span class="p">,</span><span class="s2">&quot;Earth&quot;</span><span class="p">)</span>
+<span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Degree&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Order&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;PotentialFile&quot;</span><span class="p">,</span><span class="s2">&quot;JGM2.cof&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add the force into the ODEModel container</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">earthgrav</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next we’ll build and add the Sun, Moon, and Drag forces, and then show the completed force model.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The Point Masses</span>
+<span class="n">moongrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PointMassForce&quot;</span><span class="p">)</span>
+<span class="n">moongrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;BodyName&quot;</span><span class="p">,</span><span class="s2">&quot;Luna&quot;</span><span class="p">)</span>
+<span class="n">sungrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PointMassForce&quot;</span><span class="p">)</span>
+<span class="n">sungrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;BodyName&quot;</span><span class="p">,</span><span class="s2">&quot;Sun&quot;</span><span class="p">)</span>
+
+<span class="c1"># Drag using Jacchia-Roberts</span>
+<span class="n">jrdrag</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;DragForce&quot;</span><span class="p">)</span>
+<span class="n">jrdrag</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;AtmosphereModel&quot;</span><span class="p">,</span><span class="s2">&quot;JacchiaRoberts&quot;</span><span class="p">)</span>
+
+<span class="c1"># Build and set the atmosphere for the model</span>
+<span class="n">atmos</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;JacchiaRoberts&quot;</span><span class="p">)</span>
+<span class="n">jrdrag</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">atmos</span><span class="p">)</span>
+
+<span class="c1"># Add all of the forces into the ODEModel container</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">moongrav</span><span class="p">)</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">sungrav</span><span class="p">)</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">jrdrag</span><span class="p">)</span>
+
+<span class="c1"># Show the settings on the force model</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">Help</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In GMAT, the force model scripting shows the settings for each force.  In the API, you can examine the settings for the individual forces using the Help method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">earthgrav</span><span class="o">.</span><span class="n">Help</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>or, with a little work, you can see the GMAT scripting for the complete force model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">GetGeneratingString</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+<p><strong>Step 3</strong>: Configure the Integrator</p>
+<p>Finally, in order to propagate, we need an integrator.  For this example, we’ll use a Prince-Dormand 7(8) Runge-Kutta integrator.  The propagator is set using the code</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build the propagation container that connect the integrator, force model, and spacecraft together</span>
+<span class="n">pdprop</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Propagator&quot;</span><span class="p">,</span><span class="s2">&quot;PDProp&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create and assign a numerical integrator for use in the propagation</span>
+<span class="n">gator</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PrinceDormand78&quot;</span><span class="p">,</span> <span class="s2">&quot;Gator&quot;</span><span class="p">)</span>
+<span class="n">pdprop</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">gator</span><span class="p">)</span>
+
+<span class="c1"># Set some of the fields for the integration</span>
+<span class="n">pdprop</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;InitialStepSize&quot;</span><span class="p">,</span> <span class="mf">60.0</span><span class="p">)</span>
+<span class="n">pdprop</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Accuracy&quot;</span><span class="p">,</span> <span class="mf">1.0e-12</span><span class="p">)</span>
+<span class="n">pdprop</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;MinStep&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Step 4</strong>: Connect the Objects Together</p>
+<p>Next the propagator needs its assigned force.  This assignment is made by passing the force model to the propagator:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Assign the force model to the propagator</span>
+<span class="n">pdprop</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">fm</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The propagator also needs to know the object that is propagated.  For this example, that is the spacecraft constructed above:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pdprop</span><span class="o">.</span><span class="n">AddPropObject</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Step 5</strong>: Initialize the System and Propagate a Step</p>
+<p>Finally, the system can be initialized and fired to see a single propagation step.  The top level system initialization is performed using the API’s Initialize function.  The propagator uses a propagator specific method, PrepareInternals, to setup the propagation specific interconnections and data structures:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Perform top level initialization</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="c1"># Perform the integration subsystem initialization</span>
+<span class="n">pdprop</span><span class="o">.</span><span class="n">PrepareInternals</span><span class="p">()</span>
+
+<span class="c1"># Refresh the integrator reference</span>
+<span class="n">gator</span> <span class="o">=</span> <span class="n">pdprop</span><span class="o">.</span><span class="n">GetPropagator</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We can then propagate, and start accumulating the data for display later:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Take a 60 second step, showing the state before and after, and start buffering</span>
+<span class="c1"># Buffers for the data</span>
+<span class="n">time</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">vel</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">gatorstate</span> <span class="o">=</span> <span class="n">gator</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+<span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">v</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatorstate</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+    <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatorstate</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span>
+<span class="n">time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="n">vel</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting state:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+<span class="c1"># Take a step and buffer it</span>
+<span class="n">gator</span><span class="o">.</span><span class="n">Step</span><span class="p">(</span><span class="mf">60.0</span><span class="p">)</span>
+<span class="n">gatorstate</span> <span class="o">=</span> <span class="n">gator</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="mf">60.0</span>
+<span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">v</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatorstate</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+    <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatorstate</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span>
+<span class="n">time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="n">vel</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Propped state:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, we can run for a few orbits and show the results:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">360</span><span class="p">):</span>
+    <span class="c1"># Take a step and buffer it</span>
+    <span class="n">gator</span><span class="o">.</span><span class="n">Step</span><span class="p">(</span><span class="mf">60.0</span><span class="p">)</span>
+    <span class="n">gatorstate</span> <span class="o">=</span> <span class="n">gator</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="mf">60.0</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatorstate</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatorstate</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">vel</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">positions</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The velocities can also be plotted:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">velocities</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">vel</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="discussion">
+<h2><strong>Discussion</strong><a class="headerlink" href="#discussion" title="Link to this heading">¶</a></h2>
+<p>This example has showcased one way to generate the position and velocity of a spacecraft over a specified time span. This script is now easily modifiable should a user need to adjust step sizes, adjust the spacecraft initial state, provide a more extensive force model, etc. to quickly rerun GMAT through the API and collect new sets of data.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#"><strong>Propagation with the GMAT API</strong></a><ul>
+<li><a class="reference internal" href="#problem"><strong>Problem</strong></a></li>
+<li><a class="reference internal" href="#solution"><strong>Solution</strong></a><ul>
+<li><a class="reference internal" href="#example-api-propagation">Example API Propagation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#discussion"><strong>Discussion</strong></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../index.html"
+                          title="previous chapter">GMAT API Cookbook</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="statemanagement.html"
+                          title="next chapter"><strong>State Management with the GMAT API</strong></a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/propagation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="statemanagement.html" title="State Management with the GMAT API"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="GMAT API Cookbook"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>Propagation with the GMAT API</strong></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

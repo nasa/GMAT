@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="ReleaseNotesR2017a"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>GMAT R2017a Release Notes</title>
+
+  <para>The General Mission Analysis Tool (GMAT) version R2017a was released
+  June 2017. This is the first public release since Oct. 2016, and is the 11th
+  release for the project. This is the first <guilabel>64 bit version of GMAT
+  on Windows</guilabel> (Mac and Linux are 64 bit only).</para>
+
+  <para>Below is a summary of key changes in this release. Please see the full
+  <link
+  xlink:href="http://bugs.gmatcentral.org/secure/ReleaseNote.jspa?projectId=10000&amp;version=11000">R2017a
+  Release Notes</link> on JIRA for a complete list.</para>
+
+  <section>
+    <title>New Features</title>
+
+    <section>
+      <title>Orbit Determination Enhancements</title>
+
+      <para>The following new features and capabilities have been added to
+      GMAT.</para>
+
+      <para><itemizedlist spacing="compact">
+          <listitem>
+            <para>Three new data types can now be processed in GMAT; GPS point
+            solution (GPS_PosVec), range data (Range), and range rate
+            (RangeRate) data. Note that all of these data types have been
+            through regression testing but only the DSN range data type has
+            been through substantial operational testing. Thus, the DSN range
+            data type is the most validated data type available in
+            GMAT.</para>
+          </listitem>
+
+          <listitem>
+            <para>A minimally tested and documented alpha version of an
+            extended Kalman filter algorithm is now available for experimental
+            use. This plugin is available but turned off by default. To use,
+            enable the "libEKF" plugin in the startup file.</para>
+          </listitem>
+
+          <listitem>
+            <para>A second-level data editing capability has been added. This
+            feature allows you to choose observations that are computed and
+            reported but not used in the estimation state update.</para>
+          </listitem>
+        </itemizedlist></para>
+    </section>
+
+    <section>
+      <title>STK .e Ephemeris Propagator</title>
+
+      <para>GMAT now supports a propagator that uses AGI's .e ephemeris file
+      format. See the <link linkend="Propagator">Propagator</link> reference
+      for more information.</para>
+    </section>
+
+    <section>
+      <title>File Manager Utility</title>
+
+      <para>You can now manage empirical data updates using a Python file
+      manager. The utility allows you to easily update leap second, EOP, space
+      weather, and other files and optionally archive old versions. See the
+      <link linkend="ConfiguringGmat_DataFiles">Configuring GMAT Data
+      Files</link> section for more information. When you run the the utility,
+      you will see output like that shown below (the data below is only a
+      partial summary of the output).</para>
+
+      <programlisting>--------UPDATING GMAT LEAP SECOND FILE ------------------------------
+Process Began At 2017-06-01-11:23:55
+--------Downloading tai-utc.dat
+tai-utc.dat downloaded successfully 
+tai-utc.dat archived successfully to 2017-06-01-11h23m55s_tai-utc.dat
+tai-utc.dat updated successfully
+Process Finished At 2017-06-01-11:23:55
+
+--------UPDATING GMAT EOP FILE --------------------------------
+Process Began At 2017-06-01-11:23:55
+--------Downloading eopc04_08.62-now
+eopc04_08.62-now downloaded successfully 
+eopc04_08.62-now archived successfully to 
+                          2017-06-01-11h23m57s_eopc04_08.62-now
+eopc04_08.62-now updated successfully
+
+---------UPDATING SPICE LEAP SECOND FILE -----------------------
+Process Began At 2017-06-01-11:23:57
+--------Downloading naif0011.tls
+SPICELeapSecondKernel.tls downloaded successfully
+--------Downloading naif0012.tls
+SPICELeapSecondKernel.tls downloaded successfully
+SPICELeapSecondKernel.tls archived successfully to 
+                      2017-06-01-11h24m00s_SPICELeapSecondKernel.tls
+SPICELeapSecondKernel.tls updated successfully
+Process Finished At 2017-06-01-11:24:00
+</programlisting>
+    </section>
+
+    <section>
+      <title>Collocation Stand Alone Library and Toolkit (CSALT)</title>
+
+      <para>GMAT now has a stand alone C++ library for solving optimal control
+      problems via collocation (CSALT). The library is well tested and
+      available for applications, and is currently undergoing integration into
+      GMAT. The CSALT library is not exposed via GMAT interfaces, but users
+      who are familiar with C++ programming can solve optimal control problems
+      with CSALT now. The source code will be made available via SourceForge.
+      CSALT integration into GMAT is underway and planned for completion in
+      the next GMAT release. For more information on the CSALT Library see the
+      paper entitled
+      <literal>CSALT_CollocationBenchmarkingResults.pdf</literal> in the docs
+      folder of the GMAT distribution.</para>
+    </section>
+
+    <section>
+      <title>Preliminary API Interface</title>
+
+      <para>A preliminary API is under development. The API is not available
+      in the production release and is distributed separately on SourceForge
+      in packages with the name "Alpha" in the title. The API employs SWIG to
+      expose GMAT to several languages. Preliminary testing has been performed
+      on the JAVA interface called from MATLAB. The code snippet below
+      illustrates how to call through the JAVA interface from MATLAB to
+      compute orbital accelerations on a spacecraft. Some testing of the
+      Python binding as also been performed.</para>
+
+      <programlisting>% Load GMAT
+scriptFileName = fullfile(pwd, 'gmat.script');
+[myMod, gmatBinPath, result] = load_gmat(scriptFileName);
+
+% Get the SolarSystem object from GMAT
+ss = myMod.GetDefaultSolarSystem();
+
+% Prepare the force model to be used for dynamics
+fm = myMod.GetODEModel('DefaultProp_ForceModel');
+state = gmat.GmatState(6+6^2);
+fm.SetSolarSystem(ss); % Set solar system pointer in force model
+fm.SetState(state); % Provide force model with the state placeholder
+
+% Create new Spacecraft
+sat = gmat.Spacecraft('Sat'); 
+
+% Create PropagationStateManager to manage calculation of derivatives
+propManager = gmat.PropagationStateManager();
+propManager.SetObject(sat); % Add sat PropagationStateManager
+propManager.SetProperty('AMatrix', sat); % Want to calculate Jacobian
+propManager.BuildState(); 
+
+% Tell force model to use propmanager
+fm.SetPropStateManager(propManager);
+fm.UpdateInitialData(); % Update model with changes
+fm.BuildModelFromMap(); % Sets up the models in the force model
+state = gmat.gmat.convertJavaDoubleArray(x(:,tIndex));
+
+% Compute the orbital accelerations including variational terms
+fm.GetDerivatives(state, t(tIndex), 1); % Calculate derivatives
+deriv = fm.GetDerivativeArray(); % Get calculated derivatives
+derivArray = gmat.gmat.convertDoubleArray(deriv, 42);
+
+</programlisting>
+    </section>
+  </section>
+
+  <section>
+    <title>Improvements</title>
+
+    <itemizedlist spacing="compact">
+      <listitem>
+        <para>You can now define the name and location of the gmat startup and
+        log file via the command line interface. This is useful when running
+        multiple GMAT sessions simultaneously or when you have complex, custom
+        file configurations.</para>
+      </listitem>
+
+      <listitem>
+        <para>You can now write STK ephem files with units in meters
+        (previously, only km was supported).</para>
+      </listitem>
+
+      <listitem>
+        <para>You can now write STK ephem files without discrete event
+        boundaries.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Compatibility Changes</title>
+
+    <itemizedlist>
+      <listitem>
+        <para>GMAT now requires Python version 3.6.x.</para>
+      </listitem>
+
+      <listitem>
+        <para>Schatten files no longer require the "PREDICTED SOLAR DATA"
+        keyword at the top of the file.</para>
+      </listitem>
+
+      <listitem>
+        <para>The names and locations of several data files used by GMAT are
+        no longer hard coded and their names and locations are set in the file
+        <filename>gmat_startup_file.txt</filename> located in the
+        <filename>bin</filename> directory. If you use custom startup files,
+        you MUST add the lines below to your startup file before GMAT will
+        start. Note that the startup files distributed with GMAT have these
+        lines added. This backwards compatiblity issue only affects users who
+        customize their startup file.</para>
+
+        <programlisting><?db-font-size 75% ?>EARTH_LATEST_PCK_FILE    = PLANETARY_COEFF_PATH/earth_latest_high_prec.bpc
+EARTH_PCK_PREDICTED_FILE = PLANETARY_COEFF_PATH/SPICEEarthPredictedKernel.bpc
+EARTH_PCK_CURRENT_FILE   = PLANETARY_COEFF_PATH/SPICEEarthCurrentKernel.bpc
+LUNA_PCK_CURRENT_FILE    = PLANETARY_COEFF_PATH/SPICELunaCurrentKernel.bpc
+LUNA_FRAME_KERNEL_FILE   = PLANETARY_COEFF_PATH/SPICELunaFrameKernel.tf
+</programlisting>
+      </listitem>
+
+      <listitem>
+        <para>The syntax for navigation functionality has been significantly
+        changed for consistency throughout the system. See the <emphasis
+        role="bold">Deprecated Measurement Type Names</emphasis> section of
+        the <link linkend="TrackingDataTypes">Tracking Data Types for
+        OD</link> Help for more details.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>GMAT Stuff</title>
+
+    <para>Don't forget you can purchase clothing and other items with the GMAT
+    logo via ©Land's End, Inc at the <link
+    xlink:href="http://ocs.landsend.com/cd/frontdoor?store_name=nasagsfc&amp;store_type=3">GSFC
+    Store</link> . Once, you've chosen an item, make sure to select the GMAT
+    logo!</para>
+
+    <informalfigure>
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="files/images/relnotes/r2015a/SWAG.png"
+                       scale="60"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </informalfigure>
+  </section>
+
+  <section>
+    <title>Known &amp; Fixed Issues</title>
+
+    <para>Over 70 bugs were closed in this release. See the <link
+    xlink:href="http://bugs.gmatcentral.org/issues/?filter=13900">"Critical
+    Issues Fixed in R2017a" report</link> for a list of critical bugs and
+    resolutions in R2017a. See the <link
+    xlink:href="http://bugs.gmatcentral.org/issues/?filter=13901">"Minor
+    Issues Fixed for R2017a" report</link> for minor issues addressed in
+    R2017a.</para>
+
+    <section>
+      <title>Known Issues</title>
+
+      <para>All known issues that affect this version of GMAT can be seen in
+      the <link
+      xlink:href="http://bugs.gmatcentral.org/issues/?filter=13902">"Known
+      Issues in R2017a" report</link> in JIRA.</para>
+
+      <para>There are several known issues in this release that we consider to
+      be significant:<informaltable frame="topbot">
+          <tgroup cols="2">
+            <colspec colnum="1" colwidth="0.2*"/>
+
+            <thead>
+              <row>
+                <entry align="left">ID</entry>
+
+                <entry align="left">Description</entry>
+              </row>
+            </thead>
+
+            <tbody>
+              <row>
+                <entry><link
+                xlink:href="http://li64-187.members.linode.com:8080/browse/GMT-5269">GMT-5269</link></entry>
+
+                <entry>Atmosphere model affects propagation at GEO.</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://li64-187.members.linode.com:8080/browse/GMT-2561">GMT-2561</link></entry>
+
+                <entry>UTC Epoch Entry and Reporting During Leap Second is
+                incorrect.</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://li64-187.members.linode.com:8080/browse/GMT-3043">GMT-3043</link></entry>
+
+                <entry>Inconsistent validation when creating variables that
+                shadow built-in math functions</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://li64-187.members.linode.com:8080/browse/GMT-3289">GMT-3289</link></entry>
+
+                <entry>First step algorithm fails for backwards propagation
+                using SPK propagator</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://li64-187.members.linode.com:8080/browse/GMT-3350">GMT-3350</link></entry>
+
+                <entry>Single-quote requirements are not consistent across
+                objects and modes</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://li64-187.members.linode.com:8080/browse/GMT-3669">GMT-3669</link></entry>
+
+                <entry>Planets not drawn during optimization in
+                OrbitView</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://li64-187.members.linode.com:8080/browse/GMT-3738">GMT-3738</link></entry>
+
+                <entry>Cannot set standalone FuelTank, Thruster fields in
+                CallMatlabFunction</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://bugs.gmatcentral.org/browse/GMT-4520">GMT-4520</link></entry>
+
+                <entry>Unrelated script line in Optimize changes results
+                (causes crash)</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://bugs.gmatcentral.org/browse/GMT-4398">GMT-4398</link></entry>
+
+                <entry>Coordinate System Fixed attitudes are held constant in
+                SPAD SRP model during a propagation step</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://bugs.gmatcentral.org/browse/GMT-5600">GMT-5600</link></entry>
+
+                <entry>Numerical Issues when calculating the Observation
+                Residuals</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://bugs.gmatcentral.org/browse/GMT-6040">GMT-6040</link></entry>
+
+                <entry>Correct the code for the RunSimulator and RunEstimator
+                commands so that they respect the scripted propagator
+                settings</entry>
+              </row>
+
+              <row>
+                <entry><link
+                xlink:href="http://bugs.gmatcentral.org/browse/GMT-5881">GMT-5881</link></entry>
+
+                <entry>Error in Ionosphere modeling</entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable></para>
+    </section>
+  </section>
+</section>

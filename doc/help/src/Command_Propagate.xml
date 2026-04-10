@@ -1,0 +1,1295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="Propagate"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>Propagate</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Propagate</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Commands</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Propagate</refname>
+
+    <refpurpose>Propagates spacecraft to a requested stopping
+    condition</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Script Syntax</title>
+
+    <para>The <guilabel>Propagate</guilabel> command is a complex command that
+    supports multiple <guilabel>Propagators</guilabel>, multiple
+    <guilabel>Spacecraft</guilabel>, and multiple stopping conditions. In the
+    syntax definition below, <literal>SatList</literal> is a comma separated
+    list of spacecraft and <literal>StopList</literal> is a comma separated
+    list of stopping conditions. The general syntax of the
+    <guilabel>Propagate</guilabel> command is:</para>
+
+    <synopsis>
+<literal>Propagate</literal> [Mode] [BackProp] <replaceable>Propagator1Name</replaceable>(<replaceable>SatList1</replaceable>,{<replaceable>StopList1</replaceable>})...
+                 <replaceable>Propagator2Name</replaceable>(<replaceable>SatList2</replaceable>,{<replaceable>StopList2</replaceable>}
+
+or
+
+<literal>Propagate</literal> [Mode] [BackProp] <replaceable>Propagator1Name</replaceable>(<replaceable>SatList1</replaceable>)...
+                 <replaceable>Propagator2Name</replaceable>(<replaceable>SatList2</replaceable>){<replaceable>StopList</replaceable>}
+    </synopsis>
+
+    <para>Most applications propagate a single
+    <guilabel>Spacecraft</guilabel>, forward, to a single stopping condition.
+    In that case, the syntax simplifies to:</para>
+
+    <synopsis>
+<literal>Propagate</literal> <replaceable>PropagatorName</replaceable>(<replaceable>SatName</replaceable>,{<replaceable>StopCond</replaceable>});
+
+or
+
+<literal>Propagate</literal> <replaceable>PropagatorName</replaceable>(<replaceable>SatName</replaceable>){<replaceable>StopCond</replaceable>};
+    </synopsis>
+
+    <para>In GMAT, syntax for setting orbit color on a
+    <guilabel>Propagate</guilabel> command for a single
+    <guilabel>Spacecraft</guilabel> propagating forward to a single stopping
+    condition can be done by either identifying orbit color through ColorName
+    or via RGB triplet value:</para>
+
+    <synopsis>
+<literal>Propagate</literal> <replaceable>PropagatorName</replaceable>(<replaceable>SatName</replaceable>),{<replaceable>StopCond, OrbitColor = ColorName</replaceable>};
+
+or
+
+<literal>Propagate</literal> <replaceable>PropagatorName</replaceable>(<replaceable>SatName</replaceable>),{<replaceable>StopCond, OrbitColor = [RGB triplet value]</replaceable>};
+    </synopsis>
+  </refsynopsisdiv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The <guilabel>Propagate</guilabel> command controls the time
+    evolution of spacecraft. GMAT allows you to propagate single
+    <guilabel>Spacecraft</guilabel>, multiple non-cooperative
+    <guilabel>Spacecraft</guilabel>, and <guilabel>Formations</guilabel> in a
+    single <guilabel>Propagate</guilabel> command. The
+    <guilabel>Propagate</guilabel> command is complex and controls the
+    following aspects of the temporal modeling of spacecraft:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>The <guilabel>Spacecraft</guilabel> to be propagated</para>
+      </listitem>
+
+      <listitem>
+        <para>The model(s) used for the propagation (numerical integration,
+        ephemeris interpolation)</para>
+      </listitem>
+
+      <listitem>
+        <para>The condition(s) to be satisfied at the termination of
+        propagation</para>
+      </listitem>
+
+      <listitem>
+        <para>The direction of propagation (forwards or backwards in
+        time)</para>
+      </listitem>
+
+      <listitem>
+        <para>The time synchronization of multiple
+        <guilabel>Spacecraft</guilabel></para>
+      </listitem>
+
+      <listitem>
+        <para>Propagation of STM and computation of state Jacobian
+        (A-matrix)</para>
+      </listitem>
+
+      <listitem>
+        <para>Setting unique colors on different
+        <guilabel>Spacecraft</guilabel> trajectory segments through
+        <guilabel>Propagate</guilabel> commands</para>
+      </listitem>
+    </itemizedlist>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="Propagator"/>, <xref linkend="Spacecraft"/>, <xref
+    linkend="Formation"/>, <xref linkend="Color"/></para>
+  </refsection>
+
+  <refsection xml:id="Propagate_Options">
+    <title>Options</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.0*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Option</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>Mode</guilabel></entry>
+
+            <entry><para>Optional flag to time-synchronize propagation of
+            <guilabel>Spacecraft</guilabel> performed by multiple
+            <guilabel>Propagators</guilabel> in a single
+            <guilabel>Propagate</guilabel> command. See <xref
+            linkend="Propagate_Remarks"/> for more details. </para>
+            <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>Synchronized </guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Not used</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>BackProp</guilabel></entry>
+
+            <entry><para> Optional flag to propagate all
+            <guilabel>Spacecraft</guilabel> in a
+            <guilabel>Propagate</guilabel> command backwards in time. </para>
+            <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>BackProp</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Not used</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>StopList</guilabel></entry>
+
+            <entry><para>A comma separated list of stopping conditions.
+            Stopping conditions must be parameters of propagated
+            <guibutton>Spacecraft</guibutton> in
+            <guibutton>SatList</guibutton>. See <xref
+            linkend="Propagate_Remarks"/> for more details. </para>
+            <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>Reference array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid list of stopping conditions</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>ElapsedSecs = 12000</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SatList</guilabel></entry>
+
+            <entry><para> A comma separated list of
+            <guilabel>Spacecraft</guilabel>. For SPK type
+            <guilabel>Propagators</guilabel>, the
+            <guilabel>Spacecraft</guilabel> must be configured with valid SPK
+            kernels. </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>Resource array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid list of spacecraft and/or formations</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>DefaultSC</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>yes</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>PropagatorName</guilabel></entry>
+
+            <entry><para> A propagator name. </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>Propagator</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid <guilabel>Propagator</guilabel> name</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>DefaultProp</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>yes</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>StopTolerance</guilabel></entry>
+
+            <entry><para> Tolerance on the stopping condition root location.
+            See <xref linkend="Propagate_Remarks"/> for more details. </para>
+            <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real number &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0.0000001</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>STM</guilabel></entry>
+
+            <entry><para> Optional flag to propagate the orbit STM. STM
+            propagation only occurs for numerical integrator type propagators.
+            </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>STM</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Not used</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>AMatrix</guilabel></entry>
+
+            <entry><para> The Jacobian of the orbital acceleration. The
+            partial of the first order acceleration vector with respect to the
+            state vector.</para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>AMatrix</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Not used</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Covariance</guilabel></entry>
+
+            <entry><para> Optional flag to propagate the orbit Covariance.
+            Covariance propagation only occurs for numerical integrator type
+            propagators. Selecting this option will also propagate the STM.
+            </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>Covariance</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Not used</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>OrbitColor</guilabel></entry>
+
+            <entry><para>Sets orbit color on a <guilabel>Propagate</guilabel>
+            command. Default color on <guilabel>Propagate</guilabel> segment
+            is seeded from color that is set on
+            <guilabel>Spacecraft.OrbitColor</guilabel> field. To set unique
+            colors on <guilabel>Propagate</guilabel> command in script mode:
+            Enter ColorName or RGB triplet value for the color of your choice.
+            In GUI mode, select unique color of your choice on the
+            <guilabel>Propagate</guilabel> command by clicking on Orbit Color
+            Selectbox. For Example: Setting yellow color on
+            <guilabel>Propagate</guilabel> segment in script mode can be done
+            in either of the following two ways: <literal>Propagate
+            DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis, OrbitColor =
+            Yellow}</literal> or <literal>Propagate DefaultProp(DefaultSC)
+            {DefaultSC.Earth.Apoapsis, OrbitColor = [255 255
+            0]}</literal>.</para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>Integer Array or String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any color available from the Orbit Color Picker in
+                    GUI. Valid predefined color name or RGB triplet value
+                    between 0 and 255.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Default color on <guilabel>Propagate</guilabel>
+                    command is color that is first set on
+                    <guilabel>Spacecraft.OrbitColor</guilabel> field. Default
+                    color on <guilabel>Spacecraft.OrbitColor</guilabel> is
+                    Red. Therefore default color for
+                    <guilabel>Propagate</guilabel> command is Red.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <refsection xml:id="Propagate_GUI_Introduction">
+      <title>Introduction</title>
+
+      <para>The <guilabel>Propagate</guilabel> command GUI provides an
+      interface to assign <guilabel>Spacecraft</guilabel> to
+      <guilabel>Propagators</guilabel> used for propagation and to define a
+      set of conditions to terminate propagation. The GUI also allows you to
+      define the direction of propagation, the synchronization mode for
+      multiple spacecraft, and whether or not to propagate the STM and compute
+      the A-Matrix.</para>
+
+      <para>To follow the examples below, you can load the following script
+      snippet or create a new mission with three spacecraft (named
+      <guilabel>sat1</guilabel>, <guilabel>sat2</guilabel>, and
+      <guilabel>sat3</guilabel>) and two propagators (named
+      <guilabel>prop1</guilabel> and <guilabel>prop2</guilabel>).</para>
+
+      <programlisting><code>Create Spacecraft sat1 sat2 sat3
+Create Propagator prop1 prop2
+BeginMissionSequence</code>r</programlisting>
+    </refsection>
+
+    <refsection>
+      <title>Defining Spacecraft and Propagators</title>
+
+      <para>To demonstrate how to define a set of propagators and
+      <guilabel>Spacecraft</guilabel> for propagation, you will set up a
+      <guilabel>Propagate</guilabel> command to propagate a
+      <guilabel>Spacecraft</guilabel> named <guilabel>sat1</guilabel> using a
+      <guilabel>Propagator</guilabel> named <guilabel>prop1</guilabel> and
+      <guilabel>Spacecraft</guilabel> named <guilabel>sat2</guilabel> and
+      <guilabel>sat3</guilabel> using a <guilabel>Propagator</guilabel> named
+      <guilabel>prop2</guilabel>. You will configure the command to propagate
+      for 1 day or until <guilabel>sat2</guilabel> reaches periapsis,
+      whichever happens first. You will need to configure GMAT as described in
+      the <xref linkend="Propagate_GUI_Introduction"/> section and add a new
+      <guilabel>Propagate</guilabel> command to your mission sequence. GMAT
+      auto-populates the <guilabel>Propagate</guilabel> command GUI with the
+      first <guilabel>Propagator</guilabel> in the GUI list and the first
+      <guilabel>Spacecraft</guilabel> when you add a new
+      <guilabel>Propagate</guilabel> command so you should start from this
+      point.</para>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Command_Propagate_GUI_1A.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+
+      <para>To add a second <guilabel>Propagator</guilabel> to propagate
+      <guilabel>sat2</guilabel> and <guilabel>sat3</guilabel> using
+      <guilabel>prop2</guilabel>:</para>
+
+      <orderedlist>
+        <listitem>
+          <para>In the <guilabel>Propagator</guilabel> list, click the
+          ellipsis button in the second row to open the <guilabel>Propagator
+          Select Dialog</guilabel>.</para>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center" contentdepth="100%"
+                           fileref="files/images/Command_Propagate_GUI_2.png"
+                           scalefit="1" width="100%"/>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>Available Propagators</guilabel> list, click
+          on <guilabel>prop2</guilabel>, and click
+          <guilabel>OK</guilabel>.</para>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>Spacecraft</guilabel><guilabel>
+          List</guilabel>, click the ellipsis button in the second row to open
+          the <guilabel>Space Object Select</guilabel> dialog.</para>
+        </listitem>
+
+        <listitem>
+          <para>Click the right-arrow twice to add <guilabel>sat2</guilabel>
+          and <guilabel>sat3</guilabel> to the list of selected spacecraft and
+          click <guilabel>Ok</guilabel>.</para>
+        </listitem>
+      </orderedlist>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Command_Propagate_GUI_3A.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </refsection>
+
+    <refsection>
+      <title>Stopping conditions</title>
+
+      <para>Continuing with the example above, now you will configure GMAT to
+      propagate for one elapsed day or until <guilabel>sat2</guilabel> reaches
+      periapsis.</para>
+
+      <orderedlist>
+        <listitem>
+          <para>In the <guilabel>Parameter</guilabel> list, click the ellipsis
+          button in the first row to bring up the <guilabel>Parameter Select
+          Dialog</guilabel>.</para>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>ObjectProperties</guilabel> list, double
+          click <guilabel>ElapsedDays</guilabel>, and click<guilabel>
+          OK</guilabel>.</para>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center" contentdepth="100%"
+                           fileref="files/images/Command_Propagate_GUI_4.png"
+                           scalefit="1" width="100%"/>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>Condition</guilabel> list, double click the
+          first row containing <literal>12000</literal>, type
+          <literal>1</literal>, and click OK.</para>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>Parameter</guilabel> list, click the ellipsis
+          button in the second row to bring up the <guilabel>Parameter Select
+          Dialog</guilabel>.</para>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>Object</guilabel> list, click
+          <guilabel>Sat2</guilabel>.</para>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>ObjectProperties</guilabel> list, double
+          click <guilabel>Periapsis</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </listitem>
+      </orderedlist>
+
+      <para>The <guilabel>Propagate1</guilabel> dialog should now look like
+      the image below.</para>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Command_Propagate_GUI_5A.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+
+      <para/>
+    </refsection>
+  </refsection>
+
+  <refsection xml:id="Propagate_Remarks">
+    <title>Remarks</title>
+
+    <refsection xml:id="Propagate_Remarks_Introduction">
+      <title>Introduction</title>
+
+      <para>The <guilabel>Propagate</guilabel> command documentation below
+      describes how to propagate single and multiple
+      <guilabel>Spacecraft</guilabel> to desired conditions forward and
+      backwards in time. To streamline the script examples, the objects
+      <guilabel>numSat</guilabel>, <guilabel>spkSat</guilabel>,
+      <guilabel>numProp</guilabel>, and <guilabel>spkProp</guilabel> are
+      assumed to be configured as shown below. GMAT is distributed with the
+      SPK kernels used in the examples.</para>
+
+      <programlisting><code>Create Spacecraft spkSat;
+spkSat.Epoch.UTCGregorian   = '02 Jun 2004 12:00:00.000'
+spkSat.NAIFId               = -123456789;
+spkSat.OrbitSpiceKernelName = {'..\data\vehicle\ephem\spk\GEOSat.bsp'};
+
+Create Spacecraft numSat
+numSat.Epoch.UTCGregorian = '02 Jun 2004 12:00:00.000'
+
+Create Propagator spkProp;
+spkProp.Type       = SPK;
+spkProp.StartEpoch = FromSpacecraft
+
+Create Propagator numProp
+numProp.Type = PrinceDormand78
+
+BeginMissionSequence</code></programlisting>
+    </refsection>
+
+    <refsection>
+      <title>How to Propagate a Single Spacecraft</title>
+
+      <para><literal>Note:</literal> See the <xref
+      linkend="Propagate_Remarks_Introduction"/> section for a script snippet
+      to configure GMAT to execute the examples in this section.</para>
+
+      <para>The <guilabel>Propagate</guilabel> command provides a simple
+      interface to propagate a <guilabel>Spacecraft</guilabel> to a stopping
+      condition or to take a single propagation step. To propagate a single
+      <guilabel>Spacecraft</guilabel> you must specify the desired
+      <guilabel>Propagator</guilabel>, the <guilabel>Spacecraft</guilabel> to
+      propagate, and if desired, the stopping condition. The
+      <guilabel>Propagate</guilabel> command supports numerical integrator and
+      ephemeris type propagators. For single <guilabel>Spacecraft</guilabel>
+      propagation, the syntax is the same regardless of propagator type. For
+      example, to propagate a <guilabel>Spacecraft</guilabel> using a
+      numerical integrator, you can use the following script snippet:</para>
+
+      <programlisting><code>Propagate numProp(numSat){numSat.Periapsis}
+% or
+Propagate numProp(numSat,{numSat.Periapsis})</code></programlisting>
+
+      <para>To propagate a single <guilabel>Spacecraft</guilabel> using a
+      <guilabel>Propagato</guilabel>r configured to use an SPK kernel use the
+      following:</para>
+
+      <programlisting><code>Propagate spkProp(spkSat){spkSat.TA = 90}
+% or
+Propagate spkProp(spkSat,{spkSat.TA = 90})</code></programlisting>
+
+      <para>To take a single propagation step, simply omit the stopping
+      conditions as shown below. The <guilabel>Propagator</guilabel> will take
+      a step based on its step size control algorithm. See the <xref
+      linkend="Propagator"/> documentation for more information on step size
+      control.</para>
+
+      <programlisting><code>Propagate numProp(numSat)
+% or
+Propagate spkProp(spkSat) </code></programlisting>
+    </refsection>
+
+    <refsection>
+      <title>How to Propagate Multiple Spacecraft</title>
+
+      <para>The <guilabel>Propagate</guilabel> command allows you to propagate
+      multiple <guilabel>Spacecraft</guilabel> by including a list of
+      <guilabel>Spacecraft</guilabel> in a single
+      <guilabel>Propagator</guilabel>, by including a
+      <guilabel>Formation</guilabel> in a <guilabel>Propagator</guilabel>,
+      and/or by including multiple <guilabel>Propagators</guilabel> in a
+      single command. For example purposes, here is a script snippet that
+      propagates multiple <guilabel>Spacecraft</guilabel>.</para>
+
+      <programlisting><code>Propagate Synchronized Prop1(Sat1,Sat2) Prop2(Sat3,Sat4)...
+Prop3(aFormation){Sat1.Earth.Periapsis}</code></programlisting>
+
+      <para>In the script line above <guilabel>Sat1</guilabel> and
+      <guilabel>Sat2</guilabel> are propagated using
+      <guilabel>Prop1</guilabel>; <guilabel>Prop2</guilabel> is used to
+      propagate <guilabel>Sat3</guilabel> and <guilabel>Sat4</guilabel>; all
+      <guilabel>Spacecraft</guilabel> added to <guilabel>aFormation</guilabel>
+      are propagated using<guilabel> Prop3</guilabel>. The
+      <guilabel>Propagate</guilabel> command configured above propagates all
+      <guilabel>Spacecraft</guilabel> until <guilabel>Sat1</guilabel> reaches
+      Earth periapsis.</para>
+
+      <para>All <guilabel>Spacecraft</guilabel> propagated by the same
+      <guilabel>Propagator</guilabel> are time synchronized during
+      propagation. By time synchronization, we mean that all
+      <guilabel>Spacecraft</guilabel> are propagated across the same time
+      step. The <guilabel>Synchronized</guilabel> keyword tells GMAT to keep
+      <guilabel>Spacecraft</guilabel> propagated by different
+      <guilabel>Propagators</guilabel> synchronized in time during
+      propagation. Time synchronization among multiple
+      <guilabel>Propagators</guilabel> is performed by taking a single step
+      for all <guilabel>Spacecraft</guilabel> controlled by the first
+      <guilabel>Propagator</guilabel> (<guilabel>Prop1</guilabel> in the above
+      example), and then stepping all other <guilabel>Propagators</guilabel>
+      to that time. When the <guilabel>Synchronized</guilabel> keyword is
+      omitted, <guilabel>Spacecraft</guilabel> propagated by different
+      <guilabel>Propagators</guilabel> are not synchronized in time. In that
+      case, each <guilabel>Propagator</guilabel> takes steps determined by its
+      step size control algorithm without regard to the other
+      <guilabel>Propagators</guilabel> in the <guilabel>Propagate</guilabel>
+      command. Time synchronization is particularly useful if you need
+      ephemeris files for multiple spacecraft with consistent time tags, or if
+      you are visualizing multiple spacecraft in an
+      <guilabel>OrbitView</guilabel>.</para>
+
+      <warning>
+        <para>Caution: When using a <guilabel>Propagator</guilabel> configured
+        to use SPK kernels, you can only have one
+        <guilabel>Spacecraft</guilabel> per
+        <guilabel>Propagator</guilabel>.</para>
+
+        <para>This is supported: <literal/></para>
+
+        <para><literal>Propagate numProp(numSat) spkProp(spkSat1)
+        spkProp(spkSat2)</literal></para>
+
+        <para>This is NOT supported!</para>
+
+        <para><literal>Propagate numProp(numSat)
+        spkProp(spkSat1,spkSat2)</literal></para>
+      </warning>
+    </refsection>
+
+    <refsection>
+      <title>Behavior of Stopping Conditions</title>
+
+      <para>GMAT allows you to define a set of stopping conditions when
+      propagating <guilabel>Spacecraft</guilabel> that define conditions that
+      must be satisfied at the termination of the
+      <guilabel>Propagate</guilabel> command. For example, it is often useful
+      to propagate to an orbital location such as Apogee. When no stopping
+      condition is provided, the <guilabel>Propagate</guilabel> command takes
+      a single step. When given a set of stopping conditions, the
+      <guilabel>Propagate</guilabel> command propagates the
+      <guilabel>Spacecraft </guilabel>to the condition that occurs first in
+      elapsed propagation time and terminates propagation. There are several
+      ways to define stopping conditions via the script interface. One is to
+      include a comma separated list of stopping conditions with each
+      <guilabel>Propagator</guilabel> like this.</para>
+
+      <programlisting><code>Propagate Prop1(Sat1,{Sat1.Periapsis}) Prop2(Sat2,{Sat2.Periapsis}) </code></programlisting>
+
+      <para>A second approach is to define a comma separated list of stopping
+      conditions at the end of the <guilabel>Propagate</guilabel> command like
+      this.</para>
+
+      <programlisting><code>Propagate Prop1(Sat1) Prop2(Sat2) {Sat1.Periapsis,Sat2.Periapsis}</code></programlisting>
+
+      <para>Note that the above two methods result in the same stopping epoch.
+      When you provide a set of stopping conditions, regardless of where in
+      the command the stopping condition is defined, GMAT builds a list of all
+      conditions and tracks them until the first condition occurs.</para>
+
+      <para>The <guilabel>Propagate</guilabel> command currently requires that
+      the left hand side of a stopping condition is a valid
+      <guilabel>Spacecraft</guilabel> parameter. For example, the first line
+      in the following example is supported and the second line is not
+      supported.</para>
+
+      <programlisting><code>Propagate Prop1(Sat1) {Sat1.TA = 45}  % Supported
+Propagate Prop1(Sat1) {45 = Sat1.TA}  % Not supported </code></programlisting>
+
+      <para>GMAT supports special built-in stopping conditions for apoapsis
+      and periapsis like this:</para>
+
+      <para><programlisting><code>Propagate Prop1(Sat1) {Sat1.Apoapsis}
+Propagate Prop1(Sat1) {Sat1.Mars.Periapsis} </code></programlisting>You can
+      define the tolerance on the stopping condition by including the
+      <guilabel>StopTolerance</guilabel> keyword in the
+      <guilabel>Propagate</guilabel> command as shown below. In this example,
+      GMAT will propagate until the true anomaly of <guilabel>Sat1</guilabel>
+      is 90 degrees to within +/- 1e-5 degrees.</para>
+
+      <programlisting><code>Propagate Prop1(Sat1) {Sat1.TA = 90, StopTolerance = 1e-5}</code></programlisting>
+
+      <warning>
+        <para>Caution: GMAT currently propagates
+        <guilabel>Spacecraft</guilabel> to a time quantization of a few
+        microseconds. Depending upon the rate of the stopping condition
+        function, it may not be possible to locate the stopping condition to
+        the requested <guilabel>StopTolerance</guilabel>. In that case, GMAT
+        throws a warning to alert you that the tolerance was not satisfied and
+        provides information on the achieved stopping value and the requested
+        tolerance.</para>
+
+        <para>Note: GMAT does not currently support tolerances on a per
+        stopping condition basis. If you include
+        <guilabel>StopTolerance</guilabel> multiple times in a single
+        <guilabel>Propagate</guilabel> command, GMAT uses the last value
+        provided.</para>
+      </warning>
+
+      <para>The <guilabel>Propagate</guilabel> command uses an algorithm
+      called the First Step Algorithm (FSA) when back-to-back propagations
+      occur and both propagations have at least one stopping condition that is
+      the same in both commands. For example:</para>
+
+      <programlisting><code>Propagate prop1(Sat1) {Sat1.TA = 90}
+Propagate prop1(Sat1) {Sat1.TA = 90, StopTolerance = 1e-4}</code></programlisting>
+
+      <para>The <guilabel>FSA</guilabel> determines the behavior of the first
+      step when the last propagation performed on a
+      <guilabel>Spacecraft</guilabel> was terminated using a stopping
+      condition listed in the current command. If the error in the stopping
+      condition at the initial epoch of the second
+      <guilabel>Propagate</guilabel> command is less than
+      SafetyFactor*<guilabel>StopTolerance</guilabel>, the propagate command
+      will take one integration step before attempting to locate the stopping
+      condition again. In the FSA, SafetyFactor = 10, and the
+      <guilabel>StopTolerance</guilabel> is from the second
+      <guilabel>Propagate</guilabel> command. Continuing with the example
+      above, if abs(TA_Achieved - TA_Desired) &lt; 1e-3 -- where TA_Achieved
+      is the TA after the first <guilabel>Propagate</guilabel> command and
+      TA_Desired is the requested value of TA in the second
+      <guilabel>Propagate</guilabel> command -- then the
+      <guilabel>Propagate</guilabel> command will take one step before
+      attempting to locate the stopping condition. The first step algorithm
+      works the same way for forward propagation, backwards propagation, and
+      changing propagation directions.</para>
+
+      <warning>
+        <para>Caution: It is possible to specify a
+        <guilabel>StopTolerance</guilabel> that cannot be satisfied by the
+        stopping condition root locators and in that case, a warning is
+        thrown. However, subsequent <guilabel>Propagate</guilabel> commands
+        using the same stopping conditions may not behave as desired. For the
+        FSA algorithm to work as designed, you must provide
+        <guilabel>StopTolerance</guilabel> values that are achievable.</para>
+      </warning>
+    </refsection>
+
+    <refsection>
+      <title>How to Propagate Backwards</title>
+
+      <para>To propagate backwards using the script interface, include the
+      keyword <guilabel>BackProp</guilabel> between the
+      <guilabel>Propagate</guilabel> command and the first
+      <guilabel>Propagator</guilabel> in the command as shown below. All
+      <guilabel>Propagators</guilabel> in the command will propagate
+      backwards.</para>
+
+      <programlisting><code>Propagate Synchronized BackProp Prop1(Sat1,Sat2) Prop2(Sat3,Sat4)...
+           Prop3(aFormation){Sat1.Earth.Periapsis}
+
+Propagate Backprop numProp(numSat){numSat.Periapsis}</code></programlisting>
+    </refsection>
+
+    <refsection>
+      <title>How to Propagate the STM, Covariance, and Compute the Jacobian
+      (A-matrix)</title>
+
+      <para>GMAT propagates the STM and Covariance for all
+      <guilabel>Spacecraft</guilabel> propagated using numerical integrators
+      by including the <literal>STM</literal> and
+      <literal>Covariance</literal> keyword in a
+      <guilabel>Propagate</guilabel> command as shown below. If the STM or
+      Covariance keyword is included anywhere in a
+      <guilabel>Propagate</guilabel> command, the STM and Covariance is
+      propagated for all spacecraft using numerical propagators. When
+      propagating multiple spacecraft with
+      <guilabel>ProcessNoiseModels</guilabel> assigned, each <emphasis
+      role="bold">ProcessNoiseModel</emphasis> must have the same value of the
+      <guilabel>UpdateTimeStep</guilabel> parameter.</para>
+
+      <programlisting><code>Propagate Backprop numProp(numSat, 'STM', 'Covariance') {numSat.Periapsis}</code></programlisting>
+
+      <para>GMAT does not currently support propagating the STM or Covariance
+      when propagating <guilabel>Formation</guilabel> resources or when using
+      ephemeris type propagators.</para>
+    </refsection>
+
+    <refsection>
+      <title>Special Considerations for Covariance Propagation</title>
+
+      <para>Covariance is propagated using a linearized model identical to
+      that employed in the Extended Kalman Filter resource. The initial
+      covariance is specified on the <guilabel>Spacecraft</guilabel>
+      <guilabel>OrbitErrorCovariance</guilabel> parameter. If no process noise
+      model is assigned to the spacecraft object, the covariance propagation
+      steps are the integrator steps and the initial covariance is propagated
+      without the inclusion of process noise. To include process noise in the
+      covariance propagation, define a <guilabel>ProcessNoiseModel</guilabel>
+      and assign it on the <guilabel>Spacecraft</guilabel>
+      <guilabel>ProcessNoiseModel</guilabel> parameter.</para>
+
+      <para>When process noise is included, the covariance propagation steps
+      depend on both the integrator step size and the
+      <guilabel>ProcessNoiseModel</guilabel>
+      <guilabel>UpdateTimeStep</guilabel> parameter. If UpdateTimeStep is set
+      to 0, the covariance propagation steps solely at the integration step
+      size. If UpdateTimeStep is non-zero, the UpdateTimeSteps form a grid of
+      stopping points for the integrator. Propagation of the state and
+      covariance will proceed to each UpdateTimeStep stopping point using the
+      integrator step size setting. In particular, for example, if
+      UpdateTimeStep is smaller than the integrator step size, the integrator
+      will step at only the UpdateTimeStep intervals. If UpdateTimeStep is
+      larger than the integration step size, the integrator will step to each
+      UpdateTimeStep stopping point at steps equal to, or smaller than the
+      integrator step size, depending on the difference between the current
+      propagation epoch and the next stopping point.</para>
+
+      <para>No consider parameters are currently implemented for covariance
+      propagation. GMAT will only propagate the 6x6 position/velocity
+      covariance. Covariance propagation is currently only allowed when
+      specifying the initial state and initial
+      <guilabel>OrbitErrorCovariance</guilabel> in a reference frame using
+      J2000Eq axes.</para>
+    </refsection>
+
+    <refsection>
+      <title>Limitations of the Propagate Command</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>When using an SPK-type <guilabel>Propagator</guilabel>, only a
+          single <guilabel>Spacecraft</guilabel> can be propagated by a given
+          <guilabel>Propagator</guilabel>.</para>
+        </listitem>
+
+        <listitem>
+          <para>GMAT does not currently support propagating the STM when
+          propagating <guilabel>Formation</guilabel> objects. Covariance
+          cannot be propagated for a Formation object.</para>
+        </listitem>
+
+        <listitem>
+          <para>When computing the A-matrix during propagation, the A-matrix
+          values are only accessible via the C-Interface.</para>
+        </listitem>
+      </itemizedlist>
+    </refsection>
+
+    <refsection>
+      <title>Setting Colors on the Propagate Command</title>
+
+      <para>GMAT allows you to assign unique colors to
+      <guilabel>Spacecraft</guilabel> trajectory segments by setting orbital
+      colors on each <guilabel>Propagate</guilabel> command. If you do not set
+      unique colors on each <guilabel>Propagate</guilabel> command, then by
+      default, the color on each propagate segment is seeded from color that
+      is set on <guilabel>Spacecraft.OrbitColor</guilabel> field. See the
+      <xref linkend="Propagate_Options" xrefstyle="select:title"/> section for
+      <guilabel>OrbitColor</guilabel> option that lets you set colors on the
+      <guilabel>Propagate</guilabel> command. Also see <xref linkend="Color"/>
+      documentation for discussion and examples on how to set unique colors on
+      orbital trajectory segments through GMAT's
+      <guilabel>Propagate</guilabel> command.</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Propagate a single <guilabel>Spacecraft </guilabel>to Earth
+      periapsis</para>
+
+      <programlisting><code>Create Spacecraft numSat
+numSat.Epoch.UTCGregorian = '02 Jun 2004 12:00:00.000'
+
+Create Propagator numProp
+numProp.Type = PrinceDormand78
+
+BeginMissionSequence
+
+Propagate numProp(numSat) {numSat.Earth.Periapsis}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Propagate a single <guilabel>Spacecraft</guilabel> for one
+      day.</para>
+
+      <programlisting><code>Create Spacecraft numSat
+numSat.Epoch.UTCGregorian = '02 Jun 2004 12:00:00.000'
+
+Create Propagator numProp
+numProp.Type = PrinceDormand78
+
+BeginMissionSequence
+
+Propagate numProp(numSat) {numSat.ElapsedDays = 1}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Propagate a single <guilabel>Spacecraft </guilabel>backwards to
+      true anomaly of 90 degrees.</para>
+
+      <programlisting><code>Create Spacecraft numSat
+numSat.Epoch.UTCGregorian = '02 Jun 2004 12:00:00.000'
+
+Create Propagator numProp
+numProp.Type = PrinceDormand78
+
+BeginMissionSequence
+
+Propagate BackProp numProp(numSat) {numSat.TA = 90}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Propagate two <guilabel>Spacecraft</guilabel>, each using a
+      different <guilabel>Propagator</guilabel>, but keep the
+      <guilabel>Spacecraft</guilabel> synchronized in time. Propagate until
+      either <guilabel>Spacecraft</guilabel> reaches a mean anomaly of 45
+      degrees.</para>
+
+      <programlisting>Create Spacecraft aSat1 aSat2
+aSat1.Epoch.UTCGregorian = '02 Jun 2004 12:00:00.000'
+aSat2.Epoch.UTCGregorian = '02 Jun 2004 12:00:00.000'
+aSat2.TA = 0;
+
+Create Propagator aProp1
+aProp1.Type = PrinceDormand78
+Create Propagator aProp2
+aProp2.Type = PrinceDormand78
+
+BeginMissionSequence
+
+Propagate Synchronized aProp1(aSat1) aProp2(aSat2) ...
+                      {aSat1.MA = 45,aSat2.MA = 45} 
+</programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

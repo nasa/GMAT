@@ -1,0 +1,166 @@
+%
+%  Ex_LunarOrbitStationKeeping
+%
+%  Stationkeeping maintaining a circular lunar orbit.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft LunaSat;
+
+LunaSat.DateFormat       = TAIModJulian;
+LunaSat.Epoch            = '21545';
+LunaSat.CoordinateSystem = MoonInertial;
+LunaSat.DisplayStateType = Keplerian;
+LunaSat.SMA              = 1851.000000000005;
+LunaSat.ECC              = 0.0009999999999749656;
+LunaSat.INC              = 15.33311977007591;
+LunaSat.RAAN             = 201.083353371649;
+LunaSat.AOP              = 167.2638606069433;
+LunaSat.TA               = 38.03104991952923;
+LunaSat.DryMass          = 850;
+LunaSat.Cd               = 2.2;
+LunaSat.Cr               = 1.8;
+LunaSat.ModelScale       = 0.08;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel MoonProp_ForceModel;
+
+MoonProp_ForceModel.CentralBody                     = Luna;
+MoonProp_ForceModel.PrimaryBodies                   = {Luna};
+MoonProp_ForceModel.PointMasses                     = {Earth, Jupiter, Sun};
+MoonProp_ForceModel.Drag                            = None;
+MoonProp_ForceModel.SRP                             = On;
+MoonProp_ForceModel.RelativisticCorrection          = Off;
+MoonProp_ForceModel.ErrorControl                    = RSSStep;
+MoonProp_ForceModel.GravityField.Luna.Degree        = 80;
+MoonProp_ForceModel.GravityField.Luna.Order         = 80;
+MoonProp_ForceModel.GravityField.Luna.PotentialFile = 'LP165P.cof';
+MoonProp_ForceModel.SRP.Flux                        = 1367;
+MoonProp_ForceModel.SRP.SRPModel                    = Spherical;
+MoonProp_ForceModel.SRP.Nominal_Sun                 = 149597870.691;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator MoonProp;
+
+MoonProp.FM                       = MoonProp_ForceModel;
+MoonProp.Type                     = PrinceDormand78;
+MoonProp.InitialStepSize          = 60;
+MoonProp.Accuracy                 = 9.999999999999999e-012;
+MoonProp.MinStep                  = 0.001;
+MoonProp.MaxStep                  = 2700;
+MoonProp.MaxStepAttempts          = 50;
+MoonProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn dv1;
+
+dv1.CoordinateSystem = Local;
+dv1.Origin           = Luna;
+dv1.Axes             = VNB;
+
+
+Create ImpulsiveBurn dv2;
+
+dv2.CoordinateSystem = Local;
+dv2.Origin           = Luna;
+dv2.Axes             = VNB;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MoonInertial;
+
+MoonInertial.Origin = Luna;
+MoonInertial.Axes   = BodyInertial;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DefaultDC;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.SolverIterations = Current;
+OFI_DefaultOrbitView.UpperLeft        = [ 0.4064705882352941 0.01856763925729443 ];
+OFI_DefaultOrbitView.Size             = [ 0.451764705882353 0.4509283819628647 ];
+OFI_DefaultOrbitView.RelativeZOrder   = 661;
+OFI_DefaultOrbitView.Maximized        = false;
+
+OFI_DefaultOrbitView.Add              = {LunaSat, Luna};
+OFI_DefaultOrbitView.View             = {DefaultOrbit_View};
+
+OFI_DefaultOrbitView.CoordinateSystem = MoonInertial;
+OFI_DefaultOrbitView.DrawObject       = [ true true ];
+OFI_DefaultOrbitView.DrawXYPlane      = [ false false ];
+OFI_DefaultOrbitView.DrawLabel        = [ true true ];
+OFI_DefaultOrbitView.DrawGrid         = [ false false ];
+
+OFI_DefaultOrbitView.Axes             = On;
+OFI_DefaultOrbitView.XYPlane          = On;
+OFI_DefaultOrbitView.EclipticPlane    = Off;
+OFI_DefaultOrbitView.EnableStars      = On;
+OFI_DefaultOrbitView.StarCount        = 40000;
+OFI_DefaultOrbitView.ShowPlot         = true;
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame           = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation  = On;
+DefaultOrbit_View.SetCurrentLocation  = Off;
+									  
+DefaultOrbit_View.DefaultEye          = [ 3500 3500 3500 ];
+DefaultOrbit_View.DefaultCenter       = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp           = [ 0 0 1 ];
+
+
+Create XYPlot XYPlot1;
+
+XYPlot1.UpperLeft      = [ 0.3858823529411765 0.4986737400530504 ];
+XYPlot1.Size           = [ 0.5229411764705882 0.4509283819628647 ];
+XYPlot1.RelativeZOrder = 656;
+XYPlot1.XVariable      = LunaSat.A1ModJulian;
+XYPlot1.YVariables     = {LunaSat.Luna.RadPer};
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+
+Create Variable I;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+For 'For I = 1:3' I = 1:1:3;
+   Propagate 'Prop to RMAG = 1785' MoonProp(LunaSat) {LunaSat.Luna.RMAG = 1825};
+   Target 'Raise Periapsis' DefaultDC {SolveMode = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+      Propagate 'Prop to Periapsis' MoonProp(LunaSat) {LunaSat.Luna.Periapsis};
+      Vary 'Vary dv1.V' DefaultDC(dv1.Element1 = 0.02, {Perturbation = 0.0001, Lower = -1, Upper = 1, MaxStep = 0.01, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      Vary 'Vary dv2.V' DefaultDC(dv2.Element1 = 0.02, {Perturbation = 0.0001, Lower = -1, Upper = 1, MaxStep = 0.01, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      Maneuver 'Apply dv1' dv1(LunaSat);
+      Propagate 'Prop to Apoapsis' MoonProp(LunaSat) {LunaSat.Luna.Apoapsis};
+      Achieve 'Achieve RMAG = 1850' DefaultDC(LunaSat.Luna.RMAG = 1850, {Tolerance = 0.1});
+      Maneuver 'Apply dv2' dv2(LunaSat);
+      Achieve 'Achieve ECC = 0' DefaultDC(LunaSat.Luna.ECC = 0, {Tolerance = .0001});
+   EndTarget;  % For targeter DefaultDC
+EndFor;
+Propagate 'Prop to RMAG = 1785' MoonProp(LunaSat) {LunaSat.Luna.RadPer = 1825};

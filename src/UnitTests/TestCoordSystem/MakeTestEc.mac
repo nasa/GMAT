@@ -1,0 +1,39 @@
+# Project: ConsoleApp
+# Author:  W. Shoan/MAB 2004.12.27
+
+PROJECT_ROOT    = ../..
+BINDIR	= $(PROJECT_ROOT)/bin
+LIBDIR	= $(PROJECT_ROOT)/lib
+INCDIR	= $(PROJECT_ROOT)/include
+INSTALLED_LIB	= $(LIBDIR)/libgmatbase.a	
+EXECUTABLE = $(BINDIR)/TestEcSystems
+
+TEST_FLAGS = -D__DEBUG__ -D__CONSOLE_APP__ -DDS_UNX
+
+# Source files for EXECUTABLE
+SRC	=  TestEcSystems.cpp
+#
+# LIB need to compile the EXECUTABLE  
+LIB	= -L$(LIBDIR)
+# How they are invoked on the compile  line
+LIBS	= -lgmatbase
+#
+# Define macro for using the included file
+INCMK = $(PROJECT_ROOT)/test/inc.mac
+include ${INCMK}
+#
+###############################################################################
+# Target defiitions
+#
+all: $(EXECUTABLE)
+
+$(EXECUTABLE): $(OBJ) $(INSTALLED_LIB) 
+	@if [ ! -x $(BINDIR) ]; then mkdir $(BINDIR); fi 
+	$(CPP) $(OBJ) $(LIB) $(LIBS) -o $@
+	@chmod -R 755 $(BINDIR)
+
+clean:
+	rm -f $(OBJ) core
+
+bare: clean
+	rm -f $(EXECUTABLE) 

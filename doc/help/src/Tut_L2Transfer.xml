@@ -1,0 +1,2137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="L2TransferwithSwingby"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>L2 Transfer with Swingby</title>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>The goal of this tutorial is to teach one to create and propagate a
+    transfer trajectory from a LEO (Low Earth Orbit) to the Sun-Earth
+    Lagrangian point L2. To this end, GMAT's tools called Control Logic and
+    the Bisection method will be used. You will learn how Equations and
+    Control Logic statements - namely, If, If Else, For, and While - can be
+    used to find the solution to this relatively complicated problem. Also
+    used will be the Toggle Action, the Report command, and multiple
+    viewpoints with different coordinate systems.</para>
+
+    <para>You can download the script file and run it beforehand to see the
+    final results of this tutorial: <link
+    xlink:href="scripts/LunarTransferToL2-tutorial.script">LunarTransferToL2-tutorial.script</link></para>
+
+    <section>
+      <title>Prerequisites</title>
+
+      <para></para>
+    </section>
+
+    <section>
+      <title>Mission Description</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Objective: Target a lunar transfer trajectory with several
+          initially undetermined variables, ending in an orbit about the
+          Sun-Earth Lagrangian point L2.</para>
+        </listitem>
+
+        <listitem>
+          <para>Assume:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Epoch = 01 Dec 2017 01:07:06.978</para>
+            </listitem>
+
+            <listitem>
+              <para>SMA = 6563.421890530317</para>
+            </listitem>
+
+            <listitem>
+              <para>ECC = 0.001999999999998943</para>
+            </listitem>
+
+            <listitem>
+              <para>INC = 28.68369284287025</para>
+            </listitem>
+
+            <listitem>
+              <para>RAAN = 263.0110331380764</para>
+            </listitem>
+
+            <listitem>
+              <para>AOP = 138.5702976742882</para>
+            </listitem>
+
+            <listitem>
+              <para>TA = 349.1878928421385</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Find:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>RAAN</para>
+            </listitem>
+
+            <listitem>
+              <para>AOP</para>
+            </listitem>
+
+            <listitem>
+              <para>value ΔV from LEO to achieve a given energy; value B·T
+              with respect to the Moon, required to achieve the given energy;
+              and value ΔV to place the spacecraft into an orbit about the
+              Sun-Earth Lagrangian point L2</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Resource Tree</title>
+
+    <para>For this tutorial, two spacecraft objects, two impulsive burns, and
+    24 variables are used to achieve an orbit about point L2. To realistically
+    account for the varying gravitational fields of the Sun, Earth, and Moon,
+    we will use two propagators. Six OpenGL plots will provide good views of
+    the spacecraft and its trajectory. Finally, three coordinate systems will
+    be used for an adequate representation of the mission events.</para>
+
+    <section>
+      <title>Objects Required</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft: InitSat and Sat</para>
+        </listitem>
+
+        <listitem>
+          <para>Impulsive Burns: TOI, P1, and P2</para>
+        </listitem>
+
+        <listitem>
+          <para>Solar System Special Points: EarthMoonBary and ESML2</para>
+        </listitem>
+
+        <listitem>
+          <para>Propagators NearEarthProp and NearMoonProp</para>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports: MoonView, EarthInertial, EarthView, EarthView,
+          AboveL2, and L2View</para>
+        </listitem>
+
+        <listitem>
+          <para>Variables/Arrays/Strings: YAmp, I, SMA, ECC, INC, TA, RAAN,
+          AOP, Epoch, EnergyError, Flow, FHigh, Prod, c, DesiredEnergy, Error,
+          B·T, LowerBound, UpperBound, LB, UB, BoxSize, LowerBoxSize, and
+          UpperBoxSize</para>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems: EarthMoonRot, EarthSunRotCS,
+          ESML2Centered, MoonInertial</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Creating and Modifying Objects</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add spacecraft Sat</para>
+            </listitem>
+
+            <listitem>
+              <para>Use the UTCGregorian epoch format</para>
+            </listitem>
+
+            <listitem>
+              <para>Use the Keplerian State Type</para>
+            </listitem>
+
+            <listitem>
+              <para>Under the Ballistic/Mass tab within the Spacecraft</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>DryMass = 831;</para>
+                </listitem>
+
+                <listitem>
+                  <para>Cd = 2.2;</para>
+                </listitem>
+
+                <listitem>
+                  <para>Cr = 1.3;</para>
+                </listitem>
+
+                <listitem>
+                  <para>DragArea = 20.438;</para>
+                </listitem>
+
+                <listitem>
+                  <para>SRPArea = 20.438;</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>Clone Sat and rename the new spacecraft InitSat. (Two
+              figures below show how the resulting windows of Sat properties
+              should look like.)</para>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: Sat Spacecraft Object-Orbit Tab</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_L2Transfer_SatSpacecraftObjectOrbitTab.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: Sat Spacecraft Object-Orbit Tab</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+
+          <screenshot>
+            <info>
+              <title>Figure: Sat Spacecraft Object-Ballistic/Mass Tab</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_L2Transfer_SatSpacecraftObjectBallisticMassTab.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: Sat Spacecraft Object-Ballistic/Mass Tab</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Burns</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>TOI:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>V=3.1 - this is roughly the amount of burn required to
+                  go from LEO to near the Moon</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: Burn Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_BurnObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: Burn Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>P1 and P2: leave the default settings</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Solar System Special Points</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>ESML2:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a Libration Point.</para>
+                </listitem>
+
+                <listitem>
+                  <para>Sun should be the Primary Body, Earth - the Secondary
+                  body; select L2</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: ESML2 Libration Point Special Point
+                  Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_ESML2LibrationPointSpecialPointObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: ESML2 Libration Point Special Point
+                    Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>EarthMoonBary:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a BaryCenter.</para>
+                </listitem>
+
+                <listitem>
+                  <para>Select Earth and Luna</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: Barycenter Special Point Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_BarycenterSpecialPointObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: Barycenter Special Point Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Propagators</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>NearMoonProp:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Use Luna as the Primary body</para>
+                </listitem>
+
+                <listitem>
+                  <para>LP-165 gravity model with degree and order of
+                  10</para>
+                </listitem>
+
+                <listitem>
+                  <para>Add Earth, Sun, and Jupiter as point masses</para>
+                </listitem>
+
+                <listitem>
+                  <para>Include SRP flux</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: Propagator Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_PropagatorObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: Propagator Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>NearEarthProp:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Use Earth as the Primary body</para>
+                </listitem>
+
+                <listitem>
+                  <para>Includes heliocentric and lunar point masses</para>
+                </listitem>
+
+                <listitem>
+                  <para>Include SRP flux</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate System</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>EarthMoonRot:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Use Earth as the origin</para>
+                </listitem>
+
+                <listitem>
+                  <para>Axes Type is ObjectReferenced</para>
+                </listitem>
+
+                <listitem>
+                  <para>The Primary body is Luna and the Secondary body is
+                  Earth</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: EarthMoonRot Coordinate System Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_EarthMoonRotCoordinateSystemObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: EarthMoonRot Coordinate System Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>EarthSunRotCS:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Use Earth as the origin</para>
+                </listitem>
+
+                <listitem>
+                  <para>Axes Type is ObjectReferenced</para>
+                </listitem>
+
+                <listitem>
+                  <para>Primary body is Sun, Secondary body is Earth</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>ESML2Centered:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Use ESML2 as the origin</para>
+                </listitem>
+
+                <listitem>
+                  <para>Axes Type is ObjectReferenced</para>
+                </listitem>
+
+                <listitem>
+                  <para>Primary body is Sun, Secondary body is Earth</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>MoonInertial:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Use Luna as origin</para>
+                </listitem>
+
+                <listitem>
+                  <para>Axes Type is BodyInertial</para>
+                </listitem>
+
+                <listitem>
+                  <para>Epoch is 21544.99962789778</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>SystemView:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add Luna to the Selected Celestial Objects
+                  field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use EarthMoonRot</para>
+                </listitem>
+
+                <listitem>
+                  <para>ViewPointVector &lt;10000, 10000, 10000&gt;</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use a View Scale Factor of 40</para>
+                </listitem>
+
+                <listitem>
+                  <para>Select Z as View Up Definition Axis with the
+                  Coordinate System EarthMoonRot</para>
+                </listitem>
+
+                <listitem>
+                  <para>Collect Data every 3 steps, Update Every 50 cycles,
+                  and redraw 100 points</para>
+                </listitem>
+
+                <listitem>
+                  <para>For Drawing options, show All iterations and Draw only
+                  the Axes</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: SystemView OpenGL Plot Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_SystemViewOpenGLPlotObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: SystemView OpenGL Plot Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>EarthView:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add Luna and ESML2 to the Selected Celestial Objects
+                  field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use the EarthSunRotCS coordinate system in the View
+                  Definition and View Up Definition group boxes</para>
+                </listitem>
+
+                <listitem>
+                  <para>The ViewUp definition should be along the
+                  Y-Axis</para>
+                </listitem>
+
+                <listitem>
+                  <para>Have no Drawing options selected, and show none of the
+                  solver iterations</para>
+                </listitem>
+
+                <listitem>
+                  <para>Collect data every 5 steps, update every 50
+                  cycles</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>EarthView2:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Same as EarthView1</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>MoonView:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add Luna to the Selected Celestial Objects
+                  field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use the MoonInertial coordinate system in the View
+                  Definition and View Up Definition group boxes</para>
+                </listitem>
+
+                <listitem>
+                  <para>Vector should be &lt;30000 30000 30000&gt;, with the
+                  scale factor of 1</para>
+                </listitem>
+
+                <listitem>
+                  <para>The ViewUp definition should be along the
+                  Z-Axis</para>
+                </listitem>
+
+                <listitem>
+                  <para>Draw only Axes, no iterations</para>
+                </listitem>
+
+                <listitem>
+                  <para>Collect data every 5 steps, update every 50 cycles,
+                  redraw 150 points</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>EarthInertial:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add Luna, ESML2, Earth, and Sun to the Selected
+                  Celestial Objects field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use EarthMJ2000EQ coordinate system in the View
+                  Definition and View Up Definition group boxes</para>
+                </listitem>
+
+                <listitem>
+                  <para>Vector should be &lt;0 0 30000&gt;, with the scale
+                  factor of 100</para>
+                </listitem>
+
+                <listitem>
+                  <para>The ViewUp definition should be along the
+                  Y-Axis</para>
+                </listitem>
+
+                <listitem>
+                  <para>Draw only Sun Line, no iterations</para>
+                </listitem>
+
+                <listitem>
+                  <para>Collect data every 5 steps, update every 50 cycles,
+                  redraw 150 points</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>AboveL2:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add Luna, Earth, and ESML2 to the Selected Celestial
+                  Objects field</para>
+                </listitem>
+
+                <listitem>
+                  <para>Use the ESML2Centered coordinate system in the View
+                  Definition and View Up Definition group boxes</para>
+                </listitem>
+
+                <listitem>
+                  <para>View Point Reference at ESML2</para>
+                </listitem>
+
+                <listitem>
+                  <para>Vector should be &lt;0 0 30000&gt;, with the scale
+                  factor of 75</para>
+                </listitem>
+
+                <listitem>
+                  <para>The ViewUp definition should be along the
+                  Y-Axis</para>
+                </listitem>
+
+                <listitem>
+                  <para>Draw only Axes, no iterations</para>
+                </listitem>
+
+                <listitem>
+                  <para>Collect data every 5 steps, update every 50 cycles,
+                  redraw 150 points</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>Report:</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a ReportFile called Data</para>
+                </listitem>
+
+                <listitem>
+                  <para>Left Justify, Precision = 16, ZeroFill off,
+                  ColumnWidth = 20, WriteHeaders = On</para>
+                </listitem>
+
+                <listitem>
+                  <para>Choose the folder for the file. (File name here is
+                  provided only as an example).</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: Data Data Report Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_DataDataReportObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: Data Data Report Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Variables, Arrays, Strings</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add variables YAmp, I, SMA, ECC, INC, TA, RAAN, AOP,
+              Epoch, EnergyError, FLow, FHigh, Prod, c, DesiredEnergy, Error,
+              B·T, LowerBound, UpperBound, LB, UB, BoxSize, LowerBoxSize,
+              UpperBoxSize</para>
+            </listitem>
+
+            <listitem>
+              <para>Set all variables equal to zero and to the Sat spacecraft
+              (as shown in figure below for variable SMA)</para>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: Equation 1 Variable Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_L2Transfer_Equation1VariableObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: Equation 1 Variable Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Mission Sequence</title>
+
+    <section>
+      <title>Resource Mission and Output Trees</title>
+
+      <para>To accomplish the mission, three targeting sequences are used,
+      together with a relatively complicated set of equations and control
+      logic statements. The goal is to calculate the thrust that is required
+      to take the spacecraft from LEO, perform a flyby of the Moon, and place
+      it in an orbit about the Earth-Sun Lagrange point L2. (For those
+      interested, Wikipedia has a good explanatory text on Lagrange points.)
+      Also, B-plane targeting is used here, similar to that in the Lunar
+      Transfer tutorial.</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>The First Targeting Sequence aligns the estimated trajectory
+          with the Earth-Moon line. To accomplish this, AOP and RAAN values
+          are varied. The thrust maneuver is applied before the targeting
+          sequence, with an estimated 3.1 km/s, a good but intentionally low
+          guess that will be modified in the following sections.</para>
+        </listitem>
+
+        <listitem>
+          <para>The Sat Equations take the Sat spacecraft through a series of
+          operations that put it in the correct location. The equations use
+          the initial conditions of Sat as well as the values of AOP and RAAN
+          found in the previous sequence; they also set values for some
+          variables.</para>
+        </listitem>
+
+        <listitem>
+          <para>The First Bisection Method section contains the counter
+          equation, as well as a setup for the first and second iteration
+          which deal with the lower and upper bound respectively.</para>
+        </listitem>
+
+        <listitem>
+          <para>While Loop</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>The first targeting sequence within the While loop varies
+              P1.V and P1.B, to attain a given value of BR. The spacecraft is
+              propagated from its initial condition to the Moon's periapsis,
+              utilizing two separate propagators that differ by their primary
+              bodies.</para>
+            </listitem>
+
+            <listitem>
+              <para>The second targeting section propagates the spacecraft
+              past the Moon until it enters a required box (region), and then
+              propagates it until it leaves a larger box.</para>
+            </listitem>
+
+            <listitem>
+              <para>The third targeting section is where the Bisection method
+              is really set up. The difference between the goal and the
+              resultant is found for the resultant. The first iteration
+              resultant is stored into a variable for the lower boundary, and
+              the second iteration resultant is stored into a variable for the
+              upper boundary. The sign of the product of the two resultants is
+              checked to ensure that the two boundaries lie on both sides of
+              the expected answer. If this is not the case, the sequence is
+              stopped.</para>
+            </listitem>
+
+            <listitem>
+              <para>The fourth section is the core of the Bisection method.
+              The sign of the difference between the iteration's result and
+              the goal is checked against the boundaries. The boundary with
+              which it has the same sign as is replaced and the range that the
+              answer can be contained in is cut in half.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>The Intermediate Stage places the spacecraft back at its
+          initial conditions immediately following the first burn. The
+          adjusted burn, P1, is added to the original burn. These conditions
+          for the spacecraft are then stored again into the variable InitSat.
+          Additional plots are turned on; some values are stored into
+          variables for the forthcoming targeting sequence.</para>
+        </listitem>
+
+        <listitem>
+          <para>The Final Target Sequence finds an additional fine tuning
+          burn, P2, such as to provide the spacecraft with only a very small
+          velocity when away from the Earth. The spacecraft is propagated from
+          its original position with the P1 burn added in. It is propagated
+          past the Moon and near L2. This is done in a similar manner as
+          before. A For loop is used for this fine tuning, to ensure the
+          spacecraft stays withing a certain region of space.</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Creating and Modifying Command Sequences</title>
+
+      <section>
+        <title>First Targeting Sequence</title>
+
+        <para>The purpose of the first targeting sequence is to find values
+        for AOP and RAAN that will position the spacecraft, after the
+        maneuver, near the Moon. This is very similar to what was done in the
+        Lunar Transfer Sample Mission. Instead of aiming for a particular set
+        of coordinates, we are aiming here for a DEC of zero and RA of 180
+        degrees within the EarthMoonRot coordinate system. This means that the
+        spacecraft is expected to be put on the line from Earth to the Moon.
+        (For more information on the values of DEC and RA, refer to the
+        relevant Wikipedia articles.)</para>
+
+        <para>This target sequence does several things that need more
+        explaining. The role of the equations is to store the values AOP and
+        RAAN before the spacecraft is propagated. This enables us to place the
+        spacecraft back at those particular locations after the propagation is
+        complete. This is similar to what was done in the Lunar Transfer
+        tutorial.</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Command Toggle1 maintains clean plots until they are needed
+            for later targeting. This prevents multiple targeting sequences
+            from overlapping and, since it is not blocked by the earlier
+            sequences, allows for a better understanding of the later
+            targeting sequence. This is a very appropriate time to use the
+            Toggle Action.</para>
+          </listitem>
+
+          <listitem>
+            <para>Maneuver1 applies the rough maneuver of TOI to Sat, so as to
+            bring it near the Moon, for the first targeting sequence. At this
+            point there is no intent for Sat to reach the exact desired
+            location. Rather, the value ΔV=3.1 km/s is an estimate of what
+            will be required.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation1 through Equation7 do a few things. Equations 1-4
+            store the initial values of the elements of Sat into variables so
+            that they can be accessed later. Equation5 sets the required
+            Epoch, and Equation6 uses that variable to set the Sat's timing.
+            Equation7 sets InitSat to the same elements that Sat has, so that
+            later, after Sat is propagated, InitSat will be storing the Sat's
+            initial elements.</para>
+          </listitem>
+
+          <listitem>
+            <para>The conditions on the Propagate1 are unusual. The first two
+            conditions make sure that if the current iteration fails to bring
+            Sat near the Moon, it will stop, so that the next iteration can be
+            tried. The third condition is that if Sat gets close enough to the
+            Moon, the iteration will stop, and will check if the Achieve
+            conditions are fulfilled.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Toggle 1:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Add a toggle command to the mission sequence</para>
+              </listitem>
+
+              <listitem>
+                <para>Uncheck EarthView2 and AboveL2 to turn those subscribers
+                off</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Equation1: SMA = Sat. SMA</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation2: ECC = Sat.ECC</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation3: INC = Sat.INC</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation4: TA = Sat.TA</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation5: Epoch = 28025</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation6: Sat.A1Epoch = Epoch</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation7: InitSat = Sat;</para>
+          </listitem>
+
+          <listitem>
+            <para>Target 1:</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Vary AOP (range of -360 to 360)</para>
+              </listitem>
+
+              <listitem>
+                <para>Vary RAAN (range of -360 to 360)</para>
+              </listitem>
+
+              <listitem>
+                <para>Equation8: RAAN = Sat.RAAN</para>
+              </listitem>
+
+              <listitem>
+                <para>Equation9: AOP = Sat.AOP</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate using NearEarthProp til:</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>RMAG from Earth is 34000</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>ElapsedDays = 4</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>RMAG from Moon is 1000</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Achieve RA = 180, Tolerance = 1</para>
+              </listitem>
+
+              <listitem>
+                <para>Achieve DEC = 0, Tolerance = 1</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+        <screenshot>
+          <info>
+            <title>Figure: Toggle1 Toggle Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_L2Transfer_Toggle1ToggleCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Toggle1 Toggle Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Vary1 Vary Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_L2Transfer_Vary1VaryCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Vary1 Vary Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Propagate1 Propagate Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_L2Transfer_Propagate1PropagateCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Propagate1 Propagate Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Achieve1 Achieve Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_L2Transfer_Achieve1AchieveCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Achieve1 Achieve Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>Sat Equations</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Equation10 passes back the Sat its initial conditions (which
+            had been stored in InitSat).</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation11 through Equation13 give to Sat the RAAN and AOP
+            values found in the first targeting sequence (i.e. in Equation8
+            and Equation9), and give it the originally given Epoch.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation14 is used to store all these variables, including
+            those from the first targeting sequence (in InitSat, for later
+            use).</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Equation10: Sat=InitSat</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation11: Sat.RAAN= RAAN</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation12: Sat.AOP = AOP</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation13: Sat.A1Epoch = Epoch</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation14: InitSat = Sat</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+
+      <section>
+        <title>Other Equations</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Equation15 in this next sequence sets the desired energy
+            (variable DesiredEnergy) to the value necessary to take Sat near
+            the Lagrange Point L2. This is not precise and is not the final
+            value of the energy of the spacecraft in orbit. (This energy was
+            calculated using hand calculations not shown here.)</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation16 is an initial guess of the B·T of the Moon
+            required to achieve this energy.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation17 is setting the counter variable, c, equal to
+            0.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation18 is the lower bound on the guess of B·T
+            needed.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation19 similarly is the upper bound guess.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation18 and Equation19 combine for a result in that you
+            are saying that the answer to what B·T is needed can be found
+            between these two values. If the value is not contained between
+            these two, there is no possible way GMAT will find the correct
+            answer.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation20 sets an upper bound on the amount of error
+            tolerance in the calculations.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Equation15: DesiredEnergy = -0.2076893509448376</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation16: B·T = 10000</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation17: c = 0</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation18: LB = 10000</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation19: UB = 11000</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation20: Error = 1e10</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+
+      <section>
+        <title>Section 1: Bisection Method</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>This section begins with the While statement. The While
+            conditions on Error cause it to leave the While loop once a
+            certain accuracy has been achieved. Variable c handles the maximum
+            amount of iterations desired (equal to 20).</para>
+          </listitem>
+
+          <listitem>
+            <para>Next is the counter condition as value c passes through the
+            loop.</para>
+          </listitem>
+
+          <listitem>
+            <para>In the next statement, on the first iteration the value LB
+            (Lower Bound) is set first equal to B·T. Similarly for the value
+            UB (Upper bound) in the following statement.</para>
+          </listitem>
+
+          <listitem>
+            <para>The last equation in this sequence puts Sat back at its
+            initial conditions, by making its elements equal to those of
+            InitSat. While this isn't necessary on the first iteration since
+            it's already been done, the following iterations will need this in
+            order to reset the location of Sat.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Create While Error ≥ .000001 &amp; c &lt; 20</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Create Equation c = c + 1</para>
+              </listitem>
+
+              <listitem>
+                <para>Create If c==1</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Create Equation B·T = LB</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Create If c==2</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Create Equation B·T = UB</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Create Equation Sat = InitSat</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+        <screenshot>
+          <info>
+            <title>Figure: While</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_L2Transfer_While.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: While</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>While Loop: Target 2</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>This target sequence starts with the spacecraft in the
+            initial conditions, in orbit about the Earth. Similar to the
+            second target sequence in the Lunar Transfer Sample Mission, this
+            sequence is intended to take data from the first target sequence
+            and use thrust in two directions in order to more precisely target
+            a desired point in the B-plane.</para>
+          </listitem>
+
+          <listitem>
+            <para>Recall that a ΔV=3.1 km/s has already been applied. Value P1
+            is intended to refine the TOI burn; for this, ΔV is set to
+            ΔV=P1+TOI.</para>
+          </listitem>
+
+          <listitem>
+            <para>The value NearEarthProp is used first since its calculation
+            is more accurate and quick; here Sat is near the Earth, with Earth
+            being the Primary body. At a point between the Earth and Moon,
+            sometime after a day in transit, the Moon is chosen as the Primary
+            body (using the value NearMoonProp).</para>
+          </listitem>
+
+          <listitem>
+            <para>Sat is thus propagated until Moon's periapsis. The procedure
+            then checks if the Achieves conditions were reached. The purpose
+            of expression Sat.MoonInertial.B·T=B·T is see what burn would be
+            required to reach the guessed value of B·T.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Vary P1.V</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial Guess = .01, Perturbation=0.00001, MaxStep=.05,
+                Lower =-360, Upper=360</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Vary P1.B</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial Guess = .001, Perturbation=0.00001, MaxStep=.05,
+                Lower =-360, Upper=360</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Propagate using NearEarthProp for 1 day</para>
+          </listitem>
+
+          <listitem>
+            <para>Propagate using NearMoonProp until Periapsis with the
+            Moon</para>
+          </listitem>
+
+          <listitem>
+            <para>Achieve Sat.MoonInertial.B·T=B·T (the variable) with
+            tolerance of 0.0001</para>
+          </listitem>
+
+          <listitem>
+            <para>Achieve Sat.MoonInertial.B·R= 0 with tolerance of
+            0.0001.</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+
+      <section>
+        <title>While Loop: Propagate 4 and 5</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Of the two propagators, the first takes the satellite from
+            the Moon's periapsis first to the boundaries of a predefined box
+            (region) centered around the L2 point. The outer boundaries of
+            this box are 50,000 km in both directions on the X-axis.</para>
+          </listitem>
+
+          <listitem>
+            <para>The second propagator takes the satellite from the outer
+            boundaries of the box above, and propagates it until it leaves a
+            second (larger) box, whose outer boundaries are 1,000,000 km in
+            both directions on the X-axis.</para>
+          </listitem>
+
+          <listitem>
+            <para>The stop tolerance is chosen so that if the satellite moves
+            too quickly, it will go past the stopping condition and cause the
+            program to stop.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Propagate using NearMoonProp with following
+            conditions</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>ESML2Centered.X = -50000</para>
+              </listitem>
+
+              <listitem>
+                <para>ESML2Centered.X = 50000</para>
+              </listitem>
+
+              <listitem>
+                <para>StopTolerance = 0.0001</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Propagate using NearMoonProp with following
+            conditions</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>ESML2Centered.X = -1000000</para>
+              </listitem>
+
+              <listitem>
+                <para>ESML2Centered.X = 1000000</para>
+              </listitem>
+
+              <listitem>
+                <para>ElapsedDays = 160</para>
+              </listitem>
+
+              <listitem>
+                <para>StopTolerance=0.0001</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+      </section>
+
+      <section>
+        <title>While Loop, Section 2: Bisection Method</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>This section starts the Bisection method proper. The first
+            equation here calculates the difference between the energy defined
+            by the (guessed) B·T and the energy estimated so as to place the
+            satellite near an L2 orbit. The first If statement, used for the
+            first iteration, sets FLow equal to the value EnergyError that
+            corresponds to the Lower Bound try for B·T. Similarly, the second
+            If statement sets FHigh to the EnergyError value that corresponds
+            to the Upper Bound try for B·T.</para>
+          </listitem>
+
+          <listitem>
+            <para>The third If statement is for the third iteration - it
+            checks if the initial boundaries of the problem do indeed bound
+            the problem's solution. In this statement, variable Prod is set
+            equal to the product of FHigh and FLow. Another If statement stops
+            the program when Prod is positive. This is because Prod being
+            positive means that both FHigh and FLow are positive or both are
+            negative - either case means that they do not bound the
+            solution.</para>
+          </listitem>
+
+          <listitem>
+            <para>The solution exist when FLow and FHigh are both equal to 0,
+            meaning that the EnergyError was 0. For the Bisection method to
+            work (it should work every time, no matter how large the given
+            range box is), the only requirement on the initial guesses is that
+            the expected solution is between them. To check your guesses,
+            especially if you don't get it to work the first time, it is
+            useful to use an OpenGL Plot. This is the purpose of the EarthView
+            plot in this tutorial. For the first two iterations (which are
+            your initial guesses), the one with the lower energy should take
+            the satellite back towards the Earth after going to L2, whereas
+            the iteration with the higher energy should take the satellite
+            outward, away from the Earth. If you see this, it means your
+            Bisection method should converge. The plot will also help to
+            determine which of the energy guesses, the high or the low, needs
+            to change. If both take the satellite back towards the Earth, your
+            lower bound guess was too high. If both take the satellite away
+            from the Earth, it means that your upper bound guess was too
+            low.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Create Equation EnergyError = Sat.Energy –
+            DesiredEnergy</para>
+          </listitem>
+
+          <listitem>
+            <para>Create If c==1</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>FLow = EnergyError</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Create If c==2</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>FHigh = EnergyError</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Create If c==3</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Create Equation Prod = Flow * FHigh</para>
+              </listitem>
+
+              <listitem>
+                <para>Create If Prod &gt; 0</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Create Stop</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+        <screenshot>
+          <info>
+            <title>Figure: If statement</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_L2Transfer_IfStatement.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: If statement</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>While Loop, Section 3: Bisection Method, cont.</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>This section finishes the While sequence. The first If
+            statement here is the same for the iterations that follow the
+            first two iterations (for the lower and the upper energy bounds).
+            Again, Prod is the product of FLow and EnergyError. If the energy
+            error has the same sign as FLow, it means it is erring in the same
+            manner as FLow. That is, if Prod is positive, the lower bound
+            becomes B·T. This cuts the range that contains the answer in half.
+            If Prod is negative - FLow and EnergyError have different signs -
+            then it is erring on the same side as FHigh, and then B·T becomes
+            the new upper bound.</para>
+          </listitem>
+
+          <listitem>
+            <para>The next equation takes the absolute value of
+            EnergyError.</para>
+          </listitem>
+
+          <listitem>
+            <para>The last equation takes the average of the latest upper and
+            lower bound values found in this iteration. This average is
+            equated to B·T and will become the initial guess for the next
+            iteration. As the iterations progress, the space box (range) is
+            cut in half repeatedly until the solution is contained within a
+            range so small that the required thrust to reach that B·T (and
+            thus that energy) is known to a fair extent.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Create If c &gt;2</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Create Equation Prod = FLow * EnergyError</para>
+              </listitem>
+
+              <listitem>
+                <para>Create If Else</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>If Prod &lt; 0</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Create Equation UB = B·T</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+
+                  <listitem>
+                    <para>Else</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>Create Equation LB = B·T</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Create Report Data with following variable values shown:
+                Error, UB, B·T, LB, EnergyError, Sat.Energy, and
+                DesiredEnergy</para>
+              </listitem>
+
+              <listitem>
+                <para>Create Equation, and make the absolute value of
+                EnergyError equal to Error</para>
+              </listitem>
+
+              <listitem>
+                <para>Create Equation B·T = (UB + LB ) / 2</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+        <screenshot>
+          <info>
+            <title>Figure: Report Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_L2Transfer_ReportCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Report Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>Intermediate Stage</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>This sequence does the following: The first equation sets
+            the spacecraft back to its initial condition. The next item adds
+            to the TOI burn P1, thus placing the spacecraft where it needs to
+            be. These conditions are then stored again into InitSat. The
+            fourth line of the sequence turns on EarthView2 and AboveL2.
+            (These were turned off in previous sequences, so that the finer
+            changes in orbit about the L2 could be seen unobstructed.)</para>
+          </listitem>
+
+          <listitem>
+            <para>The next two equations set up the space box (range) size
+            desired about L2.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Equation34: Sat = InitSat</para>
+          </listitem>
+
+          <listitem>
+            <para>Maneuver P1</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation35: InitSat = Sat</para>
+          </listitem>
+
+          <listitem>
+            <para>Toggle2: turn on EarthView2 and AboveL2</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation36: LowerBoxSize = -500000</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation37: UpperBoxSize = 500000</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+
+      <section>
+        <title>Final Targeting Sequence</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>This targeting sequence further adjusts the initial burn
+            while the spacecraft is still in a Low Earth Orbit. This burn is
+            to achieve a small negative velocity away from the Earth at the L2
+            point. After the initial burn is varied, the satellite is
+            propagated. It is propagated again in a similar manner to the last
+            sequence: first, for a day using the Earth propagator, then toward
+            the lunar periapsis, and then for several more days. Lastly, it is
+            propagated again for 160 more days, to produce enough information
+            to estimate the orbit's quality.</para>
+          </listitem>
+
+          <listitem>
+            <para>In the For loop, the first two equations make the box
+            (range) continually smaller. (Note: in testing, only one iteration
+            was necessary.) If the satellite is found to be within the
+            boundaries of the desired box, the spacecraft is propagated until
+            it leaves the box - or, as a stop limit, if it stays there for 220
+            days.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Create Target sequence</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Vary P2.V</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Perturbation of -.00000001</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Max Step of .00000001</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Lower bound=-.000005</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Upper bound= .0000001</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Maneuver – apply burn P2 to Sat</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate using NearEarthProp for 1 day</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate using NearMoonProp until Luna Periapsis</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate using NearMoonProp for 8 days</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate using NearMoonProp for 160 days</para>
+              </listitem>
+
+              <listitem>
+                <para>Send Sat.ESML2Centered.X position and Y position to
+                Report Data</para>
+              </listitem>
+
+              <listitem>
+                <para>Create For loop, with counter's values from 1 to 1 in
+                increments of 1</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Create Equation LowerBoxSize = LowerBoxSize -
+                    50</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Create Equation UpperBoxSize = UpperBoxSize
+                    +50</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Create If statement</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>If Sat.ESML2Centered.X &gt; LowerBoxSize</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>&amp; Sat.ESML2Centered.X &lt;
+                        UpperBoxSize</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>&amp; Sat.ESML2Centered.Y &lt;
+                        UpperBoxSize</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>&amp; Sat.ESML2Centered.Y &gt;
+                        LowerBoxSize</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+
+                  <listitem>
+                    <para>Propagate using NearMoonProp</para>
+
+                    <itemizedlist>
+                      <listitem>
+                        <para>For 220 days</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>ESML2Centered.Y=0</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>ESML2Centered.Y = LowerBoxSize</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>ESML2Centered.X = LowerBoxSize</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>ESML2Centered.X = UpperBoxSize</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>ESML2Centered.Y = UpperBoxSize</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>StopTolerance of .0001</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+
+                  <listitem>
+                    <para>Achieve ESML2Centered.VX = -.001 with a tolerance of
+                    .001</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+        <screenshot>
+          <info>
+            <title>Figure: For loop</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_L2Transfer_ForLoop.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: For loop</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+    </section>
+  </section>
+
+  <section>
+    <title>The resulting view of Resource, Mission, and Output Trees</title>
+
+    <informaltable colsep="0" frame="none">
+      <tgroup cols="2">
+        <colspec colname="c1" />
+
+        <colspec colname="c2" />
+
+        <tbody>
+          <row>
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Resource tree</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_ResourceTree1.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Resource tree</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_ResourceTree2.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+          </row>
+
+          <row>
+            <entry align="center" nameend="c2" namest="c1">Figure: Resource
+            tree</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+
+    <informaltable colsep="0" frame="none">
+      <tgroup cols="3">
+        <colspec colname="c1" />
+
+        <colspec colname="c2" />
+
+        <colspec colname="c3" />
+
+        <tbody>
+          <row>
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Mission and Output Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_MissionandOutputTrees1.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Mission and Output Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_MissionandOutputTrees2.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+
+            <entry><screenshot>
+                <info>
+                  <title>Figure: Mission and Output Trees</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_L2Transfer_MissionandOutputTrees3.jpeg"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot></entry>
+          </row>
+
+          <row>
+            <entry align="center" nameend="c3" namest="c1">Figure: Mission and
+            Output Trees</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
+
+  <section>
+    <title>Running the Mission</title>
+
+    <para>You have now configured the mission - it is time to run it and see
+    the results. First, make sure you save the changes you've made. Then click
+    the green arrow on the tool bar to run the mission. The screen capture
+    below summarizes what you should see if you completed the mission
+    correctly. In the plot SystemView you should see the first targeting
+    sequence tracking. Plot MoonView shows the Moon swingbys. Plot
+    EarthInertial shows the satellite getting closer and closer to tracing out
+    the line that L2 follows. Plot EarthView1 shows the iterations getting
+    closer and closer to wrapping around point L2 and orbiting it. Plots
+    EarthView2 and AboveL2 show the iterations further refining the
+    calculations. You can zoom in on point L2, to better see the events around
+    this area. The Report presents a variety of important data at crucial
+    points during the mission,</para>
+
+    <screenshot>
+      <info>
+        <title></title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_L2Transfer_Output1.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para></para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title></title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_L2Transfer_Output2.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para></para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title></title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_L2Transfer_Output3.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para></para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title></title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_L2Transfer_Output4.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para></para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title></title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_L2Transfer_Output5.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para></para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: Output</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_L2Transfer_Output6.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Output</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+</section>

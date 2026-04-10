@@ -1,0 +1,85 @@
+# $Id$
+# Makefile for StringUtil unit test
+# 
+#  Copyright (c) 2002-2026 United States Government as represented by the
+#  Administrator of The National Aeronautics and Space Administration.
+#  All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); 
+# You may not use this file except in compliance with the License. 
+# You may obtain a copy of the License at:
+# http://www.apache.org/licenses/LICENSE-2.0 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
+# express or implied.   See the License for the specific language
+# governing permissions and limitations under the License.
+
+# Author: Linda Jun
+# Created: 2012.08.08
+
+include ../BuildEnv.mk
+
+TARGET = TestCode500EphemFile.exe
+
+all: $(TARGET)
+clean: archclean
+
+archclean :
+	rm -r -f *.o
+	rm -r -f *.a
+	rm -r -f *~
+	rm -r -f core
+	rm -r -f */core
+	rm -rf $(TARGET)
+
+HEADERS = -I$(GMAT_BASE)/include \
+          -I$(GMAT_BASE)/foundation \
+          -I$(GMAT_BASE)/subscriber \
+          -I$(GMAT_BASE)/util \
+          -I$(GMAT_CONSOLE) \
+          -I../Common \
+
+
+OBJECTS = $(GMAT_BASE)/foundation/GmatBaseException.o \
+          $(GMAT_BASE)/util/Code500EphemerisFile.o \
+          $(GMAT_BASE)/util/A1Mjd.o \
+          $(GMAT_BASE)/util/A1Date.o \
+          $(GMAT_BASE)/util/LeapSecsFileReader.o \
+          $(GMAT_BASE)/util/Date.o \
+          $(GMAT_BASE)/util/DateUtil.o \
+          $(GMAT_BASE)/util/ElapsedTime.o \
+          $(GMAT_BASE)/util/EopFile.o \
+          $(GMAT_BASE)/util/StateConversionUtil.o \
+          $(GMAT_BASE)/util/TimeSystemConverter.o \
+          $(GMAT_BASE)/util/Linear.o \
+          $(GMAT_BASE)/util/Rvector.o \
+          $(GMAT_BASE)/util/RealUtilities.o \
+          $(GMAT_BASE)/util/Rmatrix33.o \
+          $(GMAT_BASE)/util/Rmatrix.o \
+          $(GMAT_BASE)/util/Rvector3.o \
+          $(GMAT_BASE)/util/Rvector6.o \
+          $(GMAT_BASE)/util/UtcDate.o \
+          $(GMAT_BASE)/util/StringTokenizer.o \
+          $(GMAT_BASE)/util/MessageInterface.o \
+          $(GMAT_BASE)/util/FileUtil.o \
+          $(GMAT_BASE)/util/GmatGlobal.o \
+          $(GMAT_BASE)/util/BaseException.o \
+          $(GMAT_BASE)/util/StringUtil.o \
+          $(GMAT_BASE)/util/TimeTypes.o \
+          $(GMAT_BASE)/util/GregorianDate.o \
+          $(GMAT_BASE)/util/FileManager.o \
+          $(GMAT_BASE)/util/MessageReceiver.o \
+          $(GMAT_CONSOLE)/ConsoleMessageReceiver.o \
+          $(GMAT_CONSOLE)/ConsoleAppException.o \
+          ../Common/TestOutput.o \
+          ./TestCode500EphemFile.o
+
+
+$(OBJECTS) : %.o: %.cpp
+	$(CPP) $(CPPFLAGS) $(HEADERS) $(OPTIMIZATIONS) -c -o $@ $<
+
+$(TARGET): $(OBJECTS)
+	$(CPP) $(OBJECTS) $(SPICE_LIBRARIES) \
+	$(FORTRAN_LIB) -o $(TARGET) $(CONSOLE_LINK_FLAGS)
+

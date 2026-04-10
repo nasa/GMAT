@@ -1,0 +1,267 @@
+%
+%  Ex_FiniteBurn
+%
+%  Script Mission - Finite Burn Examples  
+%
+%  This script demonstrates how to set up tanks and thrusters, and use them
+%  in a finite maneuver sequence.  
+%
+
+
+% -------------------------------------------------------------------------
+% --------------------------- Create Objects ------------------------------
+% -------------------------------------------------------------------------
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+%  Create a default spacecraft 
+Create Spacecraft Sc;
+
+Sc.DateFormat                   = TAIModJulian;
+Sc.Epoch                        = '21545';
+Sc.CoordinateSystem             = EarthMJ2000Eq;
+Sc.DisplayStateType             = Cartesian;
+Sc.X                            = 7100;
+Sc.Y                            = 0;
+Sc.Z                            = 1300;
+Sc.VX                           = 0;
+Sc.VY                           = 7.35;
+Sc.VZ                           = 1;
+Sc.DryMass                      = 850;
+Sc.Cd                           = 2.2;
+Sc.Cr                           = 1.8;
+Sc.DragArea                     = 15;
+Sc.SRPArea                      = 1;
+Sc.Tanks                        = {tank1};
+Sc.Thrusters                    = {engine1};
+Sc.NAIFId                       = -123456789;
+Sc.NAIFIdReferenceFrame         = -123456789;
+Sc.OrbitColor                   = Red;
+Sc.TargetColor                  = Teal;
+Sc.Id                           = 'SatId';
+Sc.Attitude                     = CoordinateSystemFixed;
+Sc.SPADSRPScaleFactor           = 1;
+Sc.ModelFile                    = '../data/vehicle/models/aura.3ds';
+Sc.ModelOffsetX                 = 0;
+Sc.ModelOffsetY                 = 0;
+Sc.ModelOffsetZ                 = 0;
+Sc.ModelRotationX               = 0;
+Sc.ModelRotationY               = 0;
+Sc.ModelRotationZ               = 0;
+Sc.ModelScale                   = 3;
+Sc.AttitudeDisplayStateType     = 'Quaternion';
+Sc.AttitudeRateDisplayStateType = 'AngularVelocity';
+Sc.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+Sc.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+%  Create a fuel tank and name it tank1
+%          Here we create a fuel tank and set up its physical properties
+%          including Temperature, Fuel Mass, Fuel Density etc.
+Create ChemicalTank tank1;
+
+tank1.AllowNegativeFuelMass = false;
+tank1.FuelMass              = 725;
+tank1.Pressure              = 1200;
+tank1.Temperature           = 20;
+tank1.RefTemperature        = 12;
+tank1.Volume                = 0.8;
+tank1.FuelDensity           = 1029;
+tank1.PressureModel         = PressureRegulated;
+
+%  Create a thruster
+%         Here we create a thruster and tell the thruster which tank to
+%         draw fuel from.  We also set up the direction of the thruster.
+%         Currently, you specify the thruster orientation with respect to
+%         the spacecraft VNB or EarthMJ2000Eq systems.  This will change
+%         when attitude capabilities are added to GMAT.
+Create ChemicalThruster engine1;
+
+engine1.CoordinateSystem   = Local;
+engine1.Origin             = Earth;
+engine1.Axes               = VNB;
+engine1.ThrustDirection1   = 1;
+engine1.ThrustDirection2   = 0;
+engine1.ThrustDirection3   = 0;
+engine1.DutyCycle          = 1;
+engine1.ThrustScaleFactor  = 1;
+engine1.DecrementMass      = false;
+engine1.Tank               = {tank1};
+engine1.MixRatio           = [1];
+engine1.GravitationalAccel = 9.810000000000001;
+engine1.C1                 = 70;
+engine1.C2                 = 0;
+engine1.C3                 = 0;
+engine1.C4                 = 0;
+engine1.C5                 = 0;
+engine1.C6                 = 0;
+engine1.C7                 = 0;
+engine1.C8                 = 0;
+engine1.C9                 = 0;
+engine1.C10                = 0;
+engine1.C11                = 0;
+engine1.C12                = 0;
+engine1.C13                = 0;
+engine1.C14                = 0;
+engine1.C15                = 0;
+engine1.C16                = 0;
+engine1.K1                 = 1500;
+engine1.K2                 = 0;
+engine1.K3                 = 0;
+engine1.K4                 = 0;
+engine1.K5                 = 0;
+engine1.K6                 = 0;
+engine1.K7                 = 0;
+engine1.K8                 = 0;
+engine1.K9                 = 0;
+engine1.K10                = 0;
+engine1.K11                = 0;
+engine1.K12                = 0;
+engine1.K13                = 0;
+engine1.K14                = 0;
+engine1.K15                = 0;
+engine1.K16                = 0;
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+%  Create a force model
+Create ForceModel fm;
+
+fm.CentralBody            = Earth;
+fm.PointMasses            = {Earth};
+fm.Drag                   = None;
+fm.SRP                    = Off;
+fm.RelativisticCorrection = Off;
+fm.ErrorControl           = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+%  Create a propagator
+Create Propagator prop;
+
+prop.FM                       = fm;
+prop.Type                     = RungeKutta89;
+prop.InitialStepSize          = 60;
+prop.Accuracy                 = 9.999999999999999e-012;
+prop.MinStep                  = 0.001;
+prop.MaxStep                  = 2700;
+prop.MaxStepAttempts          = 50;
+prop.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+%  Create a thruster
+%         Here we create a finite maneuver.  We create the maneuver and
+%         give it a name first.  We need to tell the maneuver which
+%         thrusters to use, and which tank to draw from.  Currently you can
+%         have multiple thrusters, but only one tank, from which both
+%         thrusters draw fuel.  We can also apply a burn scale factor.  The
+%         thrust from each thruster is added together, and the sum is
+%         multiplied by BurnScaleFactor.
+Create FiniteBurn fb;
+
+fb.Thrusters              = {engine1};
+fb.ThrottleLogicAlgorithm = 'MaxNumberOfThrusters';
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+%  Create an OpenFrameInterface View  
+
+Create OpenFramesInterface OFI_SatOpenGL;
+
+OFI_SatOpenGL.SolverIterations    = Current;
+OFI_SatOpenGL.UpperLeft           = [ 0.4770588235294118 0.05437665782493369 ];
+OFI_SatOpenGL.Size                = [ 0.4794117647058824 0.8342175066312998 ];
+OFI_SatOpenGL.RelativeZOrder      = 267;
+OFI_SatOpenGL.Maximized           = false;
+
+OFI_SatOpenGL.Add                 = {Sc, Earth};
+OFI_SatOpenGL.View                = {SatOpenGL_View};
+
+OFI_SatOpenGL.CoordinateSystem    = EarthMJ2000Eq;
+OFI_SatOpenGL.DrawObject          = [ true true ];
+OFI_SatOpenGL.DrawXYPlane         = [ false false ];
+OFI_SatOpenGL.DrawLabel           = [ true true ];
+OFI_SatOpenGL.DrawGrid            = [ false false ];
+
+OFI_SatOpenGL.Axes                = On;
+OFI_SatOpenGL.XYPlane             = On;
+OFI_SatOpenGL.EclipticPlane       = Off;
+OFI_SatOpenGL.EnableStars         = On;
+OFI_SatOpenGL.StarCount           = 40000;
+OFI_SatOpenGL.ShowPlot            = true;
+
+Create OpenFramesView SatOpenGL_View;
+
+SatOpenGL_View.ViewFrame          = CoordinateSystem;
+SatOpenGL_View.SetDefaultLocation = On;
+SatOpenGL_View.SetCurrentLocation = Off;
+
+SatOpenGL_View.DefaultEye         = [ 50000 50000 50000 ]; 
+SatOpenGL_View.DefaultCenter      = [ 0 0 0 ];
+SatOpenGL_View.DefaultUp          = [ 0 0 1 ];
+
+
+%  Create an XYPlot  
+Create XYPlot energy;
+
+energy.SolverIterations = Current;
+energy.UpperLeft        = [ 0.1017647058823529 0.02785145888594165 ];
+energy.Size             = [ 0.3605882352941177 0.4522546419098144 ];
+energy.RelativeZOrder   = 261;
+energy.Maximized        = false;
+energy.XVariable        = Sc.A1ModJulian;
+energy.YVariables       = {Sc.Energy};
+energy.ShowGrid         = true;
+energy.ShowPlot         = true;
+
+
+Create XYPlot SMAvsTime;
+
+SMAvsTime.SolverIterations = Current;
+SMAvsTime.UpperLeft        = [ 0.1035294117647059 0.486737400530504 ];
+SMAvsTime.Size             = [ 0.3605882352941177 0.4522546419098144 ];
+SMAvsTime.RelativeZOrder   = 265;
+SMAvsTime.Maximized        = false;
+SMAvsTime.XVariable        = Sc.A1ModJulian;
+SMAvsTime.YVariables       = {Sc.SMA};
+SMAvsTime.ShowGrid         = true;
+SMAvsTime.ShowPlot         = true;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+%  Propagate for 1/10 of a day, without thrusters on.
+Propagate 'Prop 0.1 Days' prop(Sc) {Sc.ElapsedSecs = 8640};
+
+%  Turn on thrusters....they will remain on through all events until the
+%  "EndFiniteBurn fb(Sc)" command is executed.
+BeginFiniteBurn 'Turn on Thruster' fb(Sc);
+
+%  Propagate for 5 days, while thrusters are turned on.
+Propagate 'Prop 1 day' prop(Sc) {Sc.ElapsedDays = 1};
+
+%  Turn off thrusters   
+EndFiniteBurn 'Turn off Thruster' fb(Sc);
+
+%  Propagate for 5 days
+Propagate 'Prop 1 Day' prop(Sc) {Sc.ElapsedDays = 1};
+
+
+
+

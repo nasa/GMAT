@@ -1,0 +1,58 @@
+%
+%  Ex_EOPFileLocationFromScript
+%
+%  Assignment of the Earth EOP file in a script.
+%
+%  Released: R2016a
+% 
+
+
+
+%  Define the location of the EOP file
+Earth.EopFileName = '../data/planetary_coeff/eopc04_08.62-now'
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+Create Propagator DefaultProp;
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OrbitView DefaultOrbitView;
+DefaultOrbitView.Add = {DefaultSC, Earth};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.Add              = {DefaultSC, Earth};
+OFI_DefaultOrbitView.View             = {Default_OrbitView};
+OFI_DefaultOrbitView.ShowPlot         = true;
+
+Create OpenFramesView Default_OrbitView;
+
+Default_OrbitView.ViewFrame           = CoordinateSystem;
+Default_OrbitView.SetDefaultLocation  = On;
+Default_OrbitView.SetCurrentLocation  = Off;
+
+Default_OrbitView.DefaultEye          = [ 0 0 30000 ]; %View frame is small
+Default_OrbitView.DefaultCenter       = [ 0 0 0 ];
+Default_OrbitView.DefaultUp           = [ 1 0 0 ]; 
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 12000.0};

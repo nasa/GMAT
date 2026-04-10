@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Software Organization and Compilation &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Concepts and Algorithms" href="csalt-ConceptsAndAlgorithms.html" />
+    <link rel="prev" title="Overview" href="csalt-overview.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="csalt-ConceptsAndAlgorithms.html" title="Concepts and Algorithms"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="csalt-overview.html" title="Overview"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="csaltIndex.html" accesskey="U">GMAT Optimal Control</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Software Organization and Compilation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="software-organization-and-compilation">
+<span id="sec-gmatoc-organization"></span><h1>Software Organization and Compilation<a class="headerlink" href="#software-organization-and-compilation" title="Link to this heading">¶</a></h1>
+<p>CSALT code and documentation is stored in the main public GMAT repository.   Compilation instructions for building CSALT as a stand-alone library, or as a GMAT plugin, are contained in the GMAT build instructions located on gmatcentral.org (search for CMAKE Build System).</p>
+<p>Classes and utilities that a user must modify or use to solve optimal control problems are located in the src/csalt/src/userfunutils directory.  The doxygen reference material for low-level/executive components that a user need not modify or use are documented separately in the collutils, util, and executive folders, among others.</p>
+<p>The CSALT software is organized as shown below:</p>
+<ul class="simple">
+<li><p>docs</p>
+<ul>
+<li><p>benchmarking</p></li>
+<li><p>user guide and system description (snapshots of this document)</p></li>
+</ul>
+</li>
+<li><p>src/csalt/src</p>
+<ul>
+<li><p>userfunutils</p></li>
+<li><p>collutils</p></li>
+<li><p>utils</p></li>
+<li><p>executive</p></li>
+<li><p>include</p></li>
+</ul>
+</li>
+<li><p>src/csaltTester/src</p>
+<ul>
+<li><p>directories for optimal control unit tests</p></li>
+<li><p>TestOptCtrl directory, which holds example problems</p></li>
+</ul>
+</li>
+</ul>
+<p>An extensive set of optimal control problem examples is included in the subdirectories of src/csaltTester/src/TestOptCtrl. The example problem driver in src/csaltTester/src/TestOptCtrl/src/TestOptCtrl.cpp allows the user to run all or selected example problems via a command-line interface. Test problem source code drivers are located in the TestOptCtrl/src/drivers folder, and path and point function source code is located in the TestOptCtrl/src/pointpath folder.</p>
+<section id="installation">
+<span id="sec-gmatoc-installation"></span><h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<p>Installation of CSALT and GMAT Optimal Control is complicated by the fact that CSALT relies on several software packages that are not currently bundled with the GMAT installation. As a result, a user must manually place several libraries in specific locations in order to execute CSALT and/or GMAT Optimal Control. The libraries are:</p>
+<ul class="simple">
+<li><p>Sparse Nonlinear OPTimizer (SNOPT) version 7.5 (all platforms)</p></li>
+<li><p>Fortran compiler (if compiling SNOPT) and/or Fortran redistributable libraries (if using a pre-compiled SNOPT)</p></li>
+</ul>
+<section id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Link to this heading">¶</a></h3>
+<p>The SNOPT libraries – snopt7.dll and snopt7_cpp.dll – must be placed in the GMAT bin directory (the same directory in which the GMAT executable is located).</p>
+</section>
+<section id="mac">
+<h3>Mac<a class="headerlink" href="#mac" title="Link to this heading">¶</a></h3>
+<p>GMAT provides a configuration file for users to set up MATLAB, PYTHON, SNOPT, and GFORTRAN locations for use with GMAT.  This file is named MacConfigure.txt (previously MATLABConfigure.txt) and is located in the bin folder. To set up snopt7 and gfortran – which are needed if and only if you are using the CSALTPlugin:</p>
+<ul class="simple">
+<li><p>Open the MacConfigure.txt in the bin directory and edit the SNOPT_LIB_PATH field to point to the location of your snopt7 dynamic libraries (snopt7.dylib and snopt7_cpp.dylib).</p></li>
+<li><p>Edit MacConfigure.txt to point GFORTRAN_LIB_PATH to your gfortran dynamic libraries.</p></li>
+</ul>
+<p>If the CSALT scripts do not run with the GmatConsole command line application, you may need to set up your Terminal so that the system can load the snopt7 and gfortran libraries.  For example, if you are using a .bashrc file, you may need to add something like this:</p>
+<ul class="simple">
+<li><p>export SNOPT7 = &lt;path/to/snopt7/libraries/location/&gt;</p></li>
+<li><p>export FORTRAN = &lt;path/to/fortran/libraries/location/&gt;</p></li>
+<li><p>export DYLD_LIBRARY_PATH=$FORTRAN:$SNOPT7:$DYLD_LIBRARY_PATH</p></li>
+</ul>
+</section>
+<section id="linux">
+<h3>Linux<a class="headerlink" href="#linux" title="Link to this heading">¶</a></h3>
+<p>The SNOPT libraries – snopt7.dll and snopt7_cpp.dll – must be placed in the GMAT lib directory (a directory at the same level as the bin directory containing the GMAT executable).</p>
+<p>The SNOPT libraries are built using a Fortran compiler.  On Linux, the most likely compiler is the GCC Fortran compiler, gfortran.  The compiled SNOPT libraries need access to the corresponding Fortran shared library (e.g. libgfortran.so.4).  If that library is not installed on your workstation, place the library in the GMAT lib folder alongside the SNOPT libraries.  You may also need to set the load library path (LD_LIBRARY_PATH) if your snopt libraries were not compiled with a run path setting.</p>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Software Organization and Compilation</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#windows">Windows</a></li>
+<li><a class="reference internal" href="#mac">Mac</a></li>
+<li><a class="reference internal" href="#linux">Linux</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="csalt-overview.html"
+                          title="previous chapter">Overview</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="csalt-ConceptsAndAlgorithms.html"
+                          title="next chapter">Concepts and Algorithms</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/CSALT/source/csalt-SoftwareOrganizationAndCompilation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="csalt-ConceptsAndAlgorithms.html" title="Concepts and Algorithms"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="csalt-overview.html" title="Overview"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="csaltIndex.html" >GMAT Optimal Control</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Software Organization and Compilation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

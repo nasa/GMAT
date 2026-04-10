@@ -1,0 +1,176 @@
+\subsection{Patched Conic Flyby Boundary Constraint}
+
+The patched conic flyby boundary constraint applies constraints to the end of an incoming phase and the beginning of the outgoing phase. The constraint applies state continuity to the position, mass, and time at the flyby.  The velocity is constrained such that the turn angle $\delta$ is achievable given user defined bounds on the radius of periapsis, $r_p$.      
+
+The incoming state vector is defined as 
+\begin{equation}
+ \mathbf{x}^- = 
+ %
+ \begin{bmatrix}
+    \mbr^-\\
+    \mbv^-\\
+    m^-
+ \end{bmatrix}.
+\end{equation}
+%
+The outgoing state vector is defined as 
+%
+\begin{equation}
+ \mathbf{x}^+ = 
+ %
+ \begin{bmatrix}
+    \mbr^+\\
+    \mbv^+\\
+    m^+
+ \end{bmatrix}.
+\end{equation}
+
+The position and velocity states are specified with respect to the body about which the flyby body $B$ orbits.
+%
+The incoming and outgoing $\vinf$ vectors are, respectively
+%
+\begin{equation}
+ \vinf^- = \mbv^- - \mbv_B(t^-)
+\end{equation}
+%  
+\begin{equation}
+ \vinf^+ = \mbv^+ - \mbv_B(t^+),
+\end{equation}
+%
+where $\mbv_B(t^+)$ and $\mbv_B(t^-)$ are the velocities of the flyby body with respect to the body about which it orbits at times $t^+$ and $t^-$, respectively.
+
+The turn angle and the radius of periapsis required to achieve the turn angle are computed using
+%
+\begin{equation}
+    \delta = \arccos{{ \left(\frac{\vinf^{-^T} \vinf^{+}}{v_{\infty}^{-}v_{\infty}^{+}}\right)}}
+\end{equation}
+%
+\begin{equation}
+r_p = \frac{\mu}{v_{\infty}^{2}} \left(\frac{1}{\sin{\delta/2}} -1\right),
+\end{equation}
+
+\noindent where $\mu$ is the gravitational parameter of the flyby body. 
+
+The flyby boundary constraints are given as follows, where $r_{p_l}$ and $r_{p_u}$ are lower and upper bounds on $r_p$, respectively, and are provided by the user.
+\begin{equation}
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}^{3 \times 1} \\
+   \mathbf{0}^{3 \times 1} \\
+   0 \\
+   0 \\
+   0 \\
+   r_{p_l} \\
+\end{bmatrix}
+%----- Constraint Values
+\leq
+\begin{bmatrix}
+   \mathbf{r}^{+} - \mathbf{r}_B(t^+) \\
+   \mathbf{r}^{-} - \mathbf{r}_B(t^-) \\
+   \| \mathbf{v}_{\infty}^{+}\| - \|\mathbf{v}_{\infty}^{-} \| \\
+   m^{+} - m_{-} \\
+   t^{+} - t^{-} \\
+   r_p \\
+\end{bmatrix}
+%----- Upper Bounds
+\leq
+%----- Lower Bounds
+\begin{bmatrix}
+   \mathbf{0}^{3 \times 1} \\
+   \mathbf{0}^{3 \times 1} \\
+   0 \\
+   0 \\
+   0 \\
+   r_{p_u} \\
+\end{bmatrix}
+\end{equation}
+
+The Jacobian of the constraint with respect to $\mathbf{x}^+$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial \mathbf{x}^+} = 
+\begin{bmatrix}
+   \Imat{3 \times 3}    & \Zeromat{3 \times 3}  & \Zeromat{3 \times 1} \\
+   \Zeromat{3 \times 3} & \Zeromat{3 \times 3}  & \Zeromat{3 \times 1} \\
+    \Zeromat{1 \times 3} & \vinfhat^{+^T}   & 0 \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3} & 1 \\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3} & 0 \\
+   \Zeromat{1 \times 3} & \partial r_p/ \partial \mbv^+  & 0  \\
+\end{bmatrix}.
+\end{equation}
+
+The Jacobian of the constraint with respect to $\mathbf{x}^-$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial \mathbf{x}^-} = 
+\begin{bmatrix}
+   \Zeromat{3 \times 3} & \Zeromat{3 \times 3}  & \Zeromat{3 \times 1} \\
+   \Imat{3 \times 3} & \Zeromat{3 \times 3} & \Zeromat{3 \times 1} \\
+   \Zeromat{1 \times 3} & -\vinfhat^{-^T}    & 0\\
+   \Zeromat{1 \times 3} &  \Zeromat{1 \times 3} & -1 \\
+   \Zeromat{1 \times 1} &  \Zeromat{1 \times 3} & 0 \\
+   \Zeromat{1 \times 3} & \partial r_p/ \partial \mbv^-  & 0  \\
+\end{bmatrix},
+\end{equation}
+%
+where 
+%
+\begin{equation}
+    \frac{\partial r_p}{\partial \mbv^+} = \frac{\partial r_p}{\partial \vinf^+}\frac{\partial \vinf^+}{\partial \mbv^+} =  
+    -2 \frac{r_p}{v_{\infty}^+}\vinfhat^{+^T} + \frac{1}{2}\frac{\mu}{v_{\infty}^{+^3}}             \frac{\cot{(\delta/2})}{\sin{(\delta/2)}}     
+     \frac{ \left( \vinfhat^{-^T} - \vinfhat^{-^T} \vinfhat^{+} \vinfhat^{+^T} \right)}{\sqrt{1 - \left(\vinfhat^{-^T} \vinfhat^{+}\right)^2}} 
+\end{equation}
+%
+\begin{equation}
+    \frac{\partial r_p}{\partial \mbv^-} = \frac{\partial r_p}{\partial \vinf^-}\frac{\partial \vinf^-}{\partial \mbv^-} = \frac{1}{2}\frac{\mu}{v_{\infty}^{+^2} v_{\infty}^{-}} \frac{\cot{(\delta/2})}{\sin{(\delta/2)}}     
+     \frac{ \left( \vinfhat^{+^T} - \vinfhat^{+^T} \vinfhat^{-} \vinfhat^{-^T} \right)}{\sqrt{1 - \left(\vinfhat^{-^T} \vinfhat^{+} \right)^2}}.
+\end{equation}
+%
+Note that the preceding derivatives assume that, in the equation for $r_p$, $v_{\infty}$ is represented by $v_{\infty}^+$, as opposed to $v_{\infty}^-$. 
+
+The Jacobian with respect to $t^+$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial t^+} = 
+\begin{bmatrix}
+   -\mbv_{B}(t^+)  \\
+   \Zeromat{3 \times 1}   \\
+   \partial v_{\infty}^+ / \partial t^+ \\
+   0  \\
+   1 \\
+   \partial r_p / \partial t^+ \\
+\end{bmatrix}.
+\end{equation}
+
+The Jacobian with respect to $t^-$ is given by
+\begin{equation}
+\frac{\partial \mathbf{c}_{fb}}{\partial t^-} = 
+\begin{bmatrix}
+   \Zeromat{3x1}  \\
+    -\mbv_{B}(t^-)  \\
+   - \partial v_{\infty}^- / \partial t^- \\
+   0  \\
+   -1 \\
+   \partial r_p / \partial t^- \\
+\end{bmatrix},
+\end{equation}
+%
+where
+
+\begin{equation}
+	\pd{v_{\infty}^+}{t^+} = - \vinfhat^{+^T} \mba_B(t^+)
+\end{equation}
+%
+\begin{equation}
+	\pd{v_{\infty}^-}{t^-} = - \vinfhat^{-^T} \mba_B(t^-)
+\end{equation}
+%
+\begin{equation}
+    \frac{\partial r_p}{\partial t^+} = \frac{\partial r_p}{\partial \vinf^+}\frac{\partial \vinf^+}{\partial t^+} =  
+    - \left(-2\frac{r_p}{v_{\infty}^+}\vinfhat^{+^T} + \frac{1}{2}\frac{\mu}{v_{\infty}^{+^3}}        \frac{\cot{(\delta/2})}{\sin{(\delta/2)}}     
+     \frac{ \left( \vinfhat^{-^T} - \vinfhat^{-^T} \vinfhat^{+} \vinfhat^{+^T} \right)}{\sqrt{1 - \left(\vinfhat^{-^T} \vinfhat^{+}\right)^2}}  \right)\mba_B(t^+)
+\end{equation}
+%
+\begin{equation}
+    \frac{\partial r_p}{\partial t^-} = \frac{\partial r_p}{\partial \vinf^-}\frac{\partial \vinf^-}{\partial t^-} =  -\left( \frac{1}{2}\frac{\mu}{v_{\infty}^{+^2} v_{\infty}^{-}} \frac{\cot{(\delta/2})}{\sin{(\delta/2)}}     
+     \frac{ \left( \vinfhat^{+^T} - \vinfhat^{+^T} \vinfhat^{-} \vinfhat^{-^T} \right)}{\sqrt{1 - \left(\vinfhat^{-^T} \vinfhat^{+}\right)^2}}\right)\mba_B(t^-).
+\end{equation}
+%
+The patched conic flyby constraints do not have a control dependency and all partials with respect to control are zero.

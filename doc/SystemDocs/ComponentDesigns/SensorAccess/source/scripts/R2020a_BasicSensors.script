@@ -1,0 +1,125 @@
+	% Spacecraft at Earth-Moon L2
+	Create Spacecraft Sat;
+	GMAT Sat.DateFormat = UTCGregorian;
+	GMAT Sat.Epoch = '23 Jan 2010 00:00:02.033';
+	GMAT Sat.CoordinateSystem = EarthMJ2000Eq;
+	GMAT Sat.DisplayStateType = Cartesian;
+	GMAT Sat.X = 406326.226613191;
+	GMAT Sat.Y = 177458.3876159782;
+	GMAT Sat.Z = 145838.5807900441;
+	GMAT Sat.VX = -0.5172746738228751;
+	GMAT Sat.VY = 0.7746503665608931;
+	GMAT Sat.VZ = 0.3314166026539857;
+
+	% Station in Florida
+	Create GroundStation TheCape;
+	GMAT TheCape.CentralBody = Earth;
+	GMAT TheCape.StateType = Spherical;
+	GMAT TheCape.HorizonReference = Ellipsoid;
+	GMAT TheCape.Location1 = 28.5619894;
+	GMAT TheCape.Location2 = 279.4228064;
+	GMAT TheCape.Location3 = -0.01451;
+	GMAT TheCape.MinimumElevationAngle = 10;
+
+	% Propagator Setup
+	Create ForceModel FM
+	GMAT FM.CentralBody = Earth;
+	GMAT FM.PrimaryBodies = {Earth};
+	GMAT FM.PointMasses = {Luna, Sun};
+
+	Create Propagator prop;
+	GMAT prop.FM = FM;
+	GMAT prop.Type = PrinceDormand78; 
+	GMAT prop.InitialStepSize = 60;
+	GMAT prop.Accuracy = 1e-12;
+	GMAT prop.MinStep = 0;
+	GMAT prop.MaxStep = 600;
+	GMAT prop.MaxStepAttempts = 50;
+	GMAT prop.StopIfAccuracyIsViolated = true;
+
+	% ------------------------------------------
+	% Visualization Scripting: Spacecraft
+
+	GMAT Sat.Attitude = NadirPointing;
+	GMAT Sat.AddHardware = {EarthPointingCone}
+
+	Create Antenna EarthPointingCone;
+	GMAT EarthPointingCone.FieldOfView = SatEarthCone;
+	GMAT EarthPointingCone.DirectionX = 1;
+	GMAT EarthPointingCone.DirectionY = 0;
+	GMAT EarthPointingCone.DirectionZ = 0;
+	GMAT EarthPointingCone.SecondDirectionX = 0;	% Ignored for cone
+	GMAT EarthPointingCone.SecondDirectionY = 0;
+	GMAT EarthPointingCone.SecondDirectionZ = 1;
+	GMAT EarthPointingCone.HWOriginInBCSX = 0;
+	GMAT EarthPointingCone.HWOriginInBCSY = 0;
+	GMAT EarthPointingCone.HWOriginInBCSZ = 0;
+
+	Create ConicalFOV SatEarthCone;
+	GMAT SatEarthCone.Color = [255 0 0];
+	GMAT SatEarthCone.Alpha = 64;
+	GMAT SatEarthCone.FieldOfViewAngle = 0.1;
+
+	% ------------------------------------------
+	% Visualization Scripting: Station
+
+	GMAT TheCape.AddHardware = {TenDegreeAntenna};
+
+	Create ConicalFOV TenDegEl;
+	GMAT TenDegEl.Color = [0 255 0];
+	GMAT TenDegEl.Alpha = 64;
+	GMAT TenDegEl.FieldOfViewAngle = 80;
+
+	Create Antenna TenDegreeAntenna;
+	GMAT TenDegreeAntenna.FieldOfView = TenDegEl;
+	GMAT TenDegreeAntenna.DirectionX = 0;
+	GMAT TenDegreeAntenna.DirectionY = 0;
+	GMAT TenDegreeAntenna.DirectionZ = 1;
+	GMAT TenDegreeAntenna.SecondDirectionX = 1;	% Ignored for cone
+	GMAT TenDegreeAntenna.SecondDirectionY = 0;
+	GMAT TenDegreeAntenna.SecondDirectionZ = 0;
+	GMAT TenDegreeAntenna.HWOriginInBCSX = 0;
+	GMAT TenDegreeAntenna.HWOriginInBCSY = 0;
+	GMAT TenDegreeAntenna.HWOriginInBCSZ = 0;
+
+	% ------------------------------------------
+	% Setup reporting for the spacecraft entering the station's field of view
+
+	Create ContactLocator ContactsAtTheCape;
+	GMAT ContactsAtTheCape.Target = Sat;
+	GMAT ContactsAtTheCape.Filename = 'CapeContacts.txt';
+	GMAT ContactsAtTheCape.OccultingBodies = {Luna};
+	GMAT ContactsAtTheCape.UseLightTimeDelay = true;
+	GMAT ContactsAtTheCape.UseStellarAberration = true;
+	GMAT ContactsAtTheCape.WriteReport = true;
+	GMAT ContactsAtTheCape.RunMode = Automatic;
+	GMAT ContactsAtTheCape.UseEntireInterval = true;
+	GMAT ContactsAtTheCape.Observers = {TheCape};
+	GMAT ContactsAtTheCape.LightTimeDirection = Transmit;
+
+	% Not available: Station visible to the Satellite
+
+	% ------------------------------------------
+	% Setup Visualization for the spacecraft and station
+	Create OpenFramesInterface openFramesInterface;
+	GMAT openFramesInterface.Add = {Sat, TheCape, Earth, Sun, Luna};
+	GMAT openFramesInterface.SensorMask = {SatMask, CapeMask};
+	GMAT openFramesInterface.CoordinateSystem = EarthMJ2000Eq;
+
+	Create OpenFramesSensorMask SatMask;
+	GMAT SatMask.Source = Sat;
+	GMAT SatMask.Hardware = EarthPointingCone;
+	GMAT SatMask.Label = 'Homewards';
+	GMAT SatMask.LengthType = Manual;
+	GMAT SatMask.Length = 465000;
+
+	Create OpenFramesSensorMask CapeMask;
+	GMAT CapeMask.Source = TheCape;
+	GMAT CapeMask.Hardware = TenDegreeAntenna;
+	GMAT CapeMask.Label = 'TheCape';
+	GMAT CapeMask.LengthType = Manual;
+	GMAT CapeMask.Length = 10000;
+
+	% ------------------------------------------
+	BeginMissionSequence
+	Propagate prop(Sat) {Sat.ElapsedDays = 30}

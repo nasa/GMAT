@@ -1,0 +1,46 @@
+%
+%  Ex_HighFidelitySRP
+%
+%  Use a SPAD spacecraft model for solar radiation pressure modeling.
+%
+%  This sample script shows how to configure a high fidelity SRP file (SPAD).
+%  Note the example provided is not particularly high fidelity and 
+%  the example simply shows how to use the funtionality. 
+%  See the user guide for more details
+%
+%  Released: R2014a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+%  Create the spacecraft and define the SRP file. 
+Create Spacecraft aSpacecraft;
+
+aSpacecraft.DryMass            = 2000
+aSpacecraft.SPADSRPFile        = '../data/vehicle/spad/SphericalModel.spo'
+aSpacecraft.SPADSRPScaleFactor = 1;
+
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+%  Create force model and configure it to use SPAD file for SRP
+Create ForceModel aFM;
+
+aFM.SRP          = On;
+aFM.SRP.SRPModel = SPADFile
+
+Create Propagator aProp;
+aProp.FM = aFM;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+%  Propagate the spacecraft
+BeginMissionSequence
+
+Propagate aProp(aSpacecraft) {aSpacecraft.ElapsedDays = 0.2}

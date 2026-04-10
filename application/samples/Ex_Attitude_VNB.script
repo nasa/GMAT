@@ -1,0 +1,86 @@
+%
+%  Ex_Attitude_VNB
+%
+%  Use of a velocity-oriented attitude model.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Sat;
+
+Sat.Attitude                     = CoordinateSystemFixed;
+Sat.AttitudeDisplayStateType     = 'Quaternion';
+Sat.AttitudeRateDisplayStateType = 'AngularVelocity';
+Sat.AttitudeCoordinateSystem     = userDefinedVNB;
+Sat.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp.FM      = DefaultProp_ForceModel;
+DefaultProp.MaxStep = 1;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem userDefinedVNB;
+
+userDefinedVNB.Origin    = Sat;
+userDefinedVNB.Axes      = ObjectReferenced;
+userDefinedVNB.XAxis     = N;
+userDefinedVNB.ZAxis     = -R;
+userDefinedVNB.Primary   = Earth;
+userDefinedVNB.Secondary = Sat;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View 
+
+Create OpenFramesInterface OFI_Earth3DView;
+
+OFI_Earth3DView.SolverIterations = Current;
+OFI_Earth3DView.Add              = {Sat, Earth};
+OFI_Earth3DView.View             = {Earth_View};
+OFI_Earth3DView.CoordinateSystem = EarthMJ2000Eq;
+
+OFI_Earth3DView.DrawObject       = [ true true];
+OFI_Earth3DView.DrawXYPlane      = [ false false];
+OFI_Earth3DView.DrawLabel        = [ true true];
+OFI_Earth3DView.DrawGrid         = [ false false];
+
+OFI_Earth3DView.Axes             = On;
+OFI_Earth3DView.XYPlane          = On;
+OFI_Earth3DView.EclipticPlane    = Off;
+OFI_Earth3DView.EnableStars      = On;
+OFI_Earth3DView.StarCount        = 40000;
+OFI_Earth3DView.ShowPlot         = true;
+
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame             = CoordinateSystem;
+Earth_View.SetDefaultLocation    = On;
+Earth_View.SetCurrentLocation    = Off;
+
+Earth_View.DefaultEye            = [ 20000 20000 20000]; 
+Earth_View.DefaultCenter         = [ 0 0 0 ];
+Earth_View.DefaultUp             = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop 120000 s' DefaultProp(Sat) {Sat.ElapsedSecs = 12000.0};

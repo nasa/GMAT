@@ -1,0 +1,227 @@
+%
+%  Ex_LibrationPointStationKeeping_ESM
+%
+%  Long-term stationkeeping for an Earth-Sun-Moon L1 libration point mission.
+%
+
+
+%----------------------------------------
+%---------- Calculated Points
+%----------------------------------------
+
+Create Barycenter DefaultBC;
+DefaultBC.BodyNames = {Earth, Luna};
+
+Create LibrationPoint ESL1;
+
+ESL1.Primary   = Sun;
+ESL1.Secondary = Earth;
+ESL1.Point     = L1;
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft ACE;
+
+ACE.DateFormat       = UTCGregorian;
+ACE.Epoch            = '09 Dec 2005 13:00:00.000';
+ACE.CoordinateSystem = EarthMJ2000Eq;
+ACE.DisplayStateType = Cartesian;
+ACE.X                = -528665.5773210001;
+ACE.Y                = -1325445.164527;
+ACE.Z                = -525969.843578;
+ACE.VX               = 0.240435056;
+ACE.VY               = -0.068342458;
+ACE.VZ               = 0.0315715361;
+ACE.DryMass          = 850;
+ACE.Cd               = 2.2;
+ACE.Cr               = 1.8;
+ACE.DragArea         = 15;
+ACE.SRPArea          = 1;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp_ForceModel.CentralBody = Earth;
+DefaultProp_ForceModel.PointMasses = {Sun, Earth, Luna};
+DefaultProp_ForceModel.Drag        = None;
+DefaultProp_ForceModel.SRP         = Off;
+DefaultProp_ForceModel.RelativisticCorrection = Off;
+DefaultProp_ForceModel.ErrorControl = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator EarthSunMoon;
+
+EarthSunMoon.FM              = DefaultProp_ForceModel;
+EarthSunMoon.Type            = RungeKutta89;
+EarthSunMoon.InitialStepSize = 60;
+EarthSunMoon.Accuracy        = 9.999999999999999e-012;
+EarthSunMoon.MinStep         = 0;
+EarthSunMoon.MaxStep         = 40000;
+EarthSunMoon.MaxStepAttempts = 40000;
+EarthSunMoon.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn MCC;
+MCC.CoordinateSystem = EarthSunRotCS;
+MCC.Element1         = 0;
+MCC.Element2         = 0;
+MCC.Element3         = 0;
+MCC.DecrementMass    = false;
+MCC.Isp              = 300;
+MCC.GravitationalAccel = 9.810000000000001;
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable I;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthSunL1CS;
+
+EarthSunL1CS.Origin    = ESL1;
+EarthSunL1CS.Axes      = ObjectReferenced;
+EarthSunL1CS.XAxis     = R;
+EarthSunL1CS.ZAxis     = N;
+EarthSunL1CS.Primary   = Sun;
+EarthSunL1CS.Secondary = Earth;
+
+Create CoordinateSystem EarthSunRotCS;
+
+EarthSunRotCS.Origin    = Earth;
+EarthSunRotCS.Axes      = ObjectReferenced;
+EarthSunRotCS.XAxis     = R;
+EarthSunRotCS.ZAxis     = N;
+EarthSunRotCS.Primary   = Sun;
+EarthSunRotCS.Secondary = Earth;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DefaultDC;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+%  Create an OpenFrameInterface View
+
+Create OpenFramesInterface OFI_L1View;
+
+OFI_L1View.SolverIterations          = Current;
+OFI_L1View.UpperLeft                 = [ 0.3486631016042781 0.01133501259445844 ];
+OFI_L1View.Size                      = [ 0.5197860962566845 0.482367758186398 ];
+OFI_L1View.RelativeZOrder            = 981;
+OFI_L1View.Maximized                 = false;
+
+OFI_L1View.Add                       = {ACE, Earth, Sun};
+OFI_L1View.View                      = {L1_View};
+
+OFI_L1View.CoordinateSystem          = EarthSunL1CS;
+OFI_L1View.DrawObject                = [ true true true];
+OFI_L1View.DrawXYPlane               = [ false false false];
+OFI_L1View.DrawLabel                 = [ true true true];
+OFI_L1View.DrawGrid                  = [ false false false];
+
+OFI_L1View.Axes                      = On;
+OFI_L1View.XYPlane                   = On;
+OFI_L1View.EclipticPlane             = Off;
+OFI_L1View.EnableStars               = On;
+OFI_L1View.StarCount                 = 40000;
+OFI_L1View.ShowPlot                  = true;
+
+
+Create OpenFramesInterface OFI_EarthSunRotView;
+
+OFI_EarthSunRotView.SolverIterations = Current;
+OFI_EarthSunRotView.UpperLeft        = [ 0.3475935828877005 0.5 ];
+OFI_EarthSunRotView.Size             = [ 0.5208556149732621 0.4521410579345088 ];
+OFI_EarthSunRotView.RelativeZOrder   = 979;
+OFI_EarthSunRotView.Maximized        = false;
+
+OFI_EarthSunRotView.Add              = {ACE, Earth, Luna, Sun};
+OFI_EarthSunRotView.View             = {EarthSunRot_View, ACE_View};
+
+OFI_EarthSunRotView.CoordinateSystem = EarthSunRotCS;
+OFI_EarthSunRotView.DrawObject       = [ true true true true];
+OFI_EarthSunRotView.DrawXYPlane      = [ false false false false];
+OFI_EarthSunRotView.DrawLabel        = [ true true true true];
+OFI_EarthSunRotView.DrawGrid         = [ false false false false];
+OFI_EarthSunRotView.DrawTrajectory   = [ true true true true ];
+
+OFI_EarthSunRotView.Axes             = On;
+OFI_EarthSunRotView.XYPlane          = On;
+OFI_EarthSunRotView.EclipticPlane    = Off;
+OFI_EarthSunRotView.EnableStars      = On;
+OFI_EarthSunRotView.StarCount        = 40000;
+OFI_EarthSunRotView.ShowPlot         = true;
+
+%----------------------------------------
+%---------- View Objects
+%----------------------------------------
+
+Create OpenFramesView L1_View;
+
+L1_View.ViewFrame                    = CoordinateSystem;
+L1_View.SetDefaultLocation           = On;
+L1_View.SetCurrentLocation           = Off;
+
+L1_View.DefaultEye                   = [ 0 0 540000 ];
+L1_View.DefaultCenter                = [ 0 0 0 ];
+L1_View.DefaultUp                    = [ 1 0 0 ];
+
+
+Create OpenFramesView EarthSunRot_View;
+
+EarthSunRot_View.ViewFrame           = CoordinateSystem;
+EarthSunRot_View.SetDefaultLocation  = On;
+EarthSunRot_View.SetCurrentLocation  = Off;
+
+EarthSunRot_View.DefaultEye          = [ -3000000 -1500000 1000000 ];
+EarthSunRot_View.DefaultCenter       = [ 0 0 0 ];
+EarthSunRot_View.DefaultUp           = [ 0 0 1 ];
+
+
+Create OpenFramesView ACE_View;
+
+ACE_View.ViewFrame                   = ACE;
+ACE_View.ViewTrajectory              = Off;
+ACE_View.InertialFrame               = Off;
+ACE_View.SetDefaultLocation          = Off;
+ACE_View.SetCurrentLocation          = Off;
+
+
+%----------------------------
+%---- Mission Sequence
+%----------------------------
+BeginMissionSequence;
+
+% Comment:  This is for simple example purposes and results in a Delta v
+% that is much too high!  Delta V's should be on the order of cm/s.  The
+% targeting scheme is beyond the scope of this simple demo. -SPH
+For 'For I = 1:7' I = 1:1:7;
+   Target 'Target Loop' DefaultDC {SolveMode = Solve, ExitMode = DiscardAndContinue};
+      Vary 'Vary MCC.V' DefaultDC(MCC.Element1 = MCC.Element1, {Perturbation = 1e-5, Lower = -0.1, Upper = 0.1, MaxStep = 0.001});
+      Maneuver 'Apply MCC' MCC(ACE);
+      Propagate 'Prop to Y = 0' EarthSunMoon(ACE) {ACE.EarthSunL1CS.Y = 0, StopTolerance = 1e-005};
+      Achieve 'Achieve VX = 0' DefaultDC(ACE.EarthSunL1CS.VX = 0, {Tolerance = 1e-005});
+   EndTarget;  % For targeter DefaultDC
+EndFor;
+
+
+

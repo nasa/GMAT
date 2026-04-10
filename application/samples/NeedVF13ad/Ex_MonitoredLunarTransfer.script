@@ -1,0 +1,246 @@
+%
+%  Ex_MonitoredLunarTransfer
+%
+%  Script Mission - Lunar Transfer Example
+%
+%  This script demonstrates how to optimize a lunar transfer, and declares success 
+%  when constraints fall within scripted ranges.
+%
+%  Optimizes the transfer from the Earth to the Moon, minimizing the delta-V cost 
+%  while ensuring that the spacecraft arrives at the targeted orbital state. 
+%
+%  Released: R2025a
+%
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft MoonSat;
+
+MoonSat.DateFormat       = UTCGregorian;
+MoonSat.Epoch            = '22 Jul 2014 11:29:10.811';
+MoonSat.CoordinateSystem = EarthMJ2000Eq;
+MoonSat.DisplayStateType = Cartesian;
+MoonSat.X                = -137380.1984338506;
+MoonSat.Y                = 75679.87867537055;
+MoonSat.Z                = 21487.63875187856;
+MoonSat.VX               = -0.2324532014235503;
+MoonSat.VY               = -0.4462753967758019;
+MoonSat.VZ               = 0.08561205662877103;
+MoonSat.DryMass          = 1000;
+MoonSat.Cd               = 2.2;
+MoonSat.Cr               = 1.7;
+MoonSat.DragArea         = 12;
+MoonSat.SRPArea          = 12;
+
+
+%----------------------------------------
+%---------- Dynamics and Propagators
+%----------------------------------------
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel LunarSB_ForceModel;
+
+LunarSB_ForceModel.CentralBody            = Earth;
+LunarSB_ForceModel.PointMasses            = {Earth, Sun, Luna};
+LunarSB_ForceModel.Drag                   = None;
+LunarSB_ForceModel.SRP                    = On;
+LunarSB_ForceModel.RelativisticCorrection = Off;
+LunarSB_ForceModel.ErrorControl           = RSSStep;
+
+
+Create ForceModel MoonCentered_ForceModel;
+
+MoonCentered_ForceModel.CentralBody            = Luna;
+MoonCentered_ForceModel.PointMasses            = {Earth, Sun, Luna};
+MoonCentered_ForceModel.Drag                   = None;
+MoonCentered_ForceModel.SRP                    = On;
+MoonCentered_ForceModel.RelativisticCorrection = Off;
+MoonCentered_ForceModel.ErrorControl           = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator LunarSB;
+
+LunarSB.FM                       = LunarSB_ForceModel;
+LunarSB.Type                     = PrinceDormand78;
+LunarSB.InitialStepSize          = 60;
+LunarSB.Accuracy                 = 1e-12;
+LunarSB.MinStep                  = 0;
+LunarSB.MaxStep                  = 45000;
+LunarSB.MaxStepAttempts          = 50;
+LunarSB.StopIfAccuracyIsViolated = true;
+
+Create Propagator MoonCentered;
+
+MoonCentered.FM                       = MoonCentered_ForceModel;
+MoonCentered.Type                     = PrinceDormand78;
+MoonCentered.InitialStepSize          = 60;
+MoonCentered.Accuracy                 = 1e-12;
+MoonCentered.MinStep                  = 0;
+MoonCentered.MaxStep                  = 15000;
+MoonCentered.MaxStepAttempts          = 50;
+MoonCentered.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TOI;
+
+TOI.CoordinateSystem   = Local;
+TOI.Origin             = Earth;
+TOI.Axes               = VNB;
+TOI.Element1           = 0.14676929889;
+TOI.Element2           = 0.046042675892;
+TOI.Element3           = 0.090223244097;
+TOI.DecrementMass      = false;
+TOI.Isp                = 300;
+TOI.GravitationalAccel = 9.81;
+
+
+Create ImpulsiveBurn LOI;
+
+LOI.CoordinateSystem   = Local;
+LOI.Origin             = Luna;
+LOI.Axes               = VNB;
+LOI.Element1           = -0.652;
+LOI.Element2           = 0;
+LOI.Element3           = 0;
+LOI.DecrementMass      = false;
+LOI.Isp                = 300;
+LOI.GravitationalAccel = 9.81;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthSunRot;
+
+EarthSunRot.Origin    = Earth;
+EarthSunRot.Axes      = ObjectReferenced;
+EarthSunRot.XAxis     = R;
+EarthSunRot.ZAxis     = N;
+EarthSunRot.Primary   = Sun;
+EarthSunRot.Secondary = Earth;
+
+
+Create CoordinateSystem MoonMJ2000Eq;
+
+MoonMJ2000Eq.Origin = Luna;
+MoonMJ2000Eq.Axes   = MJ2000Eq;
+
+
+Create CoordinateSystem EarthMoonRot;
+
+EarthMoonRot.Origin    = Luna;
+EarthMoonRot.Axes      = ObjectReferenced;
+EarthMoonRot.XAxis     = R;
+EarthMoonRot.ZAxis     = N;
+EarthMoonRot.Primary   = Earth;
+EarthMoonRot.Secondary = Luna;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create VF13ad SQP1;
+
+SQP1.ShowProgress           = true;
+SQP1.ReportStyle            = Normal;
+SQP1.ReportFile             = 'VF13adVF13ad1.data';
+SQP1.MaximumIterations      = 200;
+SQP1.Tolerance              = 1;
+
+% Enables tolerances on the constraints
+SQP1.CheckPhysicalTolerances = true;
+SQP1.UseCentralDifferences   = false;
+SQP1.UseFeasibility          = true;
+SQP1.FeasibilityTolerance    = 1;
+SQP1.MaximumLineSearches     = 20;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OGL_EarthMJ2K;
+
+OGL_EarthMJ2K.UpperLeft        = [ 0 0 ];
+OGL_EarthMJ2K.Size             = [ 0.5 0.5 ];
+OGL_EarthMJ2K.Add              = {MoonSat, Earth, Luna};
+OGL_EarthMJ2K.CoordinateSystem = EarthMJ2000Eq;
+
+
+Create OpenFramesInterface OGL_MoonMJ2K;
+
+OGL_MoonMJ2K.UpperLeft        = [ 0.5 0 ];
+OGL_MoonMJ2K.Size             = [ 0.5 0.5 ];
+OGL_MoonMJ2K.Add              = {MoonSat, Earth, Luna};
+OGL_MoonMJ2K.CoordinateSystem = MoonMJ2000Eq;
+
+
+Create OpenFramesInterface OGL_EarthMoonRot;
+
+OGL_EarthMoonRot.UpperLeft        = [ 0 0.5 ];
+OGL_EarthMoonRot.Size             = [ 0.5 0.5 ];
+OGL_EarthMoonRot.Add              = {MoonSat, Earth, Luna, Sun};
+OGL_EarthMoonRot.CoordinateSystem = EarthMoonRot;
+
+%----------------------------------------
+%---------- Plots and Reports 
+%----------------------------------------
+
+Create XYPlot RadApoPlot;
+RadApoPlot.UpperLeft  = [ 0.5 0.5 ];
+RadApoPlot.Size       = [ 0.5 0.5 ];
+RadApoPlot.XVariable  = MoonSat.A1ModJulian;
+RadApoPlot.YVariables = {MoonSat.RMAG};
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable Cost;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop to Perigee' LunarSB(MoonSat) {MoonSat.Periapsis};
+
+Optimize 'Optimal Transfer' SQP1 {SolveMode = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+   
+   Vary 'Vary TOI.V' SQP1(TOI.Element1 = 0.1562,   {Perturbation = 1e-005, MaxStep = .03, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary 'Vary TOI.N' SQP1(TOI.Element2 = 0.056042, {Perturbation = 1e-005, MaxStep = .01, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary 'Vary TOI.B' SQP1(TOI.Element3 = 0.1386,   {Perturbation = 1e-005, MaxStep = .03, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   
+   Maneuver 'Apply TOI' TOI(MoonSat);
+   
+   Propagate 'Prop 1.5 Days' LunarSB(MoonSat) {MoonSat.ElapsedDays = 1.5};
+   Propagate 'Prop to Periselene' MoonCentered(MoonSat) {MoonSat.Luna.Periapsis};
+   
+   Vary 'Vary LOI.V' SQP1(LOI.Element1 = -0.6, {Perturbation = 1e-003, MaxStep = .05, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   
+   Maneuver 'Apply LOI' LOI(MoonSat);
+   Propagate 'Prop to Periselene' MoonCentered(MoonSat) {MoonSat.Luna.Periapsis};
+	
+	% Cost is the burn delta-V
+   Cost = Sqrt(TOI.Element1^2 + TOI.Element2^2 + TOI.Element3^2) + Abs(LOI.Element1);
+   
+   NonlinearConstraint 'SMA = 2300' SQP1(MoonSat.Luna.SMA = 2300, Tolerance = 200);
+   NonlinearConstraint 'Inc = 65' SQP1(MoonSat.MoonMJ2000Eq.INC = 65, Tolerance = 5);
+   NonlinearConstraint 'ECC = 0.01' SQP1(MoonSat.Luna.ECC = 0.01, Tolerance = 0.05);
+   Minimize 'Minimize delta V' SQP1(Cost);
+
+EndOptimize;  % For targeter DC1
+
+Propagate 'Prop 1 Day' MoonCentered(MoonSat) {MoonSat.ElapsedDays = 1};

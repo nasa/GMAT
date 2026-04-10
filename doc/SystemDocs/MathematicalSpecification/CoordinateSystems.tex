@@ -1,0 +1,2607 @@
+\chapter{Coordinate Systems} \label{Ch:CoordinateSystems}
+
+%\section{Temp}
+%
+%From IAU-76 theory, we can covert from a vector in Earth fixed IAU-76, denoted $\mathbf{r}_{F_{76}}$, to
+%inertial IAU-76/FK5, denoted $\mathbf{r}_{I_{76}}$ using the following expression.
+%%
+%\begin{equation}
+%     \mathbf{r}_{F_{76}}  = \mathbf{W}(t) \mathbf{R}(t) \mathbf{N}(\Psi,\epsilon)\mathbf{P}(t)  \mathbf{r}_{I_{76}}
+%\end{equation}
+%%
+%where $\mathbf{W}(t)$,$\mathbf{R}(t)$, $\mathbf{N}(\Psi,\epsilon)$, and $\mathbf{P}(t)$ are respectively polar motion, sidereal time, nutation, and precession.  The IERS provides corrections to $\Psi$ and $\epsilon$ to enable software codes that use 1976-based computer implementations to transform from ITRF to GCRF using
+%%
+%\begin{equation}
+%     \mathbf{r}_{ITRF}  = \mathbf{W}(t) \mathbf{R}(t) \mathbf{N}(\Psi + \delta\Psi,\epsilon + \delta\epsilon)\mathbf{P}(t)    \mathbf{r}_{I_{GCRF}}
+%\end{equation}
+%%
+%If the fixed frames of the two theories are equivalent, then we can equate the two previous expressions to arrive at
+%%
+%\begin{equation}
+%     \mathbf{r}_{I_{76}}   = \mathbf{P}^T(t) \mathbf{N}^T(\Psi ,\epsilon)\mathbf{N}(\Psi + \delta\Psi,\epsilon + \delta \epsilon)\mathbf{P}  (t)  \mathbf{r}_{I_{GCRF}}
+%\end{equation}
+%%
+%I suspect this is wrong because
+%%
+%\begin{equation}
+%     \mathbf{r}_{ITRF}  \neq \mathbf{r}_{F_{76}}
+%\end{equation}
+%
+%There are numerous coordinate systems used in space mission
+%analysis, that when used appropriately can greatly simplify the work
+%and yield insight that is not obvious otherwise.  Some examples are
+%equatorial and ecliptic systems, and rotating coordinate systems
+%based on the relative motion of two bodies such as the Earth and
+%Moon.  GMAT has the capability to calculate many parameters in
+%different coordinate systems, and these parameters can then be used
+%in plots, reports, solvers, control flow statements and stopping
+%conditions to name a few.
+%
+%In this chapter we investigate how GMAT performs coordinate system
+%transformations, and how different coordinate systems are defined.
+%We begin by defining some notation.  Next, we look at how to
+%transform a vector and its first derivative from one coordinate
+%system to another when the coordinate systems are translating and
+%rotating with respect to one another.  Finally, we look at each
+%coordinate system defined in GMAT and discuss how to find its
+%rotation matrix and the first derivative of the rotation matrix to
+%rotate to the J2000 coordinate system.
+
+\section{General Coordinate System \\ Transformations } \index{Coordinate systems!general transformations}
+
+GMAT has the capability to take a position and velocity vector in
+one coordinate system, and convert them to another coordinate system
+that may be both translating and rotating with respect to the
+original system.  In this section we derive the equations governing
+coordinate system transformations and describe the algorithm GMAT
+uses to transform position and velocity vectors.
+
+We start by defining some notation.  In Fig.~\ref{fig:Frames}, we
+see an illustration of a point ``$p$" and two
+coordinate systems $\mathcal{F}_\mathcal{O}$ and $\mathcal{F}_\mathcal{F}$.
+Define the the position of $p$
+expressed in $\mathcal{F}_\mathcal{O}$  as
+%
+$\mathbf{r}_p^\mathcal{O}$.
+%
+Define the position of point $p$ with respect to
+frame $\mathcal{F}_\mathcal{F}$ as
+%
+$\mathbf{r}^\mathcal{F}_p$
+%
+\textit{It is important to
+note that using this notation,} $\|\mathbf{r}_p^\mathcal{O} \| \neq \|\mathbf{r}_p^F\|$, \textit{
+because the transformation defined in the notation contains a translation from the origin
+of $\mathcal{F}_\mathcal{O}$ to the origin of $\mathcal{F}_\mathcal{\mcF}$ as well as a coordinate rotation.}
+$\mathbf{r}_{f/i}$ is the vector from the origin of $\mathcal{F}_i$
+to origin of $\mathcal{F}_f$.  Define the rotation matrix that rotates
+from $\mathcal{F}_\mcI$ to $\mathcal{F}_\mcF$ as $\mathbf{R}^{\mcF/\mcI}$.
+Finally, let's define the  angular velocity $\mbox{\boldmath{$\omega
+$}}_{f/i}$ as the angular velocity of $\mathcal{F}_\mcI$ with respect to
+$\mathcal{F}_\mcF$.  To simplify the notation, we assume that a vector
+is expressed in the frame denoted by the superscript.  If need to define a
+point ``p" with respect to $\mathcal{F}_\mathcal{O}$, but express this result in
+$\mathcal{F}_\mathcal{F}$
+we use the notation $[\mathbf{r}_p^\mathcal{O}]^\mcF$
+curly brackets.  In summary, we have
+%
+\begin{tabbing}
+\index{Coordinate systems!nomenclature}
+%
+12345678 \= Reynoldsnumber based on length $s$ \kill
+$\mathbf{r}^{\mathcal{O}}_{p}$        \> Position of point $p$ w/r/t frame $\mathcal{F}_\mathcal{O}$
+                               expressed in  $\mathcal{F}_\mathcal{O}$ \\
+%
+$[\mathbf{r}^{\mathcal{O}}_{p} ]^\mcF$      \> Position of point $p$ w/r/t frame $\mathcal{F}_\mathcal{O}$
+                                   expressed in $\mathcal{F}_\mcF$   \\
+%
+$\mathbf{r}_{f/o}^\mcF$        \> Position vector from origin of $\mathcal{F}_\mathcal{O}$ to origin
+                         of $\mathcal{F}_\mcF$ expressed in $\mathcal{F}_\mcF$  \\
+%
+$\mathbf{R}^{\mcF/\mathcal{O}}$      \> Rotation matrix from frame $\mathcal{F}_\mathcal{O}$ to $\mathcal{F}_\mcF$\\
+%
+$\mbox{\boldmath{$\omega $}}_{f/o}^\mathcal{O}$   \>  Angular velocity of frame
+$\mathcal{F}_\mathcal{O}$ w/r/t $\mathcal{F}_\mcF$,   expressed in frame
+$\mathcal{F}_\mathcal{O}$ \\
+%
+$\mbox{\boldmath{$\omega $}}_{f/o}^\mcF$   \>  Angular velocity of
+frame $\mathcal{F}_\mathcal{O}$ w/r/t $\mathcal{F}_\mcF$,  expressed in
+frame
+$\mathcal{F}_\mcF$ \\
+\end{tabbing}
+
+
+\begin{figure*}[htb]
+ \centerline{
+\begin{picture}(100,230)
+\special{psfile= Images/Frames.eps hoffset= -160 voffset= -200
+hscale=60 vscale=60}
+\makebox(-140,15){$\mathcal{F}_{\mathcal{O}}$}
+\makebox(175,140){$\mathcal{F}_{\mcF}$}
+\makebox(-300,240){$\mathbf{r}_{o}^\mathcal{O}$}
+\makebox(-265,180){$\mathbf{r}_{i/f}$}
+\makebox(-165,310){$\mathbf{r}_{o}^\mcF$}
+\makebox(-220,430){$o$}
+\end{picture}}
+\caption{ Illustration of a Translating and Rotating Coordinate
+System } \label{fig:Frames}
+\end{figure*}
+
+
+From inspection of Figure \ref{fig:Frames} we can write
+%
+\begin{equation}
+      \mathbf{r}_{o}^\mcF = \underbrace{\mathbf{R}^{\mcF/\mcI}\mathbf{r}_{o}^\mcI}_{Rot.} +
+     \underbrace{  \mathbf{r}_{i/f}^\mcF}_{Trans.}
+     \label{Eq:PosTransform}
+\end{equation}
+%
+Equation (\ref{Eq:PosTransform}) is the equation used to convert a
+vector known in frame $\mathcal{F}_i$ to a vector in frame
+$\mathcal{F}_f$, where both a rotation and a translation are
+required.  The first term in Eq. (\ref{Eq:PosTransform}) is the
+term that performs the rotation portion of the transformation.
+Here, $\mathbf{r}_{i}$ is the position vector w/r/t to
+$\mathcal{F}_i$ and is expressed in $\mathcal{F}_i$.
+$\mathbf{R}_{fi}$ is the rotation matrix that rotates from
+$\mathcal{F}_i$ to $\mathcal{F}_f$.   $\mathbf{r}_{if}$ is the
+vector that goes from the origin of $\mathcal{F}_f$ to the origin
+of $\mathcal{F}_i$, and is expressed in $\mathcal{F}_f$.
+
+We also need to be able to determine the time rate of change of a
+vector in frame $\mathcal{F}_f$ if we know the time rate of change
+of the vector in $\mathcal{F}_i$.  To determine the equation that
+describes the transformation, we must take the derivative of
+Eq.~(\ref{Eq:PosTransform}) with respect to time.
+\begin{equation}
+     \frac{d\mathbf{r}_{f}}{dt} = \frac{d\mathbf{R}_{fi}\mathbf{r}_{i}}{dt}
+     +\frac{d \mathbf{r}_{if}}{dt}
+\end{equation}
+%
+Let's use a single dot above a variable to denote the first
+derivative of that variable with respect to time.  Then, we can
+expand this to obtain
+%
+\begin{equation}
+     \dot{\mathbf{r}}_{f} = \dot{\mathbf{R}}_{fi}\mathbf{r}_{i} +
+     \mathbf{R}_{fi}\dot{\mathbf{r}_{i}}
+     +\dot{ \mathbf{r}}_{if}  \label{Eq:WithRdot}
+\end{equation}
+%
+In Eq.~(\ref{Eq:WithRdot}) we see a term that contains the time
+derivative of the rotation matrix from $\mathcal{F}_i$ to
+$\mathcal{F}_f$.  We can write the time derivative of
+$\mathbf{R}_{fi}$ as
+%
+\begin{equation}
+     \dot{\mathbf{R}}_{fi} = \mathbf{R}_{fi}
+     \mbox{\boldmath{$\omega $}}^{\mbox{x}}_{fi} =  \{\mbox{\boldmath{$\omega
+     $}}^{\mbox{x}}_{fi}\}_f\mathbf{R}_{fi}\label{Eq:dRdt}
+\end{equation}
+%
+where $\mbox{\boldmath{$\omega $}}_{fi}$ is the angular velocity of
+$\mathcal{F}_i$ with respect to $\mathcal{F}_f$ expressed in
+$\mathcal{F}_i$.  The skew symmetric matrix, $\boldsymbol \omega
+^x$, is defined as
+\begin{equation}
+\boldsymbol \omega ^x= \left( \begin{array}{ccc}
+  0 & -\omega_z  & \omega_y \\
+  \omega_z & 0 & -\omega_x \\
+  -\omega_y & \omega_x & 0 \\
+\end{array} \right)
+\end{equation}
+%
+In summary, using Eq.~(\ref{Eq:dRdt}) to transform a derivative
+vector from $\mathcal{F}_i$  to $\mathcal{F}_f$ we can use any of
+the following three equations:
+%
+\begin{equation}
+     \dot{\mathbf{r}}_{f}  = \underbrace{\mathbf{R}_{fi}
+     \mbox{\boldmath{$\omega $}}^{\mbox{x}}_{fi}\mathbf{r}_{i} + \mathbf{R}_{fi}\dot{\mathbf{r}}_{i}}_{Rot.}
+     + \underbrace{\dot{\mathbf{r}}_{if}}_{Trans.} \label{Eq:Transform1}
+\end{equation}
+%
+\begin{equation}
+    \dot{\mathbf{r}}_{f}  = \underbrace{\{\mbox{\boldmath{$\omega $}}^{\mbox{x}}_{fi}\}_f\mathbf{R}_{fi}\mathbf{r}_{i} + \mathbf{R}_{fi}\dot{\mathbf{r}}_{i}}_{Rot.}
+     + \underbrace{\dot{\mathbf{r}}_{if}}_{Trans.} \label{Eq:Transform2}
+\end{equation}
+%
+\begin{equation}
+     \dot{\mathbf{r}}_{f} = \underbrace{\dot{\mathbf{R}}_{fi}\mathbf{r}_{i} + \mathbf{R}_{fi}\dot{\mathbf{r}}_{i}
+     }_{Rot.}+  \underbrace{\dot{\mathbf{r}}_{if}}_{Trans.}\label{Eq:Transform3}
+\end{equation}
+%
+We choose between Eqs.~(\ref{Eq:Transform1}), (\ref{Eq:Transform2}),
+or (\ref{Eq:Transform3}) depending on the type of information we
+have, and which frame is most convenient to express the angular
+velocity $\boldsymbol \omega_{fi}$ in.  In general, we know
+$\mathbf{r}_{i}$ and $\dot{\mathbf{r}}_{i}$.  To perform the
+transformation we need to determine $\mathbf{R}$,
+$\dot{\mathbf{R}}$, and $\dot{\mathbf{r}}_{if}$ and these quantities
+depend on $\mathcal{F}_i$ and $\mathcal{F}_f$.
+
+One of the difficulties in implementing coordinate system
+transformations in GMAT is that we often can't calculate
+$\mathbf{R}_{fi}$ and $\dot{\mathbf{R}}_{fi}$ directly.  For
+example, it is nontrivial to directly calculate the rotation matrix
+from the Earth fixed frame to the Moon fixed frame.  Hence, we need
+to choose a convenient intermediate coordinate system. We choose the
+axis system defined by Earth's mean equinox and mean equator at the
+J2000 epoch, denoted $\mathcal{F}_{J_{2k}}$, as the intermediate
+reference frame for all transformations that require an intermediate
+transformation. This choice is motivated by the fact that most of
+the data needed to calculate $\mathbf{R}$ and $\dot{\mathbf{R}}$ is
+given so that it is fast and convenient to calculate
+$\mathbf{R}_{J_{2k},i}$, and $\dot{\mathbf{R}}_{J_{2k},i}$.
+
+The steps taken to perform a general coordinate transformation in
+GMAT are described below and illustrated in
+Fig.~\ref{fig:RotSequence}. \index{Coordinate systems!transformation
+algorithm} We start with a vector and its first derivative known in
+frame $\mathcal{F}_i$, and wish to determine the vector and its
+first derivative with respect to frame $\mathcal{F}_f$.  However, we
+assume that the transformation to go directly from $\mathcal{F}_i$
+to $\mathcal{F}_f$ is not known.
+
+The first step in the process is to perform a rotation from
+$\mathcal{F}_i$ to $\mathcal{F}_{J_{2k}}$. We define this
+intermediate system as $\mathcal{F}_1$.  No translation is performed
+in step one. Using only the rotation portions of from
+Eqs.~(\ref{Eq:PosTransform}) and (\ref{Eq:Transform3}) we see that
+%
+\begin{equation}
+          \left\{\mathbf{r}_i\right\}_{1} = \mathbf{R}_{J_{2k},i}
+          \mathbf{r}_{i} \label{Eq:PosRot1}
+\end{equation}
+%
+\begin{equation}
+          \left\{\dot{\mathbf{r}}_i\right\}_1 = \dot{\mathbf{R}}_{J_{2k},i}\mathbf{r}_{i} +
+          \mathbf{R}_{J_{2k},i}\dot{\mathbf{r}}_{i} \label{Eq:VelRot1}
+\end{equation}
+%
+The second step is to perform a translation from the origin of
+$\mathcal{F}_i$ to the origin of $\mathcal{F}_f$.  We define this
+second intermediate system as $\mathcal{F}_2$. $\mathcal{F}_2$ has
+the same origin as $\mathcal{F}_f$ but has the same axes as
+$\mathcal{F}_{J_{2k}}$.  From inspection of
+Fig.\ref{fig:RotSequence} we can see that
+%
+\begin{equation}
+     \left\{\mathbf{r}_i\right\}_{1}  = \left\{\mathbf{r}_{Ri}\right\}_{J_{2k}}+ \left\{\mathbf{r}_{fR}\right\}_{J_{2k}} +
+     \left\{\mathbf{r}_f\right\}_{2}
+\end{equation}
+%
+Solving for $\mathbf{r}_f$ we obtain
+%
+\begin{equation}
+     \left\{\mathbf{r}_f\right\}_{2} =  \left\{\mathbf{r}_i\right\}_{1} -
+      \left\{\mathbf{r}_{Ri}\right\}_{J_{2k}} - \left\{
+      \mathbf{r}_{fR}\right\}_{J_{2k}}\label{Eq:Translater}
+\end{equation}
+%
+where $\left\{\mathbf{r}_{Ri}\right\}_{J_{2k}}$ is the vector from
+the origin of $\mathcal{F}_i$ to the origin of $\mathcal{F}_R$
+expressed in $\mathcal{F}_{J{2k}}$.  Similarly
+$\left\{\mathbf{r}_{fR}\right\}_{J_{2k}}$ is the vector from the
+origin of $\mathcal{F}_R$ to the origin of $\mathcal{F}_f$
+expressed in $\mathcal{F}_{J{2k}}$. Because the vector $ \left\{
+\mathbf{r}_f\right\}_2$ is expressed in an inertial system we can
+we can take the derivative of Eq~.(\ref{Eq:Translater}) to obtain
+%
+\begin{equation}
+      \left\{\mathbf{v}_f\right\}_{2} =  \left\{\mathbf{v}_i\right\}_{1} - \left\{ \mathbf{v}_{Ri} \right\}_{J_{2k}} - \left\{\mathbf{v}_{fR}\right\}_{J_{2k}}
+\end{equation}
+%
+where $\left\{\mathbf{v}_{Ri}\right\}_{J_{2k}}$ is the velocity of
+the origin of $\mathcal{F}_R$ w/r/t the origin of $\mathcal{F}_i$.
+Similarly, $\left\{\mathbf{v}_{fR}\right\}_{J_{2k}}$ is the
+velocity of the origin of $\mathcal{F}_f$ w/r/t the origin of
+$\mathcal{F}_R$. Finally, we perform a rotation from
+$\mathcal{F}_{J_{2k}}$ to $\mathcal{F}_f$ about the origin of
+$\mathcal{F}_f$ to obtain the desired quantities.
+%
+\begin{equation}
+    \mathbf{r}_f = \mathbf{R}_{f,J_{2k}}
+    \left\{\mathbf{v}_f\right\}_{2} \label{Eq:PosRot2}
+\end{equation}
+%
+\begin{equation}
+  \dot{\mathbf{r}}_f = \dot{\mathbf{R}}_{f,J_{2k}}\left\{\mathbf{r}_f\right\}_{2} + \mathbf{R}_{f,J_{2k}}\left\{\mathbf{v}_f\right\}_{2}
+   \label{Eq:VelRot2}
+ \end{equation}
+%
+\begin{figure*}[htb]
+ \centerline{
+\begin{picture}(100,320)
+\special{psfile= Images/RotSequence.eps hoffset= -200 voffset= -160
+hscale=80 vscale=80}
+%
+\makebox(-175,315){$\mathcal{F}_i$}
+\makebox(350,295){$\mathcal{F}_f$}
+\makebox(-140,410){$\mathcal{F}_2$}
+\makebox(-440,220){$\mathcal{J}_{2k}$}
+\makebox(-830,460){$\mathcal{F}_1$}
+\makebox(-730,580){$\mathbf{r}_{i}$}
+\makebox(-490,560){$\mathbf{r}_{f}$}
+\makebox(-740,290){$\mathbf{r}_{Ri}$}
+\makebox(-510,290){$\mathbf{r}_{fR}$}
+\end{picture}}\vspace{ -1 in} \caption{ General Coordinate System Transformation Approach in GMAT} \label{fig:RotSequence}
+\index{Coordinate systems!transformation algorithm}
+\end{figure*}
+%
+
+
+\section{Pseudo-Rotating Coordinate\\ Systems}\index{Psuedo-Rotating
+Coordinate Systems} \label{Sec:PseudoRotating}
+
+In mission analysis, sometimes it is useful to consider a rotating
+coordinate system to be inertial at a given instant in time. In this
+case, we ignore the effects of rotation on the velocity.  Let's call
+systems where we neglect the rotational effects on velocity
+ pseudo-rotating coordinate systems.
+
+To perform transformations to a pseudo-rotating coordinate system,
+the equations to convert a  position vector do not change and are
+given by Eqs.~(\ref{Eq:PosRot1}) and (\ref{Eq:PosRot2}).  However,
+the velocity conversion equations change because we neglect the
+terms that contain $\dot{\mathbf{R}}$.  For pseudo-rotating
+coordinate systems the velocity transformations shown in
+Eqs.~(\ref{Eq:VelRot1}) and (\ref{Eq:VelRot2}) become
+%
+\begin{equation}
+          \left\{\frac{d\mathbf{r}_i}{dt}\right\}_1 =  \mathbf{R}_{J_{2k},i}\frac{d\mathbf{r}_{i}}{dt}
+\end{equation}
+%
+and
+%
+\begin{equation}
+  \frac{d\mathbf{r}_f}{dt} =  \mathbf{R}_{f,J_{2k}}\left\{\mathbf{v}_f\right\}_{2}
+\end{equation}
+%
+
+To perform the transformations describe in the last few sections, we
+need to be able to calculate the rotation matrix between any
+coordinate system and $\mathcal{F}_{J_{2k}}$, and the derivative of
+the rotation matrix. In the following sections we calculate these
+matrices for the systems used in GMAT.  We assume that we want the
+transformation from some generic frame $\mathcal{F}_i$ to
+$\mathcal{F}_{J_{2k}}$ which is the Earth Mean J2000 Equatorial
+(MJ2000Eq) system.  The rotation matrix from $\mathcal{F}_{J_{2k}}$
+to $\mathcal{F}_i$ can be found by the simple relationship.
+%
+\begin{equation}
+      \mathbf{R}_{i,J_{2k}} = \mathbf{R}_{J_{2k},i}^{-1} = \mathbf{R}_{J_{2k},i}^{T}
+\end{equation}
+%
+and
+%
+\begin{equation}
+      \dot{\mathbf{R}}_{if} = \dot{\mathbf{R}}_{J_{2k},i}^{-1} = \dot{\mathbf{R}}_{J_{2k},i}^{T}
+\end{equation}
+
+
+
+
+\clearpage
+
+\section{ITRF and ICRF}
+
+The computation for the ICRF and ITRF tranformations in GMAT are from Kaplan\cite{Kaplan:05} and Capolla\cite{Coppola:etal:05} \emph{et.al.} and employ the IAU 2000A nutation IAU 2006 precession models.  The transformation is performed using three intermediate rotations as follows:
+%
+\begin{equation}
+     \mathbf{R} = \mathbf{C}^T\mathbf{R}_3(-\theta)\mathbf{W}
+\end{equation}
+%
+where $\mathbf{W}$ is the polar motion matrix, $\mathbf{R}_3$ is a 3 rotation through the Earth rotation angle $\theta$ (see Section \ref{sec:BasicRotationMatrices}), and
+$\mathbf{C}$ is a single matrix that captures precession, nutation, and frame bias.
+The time derivative of the rotation matrix assumes that the only significant time variation of the rotation matrix is due to the Earth's spin and is computed using
+%
+\begin{equation}
+     \mathbf{R} = \mathbf{C}^T\mathbf{R}_3(-\theta)\boldsymbol{\omega}_E^x\mathbf{W}
+\end{equation}
+%
+where
+%
+\begin{equation}
+   \boldsymbol{\omega}_E^x =
+   \left(\begin{array} {ccc}
+     0 & -\omega_e & 0 \\
+     \omega_e & 0 & 0 \\
+     0 & 0 & 0
+   \end{array}\right)
+\end{equation}
+%
+and $\omega_e$ is computed using Eq.~(\ref{Eq:EarthAngularVelocity}).
+
+$\mathbf{W}$ is computed from
+Eq.~6.15 in Kaplan\cite{Kaplan:05} as shown below.
+%
+\begin{equation}
+   \mathbf{W} = \mathbf{R}_3(-s')\mathbf{R}_2(x_p)\mathbf{R}_1(y_p)
+\end{equation}
+%
+The variable $s'$ is computed from
+%
+\begin{equation}
+    s' =  (-47 \mu\mbox{as}) T_{TT}
+\end{equation}
+%
+where $T_{TT}$ is given by Eq.~(\ref{Eq:T_TTComputation})and $x_p$ and $y_p$ are interpolated using third order lagrange interpolation from Earth Orientation Parameters (EOP) files provided by the IERS. The Earth Rotation angle is computed from
+%
+\begin{equation}
+    \theta = 2\pi(0.7790572732640 + 1.00273781191135448(JD_{UT1} - 2451545.0))
+\end{equation}
+%
+where $JD_{UT1}$ is the Julian date expressed in UT1 using Eq.~(\ref{Eq:UT1ToUTC}).
+
+$\mathbf{C}^T$ is computed using
+%
+\begin{equation}
+    \mathbf{C}^T = \left(\begin{array}{ccc}
+    1 - b X^2 & -b X Y & X\\
+    -b X Y & 1-b Y^2 & Y\\
+    -X & -Y & 1 - b(X^2 + Y^2)
+    \end{array}\right) \mathbf{R}_{3}(s)
+\end{equation}
+%
+where
+%
+\begin{equation}
+    b = \frac{1}{1 + \sqrt{1 - X^2 - Y^2}}
+\end{equation}
+%
+The variables $X$, $Y$, are respectively the $x$-component and $y$-component of the Celestial Intermediate
+Pole unit vector (CIP), and $s$ is called the Celestial Intermediate Origin (CIO) locator. The computation of $X$, $Y$, and $s$ requires evaluating series expansions with thousands of terms and many trigonometric function evaluations and is computationally expensive.  Vallado \emph{et. al.} show that it is possible to precompute $X$, $Y$, and $s$ at one day intervals and interpolate the values using ninth order Lagrange interpolation and provide values that are accurate to within the error of the theory itself.  The interpolation of $X$, $Y$, and $s$ is over two orders of magnitude faster than the series evaluation.  Interpolation of data at 1 day intervals is possible because all physical affects with a period of two days or less are not included in the theory for $X$, $Y$,
+$s$ and are accounted for in the daily observations provided by the IERS in the EOP files\cite{Kaplan:05}.  GMAT interpolates tabulated values $X$, $Y$, $s$ created using the IAU SOFA routines.  $s$ is computed using the routine iauS06a.c which uses the 2000A nutation model and 2006 precession model.  $X$ and $Y$ are computed using the IAU SOFA routine called iauXy06 which also uses the the 2000A nutation model and 2006 precession model.
+
+
+\section{Transformation from ICRT to MJ2000Eq}
+
+With the inclusion of ICRF-based systems, GMAT supports two types of axis systems: (1) axis systems that are
+based on IAU-1976 theory (called MJ2000Eq in GMAT), and (2) axis systems based on IAU-2000 theory (called ICRF in GMAT).  Rotation from ICRF to MJ2000Eq is performed using the Frame Bias matrix, $\mathbf{B}$, given by Kaplan\cite{Kaplan:05}.
+%%
+\begin{equation}
+   \mathbf{B} = \left(
+   \begin{array}{ccc}
+       1 - 0.5(d\alpha_0^2 + \xi_0^2) & d \alpha_0 & -\xi_0\\
+       -d \alpha_0 - \eta_0 \xi_0 & 1 - 0.5(d \alpha_0^2 + \eta_0^2) & -\eta_0\\
+      \xi_0 - \eta_0 d \alpha_0 & \eta_0+\zeta_0 d \alpha_0 & 1 - 0.5(\eta_0^2 + \xi_0^2)
+   \end{array}
+   \right)
+\end{equation}
+%
+where $d\alpha_0 = -14.6 \mbox{ mas}$, $\xi_0 = -16.6170 \mbox{ mas}$, and $\eta_0 = -6.8192 \mbox{ mas}$.
+
+The rotation between any two axes, defind here as $\mathcal{A}_1$ and $\mathcal{A}_2$, are performed in three steps:
+%
+\begin{enumerate}
+   \item Convert from $\mathcal{A}_1$ to the base axes for $\mathcal{A}_1$.
+   \item If $\mathcal{A}_1$ and $\mathcal{A}_2$ have different base axis systems, use $\mathbf{B}$ to convert from $\mathcal{A}_1$ to the base axes of $\mathcal{A}_2$
+   \item Convert from the base axes for $\mathcal{A}_2$ to $\mathcal{A}_2$
+\end{enumerate}
+
+
+\section{The $\mathcal{F}_{J_{2k}}$ Inertial System and FK5 Reduction}
+
+It is well know that Newton's laws must be applied in an inertial
+system.  The struggle to determine a truly inertial system has
+continued since Newton's time.  In reality, the best we can do is
+approximate a truly inertial system  in which to apply Newton's
+laws. In GMAT that system is the FK5 system, here called
+$\mathcal{F}_{J_{2k}}$.  The $\mathcal{F}_{J_{2k}}$ system is
+referenced to the Earth's equator and the Earth's orbit about the
+sun.  Because neither of these two planes are fixed in space, we
+must pick an epoch and define an inertial system based on the
+geometry at that epoch.  This epoch is commonly chosen as the J2000
+epoch.  In this section, we present the definition of the
+$\mathcal{F}_{J_{2k}}$ system, and discuss the transformation from
+$\mathcal{F}_{J_{2k}}$  to the Earth Fixed system.  This
+transformation is called FK5 reduction.  We begin with a conceptual
+discussion of how the Earth's spin axis moves with respect to
+inertial space.  We conclude this section with a presentation of the
+mathematical theory of FK5 reduction.
+
+
+
+\subsection{Overview of FK5 Reduction} \index{FK5 Reduction!overview}
+\index{FK5 Reduction!Earth fixed system}
+
+The inertial system most commonly used in astrodynamics as of this
+writing is the FK5 system.  We call this system
+$\mathcal{F}_{J_{2k}}$.  The $\mathcal{F}_{J_{2k}}$ system is used
+for many calculations in GMAT.  The two most important are for
+integrating equations of motion, and as an intermediate system for
+coordinate system transformation. $\mathcal{F}_{J_{2k}}$ is used
+throughout the astrodynamics community as the coordinate system to
+represent time varying data such as planetary ephemerides and
+planetary pole and prime meridian locations.
+
+The rigorous mathematical definition of $\mathcal{F}_{J_{2k}}$ is
+complex. So, let's start with a simple qualitative explanation.
+The nominal $z$-axis of $\mathcal{F}_{J_{2k}}$ is normal to the
+Earth's equatorial plane.  The nominal $x$-axis points along the
+line formed by the intersection of the Earth's equatorial plane
+and the ecliptic plane, in the direction of Aries.  The nominal
+$y$-axis completes the right-handed system. Both the equatorial
+and ecliptic planes move slowly with respect to inertial space.
+The rigorous definition of FK5 uses the mean planes of the
+ecliptic and equator, at the J2000 epoch. We'll take a closer look
+at the mathematical definitions of the mean ecliptic and equator
+below.
+
+
+FK5 reduction is the transformation that rotates a vector
+expressed in the $\mathcal{F}_{J_{2k}}$ system to the Earth Fixed
+coordinate system. To perform this transformation obviously
+requires an understanding of how the Earth's orientation changes
+with respect to $\mathcal{F}_{J_{2k}}$.  The time varying
+orientation of the Earth is complex and is due to complicated
+interactions between the Earth and it's external environment and
+complicated internal dynamics. In fact, the dynamic orientation of
+the Earth is so complicated that we can't model it completely and
+FK5 reduction is a combination of dynamics models and empirical
+observations that are updated daily.
+
+We describe the orientation of the Earth using three types of
+motion.  The first type, including precession and nutation,
+describes how the Earth's principal moment of inertia moves with
+respect to inertial space\cite{seidelmann}.  The motion is
+illustrated in Fig. \ref{fig:FK5FigOne}. The principal moment of
+inertia is defined as the Celestial Ephemeris Pole\index{Celestial
+Ephemeris Pole}, and due to the fact that Earth's mass distribution
+changes with time, the Celestial Ephemeris Pole is not constant with
+respect to the Earth's surface. Precession is the coning motion that
+the Celestial Ephemeris Pole makes around the ecliptic north pole.
+The other principal component of the motion of the Celestial
+Ephemeris Pole is commonly called nutation and is the oscillation in
+the angle between the Celestial Ephemeris Pole and the north
+ecliptic pole. The theory of Precession and Nutation come from
+dynamics models of the Earth's motion.  The second type of motion is
+called sidereal time, and represents a rotation about the Celestial
+Ephemeris Pole. The sidereal time model is a combination of theory
+ad observation. The third motion is that of the Earth's
+instantaneous spin axis with respect to the Earth's surface.  As,
+we'll see below, the Earth's spin axis is not constant with respect
+to the Earth's crust and it's motion is called Polar Motion.  A
+portion of polar motion is due to complicated dynamics, and a
+portion is due to unmodelled errors in nutation. Polar motion is
+determined from observation. Now that we've had a brief introduction
+to precession, nutation, sidereal time, and polar motion, let's look
+at each in more detail.
+
+\subsubsection{Precession}\index{FK5 Reduction!precession}
+
+As we mentioned above, precession is the coning motion of the
+Celestial Ephemeris Pole about the ecliptic north pole and is
+illustrated in Fig \ref{fig:FK5FigOne}. The motion is caused by two
+primary effects. The first is the motion of the ecliptic plane due
+to the gravitational effects of the Sun, Moon, and planets on the
+Earth's orbit, and is called planetary precession. If the Earth's
+equator were fixed in inertial space, the effects of planetary
+precession would cause a precession of the equinox of about 12" per
+century and a decrease in the obliquity of the ecliptic of about 47"
+per century \cite{seidelmann}.  The second cause of precession is
+due to the gravitational attraction of the Sun and Moon on the
+irregular mass distribution of the Earth. This causes a change in
+the orientation of the Earth's equatorial plane with respect to
+inertial space with a smooth, long-period motion with a period of
+26,000 years.  The combined effects of planetary and lunisolar
+precession are called general precession and account for the secular
+and long period motion of the Celestial Ephemeris Pole (the short
+period motion is called nutation).  \index{FK5 Reduction!secular
+motion} \index{FK5 Reduction!long period motion}The secular and long
+period motion is often used to define a mean equator and equinox,
+because it does not contain the short period motion that is modelled
+using nutation. Precession is modelled using three cubic equations
+that are shown in Section %\ref{Sec:Precession}
+
+\subsubsection{Nutation}\index{FK5 Reduction!nutation}
+
+Nutation is the most complex motion in FK5 reduction.   According to
+Seidelmann\cite{seidelmann}, nutation is ``the short period motion
+of the Earth's rotation axis with respect to a space-fixed
+coordinate system."  Nutation is actually a superposition of motions
+with many different periods, the longest of which is 18.6 years and
+is associated with the regression of the node of the Moon's orbit.
+There are nutation effects due to the gravitational torque of the
+Sun, Moon, and planets on the Earth's irregular mass distribution.
+There are also Nutation effects due to the fact that Earth is not a
+rigid body.  Nutation motion has an amplitude of about 9" and is
+usually represented as the sum of two components one in longitude
+and one in obliquity.
+
+\clearpage
+
+Nutation is modelled by separating the free and forced motion of the
+Earth. The forcing terms are due to torques from the Sun, Moon, and
+planets.   The free terms are determined by observation because they
+are beyond our current modelling abilities. The resulting theory is
+a series expansion that contains coefficients and is a function of
+the location of the Sun, Moon, and planets. Nutation is intimately
+connected with polar motion, and in fact, as we'll see in a later
+section, errors in nutation modelling are captured in polar motion
+measurements.
+%
+\begin{figure}[h]
+    \begin{picture}(100,200)
+       \special{psfile= Images/NutPrec.eps hoffset= 0 voffset=
+       0
+       hscale=10 vscale=10}
+    \end{picture}
+    \makebox(-180,90){$\Upsilon$} \makebox(-200,90){}
+    \caption{Inertial Motion of Earth's Spin Axis}
+    \label{fig:FK5FigOne}
+\end{figure}
+%
+Nutation is modelled by separating the free and forced motion of the
+Earth. The forcing terms are due to torques from the Sun, Moon, and
+planets.   The free terms are determined by observation because they
+are beyond our current modelling abilities.   The resulting theory
+is a series expansion that contains coefficients and is a function
+of the location of the Sun, Moon, and planets.  Nutation is
+intimately connected with polar motion, and in fact, as we'll see in
+a later section, errors in nutation modelling are captured in polar
+motion measurements.
+
+\clearpage
+
+\subsubsection{Sidereal Time}\index{FK5 Reduction!polar motion}
+
+%-------------------------------------------------------------------------
+%------------------------------------------------------------------------
+\begin{figure*}\begin{picture}(100,250)\begin{picture}(100,250)
+\makebox(500,250){$\mathbf{R}_{IF} =
+\mathbf{PREC}^T\mathbf{NUT}^T\mathbf{ST}^T\mathbf{PM}^T =
+\underbrace{\mathbf{R}_3^T(-\zeta)\mathbf{R}_2^T(\Theta)\mathbf{R}_3^T(-z)}_{\mathbf{PREC}^T}
+%
+\underbrace{\mathbf{R}_1^T(\bar{\epsilon})\mathbf{R}_3^T(-\Delta
+\Psi)\mathbf{R}_1^T({-\epsilon})}_{\mathbf{NUT}^T}
+%
+\underbrace{\mathbf{R}_3^T(\theta_{AST})}_{\mathbf{ST}^T}
+%
+\underbrace{\mathbf{R}_1^T(-y_p)\mathbf{R}^T_2(-x_{p})}_{\mathbf{PM}^T}$}
+%%
+\makebox(-510,160){$\mathbf{R}_{FI} = \mathbf{PM}\hspace{.05
+in}\mathbf{ST}\hspace{.05 in}\mathbf{NUT}\hspace{.05
+in}\mathbf{PREC} =
+\overbrace{\mathbf{R}_2(-x_{p})\mathbf{R}_1(-y_p)}^{\mathbf{PM}}
+%
+\overbrace{\mathbf{R}_3(\theta_{AST})}^{\mathbf{ST}}
+%
+\overbrace{\mathbf{R}_1({-\epsilon})\mathbf{R}_3(-\Delta
+\Psi)\mathbf{R}_1(\bar{\epsilon})}^{\mathbf{NUT}}
+%
+\overbrace{\mathbf{R}_3(-z)\mathbf{R}_2(\Theta)\mathbf{R}_3(-\zeta)}^{\mathbf{PREC}}$}
+%
+\makebox(-783,00){FK5} \makebox(-772,18){MODEq}
+\makebox(-780,40){MODEc} \makebox(-790,60){TODEc}
+\makebox(-796,77){TODEq}\makebox(-810,98){PEF}
+\makebox(-810,120){ITRF}
+%
+\makebox(-820,300){FK5} \makebox(-810,320){MODEq}
+\makebox(-817,340){MODEc} \makebox(-826,360){TODEc}
+\makebox(-832,380){TODEq}\makebox(-846,400){PEF}
+\makebox(-847,420){ITRF}
+%
+\drawline[10](-400,0)(-55,0)\drawline[10](-55,0)(-55,65)
+\drawline[10](-400,10)(-158,10)\drawline[10](-158,10)(-158,65)
+\drawline[10](-400,20)(-185,20)\drawline[10](-185,20)(-185,65)
+\drawline[10](-400,30)(-230,30)\drawline[10](-230,30)(-230,65)
+\drawline[10](-400,40)(-260,40)\drawline[10](-260,40)(-260,65)
+\drawline[10](-400,50)(-310,50)\drawline[10](-310,50)(-310,65)
+\drawline[10](-400,60)(-383,60)\drawline[10](-383,60)(-383,65)
+%
+\drawline[10](-398,150)(-385,150)\drawline[10](-385,150)(-385,140)
+\drawline[10](-398,160)(-285,160)\drawline[10](-285,160)(-285,140)
+\drawline[10](-398,170)(-258,170)\drawline[10](-258,170)(-258,140)
+\drawline[10](-398,180)(-210,180)\drawline[10](-210,180)(-210,140)
+\drawline[10](-398,190)(-173,190)\drawline[10](-173,190)(-173,140)
+\drawline[10](-398,200)(-130,200)\drawline[10](-130,200)(-130,140)
+\drawline[10](-398,210)(-40,210)\drawline[10](-40,210)(-40,140)
+%
+\end{picture}\end{picture}\caption{Intermediate Transformations and Coordinate Systems in FK5 Reduction}
+\end{figure*}
+%-------------------------------------------------------------------------
+%------------------------------------------------------------------------
+
+\subsection{Precession Calculations} \index{FK5 Reduction!precession}\label{Sec:PrecessionTheory}
+
+\begin{equation}
+   JD_{TDB} \approx JD_{TT}
+\end{equation}
+%
+\begin{equation}
+   T_{TDB} = \frac{JD_{TDB} - 2,451,545.0}{36525}
+\end{equation}
+%
+\begin{equation}
+    \zeta = 2306.2181^{"} T_{TDB} +0.30188 T_{TDB}^2 + 0.017998
+    T_{TDB}^3
+\end{equation}
+%
+\begin{equation}
+    \Theta = 2004.3109^{"} T_{TDB} -0.42665 T_{TDB}^2 - 0.041833
+    T_{TDB}^3
+\end{equation}
+%
+\begin{equation}
+    z = 2306.2181^{"}T_{TDB} + 1.09468 T_{TDB}^2 + 0.018203
+    T_{TDB}^3
+\end{equation}
+%
+\begin{equation}
+     \mathbf{P} =
+     \mathbf{R}_3(-z)\mathbf{R}_2(\Theta)\mathbf{R}_3(-\zeta)
+\end{equation}
+
+\subsection{Nutation Calculations} \index{FK5 Reduction!nutation} \label{Sec:NutationTheory}
+
+GMAT has the ability to use either the 1980 IAU Theory of Nutation,
+or the IERS 1996 Theory of Nutation.  There are some calculations
+that are common to both, so let's look at them first.  The mean
+obliquity of the ecliptic at the J2000 epoch, $\bar{\epsilon}$, is
+given by
+
+\begin{equation}
+    \begin{split}
+    \bar{\epsilon} = & 84381.448 - 46.8150T_{TDB} - 0.00059T_{TDB}^2 \\ & +
+    0.001813T_{TDB}^3
+    \end{split}
+\end{equation}
+
+As we mentioned previously, Earth's nutation is caused by the
+combined gravitational effect of the Moon and Sun.  So, we would
+expect to see the time dependent location of the Moon and Sun appear
+in the equations for Earth nutation.  The theories of nutation
+described below take into account of the Moon and Sun position by
+modelling mean anomalies of the Moon and Sun, $l$ and $l'$
+respectively, the mean argument of latitude of the Moon, $F$,  the
+difference between the mean longitude of the Sun and Moon, $D$, and
+the mean longitude of the ascending node of the Moon's orbit,
+$\Omega$. The equations used to determine these values as a function
+of $T_{TDB}$ are:
+%
+\begin{equation}
+      \begin{split}
+      l = & 134.96340251^{\circ} + (1717915923.2178 T_{TDB} + \\ & 31.8792 T_{TDB}^2 + 0.051635 T_{TDB}^3 - 0.00024470
+      T_{TDB}^4)^{"}
+      \end{split}
+\end{equation}
+%
+\begin{equation}
+      \begin{split}
+     l' = & 357.52910918^{\circ} + ( 129596581.0481T_{TDB}- \\ & 0.5532
+      T_{TDB}^2 - 0.000136T_{TDB}^3 - 0.00001149T_{TDB}^4)^{"}
+      \end{split}
+\end{equation}
+%
+\begin{equation}
+      \begin{split}
+     F = & 93.27209062^{\circ} + (1739527262.8478T_{TDB}
+     - \\ &
+       12.7512T_{TDB}^2 + 0.001037T_{TDB}^3 + 0.00000417T_{TDB}^4)^{"}
+      \end{split}
+\end{equation}
+%
+\begin{equation}
+      \begin{split}
+      D = & 297.85019547^{\circ} + (1602961601.2090T_{TDB} -
+      \\ &
+       6.3706T_{TDB}^2 + 0.006593T_{TDB}^3 - 0.00003169T_{TDB}^4)^{"}
+      \end{split}
+\end{equation}
+%
+\begin{equation}
+      \begin{split}
+      \Omega  = & 125.04455501^{\circ} + (  -6962890.2665T_{TDB}
+      + \\ &
+      7.4722T_{TDB}^2 + 0.007702T_{TDB}^3 - 0.00005939T_{TDB}^4)^{"}
+      \end{split}
+\end{equation}
+
+\subsubsection{ 1980 Nutation Theory } \index{FK5 Reduction!1980 nutation theory}
+
+
+\begin{equation}
+     \Delta \Psi_{1980} = \sum_{i=1}^{106}\left( A_i + B_i T_{TDB}
+     \right) \sin{a_p}
+\end{equation}
+%
+\begin{equation}
+     \Delta \epsilon_{1980} = \sum_{i=1}^{106}\left( C_i + D_i T_{TDB}
+     \right) \cos{a_p}
+\end{equation}
+%
+\begin{equation}
+     a_p = a_{1i} l + a_{2i} l' + a_{3i} F+
+     a_{4i} D + a_{5i}\Omega
+\end{equation}
+%
+\begin{equation}
+     \mathbf{N} = \mathbf{R}_1(-\epsilon) \mathbf{R}_3(-\Delta
+     \Psi)\mathbf{R}_1(\bar \epsilon)
+\end{equation}
+
+\subsubsection{ 1996 Nutation Theory }\index{FK5 Reduction!1996 nutation
+theory}
+
+The 1996 theory of nutation published by the IERS is a higher
+fidelity model of Earth nutation.  There are two primary differences
+between the 1908 IAU theory and the 1996 IERS theory.  The first
+difference is the 1996 theory uses a 263 term series expansion for
+the effects of the Earth and Moon.  The 1980 theory uses a 106 term
+series.  The second difference is that the 1996 theory has a second
+series expansion to account for the effects of nutation caused by
+the more massive planets.  The planetary series expansion is a 118
+term series.  Let's begin with the equations for the Earth and
+Moon's effect on Earth nutation, according to the 1996 IERS theory:
+%
+\begin{equation}
+     \Delta \Psi_{1996} = \sum_{i=1}^{263}\left( A_i + B_i T_{TDB}
+     \right) \sin{a_p} +
+     E_i\cos{a_p}
+\end{equation}
+%
+\begin{equation}
+     \Delta \epsilon_{1996} = \sum_{i=1}^{263}\left( C_i + D_i T_{TDB}
+     \right) \cos{a_p} + F_i\sin{a_p}
+\end{equation}
+%
+\begin{equation}
+     a_p = a_{1i} M_\circ + a_{2i} M_\odot + a_{3i}u_{M\circ} +
+     a_{4i}D_{\odot} + a_{5i}\Omega_{\circ}
+\end{equation}
+%
+
+To calculate the planetary effects on nutation, we begin by
+calculating the mean heliocentric longitude of the planets.  Only
+the effects of Venus(V), Mars(M),  Jupiter{J), and Saturn(S) are
+included in the theory. We require the Earth's (E) mean longitude
+also.  The mean longitudes are calculated using:
+%
+\begin{eqnarray}
+    \lambda_{V} &=& 181.979800853^\circ + 58,517.8156748T_{TDB} \nonumber \\
+    %
+    \lambda_{E} &=& 100.466448494^\circ + 35,999.3728521T_{TDB} \nonumber \\
+    %
+    \lambda_{M} &=& 355.433274605^\circ + 19,140.299314T_{TDB} \nonumber \\
+    %
+    \lambda_{J} &=& 34.351483900^\circ + 3,034.90567464T_{TDB} \nonumber \\
+    %
+    \lambda_{S} &=& 50.0774713998^\circ + 1,222.11379404T_{TDB} \nonumber
+\end{eqnarray}
+%
+The general precession in longitude, $p_a$, is calculated using
+%
+\begin{equation}
+    p_a = 1.39697137214^\circ T_{TDB} + 0.0003086T_{TDB}^2 \nonumber
+\end{equation}
+%
+Finally, the planetary terms are calculated using:
+%
+\begin{equation}
+     \Delta \Psi_{pl} = \sum_{i=1}^{118}\left( A_i + B_i T_{TDB}
+     \right) \sin{a_{pl}}
+\end{equation}
+%
+\begin{equation}
+     \Delta \epsilon_{pl} = \sum_{i=1}^{118}\left( C_i + D_i T_{TDB}
+     \right) \cos{a_{pl}}
+\end{equation}
+%
+\begin{eqnarray}
+     a_{pl} = &a_{1i} \lambda_V + a_{2i} \lambda_E + a_{3i} \lambda_M + a_{4i}\lambda_J + a_{5i} \lambda_S + \nonumber\\
+     &a_{6i} p_a + a_{7i}D  + a_{8i}F +
+    a_{9i} l +  a_{10i}\Omega
+\end{eqnarray}
+%
+\begin{equation}
+     \Delta\Psi = \Delta\Psi_{1996} +
+     \underbrace{\Delta\Psi_{pl}}_{optional}
+\end{equation}
+%
+\begin{equation}
+     \Delta\epsilon = \Delta\epsilon_{1996} +
+     \underbrace{\Delta\epsilon_{pl}}_{optional}
+\end{equation}
+%
+\begin{equation}
+    \epsilon = \bar{\epsilon} + \Delta\epsilon
+\end{equation}
+ In GMAT, the planetary terms are optional.  If the user has
+selected to include the planetary terms, the
+\begin{equation}
+     \mathbf{N} = \mathbf{R}_1(-\epsilon) \mathbf{R}_3(-\Delta
+     \Psi)\mathbf{R}_1(\bar \epsilon)
+\end{equation}
+
+\subsection{Sidereal Time Calculations} \index{FK5 Reduction!sidereal time}
+
+To calculate the sidereal time of the Earth, we need the current
+time which is then used to determine the Greenwich Mean Sidereal
+Time (GMST) and the equation of the equinoxes.  GMST is calculated
+using:
+%
+\begin{equation}
+     \begin{split}
+        \theta_{GMST} =  & 1.00965822615e6 + 4.746600277219299e10T_{UT1}\\ & + 1.396560T_{UT1}^2 +
+        9.3e-5T_{UT1}^3  \hspace{.15 in} \mbox{(arcseconds)}
+     \end{split}
+\end{equation}
+%
+The calculation of the equation of the equinoxes is dependent upon
+the time. If the Julian date falls after 2450449.5, then we use
+%
+\begin{equation}
+   EQ_{equinox} = \Delta \Psi \cos{\epsilon} +
+   0.00264^{"}\sin{\Omega} + 0.000063^{"}\sin{2\Omega}
+\end{equation}
+%
+If the Julian date falls on or before 2450449.5 we use
+\begin{equation}
+   EQ_{equinox} = \Delta \Psi \cos{\epsilon}
+\end{equation}
+
+%
+\begin{equation}
+   \theta_{AST} = \theta_{GMST} + EQ_{equinox}
+\end{equation}
+%
+\begin{equation}
+   \mathbf{ST} = \mathbf{R}_3(\theta_{AST} )
+\end{equation}
+
+\subsection{Polar Motion Calculations} \index{FK5 Reduction!polar motion}
+
+\begin{equation}
+     \mathbf{PM} = \mathbf{R}_2 (-x_p) \mathbf{R}_1(-y_p)
+\end{equation}
+
+
+\section{ Deriving $\mathbf{R}_{J_{2k},i}$ and $\dot{\mathbf{R}}_{J_{2k},i}$ for Various
+Coordinate Systems }
+
+In GMAT, there are numerous coordinate systems that can be used to
+define variables, stopping conditions, spacecraft states, and other
+quantities.  Some examples include the Earth centered mean ecliptic
+of J2000 system, the Earth-fixed system, the Mars equator system,
+and the Earth-Moon rotating system.
+
+In the following subsections, we determine how
+$\mathbf{R}_{J_{2k},i}$ and $\dot{\mathbf{R}}_{J_{2k},i}$ are
+calculated in GMAT for all of the coordinate systems available in
+GMAT.  Let's begin by looking at coordinate systems defined by the
+equator of a celestial body.
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{Equator System}  \label{Sec:Equator} \index{Coordinate systems!body
+equator}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+The Equator axis system has the following nominal configuration:
+%
+\begin{itemize}
+\item $x$-axis:  Along the line formed by the intersection of the bodies equator and the ecliptic plane.
+%
+\item $y$-axis:  Completes the right-handed set.
+%
+\item $z$-axis:  Normal to the  equatorial plane.
+\end{itemize}
+%
+The Equator system in GMAT is a true equator of date axis system.
+The equatorial coordinate system is defined only for celestial
+bodies. For a particular body, the equatorial system is defined by
+the bodies equatorial plane and its intersection with the ecliptic
+plane, at the current epoch.   The Earth and Moon have highly
+accurate models for their equatorial systems and and are treated at
+the end of this section. For the remaining bodies in the solar
+system, the equatorial coordinate system is calculated in GMAT using
+data published by the International Astronomical Union
+(IAU)\cite{Seidelmann:etal:02}. The IAU publishes data that gives
+the spin axis direction and prime meridian location of all the
+planets and major moons as a function of time.  For the Earth, GMAT
+uses FK5 reduction for the Equator system.  For the Moon, GMAT can
+use either the IAU data, or Euler angles provided in the JPL DE405
+files.
+
+Let's look more closely at the data provided by the IAU. Figure
+\ref{fig:IAUEqDef} contains an illustration of the three variables,
+$\alpha_o$, $\delta_o$, and $W$, that are used to define a body's
+spin axis and prime meridian location w/r/t MJ2000Eq. $\alpha_o$ and
+$\delta_o$ are used to define a body's spin axis direction. $W$ is
+the body's sidereal time.  The equations for $\alpha_o$, $\delta_o$,
+and $W$ for the nine planets and the Earth's moon are found in
+Tables \ref{Table:PlanetsPolesMeridians} and
+\ref{Table:LunaPoleMeridian}.
+%
+\begin{figure*}[htb]
+ \centerline{
+\begin{picture}(100,260)
+\special{psfile = Images/IAUEqDef.ps hoffset= -195 voffset= -200
+hscale=80 vscale=80} \makebox(55,470){$(\alpha_o,\delta_o)$}
+\makebox(265,460){North pole of planet} \makebox(-520,260){$W$}
+\makebox(-500,220){$90^{\circ} - \delta_o$}
+\makebox(-680,395){$\Upsilon$}
+\makebox(-722,315){$90^{\circ}+\alpha_o$} \makebox(-312,355){Prime
+Meridian} \makebox(-342,165){Equator of $\mathcal{F}_{J_{2k}}$}
+%
+\end{picture}}\vspace{ -1 in} \caption{ IAU Definition of Pole and Meridian Locations for Planets
+and Moons} \label{fig:IAUEqDef} \index{Coordinate
+systems!Equatorial}
+\end{figure*}
+%
+From inspection of Fig. \ref{fig:IAUEqDef} we see that
+%
+\begin{equation}
+     \mathbf{R}_{J_{2k},i} = \mathbf{R}_3^{T}(90^{\circ} + \alpha_o)
+     \mathbf{R}_1^{T}(90^{\circ}- \delta_o) \label{Eq:EquatorR}
+\end{equation}
+%
+$\alpha_o$ and $\delta_o$ vary slowly with time, so we can assume
+the derivative of $\mathbf{R}_{Ii}$ for the Equator system is the
+zero matrix.
+%
+\begin{equation}
+  \dot{\mathbf{R}}_{J_{2k},i} =   \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+
+If the user chooses to use the DE405 files to determine the Moon's
+orientation, then GMAT gets a set of Euler angles and rates from the
+DE405 files.  We then use the following equations to determine
+$\mathbf{R}_{J_{2k},i}$ and $\dot{\mathbf{R}}_{J_{2k},i}$.
+%
+\begin{eqnarray}
+   \mathbf{R}_{J_{2k},i} &=&
+   \mathbf{R}_3(\theta_1)^T\mathbf{R}_1(\theta_2)^T\\
+   %
+   \dot{\mathbf{R}}_{J_{2k},i} &=&
+   \mathbf{R}_3(\theta_1)^T\dot{\mathbf{R}}_1^T(\theta_2) + \dot{\mathbf{R}}_3^T(\theta_1)\mathbf{R}_1^T(\theta_2)
+\end{eqnarray}
+%
+where
+%
+\begin{equation}
+   \dot{\mathbf{R}}_1(\theta_2) = \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & -\dot{\theta}_2\sin{\theta_2} & \dot{\theta}_2\cos{\theta_2}\\
+     0.0 & -\dot{\theta}_2\cos{\theta_2} & -\dot{\theta}_2\sin{\theta_2}
+     \end{pmatrix}
+\end{equation}
+%
+and
+%
+\begin{equation}
+   \dot{\mathbf{R}}_3(\theta_1) = \begin{pmatrix}
+     -\dot{\theta}_1\sin{\theta_1} & \dot{\theta}_1\cos{\theta_1} & 0.0\\
+     -\dot{\theta}_1\cos{\theta_1} & -\dot{\theta}_1\sin{\theta_1} & 0.0 \\
+     0.0                           & 0.0                          &
+     0.0
+     \end{pmatrix}
+\end{equation}
+
+Finally, for the Earth, the Equator axis system a true of date
+equator system and is calculated using the algorithm described in
+Sec. \ref{Sec:TODEq}.
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{MJ2000 Ecliptic (MJ2000Ec) } \label{Sec:MJ2000Ec} \index{Coordinate systems!mean J2000
+ecliptic}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+The MJ2000 Ecliptic axis system is defined as follows:
+%
+\begin{itemize}
+\item $x$-axis:  Along the line formed by the intersection of the Earth's mean
+                 equator and the mean ecliptic plane, at the J2000
+                 epoch.  The axis points in the direction of the
+                 first point of Aries.
+%
+\item $y$-axis:  Completes the right-handed set.
+%
+\item $z$-axis:  Normal to the mean ecliptic plane at the J2000 Epoch.
+\end{itemize}
+%
+The matrix to rotate from MJ2000 Ecliptic (MJ2000Ec)  to MJ2000
+Equatorial  (MJ2000Eq) is a rotation about the $x$-axis through the
+obliquity of the ecliptic at the J2000 epoch which is
+23.439291$^\circ$:
+%
+\begin{equation}
+  \mathbf{R} =   \begin{pmatrix}
+     1.0 & 0.0 & 0.0\\
+     0.0 & 0.91748206 & -0.397777156\\
+     0.0 & 0.39777716 & 0.9174820621
+     \end{pmatrix} \label{Eq:Ec2Eq}
+\end{equation}
+%
+GMAT uses more significant digits than included here.  The rotation
+matrix is constant by definition so its time derivative is
+identically the zero matrix.
+%
+\begin{equation}
+  \dot{\mathbf{R}} =   \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{True of Epoch Equator (TOEEq) }
+\label{Sec:TOEEq} \index{Coordinate systems!true of epoch equator}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+The True of Epoch Equator axis system is defined as follows:
+%
+\begin{itemize}
+\item $x$-axis:  Along the true equinox at the chosen epoch.
+                 The axis points in the direction of the
+                 first point of Aries.
+%
+\item $y$-axis:  Completes the right-handed set.
+%
+\item $z$-axis:  Normal to the Earth's true equatorial plane at the chosen Epoch.
+\end{itemize}
+%
+The TOEEq axis system is an intermediate system in FK5 reduction.
+$\mathbf{R}_{Ii}$ and $ \dot{\mathbf{R}}_{Ii}$ for the TOEEq system
+are calculated using the following equations
+%
+\begin{equation}
+      \mathbf{R}_{Ii} = \mathbf{N}^T(t_o)\mathbf{P}^T(t_o)
+\end{equation}
+%
+where $t_o$ is the epoch defined in the coordinate system
+description provided by the user in the epoch field.  Hence, $t_o$
+is a constant value for the TOEEq system.  For a given $t_o$, the
+matrices associated with the TOEEq system only need to be evaluated
+once and can be reused later when necessary. $\mathbf{P}(t_o)$ and
+$\mathbf{N}(t_o)$ are part of the FK5 reduction algorithm and are
+explained in detail in Sec. \ref{Sec:NutationTheory} and
+\ref{Sec:PrecessionTheory} . Because $t_o$ is fixed for a TOEEq
+system, the derivative of $\mathbf{R}_{Ii}$ is identically equal to
+the zero matrix.
+%
+\begin{equation}
+  \dot{\mathbf{R}} =   \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{Mean of Epoch Equator (MOEEq)}
+\label{Sec:MOEEq} \index{Coordinate systems!mean of epoch equator}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+The Mean of Epoch Equator axis system is defined as follows:
+%
+\begin{itemize}
+\item $x$-axis:  Along the mean equinox at the chosen epoch.
+                 The axis points in the direction of the
+                 first point of Aries.
+%
+\item $y$-axis:  Completes the right-handed set.
+%
+\item $z$-axis:  Normal to the Earth's mean equatorial plane at the chosen Epoch.
+\end{itemize}
+%
+The MOEEq is an intermediate system in FK5 reduction and
+$\mathbf{R}_{Ii}$ and $ \dot{\mathbf{R}}_{Ii}$ for the MOEEq system
+can be calculated using the following equations
+%
+\begin{equation}
+      \mathbf{R}_{Ii} = \mathbf{P}^T(t_o)
+\end{equation}
+%
+where $t_o$ is the epoch defined in the coordinate system
+description provided by the user in the epoch field.  Hence $t_o$ is
+a constant value for the MOEEq system.  For a given $t_o$, the
+matrices associated with the MOEEq system only need to be evaluated
+once and can be reused later when necessary. $\mathbf{P}(t_o)$ is
+described in Sec. \ref{Sec:PrecessionTheory}. Because $t_o$ is fixed
+for a MOEEq system, the derivative of $\mathbf{R}_{Ii}$ is the zero
+matrix.
+%
+\begin{equation}
+  \dot{\mathbf{R}} =   \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{True of Date Equator (TODEq)}
+\label{Sec:TODEq} \index{Coordinate systems!true of date equator}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+$\mathbf{R}_{Ii}$ and $ \dot{\mathbf{R}}_{Ii}$ for the TODEq
+system can be calculated using the following equations
+Vallado\cite{vallado2} Fig. 3-29).
+%
+\begin{equation}
+      \mathbf{R}_{Ii} = \mathbf{N}^T(t_o)\mathbf{P}^T(t_o)
+\end{equation}
+%
+where $t_o$ is the epoch.  Unlike the TOEEq sytem, for the TODEq
+system $t_o$ is a variable and usually comes from the epoch of the
+object whose state we wish to convert.  $\mathbf{P}(t_o)$ and
+$\mathbf{N}(t_o)$ are part of the FK5 reduction algorithm and can
+be found in Vallado pgs. 214 - 219.  Because $t_o$ is not fixed
+for a TODEq system the derivative of $\mathbf{R}_{Ii}$ is
+non-zero. However, we will assume its derivative is negligibly
+small so
+   that
+\begin{equation}
+  \dot{\mathbf{R}} =   \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{Mean of Date Equator (MODEq)}
+\label{Sec:MODEq} \index{Coordinate systems!mean of date equator}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+$\mathbf{R}_{Ii}$ and $ \dot{\mathbf{R}}_{Ii}$ for the MODEq
+system can be calculated using the following equations
+%
+\begin{equation}
+      \mathbf{R}_{Ii} = \mathbf{P}^T(t_o)
+\end{equation}
+%
+where $t_o$ is the epoch.  Unlike the MOEEq sytem, for the MODEq
+system $t_o$ is a variable and usually comes from the epoch of the
+object whose state we wish to convert.  $\mathbf{P}(t_o)$ and
+$\mathbf{N}(t_o)$ are part of the FK5 reduction algorithm and can
+be found in Vallado\cite{vallado2} pgs. 214 - 219.  Because $t_o$
+is not fixed for a  MODEq system, the derivative of
+$\mathbf{R}_{Ii}$ is non-zero. However, we will assume its
+derivative is negligibly small so that
+   %
+\begin{equation}
+  \dot{\mathbf{R}} =   \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{Mean of Date Ecliptic (MODEc)}
+\label{Sec:MODEc} \index{Coordinate systems!mean of epoch equator}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+$\mathbf{R}_{Ii}$ and $ \dot{\mathbf{R}}_{Ii}$ for the MODEc
+system can be calculated using the following equations
+%
+\begin{equation}
+      \mathbf{R}_{Ii} = \mathbf{P}^T(t_o)\mathbf{R}_1^T(\bar{\epsilon})
+\end{equation}
+%
+where $t_o$ is the epoch.  For the MODEc system $t_o$ is a
+variable and usually comes from the epoch of the object whose
+state we wish to convert.   $\mathbf{P}(t_o)$ comes from the FK5
+reduction algorithm and can be found in Vallado\cite{vallado2}
+pgs. 214 - 219.  $\bar{\epsilon}$ is given by
+Vallado\cite{vallado2}, Eq. (3-52).  For a more complete
+discussion, you can also refer to Seidelmann\cite{seidelmann},
+pgs. 114 - 115.   Because $t_o$ is not fixed for a MODEc system,
+the derivative of $\mathbf{R}_{Ii}$ is non-zero. However, we will
+assume its derivative is negligibly small so that
+%
+\begin{equation}
+  \dot{\mathbf{R}} =   \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+
+%-------------------------------------------------------------------------------------
+\subsection{True of Date Ecliptic (TODEc)}
+\label{Sec:TODEc} \index{Coordinate systems!true of date equator}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+$\mathbf{R}_{Ii}$ and $ \dot{\mathbf{R}}_{Ii}$ for the TODEc
+system can be calculated using the following equations
+%
+\begin{equation}
+      \mathbf{R}_{Ii} = \mathbf{P}^T(t_o)\mathbf{R}_1^T(\bar{\epsilon})\mathbf{R}_3^T(-\Delta \Psi)
+\end{equation}
+%
+where $t_o$ is the epoch.  Unlike the TOEEc sytem, for the TODEc
+system $t_o$ is a variable and usually comes from the epoch of the
+object whose state we wish to convert.  $\mathbf{P}(t_o)$is part
+of the FK5 reduction algorithm and can be found in Vallado pgs.
+214 - 219.   $\bar{\epsilon}$ is given by Vallado\cite{vallado2},
+Eq. (3-52).  $\Delta \Psi$ is given by Eq.(3-62) in
+Vallado\cite{vallado2}.  For a more complete discussion, you can
+also refer to Seidelmann\cite{seidelmann}, pgs. 114 - 115. Because
+$t_o$ is not fixed for a MODEq system, the derivative of
+$\mathbf{R}_{Ii}$ is non-zero. However, we will assume its
+derivative is negligibly small so that
+%
+\begin{equation}
+  \dot{\mathbf{R}} =   \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{Topocentric Horizon}  \label{Sec:TopocentricHorizon} \index{Coordinate systems! Topocentric Horizon}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+
+The Topocentric coordinate system has its origin at a ground station
+with the following axes definitions
+\begin{itemize}
+\item $x$-axis:  Completes the right handed set and points south in
+the local horizon system.
+%
+\item $y$-axis:  Points due East.
+%
+\item $z$-axis:  Normal to the local horizon.  The local horizon is
+defined by the selection of the \st{HorizonReference} which is
+either \st{Sphere} or \st{Ellipsoid}.
+\end{itemize}
+
+The calculation of the Topocentric to MJ2000Eq systems is different
+for the different ground system state representations.  Regardless of
+how the user inputs the state of a ground station, the Topocentric
+axes are always defined with respect to the reference shape of the central body.  GMAT uses
+the appropriate transformation to convert the user input to the cartesian location
+of the ground station expressed in the local body-fixed frame.
+This cartesian representation is used to calculate the topocentric axes.
+
+Define the axes of the topocentric coordinate
+system, expressed in the body fixed system as $\hat{\mathbf{x}}$,
+$\hat{\mathbf{y}}$, and $\hat{\mathbf{z}}$.  Define, $x_F$, $y_F$, and $z_F$ as the location of the station in the local body-fixed coordinate system.
+%If the \st{StateType} is \st{Spherical} and the \st{HorizonReference} is \st{Sphere} then calculate the body fixed location of the station using.
+%%
+%\begin{eqnarray}
+%     x_F &=& (R_b + h)\cos{\phi_{sp}}\cos{\lambda} \\
+%     y_F &=& (R_b + h)\cos{\phi_{sp}}\sin{\lambda} \\
+%     z_F &=& (R_b + h)\sin{\lambda}
+%\end{eqnarray}
+%%
+%where $R_b$ is the body's equatorial radius, $h$ is the height above the reference sphere,  $\phi_{sp}$ is the latitude w/r/t to the reference sphere, and $\lambda$ is the longitude.
+%If the \st{StateType} is \st{Cartesian}, or \st{Spherical} with the \st{HorizonReference = Sphere} then calculate the latitude w/r/t to the reference ellipsoid as follows:
+%%
+%\begin{equation}
+%     r_{xy} = \sqrt{ x_F^2 + y_F^2 }
+%\end{equation}
+%%
+Calculate the geocentric latitude to use as an initial guess to find
+the geodetic latitude
+%
+\begin{equation}
+     \phi_{gd}  \approx \mbox{atan2}(z_F,  r_{xy}  );
+\end{equation}
+%
+The eccentricity of the body is calculated from the flatting $f$ using
+%
+\begin{equation}
+    e^2 = 2f-f^2
+\end{equation}
+%
+
+\noindent Set $\delta = 1.0$ to initialize the loop, then,
+
+\noindent While ( $\delta > 10^{-11}$ )
+%
+\begin{eqnarray}
+   \phi' & = & \phi_{gd}\\
+   C & = & \frac{R} { \sqrt{1 - e^2\sin^2{\phi}}    }\\
+   \phi_{gd} & = & \mbox{atan} \left( \frac{z_F + C
+   e^2\sin{\phi}}{r_{xy}}
+   \right)\\
+   \delta & = & | \phi_{gd} - \phi' |
+\end{eqnarray}
+%
+EndWhile\\
+
+
+The longitude  of the station location, $\lambda$,  is calculated
+using
+
+\begin{equation}
+    \lambda = \mbox{atan2}(y_F,x_F)
+\end{equation}
+
+%
+Finally,
+%
+\begin{equation}
+     \hat{\mathbf{z}} = \left(
+     \begin{array}{cc}
+          \cos{\phi_{gd}}\cos{\lambda}\\
+          \cos{\phi_{gd}}\sin{\lambda}\\
+          \sin{\phi_{gd}}
+     \end{array}
+     \right) \label{Eq:GeodeLatToz}
+\end{equation}
+
+\begin{equation}
+     \hat{\mathbf{y}} = \hat{\mathbf{k}}
+     \times \hat{\mathbf{z}}
+\end{equation}
+%
+where
+%
+\begin{equation}
+     \hat{\mathbf{k}} = [0 \hspace{.05 in} 0 \hspace{.05 in} 1]^T
+\end{equation}
+%
+\begin{equation}
+     \hat{\mathbf{x}} = \hat{\mathbf{y}}
+     \times \hat{\mathbf{z}}
+\end{equation}
+%
+\begin{equation}
+     \mathbf{R}_{FT} = [\hat{\mathbf{x}} \hspace{.05 in} \hat{\mathbf{y}}\hspace{.05 in} \hat{\mathbf{z}}]
+\end{equation}
+
+The last step is to determine the rotation matrix from the
+topocenric system to the inertial system by using the rotation
+matrix from body fixed to inertial, $\mathbf{R}_{IF}$, at the
+desired epoch, $t$.  We determine the body fixed rotation matrix
+using the algorithm in Sec. 3.1.9.  Once we have evaluated
+$\mathbf{R}_{IF}$ and $\dot{\mathbf{R}}_{IF}$ we calculate
+$\mathbf{R}_{IT}$ and $\dot{\mathbf{R}}_{IT}$ using
+%
+\begin{eqnarray}
+      \mathbf{R}_{IT} &=& \mathbf{R}_{IF}
+      \mathbf{R}_{FT}\\
+%
+      \dot{\mathbf{R}}_{IT} &=& \dot{\mathbf{R}}_{IF}
+      \mathbf{R}_{FT}\label{Eq:TopoRdot}
+\end{eqnarray}
+
+
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{Celestial Body Fixed}  \label{Sec:Fixed} \index{Coordinate systems!body fixed}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+The body fixed coordinate system is referenced to the body equator
+and the prime meridian of the body.  The body fixed system for
+Earth is found  by using FK5 reduction to the ITRF system as
+described by Vallado.  The ITRF system is the earth fixed system.
+
+Vallado denotes the four rotation sequences required to transform
+from the ITRF to the FK5 system as [PM], the polar motion, [ST],
+the sidereal time, [NUT], the nutation, and [PREC], the
+precession. GMAT calculates these four rotation matrices as
+described in Vallado.  The rotation matrix from ITRF to FK5 can be
+written as follows.
+%
+\begin{equation}
+     \mathbf{R}_{Ii}  = \mathbf{P}^T\mathbf{N}^T\mathbf{ST}^T\mathbf{PM}^T
+     \label{Eq:RFK5}
+\end{equation}
+%
+GMAT assumes that the only intermediate rotation that has a
+significant time derivative is the sidereal time, [ST].  So, we can
+write
+%
+\begin{equation}
+     \dot{\mathbf{R}}_{Ii}  = \mathbf{P}^T\mathbf{N}^T\dot{\mathbf{ST}}^T\mathbf{PM}^T \label{Eq:RdotFK5}
+\end{equation}
+%
+where $\dot{\mathbf{ST}}$ is given by
+%
+\begin{equation}
+    \dot{\mathbf{ST}} =   \begin{pmatrix}
+     -\omega_e\sin{\theta_{AST}}  & \omega_e\cos{\theta_{AST}} & 0.0\\
+     -\omega_e\cos{\theta_{AST}} & -\omega_e\sin{\theta_{AST}} & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+%
+and $\omega_e$ is given by
+%
+\begin{equation}
+    \omega_e = 7.29211514670698e^{-5} \left( 1 - \frac{LOD}{86400}  \right) \label{Eq:EarthAngularVelocity}
+\end{equation}
+%
+Note that the 2nd edition of Vallado\cite{vallado2} has
+inconsistencies in Eqs.~(\ref{Eq:RFK5}) and (\ref{Eq:RdotFK5}) and
+they are discussed in the errata to the 2nd edition.  We have
+modified equations Eqs.~(\ref{Eq:RFK5}) and (\ref{Eq:RdotFK5})
+according to the errata.
+
+For bodies other than the earth,   the IAU gives the spin axis
+direction as a function of time with respect to the MJ2000Eq
+system and rotation of the prime meridian in the MJ2000Eq system.
+This data for all of the planets and many moons can be found in
+``Report of the IAU/IAG Working Group on Cartographic Coordinates
+and Rotational Elements of the Planets and Satellites: 2000"
+Seidelmann\cite{Seidelmann:etal:02} \emph{et.al.} Figure 1 in this
+document explains the three variables, $\alpha_o$, $\delta_o$, and
+$W$,  that are used to define the body spin axis and prime
+meridian location w/r/t J2000.  The values of $\alpha_o$,
+$\delta_o$, and $W$ for the nine planets and the Earth's moon are
+found on pgs. 8 and 9.
+
+Using the notation found in the reference we can write
+%
+\begin{equation}
+     \mathbf{R}_{Ii} = \mathbf{R}_3^{T}(90^{\circ} + \alpha_o)
+     \mathbf{R}_1^{T}(90^{\circ}- \delta_o)\mathbf{R}_3^T(W)
+\end{equation}
+%
+
+For the derivative we assume that
+%
+\begin{equation}
+    \frac{d}{dt}\left( \mathbf{R}_3^{T}(90^{\circ} + \alpha_o) \right)  =  \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+%
+and
+\begin{equation}
+    \frac{d}{dt}\left( \mathbf{R}_1^{T}(90^{\circ}- \delta_o) \right)  =  \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+%
+\begin{equation}
+    \frac{d}{dt}\left( \mathbf{R}_3^{T}(W) \right)  =  \begin{pmatrix}
+     -\dot{W}\mbox{sin}(W) & -\dot{W}\mbox{cos}(W) & 0.0\\
+     \dot{W}\mbox{cos}(W) & -\dot{W}\mbox{sin}(W) & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+%
+where $\dot{W}$ is the time derivative of W for the given body.
+Note, Seidelmann\cite{Seidelmann:etal:02} does not provide the
+values for $\dot{W}$ so we include them in Table
+\ref{Table:PlanetsPolesMeridians}.
+%
+In summary
+%
+\begin{equation}
+      \dot{\mathbf{R}} = \mathbf{R}_3^{T}(90^{\circ} + \alpha_o)
+     \mathbf{R}_1^{T}(90^{\circ}- \delta_o)\frac{d}{dt}\mathbf{R}_3^{T}(W)
+\end{equation}
+%
+
+
+
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+\subsection{Body Inertial}  \label{Sec:BodyInertial} \index{Coordinate systems!body inertial}
+%-------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------
+
+
+The \st{BodyInertial} axis system is an inertial system based on the
+equator of the celestial body chosen as the origin of the system.
+The origin of a \st{BodyInertial} system must be a celestial body,
+and cannot be a spacecraft, libration point etc. The axes are
+defined as follows (except for Earth):
+%
+\begin{itemize}
+\item $x$-axis:  Along the line formed by the intersection of the
+bodies equator and the $x$-$y$ plane of the FK5 system, at the J2000
+epoch.
+%
+\item $y$-axis:  Completes the right-handed set.
+%
+\item $z$-axis:  Along the bodies instantaneous spin axis direction at the
+J2000 epoch.
+\end{itemize}
+%
+
+For Earth, the \st{BodyInertial} axis system is the FK5 system.  For
+all other bodies, the \st{BodyInertial} axis system is based upon
+the bodies equator and spin axis at the J2000 epoch. So,
+\st{BodyInertial} is essentially a true-of-epoch system referenced
+to the chosen central body.  The body orientation at the J2000 epoch
+is calculated from the IAU Data in Seidelmann
+\cite{Seidelmann:etal:02} for the Sun, Mercury, Venus, Mars,
+Jupiter, Saturn, Uranus, Neptune, and Pluto.  For the Moon, the
+orientation at the J2000 epoch comes from the DE405 files.  Because
+the \st{BodyInertial} system is an inertial system, the derivative
+of the rotation matrix is always zero:
+%
+\begin{equation}
+   \dot{\mathbf{R}}_{Ii}  = \begin{pmatrix}
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0\\
+     0.0 & 0.0 & 0.0
+     \end{pmatrix}
+\end{equation}
+%
+The rotation matrix, $\mathbf{R}_{Ii}$, is different for each
+celestial body.  We begin by calculating the angles $\alpha$ and
+$\delta$ used to define the bodies orientation with respect to the
+FK5 system:
+%
+\begin{equation}
+    \alpha = \alpha_o(T_{J2000})
+\end{equation}
+%
+\begin{equation}
+    \delta = \delta_o(T_{J2000})
+\end{equation}
+%
+Where $T_{J2000} = 2451544.9999999990686$ TDB and the equations for
+$\alpha_o$ and $\delta_o$ are given by Seidelmann
+\cite{Seidelmann:etal:02} and reproduced in Table
+\ref{Table:PlanetsPolesMeridians}. Finally, the rotation matrix is
+calculated using
+%
+\begin{equation}
+     \mathbf{R}_{J_{2k},i} = \mathbf{R}_3^{T}(90^{\circ} + \alpha)
+     \mathbf{R}_1^{T}(90^{\circ}- \delta) \label{Eq:BodyEquatorR}
+\end{equation}
+%
+The result is a rotation matrix, that is time invariant, for each
+celestial body.%  The individual matrices are shown below.
+%
+%\noindent For the Sun
+%%
+%\begin{eqnarray}
+%   R_{11} & = &  0.9606338208497771 \nonumber \\
+%   R_{21} & = &  0.2778176780544363 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  -0.2494239059807128 \nonumber \\
+%   R_{22} & = &  0.8624542595398803 \nonumber \\
+%   R_{32} & = &  0.4404093156676427 \nonumber \\
+%   R_{13} & = &  0.1223534934723278 \nonumber \\
+%   R_{23} & = &  -0.4230720836476433 \nonumber \\
+%   R_{33} & = &  0.8977971010607901
+%\end{eqnarray}
+%%
+%For Mercury
+%%
+%\begin{eqnarray}
+%   R_{11} & = &  0.9815938660446788 \nonumber \\
+%   R_{21} & = &  0.1909803187332696 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  -0.1677571842642237 \nonumber \\
+%   R_{22} & = &  0.8622324234816705 \nonumber \\
+%   R_{32} & = &  0.4779254910806334 \nonumber \\
+%   R_{13} & = &  0.09127436261733374 \nonumber \\
+%   R_{23} & = &  -0.4691287304711406 \nonumber \\
+%   R_{33} & = &  0.8784003785150228
+%\end{eqnarray}
+%%
+%For Venus
+%%
+% \begin{eqnarray}
+%   R_{11} & = &  0.9988399975085459 \nonumber \\
+%   R_{21} & = &  0.04815245972043356 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  -0.04437694044018298 \nonumber \\
+%   R_{22} & = &  0.9205233405740161 \nonumber \\
+%   R_{32} & = &  0.3881590738545506 \nonumber \\
+%   R_{13} & = &  0.01869081416890205 \nonumber \\
+%   R_{23} & = &  -0.3877088083617988 \nonumber \\
+%   R_{33} & = &  0.9215923900425705
+%\end{eqnarray}
+%%
+%For the Earth
+%%
+%\begin{eqnarray}
+%    R_{11} & = & 1 \nonumber \\
+%    R_{12} & = & 0 \nonumber \\
+%    R_{13} & = & 0 \nonumber \\
+%    R_{21} & = & 0 \nonumber \\
+%    R_{22} & = & 1 \nonumber \\
+%    R_{23} & = & 0 \nonumber \\
+%    R_{31} & = & 0 \nonumber \\
+%    R_{32} & = & 0 \nonumber \\
+%    R_{33} & = & 1
+%\end{eqnarray}
+%%
+%For the Moon
+%%
+%\begin{eqnarray}
+%    R_{11} & = & 0.998496505205088 \nonumber \\
+%    R_{21} & = & -0.0548154092680678 \nonumber \\
+%    R_{31} & = & 0 \nonumber \\
+%    R_{12} & = & 0.0499357293985327 \nonumber \\
+%    R_{22} & = & 0.909610125238044 \nonumber \\
+%    R_{32} & = & 0.412451018902689 \nonumber \\
+%    R_{13} & = & -0.0226086714041825 \nonumber \\
+%    R_{23} & = & -0.411830900942613 \nonumber \\
+%    R_{33} & = & 0.91097977859343
+%\end{eqnarray}
+%%
+%For Mars
+%%
+%\begin{eqnarray}
+%   R_{11} & = &  0.6732521982472343 \nonumber \\
+%   R_{21} & = &  0.7394129276360177 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  -0.5896387605430038 \nonumber \\
+%   R_{22} & = &  0.5368794307891334 \nonumber \\
+%   R_{32} & = &  0.6033958972853944 \nonumber \\
+%   R_{13} & = &  0.4461587269353554 \nonumber \\
+%   R_{23} & = &  -0.4062376142607542 \nonumber \\
+%   R_{33} & = &  0.7974417791532832
+%\end{eqnarray}
+%%
+%For Jupiter
+%%
+%\begin{eqnarray}
+%   R_{11} & = &  0.9994209020316729 \nonumber \\
+%   R_{21} & = &  -0.03402735050216735 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  0.0307100286015568 \nonumber \\
+%   R_{22} & = &  0.9019874904580493 \nonumber \\
+%   R_{32} & = &  0.430668621100356 \nonumber \\
+%   R_{13} & = &  -0.01465451212046692 \nonumber \\
+%   R_{23} & = &  -0.4304192217768545 \nonumber \\
+%   R_{33} & = &  0.9025101322420253
+%\end{eqnarray}
+%%
+%For Saturn
+%%
+%\begin{eqnarray}
+%   R_{11} & = &  -0.6506284356468798 \nonumber \\
+%   R_{21} & = &  0.7593962330217962 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  -0.7545700815904118 \nonumber \\
+%   R_{22} & = &  -0.6464935305479939 \nonumber \\
+%   R_{32} & = &  0.1125615694996715 \nonumber \\
+%   R_{13} & = &  0.08547883186107168 \nonumber \\
+%   R_{23} & = &  0.07323575787752883 \nonumber \\
+%   R_{33} & = &  0.9936447519469775
+%\end{eqnarray}
+%%
+%For Uranus
+%%
+%\begin{eqnarray}
+%   R_{11} & = &  0.9755767334083795 \nonumber \\
+%   R_{21} & = &  -0.2196589111150187 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  -0.05749969269512644 \nonumber \\
+%   R_{22} & = &  -0.2553748540714755 \nonumber \\
+%   R_{32} & = &  0.9651308042166816 \nonumber \\
+%   R_{13} & = &  -0.2119995815377986 \nonumber \\
+%   R_{23} & = &  -0.9415591572895125 \nonumber \\
+%   R_{33} & = &  -0.2617680858165513
+%\end{eqnarray}
+%%
+%For Neptune
+%%
+%\begin{eqnarray}
+%   R_{11} & = &  0.8717809455009272 \nonumber \\
+%   R_{21} & = &  0.4898958900230839 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  -0.3337976487639454 \nonumber \\
+%   R_{22} & = &  0.5940005535292547 \nonumber \\
+%   R_{32} & = &  0.7319443094160927 \nonumber \\
+%   R_{13} & = &  0.3585765089087282 \nonumber \\
+%   R_{23} & = &  -0.6380951021167846 \nonumber \\
+%   R_{33} & = &  0.6813644604126335
+%\end{eqnarray}
+%%
+%For Pluto
+%%
+%\begin{eqnarray}
+%   R_{11} & = &  0.7311155947298647 \nonumber \\
+%   R_{21} & = &  0.6822536091093958 \nonumber \\
+%   R_{31} & = &  0 \nonumber \\
+%   R_{12} & = &  -0.1077863335431382 \nonumber \\
+%   R_{22} & = &  0.1155058299435205 \nonumber \\
+%   R_{32} & = &  0.9874413955017208 \nonumber \\
+%   R_{13} & = &  0.6736854558650673 \nonumber \\
+%   R_{23} & = &  -0.7219338031331282 \nonumber \\
+%   R_{33} & = &  0.1579857286263988
+%\end{eqnarray}
+%%
+
+\subsection{Object Referenced}\index{Coordinate systems!object
+referenced}
+
+An object referenced system is a coordinate system whose axes are
+defined by the motion of one object with respect to another
+object. GMAT allows the user to define many different types of
+Object Referenced system.
+%
+\begin{figure*}[htb]
+ \centerline{
+\begin{picture}(100,290)
+\special{psfile = Images/ObjectRefCS.eps hoffset= -180 voffset= -180
+hscale=70 vscale=70} \makebox(-60,170){}
+\makebox(173,368){$\mathbf{r}$} \makebox(-115,488){$\mathbf{v}$}
+ \makebox(-175,478){$\mathbf{n}$}\makebox(-245,215){Location of Primary}
+ \makebox(-20,335){Location of Secondary}
+  \makebox(-270,155){}
+\end{picture}}\vspace{ -1 in} \caption{ Diagram of an Object Referenced Coordinate System} \label{fig:ObjectRefCS}
+\end{figure*}
+%
+In Fig. \ref{fig:ObjectRefCS} we see a diagram that defines the
+directions a user can choose from in creating an Object Referenced
+coordinate system.  There are six directions.  One is the relative
+position, denoted here by $\mathbf{r}$, of the secondary object
+with respect to the primary object, expressed in an inertial
+frame. The second is the the relative velocity, denoted here by
+$\mathbf{v}$, of the secondary object with respect to the primary,
+expressed in an inertial frame. The third direction is the vector
+normal to the direction of motion which is denoted by $\mathbf{n}$
+and is calculated from $\mathbf{n} = \mathbf{r} \times
+\mathbf{v}$.  The remaining three directions are the negative of
+of the first three.
+
+In GMAT, a user can use the directions described above to define
+an Object Referenced coordinate system.  In doing so, the user can
+choose two of the available directions, and define which of the
+three axes, $x$, $y$, and $z$, they desire the direction to be
+aligned with.  Given this information, GMAT automatically
+constructs an orthogonal coordinate system.  For example, if user
+chooses the $x$-axis to be in the direction of $\mathbf{r}$ and
+the $z$-axis to be in the direction of $\mathbf{n}$, the GMAT
+completes the right-handed set by setting the $y$-axis in the
+direction of $\mathbf{n} \times \mathbf{r}$.  Obviously there are
+some choices that not yield an orthogonal system, or that yield a
+left handed system.  GMAT does not allow the user to select these
+pairs of axes and throws an error message.
+
+In general, given the unit vectors that define the axes system of
+the Object Referenced system, but expressed in the inertial frame,
+GMAT uses the following equations to determine $\mathbf{R}_{Ii}$
+and $ \dot{\mathbf{R}}_{Ii}$.
+%
+\begin{equation}
+     \mathbf{R}_{Ii} = \left[\hspace{.05 in} \hat{\mathbf{x}} \hspace{.2 in} \hat{\mathbf{y}} \hspace{.2 in} \hat{\mathbf{z}} \hspace{.05 in} \right]
+\end{equation}
+%
+\begin{equation}
+     \dot{\mathbf{R}}_{Ii} = \left[\hspace{.05 in} \dot{\hat{\mathbf{x}}} \hspace{.2 in}
+     \dot{\hat{\mathbf{y}}} \hspace{.2 in} \dot{\hat{\mathbf{z}}} \hspace{.05 in} \right]
+\end{equation}
+%
+%\begin{equation}
+%         \mathbf{R}^{Ii} = \begin{pmatrix}
+%               \hat{x}_1 & \hat{y}_1  & \hat{z}_1  \\
+%               \hat{x}_2 & \hat{y}_2  & \hat{z}_2  \\
+%               \hat{x}_3 & \hat{y}_3  & \hat{z}_3  \\
+%               \label{Eq:RObjectReferenced}
+%     \end{pmatrix}
+%\end{equation}
+%and
+%\begin{equation}
+%         \dot{\mathbf{R}}^{Ii} = \begin{pmatrix}
+%               \dot{\hat{x}}_1 & \dot{\hat{y}}_1  & \dot{\hat{z}}_1  \\
+%               \dot{\hat{x}}_2 & \dot{\hat{y}}_2  & \dot{\hat{z}}_2  \\
+%               \dot{\hat{x}}_3 & \dot{\hat{y}}_3  & \dot{\hat{z}}_3
+%               \\\label{Eq:RdotObjectReferenced}
+%     \end{pmatrix}
+%\end{equation}
+%%
+%where
+%%
+%\begin{equation}
+%     \hat{\mathbf{x}} = \left[ \hat{x}_1 \hspace{.2 in}  \hat{x}_2 \hspace{.2 in}  \hat{x}_3
+%     \right]^T \label{Eq:xhatdef}
+%\end{equation}
+%%
+%\begin{equation}
+%     \dot{\hat{\mathbf{x}}} = \left[ \dot{\hat{x}}_1 \hspace{.2 in}  \dot{\hat{x}}_2 \hspace{.2 in}  \dot{\hat{x}}_3
+%     \right]^T \label{Eq:yhatdef}
+%\end{equation}
+%and similarly for $\hat{\mathbf{y}}$, $\dot{\hat{\mathbf{y}}}$,
+%$\hat{\mathbf{z}}$ and $\dot{\hat{\mathbf{z}}}$.
+
+Recall that the user chooses two axes to  an Object Referenced
+system among the following choices:   $\hat{\mathbf{r}}$,
+$\hat{\mathbf{v}}$, $\hat{\mathbf{n}}$,  $-\hat{\mathbf{r}}$,
+$-\hat{\mathbf{v}}$, and $-\hat{\mathbf{n}}$.  In general, one of
+the axes chosen by the user must be either $\hat{\mathbf{n}}$, or
+$-\hat{\mathbf{n}}$.
+
+
+If the user defines the $x$-axis and $y$-axis then GMAT determines
+the z axis using
+%
+\begin{equation}
+    \hat{\mathbf{z}} =  \hat{\mathbf{x}}\times\hat{\mathbf{y}}
+\end{equation}
+%
+and
+%
+\begin{equation}
+    \dot{\hat{\mathbf{z}}} =  \dot{\hat{\mathbf{x}}}
+    \times\hat{\mathbf{y}}+  \hat{\mathbf{x}} \times
+    \dot{\hat{\mathbf{y}}}
+\end{equation}
+%
+If the user defines the $y$-axis and $z$-axis, then GMAT determines
+the $x$ axis using
+%
+\begin{equation}
+    \hat{\mathbf{x}} =  \hat{\mathbf{y}}\times\hat{\mathbf{z}}
+\end{equation}
+%
+and
+%
+\begin{equation}
+    \dot{\hat{\mathbf{x}}} =  \dot{\hat{\mathbf{y}}}
+    \times\hat{\mathbf{z}}+  \hat{\mathbf{y}} \times
+    \dot{\hat{\mathbf{z}}}
+\end{equation}
+%
+And finally, if the user defines the $x$-axis and $z$-axis then GMAT
+determines the $y$ axis using
+%
+\begin{equation}
+    \hat{\mathbf{y}} =  \hat{\mathbf{z}}\times\hat{\mathbf{x}}
+\end{equation}
+%
+and
+%
+\begin{equation}
+    \dot{\hat{\mathbf{y}}} =  \dot{\hat{\mathbf{z}}}
+    \times\hat{\mathbf{x}}+  \hat{\mathbf{z}} \times
+    \dot{\hat{\mathbf{x}}}
+\end{equation}
+%
+
+
+Depending on the users choice of axes for an Object Referenced
+coordinate system, GMAT will need to calculate $\hat{\mathbf{r}}$,
+$\hat{\mathbf{v}}$, $\hat{\mathbf{n}}$, $\dot{\hat{\mathbf{r}}}$,
+$\dot{\hat{\mathbf{v}}}$, and $\dot{\hat{\mathbf{n}}}$.  These are
+given by:
+%
+\begin{equation}
+\hat{\mathbf{r}} = \frac{\mathbf{r}}{\| \mathbf{r}
+     \|} = \frac{\mathbf{r}}{r}
+\end{equation}
+%
+\begin{equation}
+     \hat{\mathbf{v}} = \frac{\mathbf{v}}{\| \mathbf{v}
+     \|} = \frac{\mathbf{v}}{v}
+\end{equation}
+%
+\begin{equation}
+     \hat{\mathbf{n}} = \frac{\mathbf{r}\times \mathbf{v}}{ \| \mathbf{r}\times \mathbf{v}
+     \|}
+\end{equation}
+%
+\begin{equation}
+    \dot{\hat{\mathbf{r}}} = \frac{\mathbf{v}}{r}  -
+     \frac{\hat{\mathbf{r}}}{r}
+     \left(\hat{\mathbf{r}} \cdot
+     \mathbf{v} \right)
+\end{equation}
+%
+\begin{equation}
+    \dot{\hat{\mathbf{v}}} = \frac{\mathbf{a}}{v} -
+    \frac{\hat{\mathbf{v}}}{v}\left(\hat{\mathbf{v}}\cdot\mathbf{a}\right)
+\end{equation}
+%
+\begin{equation}
+     \dot{\hat{\mathbf{n}}} = \frac{\mathbf{r} \times \mathbf{a}}{n} - \frac{\hat{\mathbf{n}}}{n} \left(  \mathbf{r}\times\mathbf{a} \cdot \hat{\mathbf{n}} \right)
+     \label{Eq:VBN_Ndot}
+\end{equation}
+
+
+
+%---------------------------------------------------------------------------------
+%---------------------------------------------------------------------------------
+\subsection{Geocentric Solar
+Ecliptic (GSE)  }
+%---------------------------------------------------------------------------------
+%---------------------------------------------------------------------------------
+
+%  Reference for this: http://sscweb.gsfc.nasa.gov/users_guide/Appendix_C.html
+The Geocentric Solar Ecliptic system is a time varying axis system
+often used to describe and analyze the Earth's magnetic field. The
+coordinate system is defined such that
+%
+\begin{equation}
+     \hat{\mathbf{x}} = \frac{\mathbf{r}_{sun}}{\| \mathbf{r}_{sun} \|}
+\end{equation}
+%
+where $\mathbf{r}_{sun}$ is the vector from the Earth to the Sun
+in the MJ2000Eq axis system.   The $z$-axis is defined to be the
+ecliptic pole. To ensure we have an orthogonal system, we
+calculate $\hat{\mathbf{z}}$ using
+%
+\begin{equation}
+     \hat{\mathbf{z}} = \frac{\mathbf{r}_{sun} \times \mathbf{v}_{sun}}{ \|  \mathbf{r}_{sun} \times \mathbf{v}_{sun}   \|}
+\end{equation}
+
+
+% The unit vector pointing in the direction of the
+%ecliptic pole, but expressed in the MJ2000Eq system, is simply the
+%third column of rotation matrix from MJ2000Ec to MJ2000Eq given in
+%Eq.~(\ref{Eq:Ec2Eq}). So,
+%%
+%\begin{equation}
+%  \hat{\mathbf{z}} =   \begin{pmatrix}
+%     0.0\\
+%     -0.397777155914121383\\
+%     0.917482062076895741
+%     \end{pmatrix}
+%\end{equation}
+%
+Finally, the $y$-axis completes the right-handed set
+%
+\begin{equation}
+    \hat{\mathbf{y}} = \hat{\mathbf{z}} \times \hat{\mathbf{x}}
+\end{equation}
+%
+We can construct the rotation matrix that goes from the GSE axis
+system to the MJ2000Eq axis system as
+%
+\begin{equation}
+     \mathbf{R}_{Ii} = \left[\hspace{.05 in} \hat{\mathbf{x}} \hspace{.2 in} \hat{\mathbf{y}} \hspace{.2 in} \hat{\mathbf{z}} \hspace{.05 in} \right]
+\end{equation}
+%
+We also need to compute the derivative of the rotation matrix.  We
+start by computing
+%
+\begin{equation}
+     \frac{d\hat{\mathbf{x}}}{dt} =      \displaystyle\frac{\mathbf{v}_{sun}}{r_{sun}}  -\displaystyle
+     \hat{\mathbf{x}}
+     \left(\hat{\mathbf{x}}  \cdot
+     \frac{\mathbf{v}_{sun}}{r_{sun}} \right)
+\end{equation}
+%
+where $\mathbf{v}_{sun}$ is the velocity of the Sun with respect
+to the Earth in the MJ2000Eq system.  We can approximate the
+derivative of the $z$ axis using
+%
+\begin{equation}
+     \frac{d\hat{\mathbf{z}}}{dt} \approx      \mathbf{0}
+\end{equation}
+%
+\begin{equation}
+     \frac{d\hat{\mathbf{y}}}{dt} =     \hat{\mathbf{z}} \times  \frac{d\hat{\mathbf{x}}}{dt}
+\end{equation}
+%
+\begin{equation}
+     \dot{\mathbf{R}}_{Ii} = \left[\hspace{.05 in} \frac{d\hat{\mathbf{x}}}{dt} \hspace{.2 in}
+     \frac{d\hat{\mathbf{y}}}{dt} \hspace{.2 in} \frac{d\hat{\mathbf{z}}}{dt} \hspace{.05 in} \right]
+\end{equation}
+
+
+\subsection{ Geocentric Solar
+Magnetic (GSM)}
+
+
+\begin{equation}
+     \hat{\mathbf{x}} = \frac{\mathbf{r}_{sun}}{\| \mathbf{r}_{sun} \|}
+\end{equation}
+%
+
+Let's define the spherical coordinates of the Earth's dipole in
+the Earth fixed frame to be $\lambda_d$ and $\phi_d$.  The
+location of the dipole actually changes with time.  Also, the
+dipole does not actually pass through the center of the Earth.
+However, GMAT currently assumes that the dipole direction is
+constant, and passes directly through the center of the Earth.  If
+this approximation is not sufficient for future studies, the model
+will have to be updated.
+
+\begin{equation}
+     \lambda_d = 70.1^{\circ}\mbox{  W}
+\end{equation}
+%
+\begin{equation}
+     \phi_d = 78.6 ^{\circ} \mbox{  N}
+\end{equation}
+%(http://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html)
+%Latitude/Longitude of dipole N: 78.6 degrees N/70.1 degrees W
+%Dipole offset (planet center to dipole center) distance: 0.0725 Re
+%Latitude/Longitude of offset vector: 18.3 degrees N/147.8 degrees
+%
+The dipole vector in the Earth Fixed system is simply
+%
+\begin{equation}
+    \{\mathbf{r}_d\}_F =   \begin{pmatrix}
+               \cos{\phi_d}\cos{(-\lambda_d)}\\
+                \cos{\phi_d}\sin{(-\lambda_d)}\\
+                \sin{\phi_d}
+     \end{pmatrix}
+\end{equation}
+
+
+If $R_{IF}$ is the rotation matrix from the Earth Fixed frame to
+MJ2000Eq at the current epoch, then we can write the vector that
+describes the dipole direction in the inertial frame as
+%
+\begin{equation}
+        \{\mathbf{r}_d\}_I =   R_{IF}\{\mathbf{r}_d\}_F
+\end{equation}
+%
+Then, the $y$-axis is defined as
+%
+\begin{equation}
+     \hat{\mathbf{y}} = \frac{\{\mathbf{r}_d\}_I \times \hat{\mathbf{x}}  }{\|  \{\mathbf{r}_d\}_I \times \hat{\mathbf{x}}   \|}
+\end{equation}
+%
+the $z$-axis is defined as
+%
+\begin{equation}
+     \hat{\mathbf{z}} = \hat{\mathbf{x}} \times \hat{\mathbf{y}}
+\end{equation}
+%
+and
+%
+\begin{equation}
+     \mathbf{R}_{Ii} = \left[\hspace{.05 in} \hat{\mathbf{x}} \hspace{.2 in} \hat{\mathbf{y}} \hspace{.2 in} \hat{\mathbf{z}} \hspace{.05 in} \right]
+\end{equation}
+%
+To calculate the derivative of the rotation matrix, we know that
+%
+%
+\begin{equation}
+     \frac{d\hat{\mathbf{x}}}{dt} =      \displaystyle\frac{\mathbf{v}_{sun}}{r_{sun}}  -\displaystyle
+     \hat{\mathbf{x}}
+     \left(\hat{\mathbf{x}}  \cdot
+     \frac{\mathbf{v}_{sun}}{r_{sun}} \right)
+\end{equation}
+%
+Let's define
+%
+\begin{equation}
+      \mathbf{y}  = (R_{IF}\{\mathbf{r}_d\}_F) \times
+      \hat{\mathbf{x}}
+\end{equation}
+%
+and
+%
+\begin{equation}
+      y  = \|(R_{IF}\{\mathbf{r}_d\}_F) \times
+      \hat{\mathbf{x}}\|
+\end{equation}
+%
+then
+%
+\begin{equation}
+      \frac{d\mathbf{y}}{dt}  = \dot{\mathbf{y}}=\left(\dot{R}_{IF}\{\mathbf{r}_d\}_F\right) \times
+      \hat{\mathbf{x}} + \left(R_{IF}\{\mathbf{r}_d\}_F\right) \times
+      \frac{\hat{\mathbf{x}}}{dt}
+\end{equation}
+%
+Now we can write
+%
+\begin{equation}
+     \frac{d\hat{\mathbf{y}}}{dt} = \dot{\hat{\mathbf{y}}} =
+     \frac{\dot{\mathbf{y}}}{y} - \hat{\mathbf{y}}\left(\hat{\mathbf{y}} \cdot \frac{\dot{\mathbf{y}}}{y}  \right)
+\end{equation}
+%
+Finally,
+\begin{equation}
+    \dot{\hat{\mathbf{z}}} = \dot{\hat{\mathbf{x}}} \times
+    \hat{\mathbf{y}}+ \hat{\mathbf{x}} \times
+    \dot{\hat{\mathbf{y}}}
+\end{equation}
+%
+and
+%
+\begin{equation}
+     \dot{\mathbf{R}}_{Ii} = \left[\hspace{.05 in} \frac{d\hat{\mathbf{x}}}{dt} \hspace{.2 in}
+     \frac{d\hat{\mathbf{y}}}{dt} \hspace{.2 in} \frac{d\hat{\mathbf{z}}}{dt} \hspace{.05 in} \right]
+\end{equation}
+
+
+\subsection{ Body-Spin Sun Coordinates}
+
+The body-spin Sun coordinate system is a celestial-body-based coordinate system defined as follows:
+%
+\begin{itemize}
+   \item x points from the central body to the sun
+   \item y completes the right-handed set
+   \item z lies in the plane of the body's spin axis and the x axis
+\end{itemize}
+%
+This system is similar to the GSM system with the following two differences:  (1)  The magnetic field vector is replaced with the body's spin axis, and (2) the system is based on the fixed frame of the central body and not always referenced to the Earth fixed system, and (3) x points in the opposite direction in the two systems.
+
+Define the vector $\mathbf{r}_{sun}$ as the vector from the central body to the sun. Then,
+%
+\begin{equation}
+     \hat{\mathbf{x}} = \frac{\mathbf{r}_{sun}}{\| \mathbf{r}_{sun} \|}
+\end{equation}
+%
+Define the body's spin axis in the body fixed system as
+%
+\begin{equation}
+    \mathbf{r}_s^I =   \begin{pmatrix}
+               0\\
+                0\\
+                1
+     \end{pmatrix}
+\end{equation}
+
+If $\mathbf{R}^{I/F}$ is the rotation matrix from the central body's fixed frame to
+MJ2000Eq at the current epoch, then we can write the vector that
+describes the spin axis in the inertial frame as
+%
+\begin{equation}
+     \mathbf{r}_s^I =  \mathbf{R}^{I/F} \mathbf{r}_s^F
+\end{equation}
+%
+Then, the $y$-axis is defined as
+%
+\begin{equation}
+     \hat{\mathbf{y}} = \frac{\mathbf{r}_s^I \times \hat{\mathbf{x}}  }{\|  \mathbf{r}_s^I\times \hat{\mathbf{x}}   \|}
+\end{equation}
+%
+the $z$-axis is defined as
+%
+\begin{equation}
+     \hat{\mathbf{z}} = \hat{\mathbf{x}} \times \hat{\mathbf{y}}
+\end{equation}
+%
+and
+%
+\begin{equation}
+     \mathbf{R}_{Ii} = \left[\hspace{.05 in} \hat{\mathbf{x}} \hspace{.2 in} \hat{\mathbf{y}} \hspace{.2 in} \hat{\mathbf{z}} \hspace{.05 in} \right]
+\end{equation}
+%
+To calculate the derivative of the rotation matrix, we know that
+%
+%
+\begin{equation}
+     \frac{d\hat{\mathbf{x}}}{dt} =      \displaystyle\frac{\mathbf{v}_{sun}}{r_{sun}}  -\displaystyle
+     \hat{\mathbf{x}}
+     \left(\hat{\mathbf{x}}  \cdot
+     \frac{\mathbf{v}_{sun}}{r_{sun}} \right)
+\end{equation}
+%
+and
+%
+\begin{equation}
+      \frac{d\mathbf{y}}{dt}  = \dot{\mathbf{y}}=\left(\dot{\mathbf{R}}^{I/F}\mathbf{r}_s^F\right) \times
+      \hat{\mathbf{x}} + \mathbf{r}_s^I \times
+      \frac{d\hat{\mathbf{x}}}{dt}
+\end{equation}
+%
+Now we can write
+%
+\begin{equation}
+     \frac{d\hat{\mathbf{y}}}{dt} = \dot{\hat{\mathbf{y}}} =
+     \frac{\dot{\mathbf{y}}}{y} - \hat{\mathbf{y}}\left(\hat{\mathbf{y}} \cdot \frac{\dot{\mathbf{y}}}{y}  \right)
+\end{equation}
+%
+Finally,
+\begin{equation}
+    \dot{\hat{\mathbf{z}}} = \dot{\hat{\mathbf{x}}} \times
+    \hat{\mathbf{y}}+ \hat{\mathbf{x}} \times
+    \dot{\hat{\mathbf{y}}}
+\end{equation}
+%
+and
+%
+\begin{equation}
+     \dot{\mathbf{R}}_{Ii} = \left[\hspace{.05 in} \frac{d\hat{\mathbf{x}}}{dt} \hspace{.2 in}
+     \frac{d\hat{\mathbf{y}}}{dt} \hspace{.2 in} \frac{d\hat{\mathbf{z}}}{dt} \hspace{.05 in} \right]
+\end{equation}
+
+
+\section{Appendix 1: Derivatives of ObjectReferenced Unit Vectors}
+
+The derivations of the above quantities are shown below.  We start
+by deriving two derivatives with respect to $\mathbf{n}$, where
+$\mathbf{n}$ is given by:
+\begin{equation}
+    \mathbf{n} =
+    \mathbf{r}\times\mathbf{v}
+\end{equation}
+%
+We need to determine two derivatives of $\mathbf{n}$. First
+%
+\begin{equation}
+    \frac{d \mathbf{n}}{dt} = \frac{d }{d
+    t}\left(\mathbf{r}\times\mathbf{v}\right) =
+    \underbrace{\frac{d \mathbf{r}}{d t} \times\mathbf{v}}_0 +  \mathbf{r} \times
+    \frac{d\mathbf{v}}{\partial t}
+\end{equation}
+%
+so we know that
+%
+\begin{equation}
+    \boxed{\frac{d \mathbf{n}}{dt} =   \mathbf{r} \times
+    \mathbf{a}}
+\end{equation}
+%
+The next useful derivative is
+%
+\begin{equation}
+    \frac{dn}{dt} = \frac{d  \| \mathbf{n} \|}{dt} = \frac{d }{
+    d
+    t}\left( \mathbf{n}^T \mathbf{n} \right)^{1/2} =
+    \frac{\mathbf{n}^T}{n}\frac{d \mathbf{n}}{dt}
+\end{equation}
+%
+So we can write
+%
+\begin{equation}
+    \boxed{\frac{dn}{dt} =
+    \frac{\mathbf{n}}{n}\cdot\left(\mathbf{r}\times\mathbf{a}\right)}
+\end{equation}
+%
+The following two derivatives are also useful
+\begin{equation}
+    \frac{dr}{dt} = \frac{d  \| \mathbf{r} \|}{dt} =
+    \frac{d}{dt}(\mathbf{r}^T\mathbf{r})^{1/2} = \frac{\mathbf{v}  \cdot \mathbf{r} }{r}
+\end{equation}
+%
+\begin{equation}
+     \boxed{\frac{dr}{dt} = \frac{\mathbf{v}  \cdot \mathbf{r}
+     }{r}}
+\end{equation}
+%
+\begin{equation}
+     \frac{dv}{dt} = \frac{d \| \mathbf{v} \|}{dt} = \frac{d}{dt}(\mathbf{v}^T\mathbf{v})^{1/2} = \frac{\mathbf{v}  \cdot \mathbf{a} }{v}
+\end{equation}
+%
+so we can write
+\begin{equation}
+     \boxed{\frac{dv}{dt} = \frac{\mathbf{v}  \cdot \mathbf{a}
+     }{v}}
+\end{equation}
+
+\begin{equation}
+     \boxed{\hat{\mathbf{v}} = \frac{\mathbf{v}}{\| \mathbf{v}
+     \|}}
+\end{equation}
+%
+\begin{equation}
+\boxed{\hat{\mathbf{r}} = \frac{\mathbf{r}}{\| \mathbf{r}
+     \|}}
+\end{equation}
+%
+\begin{equation}
+     \boxed{\hat{\mathbf{n}} = \frac{\mathbf{r}\times \mathbf{v}}{ \| \mathbf{r}\times \mathbf{v}
+     \|}}
+\end{equation}
+%
+The time derivatives are derived as follows.
+%
+\begin{equation}
+    \dot{\hat{\mathbf{r}}} =
+    \frac{\partial \hat{\mathbf{r}}}{ \partial t} = \frac{\partial }{ \partial
+    t}\left( \mathbf{r} r^{-1}  \right) = \frac{\mathbf{v}}{r} -
+    \frac{\mathbf{r}}{r^2}\left(\frac{\mathbf{r}\cdot\mathbf{v}}{r}\right)
+\end{equation}
+%
+which can be rewritten as
+%
+\begin{equation}
+    \boxed{\frac{d\hat{\mathbf{r}}}{dt} = \frac{\mathbf{v}}{r}  -
+     \frac{\hat{\mathbf{r}}}{r}
+     \left(\hat{\mathbf{r}} \cdot
+     \mathbf{v} \right)}
+\end{equation}
+%
+\begin{equation}
+    \dot{\hat{\mathbf{v}}} =
+    \frac{\partial \hat{\mathbf{v}}}{ \partial t} = \frac{\partial }{ \partial
+    t}\left( \mathbf{v} v^{-1}  \right) = \frac{\mathbf{a}}{v} -
+    \frac{\mathbf{v}}{v^2}\left(\frac{\mathbf{v}\cdot\mathbf{a}}{v}\right)
+\end{equation}
+%
+which can be rewritten as
+%
+\begin{equation}
+    \boxed{\dot{\hat{\mathbf{v}}} = \frac{\mathbf{a}}{v} -
+    \frac{\hat{\mathbf{v}}}{v}\left(\hat{\mathbf{v}}\cdot\mathbf{a}\right)}
+\end{equation}
+%
+Finally,
+%
+\begin{equation}
+     \dot{\hat{\mathbf{n}}} = \frac{d}{dt}\left( \mathbf{n} n^{-1}
+     \right)= \frac{\mathbf{r} \times \mathbf{a}}{n} - \frac{\mathbf{n}}{n^3} \left(  \mathbf{r}\times\mathbf{a} \cdot \mathbf{n} \right)
+\end{equation}
+%
+\begin{equation}
+     \boxed{\dot{\hat{\mathbf{n}}} = \frac{\mathbf{r} \times \mathbf{a}}{n} - \frac{\hat{\mathbf{n}}}{n} \left(  \mathbf{r}\times\mathbf{a} \cdot \hat{\mathbf{n}} \right)
+     }
+\end{equation}
+
+\subsection{Basic Rotation Matrices} \label{sec:BasicRotationMatrices}
+
+\begin{equation}
+   \mathbf{R}_1 = \left(\begin{array}{ccc}
+      1 & 0 & 0 \\
+      0 & \cos{\theta} & \sin{\theta} \\
+      0 & -\sin{\theta} & \cos{\theta}
+   \end{array}\right)
+\end{equation}
+
+\begin{equation}
+   \mathbf{R}_2 = \left(\begin{array}{ccc}
+      \cos{\theta}  & 0 & -\sin{\theta} \\
+      0 & 1 & 0 \\
+      \sin{\theta} & 0 & \cos{\theta}
+   \end{array} \right)
+\end{equation}
+
+
+\begin{equation}
+   \mathbf{R}_3 = \left(\begin{array}{ccc}
+       \cos{\theta} & \sin{\theta} & 0 \\
+      -\sin{\theta} &  \cos{\theta} & 0 \\
+      0 & 0 & 1
+   \end{array}\right)
+\end{equation}
+
+
+
+\begin{table*} \caption{Recommended Values for Pole and Prime Meridian Locations of the Sun and
+Planets\cite{Seidelmann:etal:02}} \index{Planets!pole locations}
+\index{Planets!prime meridian locations}\centering
+\begin{tabular}{p{.5 in} p{4.5 in} }
+  \hline\hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+   Name & Values  \\
+  \hline
+  Sun & $\alpha_o = 286.13^{\circ}$ \hspace{.2 in} (deg)\\
+       & $\delta_o = 63.87^{\circ}$ \hspace{.2 in} (deg)\\
+       &$W = 84.10^{\circ}+ 14.1844000^{\circ}d$  \hspace{.2 in} (deg)\\
+       &$\dot{W} =14.1844000^{\circ}$  \hspace{.2 in} (deg/s)\\
+       & \\
+ %------------------------------------------------------
+  Mercury & $\alpha_o = 281.01 - 0.033T$\\
+       & $\delta_o = 61.45 - 0.005T$\\
+       & $W = 329.548 + 6.1385025d$\\
+       &$\dot{W} =6.1385025$\\
+       & \\
+ %------------------------------------------------------
+   Venus & $\alpha_o = 272.76$\\
+       & $\delta_o = 67.16$\\
+       & $W = 160.20 - 1.4813688d$\\
+       &$\dot{W} = - 1.4813688$\\
+       & \\
+ %------------------------------------------------------
+     Earth& $\alpha_o = 0.00 - 0.641T$\\
+       & $\delta_o =  90.00 - 0.557T$ \\
+       & $W = 190.147 + 360.9856235d$\\
+       &$\dot{W} = 360.9856235$\\
+       & \emph{Earth Data is included for completeness only, GMAT uses FK5 reduction for the Earth}\\
+       & \\
+ %------------------------------------------------------
+   Mars & $\alpha_o = 317.68143 - 0.1061T$\\
+       & $\delta_o = 52.88650 - 0.0609T$\\
+       & $W = 176.630 + 350.89198226d$\\
+       &$\dot{W} = 350.89198226$\\
+       & \\
+ %------------------------------------------------------
+    Jupiter & $\alpha_o = 268.05 - 0.009T$\\
+       & $\delta_o = 64.49 + 0.003T$\\
+       & $W = 284.95 + 870.5366420d$\\
+       &$\dot{W} = 870.5366420$\\
+       & \\
+ %------------------------------------------------------
+    Saturn & $\alpha_o = 40.589 - 0.036T$\\
+       & $\delta_o = 83.537 - 0.004T$\\
+       & $W =  38.90 + 810.7939024d$\\
+       &$\dot{W} = 810.7939024$\\
+       & \\
+ %------------------------------------------------------
+    Uranus & $\alpha_o = 257.311$\\
+       & $\delta_o = -15.175$\\
+       & $W = 203.81-501.1600928d$\\
+       &$\dot{W} = -501.1600928$\\
+       & \\
+ %------------------------------------------------------
+     Neptune & $\alpha_o = 299.36 + 0.70\sin{N}$\\
+       & $\delta_o = 43.46 - 0.51\cos{N}$\\
+       & $W = 253.18 + 536.3128492d - 0.48 \sin{N}$\\
+       &$\dot{W} = 536.3128492- 0.48\dot{N} \cos{N}$\\
+       &$N = 357.85 + 52.316T$\\
+       &$\dot{N} = 6.0551\times 10^{-4}$ \hspace{.2in}(deg/day)\\
+       & \\
+ %------------------------------------------------------
+     Pluto & $\alpha_o = 313.02$\\
+       & $\delta_o = 9.09$\\
+       & $W = 236.77 - 56.3623195d$\\
+       &$\dot{W} = - 56.3623195$\\
+ %------------------------------------------------------
+  \hline\hline \label{Table:PlanetsPolesMeridians}
+\end{tabular}
+\end{table*}
+
+\begin{table*} \caption{Recommended Values for Pole and Prime Meridian Locations of Luna \cite{Seidelmann:etal:02}} \index{Luna!pole locations}
+\index{Luna!prime meridian locations}\centering
+\begin{tabular}{p{.5 in} p{4.5 in} }
+  \hline\hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+   Name & Values  \\
+  \hline
+ %------------------------------------------------------
+  Luna & \[
+\begin{array}{lllll}
+               \alpha_o  = &269.9949 &+ 0.0031T             &- 3.8787\sin{E1} &- 0.1204\sin{E2}  \\
+                        & \mbox{}  &+ 0.0700\sin{E3}      &- 0.0172\sin{E4} &+0.0072\sin{E6}\\
+                        & \mbox{}  &- 0.0052\sin{E10}      &- 0.0043\sin{E13}
+\end{array}
+\]
+\\
+ %------------------------------------------------------
+& \[
+\begin{array}{lllll}
+               \delta_o  = &66.5392 &+ 0.0130T             &+ 1.5419\cos{E1} &+0.0239\cos{E2}  \\
+                        & \mbox{  }  &- 0.0278\cos{E3}      &+0.0068\cos{E4} &-0.00292\cos{E6}\\
+                        & \mbox{  }  &+0.0009\cos{E7}    &+.0008\cos{E10} &-0.0009\cos{E13}
+\end{array}
+\]
+\\
+ %------------------------------------------------------
+& \[
+\begin{array}{lllll}
+               W  =     &38.3213     &+ 13.17635815d     &-1.4\times 10^{-12}d^2 &+3.5610\sin{E1}  \\
+                        & \mbox{  }  &+ 0.1208\sin{E2}  &-0.0642\sin{E3}        &+0.0158\sin{E4}\\
+                        & \mbox{  }  &+ 0.0252\sin{E5}  &-0.0066\sin{E6}        &-0.0047\sin{E7}\\
+                        & \mbox{  }  &- 0.0046\sin{E8}  &+0.0028\sin{E9}        &+0.0052\sin{E10}\\
+                        & \mbox{  }  &+ 0.0040\sin{E11}  &+0.0019\sin{E12}        &-0.0044\sin{E13}\\
+\end{array}
+\]
+\\
+ %------------------------------------------------------
+& \[
+\begin{array}{llllll}
+               \dot{W}  =     &+ 13.17635815     &-2.8\times 10^{-12}d   &-.18870\cos{E1}  \\
+                        &-.01280\cos{E2}  &-.835\cos{E3}        &+.211\cos{E4}\\
+                        &+.0248\cos{E5}  &-.17\cos{E6}        &-.061\cos{E7}\\
+                        &-.0015\cos{E8}  &+.0049\cos{E9}        &-.00083\cos{E10}\\
+                        &+.00001\cos{E11}  &+.00031\cos{E12}        &-.057\cos{E13}\\
+\end{array}
+\]
+\\
+% %------------------------------------------------------
+where & \[
+\begin{array}{lllllll}
+                        &E1 = 125.045 - 0.0529921d     &E2 = 250.089 - 0.1059842d \\
+                        &E3 = 260.008 + 13.0120009d    &E4 = 176.625 + 13.3407154d \\
+                        &E5 = 357.529 + 0.9856003d     &E6 = 311.589 + 26.4057084d   \\
+                        &E7 = 134.963 + 13.0649930d    &E8 = 276.617 + 0.3287146d \\
+                        &E9 = 34.226 + 1.7484877d      &E10 = 15.134 - 0.1589763d \\
+                        &E11 = 119.743 + 0.0036096d    &E12 = 239.961 + 0.1643573d   \\
+                        &E13 = 25.053 + 12.9590088d \\
+\end{array}
+\]
+\\
+  \hline\hline \label{Table:LunaPoleMeridian}
+\end{tabular}
+\end{table*}
+
+\clearpage
+\include{CSFlowChart}

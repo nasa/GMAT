@@ -1,0 +1,1303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="MinimumFuelforOrbitTransfer"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Minimum Fuel for Orbit Transfer</title>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>This tutorial shows how GMAT's optimizer can be used in a mission
+    setting. This mission basically shows how a Hohmann transfer is the most
+    efficient to go from one orbit to the other. While this isn't entirely a
+    Hohmann transfer since it also has a plane change, it generally abides by
+    its rules. Again, this tutorial will show how the optimize, optimizer,
+    vary command using the optimizer, nonlinear constraints, and minimize
+    command. To accomplish this, the transfer orbit insertion burn and the
+    final orbit insertion burn will each vary in all directions. Additionally,
+    the time that the spacecraft flies in the transfer orbit and the
+    time/point that it leaves the initial orbit are both varied as
+    well.</para>
+
+    <para>Download the script file: <link
+    xlink:href="scripts/Ex_LowEarthMinFuelTransfer.script">Ex_LowEarthMinFuelTransfer.script</link></para>
+
+    <para>Note: This mission is the same as the Optimization sample mission
+    largely, except the Optimization mission has a few errors in it and does
+    not contain XY Plots</para>
+
+    <section>
+      <title>Prerequisites</title>
+
+      <para></para>
+    </section>
+
+    <section>
+      <title>Mission Description</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Objective:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>SMA=10,000</para>
+            </listitem>
+
+            <listitem>
+              <para>ECC=.05</para>
+            </listitem>
+
+            <listitem>
+              <para>INC=5</para>
+            </listitem>
+
+            <listitem>
+              <para>Minimum Fuel Required to Achieve Above Objectives</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Assume:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>SMA = 7500</para>
+            </listitem>
+
+            <listitem>
+              <para>ECC = 0</para>
+            </listitem>
+
+            <listitem>
+              <para>INC = 0</para>
+            </listitem>
+
+            <listitem>
+              <para>RAAN = 45</para>
+            </listitem>
+
+            <listitem>
+              <para>AOP = 0</para>
+            </listitem>
+
+            <listitem>
+              <para>TA = 360</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Find:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Epoch of Transfer Orbit Insertion Burn</para>
+            </listitem>
+
+            <listitem>
+              <para>Epoch of Final Orbit Insertion Burn</para>
+            </listitem>
+
+            <listitem>
+              <para>Transfer Orbit Insertion Burn</para>
+            </listitem>
+
+            <listitem>
+              <para>Final Orbit Insertion Burn</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Resource, Mission, and Output Trees</title>
+
+      <informaltable colsep="0" frame="none">
+        <tgroup cols="3">
+		<colspec colname='c1'/>
+		<colspec colname='c2'/>
+		<colspec colname='c3'/>
+          <tbody>
+            <row>
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: Minimum Fuel Orbit Transfer Resource,
+                    Mission, and Output Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_MinFuelOrbitTrans_MinimumFuelOrbitTransferResourceMissionandOutputTrees1.jpeg"></imagedata>
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></entry>
+				
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: Minimum Fuel Orbit Transfer Resource,
+                    Mission, and Output Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_MinFuelOrbitTrans_MinimumFuelOrbitTransferResourceMissionandOutputTrees2.jpeg"></imagedata>
+                    </imageobject>
+
+                  </mediaobject>
+                </screenshot></entry>
+
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: Minimum Fuel Orbit Transfer Resource,
+                    Mission, and Output Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_MinFuelOrbitTrans_MinimumFuelOrbitTransferResourceMissionandOutputTrees3.jpeg"></imagedata>
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></entry>
+            </row>
+			<row>
+				<entry namest="c1" nameend="c3" align='center'>Figure: Minimum Fuel Orbit Transfer Resource,
+                      Mission, and Output Trees</entry>
+			</row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Resource Tree</title>
+
+    <para>Two spacecraft will be required, one for actual propagation and the
+    other is a dummy satellite whose conditions we don't care about but For
+    this mission, two burns will be required. One burn will transfer the
+    spacecraft from its initial orbit to its transfer orbit. The second burn
+    will transfer the spacecraft from its transfer orbit to its final orbit.
+    Only one propagator is needed since the spacecraft is staying close to
+    Earth. Only one OpenGL plot will be used. One report file will be used to
+    store the final numbers of the burns and to see how closely it achieves
+    the desired goals. Four XY plots will be used to observe how quickly
+    convergence is achieved for the objectives of the mission. Also an
+    optimizer will be used instead of a differential corrector. Also a number
+    of variables will be used.</para>
+
+    <para></para>
+
+    <section>
+      <title>Objects Required</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft: Sat, DummySat</para>
+        </listitem>
+
+        <listitem>
+          <para>Burns: dV1, dV2</para>
+        </listitem>
+
+        <listitem>
+          <para>Propagators: DefaultProp</para>
+        </listitem>
+
+        <listitem>
+          <para>Optimizer: SPQfmincon</para>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports: DefaultOpenGL, IterateData, CostPlot, SMAPlot,
+          ECCPlot, INCPlot</para>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems:EarthMJ2000Eq</para>
+        </listitem>
+
+        <listitem>
+          <para>Variables: TOF dV1Time Cost Constraint1 Constraint2
+          Constraint3, dV1mag dV2mag RefEpoch PropEpoch Iterate</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Creating and Modifying Objects</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Sat</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>SMA = 7500</para>
+                </listitem>
+
+                <listitem>
+                  <para>ECC = 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>INC = 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>RAAN = 45</para>
+                </listitem>
+
+                <listitem>
+                  <para>AOP = 0</para>
+                </listitem>
+
+                <listitem>
+                  <para>TA = 360</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: Sat Spacecraft Object'</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MinFuelOrbitTrans_SatSpacecraftObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: Sat Spacecraft Object'</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>DummySat</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Default Conditions</para>
+                </listitem>
+              </itemizedlist>
+
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Propagators</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>DefaultProp</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>It uses all of the default values except it has no
+                  primary body, but rather uses a point force model of the
+                  Earth with no drag. If it was desired to make it more
+                  accurate, drag, J2, solar radiation, and other celestial
+                  bodies could be added to the propagator.</para>
+                </listitem>
+              </itemizedlist>
+
+
+              <screenshot>
+                <info>
+                  <title>Figure: DefaultProp Propagator Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MinFuelOrbitTrans_DefaultPropPropagatorObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: DefaultProp Propagator Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Burns</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>dV1</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Default Values</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>dV2</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Default Values</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: dv1 Burn Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_MinFuelOrbitTrans_dv1BurnObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: dv1 Burn Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Variables/Strings/Arrays</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Variable TOF</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable dV1 Time</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable Cost</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable Constraint1</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable Constraint2</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable Constraint3</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable dV1mag</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable dV2mag</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable RefEpoch</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable PropEpoch</para>
+            </listitem>
+
+            <listitem>
+              <para>Variable Iterate</para>
+            </listitem>
+          </itemizedlist>
+
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Use Default coordinate systems</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Solvers</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Optimizer fmincon</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>DiffMaxChange = .01</para>
+                </listitem>
+
+                <listitem>
+                  <para>DiffMinChange = .00001</para>
+                </listitem>
+
+                <listitem>
+                  <para>MaxFunEvals = 1000</para>
+                </listitem>
+
+                <listitem>
+                  <para>MaxIter = 100</para>
+                </listitem>
+
+                <listitem>
+                  <para>TolX = .001</para>
+                </listitem>
+
+                <listitem>
+                  <para>TolFun = .00001</para>
+                </listitem>
+
+                <listitem>
+                  <para>TolCon = .00001</para>
+                </listitem>
+
+                <listitem>
+                  <para>Display = Iter</para>
+                </listitem>
+
+                <listitem>
+                  <para>Diagnostics = On</para>
+                </listitem>
+              </itemizedlist>
+
+
+              <screenshot>
+                <info>
+                  <title>Figure: SQPfmincon Boundary Value Solver
+                  Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MinFuelOrbitTrans_SQPfminconBoundaryValueSolverObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: SQPfmincon Boundary Value Solver
+                    Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>XY Plot CostPlot</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Inde = Iterate</para>
+                </listitem>
+
+                <listitem>
+                  <para>Add = Cost</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>XY Plot SMAPlot</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Inde = Iterate</para>
+                </listitem>
+
+                <listitem>
+                  <para>Add = SMA</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>XY Plot ECCPlot</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Inde = Iterate</para>
+                </listitem>
+
+                <listitem>
+                  <para>Add = ECC</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>XY Plot INCPlot</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Inde = Iterate</para>
+                </listitem>
+
+                <listitem>
+                  <para>Add = INC</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+
+
+          <screenshot>
+            <info>
+              <title>Figure: Cost XY Plot Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_MinFuelOrbitTrans_CostXYPlotObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: Cost XY Plot Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+
+          <itemizedlist>
+            <listitem>
+              <para>Report IterateDate</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Filename =
+                  ./output/SampleMissions/Ex_LowEarthMinFuelTransfer.report</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: IterateData Report Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MinFuelOrbitTrans_IterateDataReportObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: IterateData Report Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>DefaultOpenGL</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Collect Data every 6 steps</para>
+                </listitem>
+
+                <listitem>
+                  <para>Number of Points to redraw: 100</para>
+                </listitem>
+
+                <listitem>
+                  <para>Selected Celestial Objects: Earth</para>
+                </listitem>
+
+                <listitem>
+                  <para>View Up Definition Axis: X</para>
+                </listitem>
+
+                <listitem>
+                  <para>SolverIterations: All</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: DefaultOpenGL System Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_MinFuelOrbitTrans_DefaultOpenGLSystemObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: DefaultOpenGL System Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Mission Tree</title>
+
+    <para>The spacecraft propagates a single orbit and then the optimizing
+    sequence starts. First the time of the transfer orbit insertion burn is
+    varied to determine the best time to start the orbit insertion. The two if
+    statements depend on if the time is negative or positive. If it is
+    positive, the first if statement allows the spacecraft to propagate
+    forward in time to that point. If it is negative, the second if statement
+    allows the spacecraft to propagate backwards in time to that point. Next
+    the three directions of the first burn are varied in magniture. Then the
+    maneuever is performed and the amount of time the spacecraft is on that
+    transfer orbit is varied. Then the magnitude of the three directions of
+    the second transfer burn</para>
+
+    <section>
+      <title>Creating and Modifying Command Sequences</title>
+
+      <section>
+        <title>Pre-Optimization Sequence</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Firstly, the four XY plots are turned off so that they can
+            only take data when we want them to be. If they were left on, they
+            would take the wrong data. We want them to take a measurement at
+            the end of the iteration so we know how close each iteration is to
+            the final value.</para>
+          </listitem>
+
+          <listitem>
+            <para>The propagate command is then to make the spacecraft orbit
+            one period so that we can see what the original orbit looked
+            like.</para>
+          </listitem>
+
+          <listitem>
+            <para>In Equation2, the counter variable is set to 0 before the
+            optimization sequence starts.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Toggle CostPlot Off;</para>
+          </listitem>
+
+          <listitem>
+            <para>Toggle SMAPlot Off;</para>
+          </listitem>
+
+          <listitem>
+            <para>Toggle ECCPlot Off;</para>
+          </listitem>
+
+          <listitem>
+            <para>Toggle INCPlot Off;</para>
+          </listitem>
+
+          <listitem>
+            <para>Propagate Sat for Elapsed Seconds = Sat . Period</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation1 RefEpoch = Sat.A1ModJulian</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation2 Iterate = 0</para>
+          </listitem>
+        </itemizedlist>
+
+
+        <screenshot>
+          <info>
+            <title>Figure: Toggle1 Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_Toggle1Command.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Toggle1 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Propagate Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_PropagateCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Propagate Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Equation1 Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_Equation1Command.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Equation1 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>Optimization Sequence - Part 1</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>Equation3 counts the number of iterations performed in the
+            optimization sequence. This number will allow tracking of the data
+            in regards to the particular iteration. This is helpful for the
+            ReportFile and the XY Plots.</para>
+          </listitem>
+
+          <listitem>
+            <para>The time when the transfer orbit insertion burn is started
+            is varied. Note that the units on dV1Time(as well as A1ModJulian)
+            is days.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation4 is used to change the point to which it propagates
+            to.</para>
+          </listitem>
+
+          <listitem>
+            <para>The first If statement allows it to propagate forward while
+            the second If statement allows it to propagate backwards, thus
+            covering the entire orbit so that a burn is possible at any
+            point.</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Equation3 Iterate = Iterate + 1</para>
+          </listitem>
+
+          <listitem>
+            <para>Vary dV1 Time</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Lower = -.5, Upper = .5, MultiplicativeScaleFactor =
+                10</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Equation4 PropEpoch = RefEpoch + dV1Time</para>
+          </listitem>
+
+          <listitem>
+            <para>If dV1 &gt; 0</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Propagate until Sat.A1ModJulian = PropEpoch</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>If dV1 &lt; 0</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Backwards Propagate until Sat.A1ModJulian =
+                PropEpoch</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+        <screenshot>
+          <info>
+            <title>Figure: Vary1 Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_Vary1Command.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Vary1 Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: If Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_IfCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: If Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>Optimization Sequence - Part 2</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>First the transfer orbit insertion burn is varied and the
+            maneuver is applied.</para>
+          </listitem>
+
+          <listitem>
+            <para>Next the time in which it remains in the transfer orbit
+            (TOF) is varied.</para>
+          </listitem>
+
+          <listitem>
+            <para>Now TOF is summed with RefEpoch so that Sat is propagated to
+            the correct location.</para>
+          </listitem>
+
+          <listitem>
+            <para>Final orbit insertion burn is varied and the maneuver is
+            applied.</para>
+          </listitem>
+
+          <listitem>
+            <para>The final values for the SMA, ECC, and INC are stored in
+            variables. The reason SMA is divided by 10000 is to give it a
+            wider tolerance.</para>
+          </listitem>
+
+          <listitem>
+            <para>The goal values for SMA, ECC, and INC are compared to the
+            goal values by using Nonlinear Constraints.</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation10 and 11 are used to find the magnitude of the
+            burns.</para>
+          </listitem>
+
+          <listitem>
+            <para>It is then made so that the value to be minimized is the
+            Cost</para>
+          </listitem>
+
+          <listitem>
+            <para>A ScriptEvent is inserted in the mission sequence for
+            simplicity</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>The four XY plots are turned on so that they are able to
+                record data.</para>
+              </listitem>
+
+              <listitem>
+                <para>The DummySat is propagated a step. In order for any data
+                to be recorded by an XY plot, a propagation of any sort needs
+                to take place, thus a DummySat is used which is not useful or
+                needed beyond this particular need.</para>
+              </listitem>
+
+              <listitem>
+                <para>The four XY plots are turned off, so that they will not
+                record the other values that aren't useful.</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Thus the Optimization Sequence Closes</para>
+          </listitem>
+        </itemizedlist>
+
+        <itemizedlist>
+          <listitem>
+            <para>Vary2: dv1.V</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial = .1, Lower = -5, Upper = 5</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Vary3: dv1.N</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial = .01, Lower = -5, Upper = 5</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Vary4: dv1.B</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial = .01, Lower = -5, Upper = 5</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Maneuver1: Apply dv1 to Sat</para>
+          </listitem>
+
+          <listitem>
+            <para>Vary5: TOF</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial = .3, Lower = 0, Upper = 1, Multiplicative Scale
+                Factor= 10</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Equation5: PropEpoch = RefEpoch + TOF</para>
+          </listitem>
+
+          <listitem>
+            <para>Propagate4: Sat until Sat.A1ModJulian = PropEpoch</para>
+          </listitem>
+
+          <listitem>
+            <para>Vary6: dv2.V</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial = .1, Lower = -5, Upper = 5</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Vary7: dv2.N</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial = .01, Lower = -5, Upper = 5</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Vary8: dv2.B</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Initial = .01, Lower = -5, Upper = 5</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Maneuver2: Apply dv2 to Sat</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation6: Constraint1 = Sat.SMA/10000</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation7: Constraint2 = Sat.ECC</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation8: Constraint3 = Sat.INC</para>
+          </listitem>
+
+          <listitem>
+            <para>Nonlinear Constraint1 : Constraint1 = 1</para>
+          </listitem>
+
+          <listitem>
+            <para>Nonlinear Constraint2 : Constraint2 = .05</para>
+          </listitem>
+
+          <listitem>
+            <para>Nonlinear Constraint3 : Constraint3 = 5</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation9: dV1mag = sqrt( dv1.Element1^2 + dv1.Element2^2 +
+            dv1.Element3^2 )</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation10: dV2mag = sqrt( dv2.Element1^2 + dv2.Element2^2 +
+            dv2.Element3^2 )</para>
+          </listitem>
+
+          <listitem>
+            <para>Equation11: Cost = ( dV1mag + dV2mag )</para>
+          </listitem>
+
+          <listitem>
+            <para>Minimize1: Cost</para>
+          </listitem>
+
+          <listitem>
+            <para>Script Event</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Report IterateData dV1Time TOF Cost Sat.SMA Sat.ECC
+                Sat.INC;</para>
+              </listitem>
+
+              <listitem>
+                <para>Toggle CostPlot On;</para>
+              </listitem>
+
+              <listitem>
+                <para>Toggle SMAPlot On;</para>
+              </listitem>
+
+              <listitem>
+                <para>Toggle ECCPlot On;</para>
+              </listitem>
+
+              <listitem>
+                <para>Toggle INCPlot On;</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate DefaultProp(DummySat);</para>
+              </listitem>
+
+              <listitem>
+                <para>Toggle CostPlot Off;</para>
+              </listitem>
+
+              <listitem>
+                <para>Toggle SMAPlot Off;</para>
+              </listitem>
+
+              <listitem>
+                <para>Toggle ECCPlot Off;</para>
+              </listitem>
+
+              <listitem>
+                <para>Toggle INCPlot Off;</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+        <screenshot>
+          <info>
+            <title>Figure: Maneuver Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_ManeuverCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Maneuver Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Nonlinear Constraint Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_NonlinearConstraintCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Nonlinear Constraint Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: Minimize Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_MinimizeCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: Minimize Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+
+        <screenshot>
+          <info>
+            <title>Figure: ScriptEvent Command</title>
+          </info>
+
+          <mediaobject>
+            <imageobject>
+              <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                         fileref="files/images/Tut_MinFuelOrbitTrans_ScriptEventCommand.jpeg"></imagedata>
+            </imageobject>
+
+            <caption>
+              <para>Figure: ScriptEvent Command</para>
+            </caption>
+          </mediaobject>
+        </screenshot>
+      </section>
+
+      <section>
+        <title>Closing Sequence</title>
+
+        <itemizedlist>
+          <listitem>
+            <para>SolutionData is reported to IterateData</para>
+          </listitem>
+
+          <listitem>
+            <para>TOF and Cost is reported to IterateData</para>
+          </listitem>
+
+          <listitem>
+            <para>Sat.SMA, Sat.ECC, Sat.INC are reported to IterateData</para>
+          </listitem>
+
+          <listitem>
+            <para>dv1.V, dv1.N, dv1.B are reported to IterateData</para>
+          </listitem>
+
+          <listitem>
+            <para>dv2.V, dv2.N, dv2.B are reported to IterateData</para>
+          </listitem>
+
+          <listitem>
+            <para>Sat is propagated for one orbital period</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>Script Syntax:</para>
+
+        </section>
+    </section>
+  </section>
+
+  <section>
+    <title>Running the Mission</title>
+
+    <para>The SMAPlot should have a large spike but be largely constant
+    otherwise at about 10000. The INC plot starts increasing then decreasing,
+    is constant for a time, spikes, and then is largely constant at about 5
+    degrees. The ECC plot is largely zeroed except for a single spike. The
+    Cost plot decreases by a small amount, spikes, and then is constants
+    largely at some value near 1.</para>
+
+    <screenshot>
+      <info>
+        <title>Figure: Output</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_MinFuelOrbitTrans_Output.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Output</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: GL plot enlarged Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_MinFuelOrbitTrans_GLPlotEnlargedCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: GL plot enlarged Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+</section>

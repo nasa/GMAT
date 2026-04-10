@@ -1,0 +1,68 @@
+%
+%  Ex_AlgebraicOptimization
+%
+%  Use the SNOPT optimizer to minimize an algebraic cost function.
+%
+%  Released: R2015a
+%
+
+
+%-----------------------------------------------------------------
+%-----------------Create and Setup the Optimizer------------------
+%-----------------------------------------------------------------
+Create SNOPT NLP;
+
+NLP.ShowProgress              = true;
+NLP.ReportStyle               = Normal;
+NLP.ReportFile                = output.report;
+NLP.MajorOptimalityTolerance  = 0.001234;
+NLP.MajorFeasibilityTolerance = 0.0004567;
+NLP.MajorIterationsLimit      = 456;
+NLP.TotalIterationsLimit      = 789012;
+NLP.OutputFileName            = 'SNOPTName123.out';
+NLP.SpecsFileName             = 'SNOPT.spec';
+NLP.OverrideSpecsFileValues   = true;
+
+%-----------------------------------------------------------------
+%------------------------------OutPut-----------------------------
+%-----------------------------------------------------------------
+Create ReportFile Data
+
+Data.WriteHeaders = false;
+Data.Filename     = Ex_AlgebraicOptimization.report
+
+%-----------------------------------------------------------------
+%-------------------Arrays, Variables, Strings--------------------
+%-----------------------------------------------------------------
+Create Variable X1 X2 J G;
+
+%-----------------------------------------------------------------
+%---------------------------Mission Sequence----------------------
+%-----------------------------------------------------------------
+
+BeginMissionSequence;
+
+Optimize NLP {SolveMode = Solve, ExitMode = DiscardAndContinue};
+   
+   %  Vary the independent variables
+   Vary 'Vary X1' NLP(X1 = 0, {Perturbation = 0.0000001, Upper = 10, Lower = -10, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary 'Vary X2' NLP(X2 = 0, {Perturbation = 0.0000001, Upper = 10, Lower = -10, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   
+   %  The cost function and Minimize command
+   'Compute Cost (J)' J = ( X1 - 2 )^2 + ( X2 - 2 )^2;
+   Minimize 'Minimize Cost (J)' NLP(J);
+   
+   %  Calculate constraint and use NonLinearConstraint command
+   %   ( yes, the equation below is actually a linear constraint, were 
+   %     testing functionality with this test)
+   %  The constraint is to require the solution to lie above the line defined by X2 = -X1 + 6
+   %  or X2 >= -X1 + 6;
+   'Compute Constraint (G)' G = X2 + X1;
+   NonlinearConstraint 'G = 8' NLP(G<=8);
+
+EndOptimize;  % For optimizer NLP
+
+Report 'Report Solution' Data X1 X2 J G;
+
+
+

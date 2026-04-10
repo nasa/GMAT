@@ -1,0 +1,87 @@
+%  
+%   Ex_PlanetographicRegion
+%
+%   Script Mission - PlanetographicRegion Example  
+%
+%   This script demonstrates how to set up a simple PlanetographicRegion 
+%   and generate entry/exit times for a spacecraft flying over it.  
+%
+%   Released: R2022a
+%
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Fermi
+Fermi.DateFormat                   = UTCGregorian;
+Fermi.Epoch                        = '16 Mar 2010 00:00:00.000';
+Fermi.CoordinateSystem             = EarthMJ2000Eq;
+Fermi.DisplayStateType             = Cartesian;
+Fermi.X                            = 1861.715588    
+Fermi.Y                            = -6097.672271    
+Fermi.Z                            = -2687.893642       
+Fermi.VX                           = 7.278672       
+Fermi.VY                           = 1.600198       
+Fermi.VZ                           = 1.424786
+Fermi.DryMass                      = 4357.33
+Fermi.Cd                           = 2.1
+Fermi.CdSigma                      = 0.21
+Fermi.AtmosDensityScaleFactor      = 1.0;
+Fermi.AtmosDensityScaleFactorSigma = 1.0;
+Fermi.Cr                           = 0.75
+Fermi.CrSigma                      = 0.1
+Fermi.DragArea                     = 14.18
+Fermi.SRPArea                      = 14.18
+Fermi.Id                           = 'Fermi'
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel FM
+
+FM.CentralBody            = Earth
+FM.PointMasses            = {Earth}
+FM.RelativisticCorrection = Off
+FM.SRP                    = Off
+FM.ErrorControl           = None
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator Prop
+
+Prop.FM   = FM
+Prop.Type = RungeKutta89
+
+
+%----------------------------------------
+%---------- PlanetographicRegion 
+%----------------------------------------
+
+Create PlanetographicRegion BT
+
+BT.CentralBody = Earth
+BT.Latitude    = [  25.0,  32.0,  18.6]
+BT.Longitude   = [ -80.0, -65.0, -66.2]
+
+%----------------------------------------
+%---------- ContactLocator
+%----------------------------------------
+
+Create ContactLocator CL
+
+CL.Observers = {Fermi}
+CL.Target    = BT
+CL.Filename  = 'PlanetographicRegion_example_triangle.txt'
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Propagate Prop(Fermi) {Fermi.ElapsedDays = 1.0}

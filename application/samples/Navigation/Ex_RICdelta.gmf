@@ -1,0 +1,71 @@
+%-------------------------------------------------------------------------------
+%
+%   Receives two six-element (position and velocity) state vectors, and returns
+%   two three-element vectors dr (RIC position difference) and dv (RIC velocity
+%   difference).
+%
+%   Version 01/31/2018
+%
+%
+%   20180131 JJM Initial version
+%
+%-------------------------------------------------------------------------------
+
+function [dr, dv] = Ex_RICdelta(rv1, rv2)
+
+    Create Array dx[3,1] dxdot[3,1] u[3,1] c[3,1] dr[3,1] dv[3,1] at[3,1]
+    Create Array r1[3,1] v1[3,1] omega[3,1]
+    Create Variable r r2 v2 udotv udotv2 vsq I J
+
+    BeginMissionSequence
+
+    r2 = rv1(1,1)^2 + rv1(2,1)^2 + rv1(3,1)^2
+    r  = sqrt(r2)
+    v2 = rv1(4,1)^2 + rv1(5,1)^2 + rv1(6,1)^2
+
+    For I = 1:3
+        r1(I,1) = rv1(I,1)
+
+        dx(I,1) = rv2(I,1) - rv1(I,1)
+        u(I,1)  = rv1(I,1) / r
+
+        J = I + 3
+
+        dxdot(I,1) = rv2(J,1) - rv1(J,1)
+        v1(I,1) = rv1(J,1)
+
+    EndFor
+
+    omega = cross(r1,v1)
+    omega = omega/r2
+
+    % Convert omega from inertial to RIC
+
+    omega(3,1) = norm(omega)
+    omega(1,1) = 0
+    omega(2,1) = 0
+
+    udotv  = rv1(4,1)*u(1,1) + rv1(5,1)*u(2,1) + rv1(6,1)*u(3,1)
+    udotv2 = udotv^2
+    vsq    = sqrt(abs(v2-udotv2))
+
+    at(1,1) = (rv1(4,1) - udotv*u(1,1)) / vsq
+    at(2,1) = (rv1(5,1) - udotv*u(2,1)) / vsq
+    at(3,1) = (rv1(6,1) - udotv*u(3,1)) / vsq
+
+    c = cross(u,at);
+
+    % dr = [dot(u,dx); dot(at,dx); dot(c,dx)];
+
+    dr(1,1) =  u(1,1)*dx(1,1) +  u(2,1)*dx(2,1) +  u(3,1)*dx(3,1)
+    dr(2,1) = at(1,1)*dx(1,1) + at(2,1)*dx(2,1) + at(3,1)*dx(3,1)
+    dr(3,1) =  c(1,1)*dx(1,1) +  c(2,1)*dx(2,1) +  c(3,1)*dx(3,1)
+
+    % dv = [dot(u,dxdot); dot(at,dxdot); dot(c,dxdot)] - cross(omega, dr);
+
+    dv(1,1) =  u(1,1)*dxdot(1,1) +  u(2,1)*dxdot(2,1) +  u(3,1)*dxdot(3,1)
+    dv(2,1) = at(1,1)*dxdot(1,1) + at(2,1)*dxdot(2,1) + at(3,1)*dxdot(3,1)
+    dv(3,1) =  c(1,1)*dxdot(1,1) +  c(2,1)*dxdot(2,1) +  c(3,1)*dxdot(3,1)
+
+    dv = dv - cross(omega, dr);
+

@@ -1,0 +1,1022 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="ReleaseNotesR2020a"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>GMAT R2020a Release Notes</title>
+
+  <para>The General Mission Analysis Tool (GMAT) version R2020a was released
+  in May 2020. This is the first public release since May 2018 and is the
+  13<superscript>th</superscript> release for the project. This is a major
+  project release that includes numerous improvements in dynamics modeling
+  and other areas and five major new subsystems and components: <itemizedlist
+      spacing="compact">
+      <listitem>
+        <para>A new 3D graphics engine based on OpenFrames. OpenFrames is the
+        graphics engine used in NASA's Copernicus software. GMAT and
+        Copernicus now share graphics capability, improving development
+        efficiency and providing greater capablity to both systems.</para>
+      </listitem>
+
+      <listitem>
+        <para>The first production-quality C++ release of the Collocation
+        Stand-Alone Library and Toolkit (CSALT). CSALT solves the general
+        optimal control problem and supports pseudospectral and Lobatto IIIa
+        transcriptions. CSALT can be used independent of GMAT (though CSALT
+        leverages some low-level GMAT math libraries).</para>
+      </listitem>
+
+      <listitem>
+        <para>A new optimal control subsystem that supports finite-thrust
+        optimization. The optimal control plugin uses the CSALT optimization
+        library, electric propulsion models, and GMAT's high-fidelity dynamics
+        models to support high-fidelity finite thrust optmization. This plugin
+        makes extensive use of analytic partial derivatives and employs
+        optimal finite differencing when analytic partials are not
+        provided.</para>
+      </listitem>
+
+      <listitem>
+        <para>A new (beta) API developed to provide users low-level access to
+        GMAT functionality and to support interoperablity between NASA's GMAT,
+        Copernicus, and MONTE software applications.</para>
+      </listitem>
+
+      <listitem>
+        <para>A new (alpha) Extended Kalman Filter Smoother with process
+        noise.</para>
+      </listitem>
+    </itemizedlist></para>
+
+  <para>Below is a more detailed summary of key changes in this release.
+  Please see the full <link
+  xlink:href="http://bugs.gmatcentral.org/secure/ReleaseNote.jspa?version=11104&amp;styleName=Html&amp;projectId=10000&amp;Create=Create&amp;atl_token=B8F2-GAHA-O7AM-D5JZ%7C78ed3832b129ed9d51b5d382a7c04b0602d918d9%7Clin">R2020a
+  Release Notes</link> on JIRA for a complete list.</para>
+
+  <section>
+    <title>Milestones and Accomplishments</title>
+
+    <para>We are excited that GMAT continues to see significant adoption for
+    operational mission support.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>On May 1, 2018, the Lunar Reconnaissance Orbiter (LRO) project
+        held an Operational Readiness Review (ORR) to evaluate GMAT as a
+        replacement for GTDS as the primary operational orbit determination
+        (OD) tool for LRO. GMAT was approved for this purpose at this ORR and
+        LRO began using GMAT for operational OD in June 2018.</para>
+      </listitem>
+
+      <listitem>
+        <para>In April 2018, the Transiting Exoplanet Survey Satellite (TESS)
+        mission launched. TESS used GMAT as its primary tool for mission
+        design and maneuver planning from proposal development through
+        operations. For more information about TESS, including a discussion of
+        how GMAT was used, see the <link
+        xlink:href="https://ntrs.nasa.gov/search.jsp?R=20180006156">published
+        paper</link>.</para>
+      </listitem>
+
+      <listitem>
+        <para>The GMAT team is currently developing an Extended Kalman Filter
+        Smoother (EKFS) orbit determination capability for future release. In
+        late 2020, a low Earth NASA mission that uses the GPS point solution
+        data type will help operationally test our new EKFS capability. A
+        publicly available version of GMAT, with EKFS capabilities for all
+        data types supported by GMAT, is planned for the R2021a
+        release.</para>
+      </listitem>
+
+      <listitem>
+        <para>The GMAT team is currently integrating CSALT into GSFC's Core
+        Flight System (cFS) to demonstrate the ability to perform optimal
+        control onboard.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>New Features</title>
+
+    <section>
+      <title>General Capabilities</title>
+
+      <para>The following general capabilities were added in release
+      R2020a:</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>Force models now support Solar Radiation Pressure (SRP)
+          N-Plate force modeling (alpha/beta level). See the <xref
+          linkend="ForceModel" xrefstyle="select:title"/> section
+          for details.</para>
+        </listitem>
+
+        <listitem>
+          <para>Attitude propagation models now support kinematic attitude
+          propagation using initial atittude and angular velocity. See the
+          <xref linkend="SpacecraftAttitude" xrefstyle="select:title"/>
+          section for details.</para>
+        </listitem>
+
+        <listitem>
+          <para>Hardware models (e.g., antennae, sun sensors) are extended to
+          support fields of view including</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>The orientation of the hardware relative to the spacecraft
+              body</para>
+            </listitem>
+
+            <listitem>
+              <para>Field-of-view masks for conical, rectangular and custom
+              fields of view</para>
+            </listitem>
+
+            <listitem>
+              <para>Visibility model for points represented as unit
+              vectors</para>
+            </listitem>
+
+            <listitem>
+              <para>Visualization of sensor cones in OpenFrames
+              graphics</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Force models now include the ability to use continuous thrust
+          files during numerical propagation. For details, see the new <xref
+          linkend="ThrustSegment" xrefstyle="select:title"/> and <xref
+          linkend="ThrustHistoryFile" xrefstyle="select:title"/> sections and
+          the sample script
+          <filename>samples/Ex_Propagate_ThrustHistoryFile.script</filename>
+          for an example demonstrating the use of finite-thrust modeling in
+          propagation. The thrust history model supports: <itemizedlist
+              spacing="compact">
+              <listitem>
+                <para>Interpolation of finite thrust (low, medium, or high
+                continuous thrust) or accelerations</para>
+              </listitem>
+
+              <listitem>
+                <para>Optional integration of mass flow rate in
+                propagation</para>
+              </listitem>
+
+              <listitem>
+                <para>Choice of coordinate system for input
+                thrust/acceleration</para>
+              </listitem>
+
+              <listitem>
+                <para>Scaling of selected inputs</para>
+              </listitem>
+
+              <listitem>
+                <para>Choice of interpolation methods</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+
+        <listitem>
+          <para>The drag model now supports interpolation of a SPAD drag model
+          for attitude dependent drag modeling. SPAD files are created by
+          ray-tracing CAD models to compute an attitude-dependent area profile
+          that is interpolated during numerical propagation. For more
+          information on how to configure a force model and spacecraft to use
+          a SPAD drag model, see the <xref linkend="ForceModel"
+          xrefstyle="select:title"/> and <xref
+          linkend="SpacecraftBallisticMass" xrefstyle="select:title"/>
+          sections, respectively, and the sample script
+          <filename>samples/Navigation/Ex_Estimate_SPADDragScaleFactor.script</filename></para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Orbit Determination (OD) Enhancements</title>
+
+      <para>There are numerous OD enhancements including 5 new Resources
+      <guilabel>KalmanFilter</guilabel>, <guilabel>Smoother</guilabel>,
+      <guilabel>ProcessNoiseModel</guilabel>,
+      <guilabel>EstimatedParameter</guilabel>, and <guilabel> Plate</guilabel>
+      and numerous improvements to existing functionality.</para>
+
+      <para><itemizedlist spacing="compact">
+          <listitem>
+            <para>The OD subsystem has undergone significant refactoring to
+            prepare for a future release of an extended Kalman Filter with
+            smoother.</para>
+          </listitem>
+
+          <listitem>
+            <para>The ionosphere media correction model is faster via
+            correction caching. GMAT re-uses computed ionosphere correction to
+            light-time when multiple independent measurements (such as range,
+            range-rate, and angles) occur from the same station at the same
+            epoch.</para>
+          </listitem>
+
+          <listitem>
+            <para>The Batch Least Squares (BLS) now supports inner-loop sigma
+            editing. After each BLS iteration, an iterative linearized
+            approximation is used to predict measurements likely to be edited
+            on the next BLS iteration and to correct the state accordingly.
+            This can accelerate convergence and help to reduce the overall
+            number of BLS iterations required. See the
+            <guilabel>UseInnerLoopEditing</guilabel> option to the
+            <guilabel>BatchEstimator</guilabel> resource.</para>
+          </listitem>
+
+          <listitem>
+            <para>The Batch Least Squares (BLS) now removes unobservable
+            states from the normal matrix before attempting inversion. This is
+            useful, for example, when the user configures estimation of a
+            measurement bias but all observations of the bias are edited out.
+            GMAT now removes the unobservable state and continues processing
+            instead of terminating with a matrix inversion error.</para>
+          </listitem>
+
+          <listitem>
+            <para>Several new measurement types are supported for OD
+            simulation and estimation. See the User Guide section on <xref
+            linkend="TrackingDataTypes"/> for more details on the new
+            supported measurement types, including:<itemizedlist
+                spacing="compact">
+                <listitem>
+                  <para>Azimuth, Elevation angles</para>
+                </listitem>
+
+                <listitem>
+                  <para>XEast, YNorth angles</para>
+                </listitem>
+
+                <listitem>
+                  <para>XSouth, YEast angles</para>
+                </listitem>
+
+                <listitem>
+                  <para>Range_Skin (C-band, non-transponder range)</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+
+          <listitem>
+            <para>The Batch Least Squares (BLS) measurement statistics report
+            now includes summary statistics on user-edited data.</para>
+          </listitem>
+
+          <listitem>
+            <para>The estimation subsystem now supports <xref
+            linkend="ThrustHistoryFile" xrefstyle="select:title"/> and <xref
+            linkend="ThrustSegment" xrefstyle="select:title"/> resources to
+            model finite burns in the estimation arc for BLS OD, and can
+            optionally estimate a scale factor correction to the nominal
+            finite burn profile.</para>
+          </listitem>
+
+          <listitem>
+            <para>The structure of the BLS MATLAB data file has changed. See
+            the <xref linkend="BatchEstimator" xrefstyle="select:title"/>
+            resource documentation in the Orbit Determination section of the
+            User Guide for details.</para>
+          </listitem>
+
+          <listitem>
+            <para>New <xref linkend="ExtendedKalmanFilter"
+            xrefstyle="select:title"/> and <xref linkend="Smoother"
+            xrefstyle="select:title"/> resources are available in Testing
+            mode. These resources are currently under development and should
+            not be used in operational support.</para>
+          </listitem>
+
+          <listitem>
+            <para>The estimation subsystem now supports a (beta) N-Plate area
+            model for solar radiation pressure (SRP). The user may configure a
+            detailed multi-plate area model for SRP modeling for both
+            prediction and estimation. The model includes specular and diffuse
+            reflectivity, support for moving panels, like solar arrays, and
+            estimation of one or more SRP correction scale factors. This model
+            is currently under development and should not be used in
+            operational support. See the <xref linkend="Plate"
+            xrefstyle="select:title"/> resource for more details on activating
+            and configuring this model.</para>
+          </listitem>
+
+          <listitem>
+            <para>The estimation subsystem now supports the ablity to solve
+            for SPAD drag/SRP coefficients.</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para>GMAT’s orbit determination (OD) capability has been significantly
+      enhanced. As with all new releases, missions that use GMAT’s OD
+      capability should perform a baseline set of regression/performance tests
+      prior to using the new version of GMAT OD for operational purposes. GMAT
+      is distributed with several examples that demonstrate new orbit
+      determination capability in this release, including:</para>
+
+      <para><itemizedlist spacing="compact">
+
+          <listitem>
+            <para>Angle measurement types: See <filename/></para>
+
+            <para><filename>samples/Navigation/Ex_Estimate_AngleData.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>Skin range measurement type:</para>
+
+            <para>See
+            <filename>samples/Navigation/Ex_Estimate_RangeSkin.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>SPAD drag estimation: See <filename/></para>
+
+            <para><filename>samples/Navigation/Ex_Estimate_SPADDragScaleFactor.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>SPAD SRP estimation: See</para>
+
+            <para><filename>samples/Navigation/Ex_Estimate_SPADSRPScaleFactor.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>Finite thrust estimation: See <filename/></para>
+
+            <para><filename>samples/Navigation/Ex_Estimate_ThrustScaleFactor.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+        </itemizedlist></para>
+    </section>
+
+    <section>
+      <title>3D Visualization Plugin: OpenFramesInterface</title>
+
+      <para>GMAT now supports a new 3D graphics component called
+      OpenFramesInterface (OFI), which enables high-performance interactive 3D
+      visualizations with significant additional functionality compared to
+      GMATs legacy 3D graphics (<guilabel>OrbitView</guilabel>) capability.
+      GMAT R2020a includes OFI v1.0, the first tested and documented release
+      of the plugin. The complete set of documentation for OFI is available at
+      <uri>https://gitlab.com/EmergentSpaceTechnologies/OpenFramesInterface/-/wikis/home</uri>.
+      Screen captures of selected components are included in the appendix of
+      this section. A summary of key OFI interface capablity is shown
+      below.</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>The new OFI graphics component supports all functionaliy in
+          GMAT's legacy 3D graphics, as well as significant new
+          functionality.</para>
+        </listitem>
+
+        <listitem>
+          <para>The system now supports user-defined views of any spacecraft
+          or celestial body. Views can be body-fixed, coordinate system-fixed,
+          or look from one body towards another. Additionally, the user can
+          switch between views in a single graphics window.</para>
+        </listitem>
+
+        <listitem>
+          <para>Multithreaded visualizations now make use of multiple
+          processor cores, resulting in a general computation speedup
+          throughout GMAT when compared to OrbitView.</para>
+        </listitem>
+
+        <listitem>
+          <para>The 3D graphics now supports full control over simulation
+          time. View scene at any time, animate at various time scales, and
+          synchronize time between multiple OpenFramesInterface
+          windows.</para>
+        </listitem>
+
+        <listitem>
+          <para>The system supports granular control over displayed objects,
+          including optionally plotting axes, bodies, trajectories, or many
+          other per-body graphics options.</para>
+        </listitem>
+
+        <listitem>
+          <para>Graphics option changes no longer require a mission rerun.
+          This includes switching between user-defined views and
+          enabling/disabling displayed objects.</para>
+        </listitem>
+
+        <listitem>
+          <para>Graphics now support high-fidelity rendering, including
+          multisample antialiasing (MSAA), lighting, accurate star map with
+          star colors and sizes (HYGv3 database)</para>
+        </listitem>
+
+        <listitem>
+          <para>The system now supports vectors to objects in 3D graphics:
+          body-fixed direction or pointing towards another object.</para>
+        </listitem>
+
+        <listitem>
+          <para>The OFI interface now supports visualizing sensor fields of
+          view, including conical, rectangular, and custom fields of
+          view.</para>
+        </listitem>
+
+        <listitem>
+          <para>The system supports Virtual Reality visualization via OpenVR.
+          Any scene can be visualized on OpenVR-compatible hardware, including
+          the Oculus Rift or HTC Vive.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>There is an extensive set of samples scripts illustrating how to
+      use the new graphics capability in GMAT located in
+      <filename>samples/NeedOpenFramesInterface</filename>. A few scripts of
+      particular interest are:<itemizedlist spacing="compact">
+          <listitem>
+            <para>Near real-time graphics: See</para>
+
+            <para><filename>samples/NeedOpenFramesInterface/Ex_OFI_RealTimeMOC.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>Visualization of sensor cones: See <filename/></para>
+
+            <para><filename>samples/NeedOpenFramesInterface/Ex_OFI_FieldOfView.script</filename>
+            .</para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>Solar eclipse visualization: See</para>
+
+            <para><filename>samples/NeedOpenFramesInterface/Ex_OFI_VR_2017SolarEclipse.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>Custom segment colors: See</para>
+
+            <para><filename>samples/NeedOpenFramesInterface/Ex_OFI_CustomSegmentColors.script</filename></para>
+
+            <para/>
+          </listitem>
+        </itemizedlist></para>
+
+      <note>
+        <para>The OFI is now the default 3D visualization component in GMAT.
+        <guilabel>OrbitView</guilabel> will continue to be supported for
+        backward compatibility purposes but will only be modified for critical
+        bug fixes.</para>
+      </note>
+    </section>
+
+    <section>
+      <title>Trajectory Optimization Plugins</title>
+
+      <para>GMAT has a new subsystem for trajectory optimization, including
+      new techniques and a new C++ and script interface, (The legacy parameter
+      optimzation functionality is still supported.) The trajectory
+      optimization capablity of GMAT is extended to support a stand-alone
+      library for solving the optimal control problem using collocation. This
+      library is called the Collocation Stand Alone Library and Toolkit
+      (CSALT). CSALT solves the general optimal control problem and supports
+      pseudospectral and Lobatto IIIa transcriptions with automatic mesh
+      refinement. CSALT can be used independent of GMAT (though, uses some
+      low-level GMAT math libraries.)</para>
+
+      <para>There are two new proprietary plugins -- CsaltInterface and
+      EMTGModels -- for spacecraft trajectory optimization. Together with the
+      CSALT library, those features combine to form the new GMAT optimal
+      control capability. The CsaltInterface plugin contains GMAT's interface
+      to the collocation transcriptions and optimization capabilities in
+      CSALT. The EMTGModels plugin allows GMAT to use spacecraft power and
+      engine models implemented in the Evolutionary Mission Trajectory
+      Generator (EMTG). Together, those components provide extensive support
+      for analytic partial derivatives of optimal control functions, including
+      orbital dynamcs and thrust models. When analytic derivatives are not
+      provided, the system uses optimal finite differencing.</para>
+
+      <para>The user guide for the optimal control components including CSALT
+      and GMAT optimal control is written in restructured text (rst) and
+      located in the GMAT distribution here:
+      <filename>gmat/docs/GMAT_OptimalControl_Specification.pdf</filename>.
+      Extensive training materials, beyond the reference material, is
+      available for GMAT optimal control functionality and CSALT. Below is a
+      brief summary of the new capability.</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>CSALT solves the generic optimal control problem, supporting
+          dynamics, Lagrange form of the cost function, path, and boundary
+          constraints. CSALT does not assume the problem is low-thrust and can
+          solve general problems including but not limited to 6-DOF
+          optimization, classical optimal control problems, low-thrust,
+          high-finite thrust, formation and constellation, and re-entry
+          problems. CSALT is distributed with a limited set of models. In
+          general, when using CSALT, the user must provide models of dynamics,
+          cost, and constraint functions. (NOTE: the GMAT optimal control
+          subsystem is used to solve low-thrust trajectory problems in
+          GMAT.)</para>
+        </listitem>
+
+        <listitem>
+          <para>The GMAT plugins CsaltInterface and EMTGModels support
+          low-thrust trajectory optimization.</para>
+        </listitem>
+
+        <listitem>
+          <para>The GMAT interface to CSALT is fully contained in the GMAT
+          scripting language. GMAT script users do not need to write low-level
+          C++ code. (However, those familiar with C++ can call CSALT directly
+          via the C++ interface.)</para>
+        </listitem>
+
+        <listitem>
+          <para>The system can optimize a constrained spacecraft trajectory
+          using one of several collocation transcriptions, with mesh
+          refinement.</para>
+        </listitem>
+
+        <listitem>
+          <para>The system supports a trajectory composed of multiple
+          “phases,” each of which may be defined by a different dynamics
+          model. Phases may be “linked” through user-settable constraints
+          (e.g., full-state/time linkage between the end of one phase and the
+          beginning of another phase to enforce continuity).</para>
+        </listitem>
+
+        <listitem>
+          <para>Users have the ability to set optimization settings from
+          within a GMAT script. Examples of settable parameters include
+          feasibility/optimality tolerances, upper/lower bounds on states, and
+          initial collocation mesh settings.</para>
+        </listitem>
+
+        <listitem>
+          <para>Users can choose from one of multiple commonly used merit
+          functions (e.g., maximum final mass, minimum time of flight).</para>
+        </listitem>
+
+        <listitem>
+          <para>Thrust models now include constant thrust and specific impulse
+          (Isp), fixed efficiency, polynomials, and smoothed throttle
+          tables.</para>
+        </listitem>
+
+        <listitem>
+          <para>Users may include in their trajectory multiple commonly used
+          spacecraft trajectory constraints, such as an integrated flyby or a
+          celestial body rendezvous.</para>
+        </listitem>
+
+        <listitem>
+          <para>There is alpha-level support for scalar inline expressions in
+          optimal control functions. I.e., a user may specify a constraint in
+          a script based on GMAT variables if a built-in constraint does not
+          satisfy the user’s needs.</para>
+        </listitem>
+
+        <listitem>
+          <para>New sample scripts and examples of supporting files are
+          included in the release in gmat/samples/OptimalControl (for sample
+          scripts) and gmat/data/misc and gmat/data/emtg (for supporting
+          files).</para>
+        </listitem>
+      </itemizedlist>
+
+      <note>
+        <para>The source code for GMAT optimal control and CSALT can be
+        distributed, but is currently not included in the public release as
+        they depend on the nonlinear programming solver software SNOPT. Source
+        code for those components can be provided upon request but the user
+        must obtain SNOPT from Standford Business Software to compile those
+        components.</para>
+      </note>
+
+      <para>There is an extensive set of sample scripts illustrating optimal
+      control functionality distributed with GMAT in the folder
+      <filename>samples/OptimalControl/</filename>. (Note: For CSALT C++
+      examples and tutorials see the user guide referenced above.) A few
+      scripts of particular interest are:<itemizedlist spacing="compact">
+          <listitem>
+            <para>Low-thrust Interplanetary Transfer: See</para>
+
+            <para><filename>samples/OptimalControl/Ex_EarthToMarsSOI_C3Eq0_CSALTTutorial.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>Launch Model: See</para>
+
+            <para><filename>samples/OptimalControl/Ex_PCLaunch_ConstrainedC3AndDLA_EarthLaunch_EarthOrigin.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>Configuring Transcription to Lobatto IIIa: See</para>
+
+            <para><filename>samples/OptimalControl/Ex_Phase_Type_ImplicitRKOrder6.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>Integrated Flyby Model: See <filename/></para>
+
+            <para><filename>samples/OptimalControl/Ex_IntegratedFlyby_MarsFlyby.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>Thrust Model Configuration: See</para>
+
+            <para><filename>samples/OptimalControl/Ex_EMTGSpacecraft_SCOpt_*.script</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+        </itemizedlist></para>
+    </section>
+
+    <section>
+      <title>API</title>
+
+      <para>GMAT now provides access to many of its internal components from
+      Python and Java, and from MATLAB using the Java-based API. This new
+      Beta-quality functionality enables interoperablity between NASA's GMAT,
+      Copernicus, and MONTE software applications. The user guide for the API
+      is written in restructured text (rst) and located in the GMAT
+      distribution here:<filename>docs/GMAT_API_UsersGuide.pdf</filename>. A
+      summary of key API features is shown below.</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>Users can now load GMAT scripts, modify parameters, and
+          execute the loaded script via an API interface.</para>
+        </listitem>
+
+        <listitem>
+          <para>After running a script, users can now access the objects from
+          the run and retrieve the results of the run.</para>
+        </listitem>
+
+        <listitem>
+          <para>Users can now create GMAT objects directly via the API.</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Created objects can be configured using a syntax similar
+              to GMAT scripting.</para>
+            </listitem>
+
+            <listitem>
+              <para>Object-to-object connections are made by calling an
+              initialization function.</para>
+            </listitem>
+
+            <listitem>
+              <para>Initialized objects provide data that matches the
+              computations performed by GMAT during a run.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Users can interact with GMAT objects from their platform’s
+          console interface - that is, from the MATLAB console, a Python
+          console (Spyder, ipython, or the default Python console
+          application).</para>
+        </listitem>
+
+        <listitem>
+          <para>The API can be accessed using Jupyter notebooks.</para>
+        </listitem>
+
+        <listitem>
+          <para>The GMAT API provides live help during use.</para>
+        </listitem>
+
+        <listitem>
+          <para>Examples of all of these features are included in the api
+          folder for the release.</para>
+        </listitem>
+      </itemizedlist>
+
+      <note>
+        <para>The compiled API resources for Python were built using Python
+        3.7 on Windows and Mac, and the platform-supplied Python 3.6 libraries
+        on Linux.</para>
+      </note>
+
+      <para>There is an extensive set of sample scripts illustrating API
+      functionality distributed with GMAT in the folder
+      <filename>gmat/api</filename>. A few scripts of particular interest
+      are:<itemizedlist spacing="compact">
+          <listitem>
+            <para>Call GMAT Force Models: See <filename/></para>
+
+            <para><filename>gmat/api/Ex_R2020a_CompleteForceModel.*</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+          <listitem>
+            <para>Call GMAT Propagators:</para>
+
+            <para>See
+            <filename>gmat/api/Ex_R2020a_RangeMeasurement.*</filename></para>
+
+            <para><filename/></para>
+          </listitem>
+
+        </itemizedlist></para>
+    </section>
+  </section>
+
+  <section>
+    <title>Improvements</title>
+
+    <itemizedlist spacing="compact">
+      <listitem>
+        <para>There are several new built-in GMAT functions:
+        <function>Pause</function>, <function>SystemTime</function>,
+        <function>ConvertTime</function>, <function>Num2str</function>,
+        <function>Str2num</function>, <function>RotationMatrix</function>, and
+        <function>Sign</function>.</para>
+      </listitem>
+
+      <listitem>
+        <para>There is a preliminary interface to use the GMAT python
+        interface and python sockets to bring in raw telemetry data into
+        GMAT.</para>
+      </listitem>
+
+      <listitem>
+        <para>A new graphical interface, DynamicDataDisplay, allows display of
+        numeric and text data during system execution and can optionally color
+        code the data based on user defined constraints.</para>
+      </listitem>
+
+      <listitem>
+        <para>There is a new, minimally tested interface to SNOPT that allows
+        users to provide precompiled versions of SNOPT 7.5. Previous versions
+        of GMAT had SNOPT compiled directly into the SNOPT plugin, which
+        prohibits release.</para>
+      </listitem>
+
+      <listitem>
+        <para>Updates to the beta polyhedral gravity model allow polyhedral
+        regions with non-uniform density.</para>
+      </listitem>
+
+      <listitem>
+        <para>The script editor now supports syntax highlighting.</para>
+      </listitem>
+
+      <listitem>
+        <para>A ground station can now be placed on any celestial body (not
+        only Earth as in previous releases).</para>
+      </listitem>
+
+      <listitem>
+        <para>When compiling GMAT, dependency configuration is now unified on
+        all platforms via a Python 3 script. Previous versions used bash and
+        windows .bat files.</para>
+      </listitem>
+
+      <listitem>
+        <para>There are numerous improvements to the GMAT build system: easier
+        to incorporate external plugins (e.g. OpenFramesInterface), and CMake
+        automatically downloads some dependencies (currently Boost). This
+        makes it easier for developers to compile GMAT.</para>
+      </listitem>
+
+      <listitem>
+        <para>The SPAD SRP model supports improved interpolation.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Compatibility Changes</title>
+
+    <itemizedlist>
+      <listitem>
+        <para>The <guilabel>BatchEstimatorInv</guilabel> resource has been
+        renamed <guilabel>BatchEstimator</guilabel>.
+        <guilabel>BatchEstimatorInv</guilabel> will continue to be recognized
+        for R2020a but will be deprecated in the next major release.</para>
+      </listitem>
+
+      <listitem>
+        <para>The structure of the <guilabel>BatchEstimator</guilabel> MATLAB
+        data file has changed. See the <xref linkend="BatchEstimator"
+        xrefstyle="select:title"/> resource documentation for details.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Fixed &amp; Known Issues</title>
+
+    <section>
+      <title>Fixed Issues</title>
+
+      <para>Over 150 bugs were closed in this release. See the <link
+      xlink:href="http://bugs.gmatcentral.org/issues/?filter=14801">"Critical
+      Issues Fixed in R2020a" report</link> for a list of critical bugs and
+      resolutions in R2020a. See the <link
+      xlink:href="http://bugs.gmatcentral.org/issues/?filter=14804">"Minor
+      Issues Fixed for R2020a"</link> report for minor issues addressed in
+      R2020a. Some fixes in R2020a include:</para>
+
+      <para><itemizedlist spacing="compact">
+          <listitem>
+            <para>The simulator now accounts for occultation of the central
+            body of the orbit when other than the Earth. (GMT-6134).</para>
+          </listitem>
+
+          <listitem>
+            <para>An error affecting the ability to simulate data for
+            durations longer than three weeks has been corrected.
+            (GMT-6649)</para>
+          </listitem>
+
+          <listitem>
+            <para>Solve-for parameters may now be specified in any order on
+            the <guilabel>Spacecraft.SolveFors</guilabel> field.
+            (GMT-6658)</para>
+          </listitem>
+
+          <listitem>
+            <para>The <guilabel>BatchEstimator</guilabel>
+            <guilabel>ResetBestRMSIfDiverging</guilabel> setting now works.
+            (GMT-7036)</para>
+          </listitem>
+
+          <listitem>
+            <para>The MarsGRAM atmosphere model now works correctly for Mac
+            and Linux users. (GMT-5044)</para>
+          </listitem>
+
+          <listitem>
+            <para>GMAT now properly interpolates UT1-UTC on the day of a leap
+            second. (GMT-5954)</para>
+          </listitem>
+        </itemizedlist></para>
+    </section>
+
+    <section>
+      <title>Known Issues</title>
+
+      <para>See the <link
+      xlink:href="http://bugs.gmatcentral.org/issues/?filter=14802&amp;jql=affectedVersion%20in%20(R2019a%2CR2020a)">"All
+      Known Issues for R2020a" report</link> for a list of all known issues in
+      R2020a.</para>
+
+      <para>There are several known issues in this release that we consider to
+      be significant:<informaltable frame="topbot">
+          <tgroup cols="2">
+            <colspec colnum="1" colwidth="0.2*"/>
+
+            <thead>
+              <row>
+                <entry align="left">ID</entry>
+
+                <entry align="left">Description</entry>
+              </row>
+            </thead>
+
+            <tbody>
+              <row>
+                <entry>GMT-5417</entry>
+
+                <entry>Adaptive step size control behaves inconsistently when
+                used in GMAT's navigation system. Fixed-step integration is
+                currently required for simulation and estimation.</entry>
+              </row>
+
+              <row>
+                <entry>GMT-6202</entry>
+
+                <entry>Spikes of up to 1 mm/sec may be observed in some cases
+                in <guilabel>DSN_TCP</guilabel> and
+                <guilabel>Doppler</guilabel> ionospheric corrections. The
+                IRI2007 model has some jumps in the electron density when
+                moving through time. Spikes are caused when the start and end
+                signal paths are located on different sides of these
+                jumps.</entry>
+              </row>
+
+              <row>
+                <entry>GMT-7207</entry>
+
+                <entry>The GMAT python interface is only designed to work with
+                a standard python installation from <uri>python.org</uri>.
+                (For Mac and Windows, we recommend use of Python 3.7. For
+                Linux, we recommend the use of Python 3.6 or 3.7). In the
+                future, we would like to allow the user the choice to install
+                either <uri>python.org</uri> python or Anaconda python. Note
+                that preliminary testing shows that, for Windows, the user may
+                be able to use the Anaconda python interface by (1) deleting
+                system variable references to <uri>python.org</uri> python and
+                (2) creating the System Variable <varname>PYTHONHOME</varname>
+                and setting it to the folder where python.exe resides. Note
+                that this is not fully tested and it is not known if this can
+                cause other problems.</entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable></para>
+    </section>
+
+    <section>
+      <title>Appendix: Screen Captures of Selected New Graphics
+      Capablity</title>
+
+      <para>The images below illustrate new graphics capability in GMAT
+      R2020a.</para>
+
+      <figure xml:id="R2020a_OFI_SensorCones">
+        <title>Visualization of sensor cones.</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="50%"
+                         fileref="files/images/Resource_OFI_SensorCones.png"
+                         scalefit="1" width="60%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <figure xml:id="R2020a_OFI_MoonRise">
+        <title>Earth rise from the Moon.</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Resource_OFI_EarthRise.png"
+                         scalefit="1" width="70%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <figure xml:id="R2020a_OFI_Shadows">
+        <title>Rendering of complex bodies with shadows.</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Resource_OFI_CometShadows.png"
+                         scalefit="1" width="70%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <figure xml:id="R2020a_OFI_MOCGraphics">
+        <title>Near real-time graphics example with inertial and body views
+        and dynamic data display.</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="50%"
+                         fileref="files/images/Resource_OFI_NearRealTimeMOCGraphics.png"
+                         scalefit="1" width="50%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+  </section>
+</section>

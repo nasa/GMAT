@@ -1,0 +1,658 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="Target" xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>Target</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary>EndTarget</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Target</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Commands</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Target</refname>
+
+    <refpurpose>Solve for condition(s) by varying one or more
+    parameters</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Script Syntax</title>
+
+    <synopsis><literal>Target</literal> <replaceable>SolverName</replaceable> [<literal>{</literal>[<literal>SolveMode =</literal> <replaceable>value</replaceable>], [<literal>ExitMode =</literal> <replaceable>value</replaceable>],
+                    [<literal>ShowProgressWindow =</literal> <replaceable>value</replaceable>]<literal>}</literal>]
+      <replaceable>Vary command</replaceable> …
+      <replaceable>script statement</replaceable> …
+      <replaceable>Achieve command</replaceable> …
+<literal>EndTarget</literal>    </synopsis>
+
+    <note>
+      <para xlink:href="Target_Remarks">See <xref linkend="Target_Remarks"/>
+      and <xref linkend="Target_Description"/> for this complex command.
+      Multiple <guilabel>Vary</guilabel> and <guilabel>Achieve</guilabel>
+      commands are permitted. Script statements can appear anywhere in the
+      <guilabel>Target</guilabel> sequence.</para>
+    </note>
+  </refsynopsisdiv>
+
+  <refsection xml:id="Target_Description">
+    <title>Description</title>
+
+    <para>The <guilabel>Target</guilabel> and <guilabel>EndTarget</guilabel>
+    commands are used to define a <guilabel>Target</guilabel> sequence to
+    determine, for example, the maneuver components required to raise the
+    orbit apogee to 42164 km. Another common targeting example is to determine
+    the parking orbit orientation required to align a lunar transfer orbit
+    with the moon. <guilabel>Target</guilabel> sequences in GMAT are general
+    and these are just examples. Let’s define the quantities whose values you
+    don’t know precisely, but need to determine, as the<firstterm> control
+    variables</firstterm>. Define the conditions that must be satisfied as the
+    <firstterm>constraints</firstterm>. A <guilabel>Target</guilabel> sequence
+    numerically solves a boundary value problem to determine the value of the
+    control variables required to satisfy the constraints. You define your
+    control variables by using <guilabel>Vary</guilabel> commands and you
+    define the problems constraints using <guilabel>Achieve</guilabel>
+    commands. The <guilabel>Target/EndTarget </guilabel> sequence is an
+    advanced command. The examples later in this section give additional
+    details.</para>
+
+    <para>See also: <xref linkend="DifferentialCorrector"/>,<xref
+    linkend="Vary"/>,<xref linkend="Achieve"/>,<xref
+    linkend="Optimize"/>,</para>
+  </refsection>
+
+  <refsection>
+    <title>Options</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.0*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Option</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>ApplyCorrections</guilabel></entry>
+
+            <entry><para>This GUI button replaces the initial guess values
+            specified in the <guilabel>Vary</guilabel> commands. If the
+            <guilabel>Target</guilabel> sequence converged, the converged
+            values are applied. If the <guilabel>Target</guilabel> sequence
+            did not converge, the last calculated values are applied. There is
+            one situation where the action specified above, where the initial
+            guess values specified in the <guilabel>Vary</guilabel> commands
+            are replaced, does not occur. This happens when the initial guess
+            value specified in the <guilabel>Vary</guilabel> command is given
+            by a variable. See the Remarks section of the help for additional
+            details. </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ExitMode</guilabel></entry>
+
+            <entry><para>Controls the initial guess values for
+            <guilabel>Target</guilabel> sequences nested in control flow. If
+            <guilabel>ExitMode</guilabel> is set to
+            <guilabel>SaveAndContinue</guilabel>, the solution of a
+            <guilabel>Targe</guilabel>t sequence is saved and used as the
+            initial guess for the next <guilabel>Target</guilabel> sequence
+            execution. The rest of the mission sequence is then executed. If
+            <guilabel>ExitMode</guilabel> is set to
+            <guilabel>DiscardAndContinue</guilabel>, then the solution is
+            discarded and the initial guess values specified in the
+            <guilabel>Vary</guilabel> commands are used for each
+            <guilabel>Target</guilabel> sequence execution. The rest of the
+            mission sequence is then executed. If
+            <guilabel>ExitMode</guilabel> is set to <guilabel>Stop</guilabel>,
+            the <guilabel>Target</guilabel> sequence is executed, the solution
+            is discarded, and the rest of the mission sequence is not
+            executed. </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>Reference Array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><guilabel>DiscardAndContinue</guilabel>,
+                    <guilabel>SaveAndContinue</guilabel>,
+                    <guilabel>Stop</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>DiscardAndContinue</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ShowProgressWindow</guilabel></entry>
+
+            <entry><para>Flag to indicate if solver progress window should be
+            displayed. </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>Boolean</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>true,false</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>true</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SolveMode</guilabel></entry>
+
+            <entry><para>Specifies how the <guilabel>Target</guilabel>
+            sequence behaves during mission execution. When
+            <guilabel>SolveMode</guilabel> is set to
+            <guilabel>Solve</guilabel>, the <guilabel>Target</guilabel>
+            sequence executes and attempts to solve the boundary value problem
+            satisfying the targeter constraints (i.e, goals). When
+            <guilabel>SolveMode</guilabel> is set to
+            <guilabel>RunInitialGuess</guilabel>, the targeter does not
+            attempt to solve the boundary value problem and the commands in
+            the <guilabel>Target</guilabel> sequence execute using the initial
+            guess values defined in the <guilabel>Vary</guilabel> commands.
+            </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>Reference Array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><guilabel>Solve</guilabel>,
+                    <guilabel>RunInitialGuess</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>Solve</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SolverName</guilabel></entry>
+
+            <entry><para>Identifies the
+            <guilabel>DifferentialCorrector</guilabel> used for a
+            <guilabel>Target</guilabel> sequence. </para> <variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>DifferentialCorrector</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any user-defined or default
+                    <guilabel>DifferentialCorrector</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>DefaultDC</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>yes</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <para>The <guilabel>Target</guilabel> command allows you to use a
+    differential correction process to solve problems. To solve a given
+    problem, you need to create a so-called <guilabel>Target</guilabel>
+    sequence which we now define. When you add a <guilabel>Target</guilabel>
+    command to the mission sequence, an <guilabel>EndTarget</guilabel> command
+    is automatically added as shown below.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Command_Target_MissionTree.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>In the example above, the <guilabel>Target</guilabel> command
+    sequence is defined as all of the commands between the
+    <guilabel>Target1</guilabel> and <guilabel>End Target1</guilabel>
+    commands, inclusive. Although not shown above, a
+    <guilabel>Target</guilabel> command sequence must contain both a
+    <guilabel>Vary</guilabel> command and an <guilabel>Achieve</guilabel>
+    command. The <guilabel>Vary</guilabel> command is used to define the
+    control variables which can be varied in order to achieve a certain goal.
+    The <guilabel>Achieve</guilabel> command is used to define the desired
+    goal. In order for the <guilabel>Target</guilabel> sequence to be well
+    formed, there must be at least one <guilabel>Vary</guilabel> command
+    before any <guilabel>Achieve</guilabel> commands, so that the variable
+    defined in the <guilabel>Vary</guilabel> command can affect the goal
+    specified in the subsequent <guilabel>Achieve</guilabel> commands. Double
+    click on <guilabel>Target1</guilabel> command above to bring up the
+    <guilabel>Target</guilabel> command dialog box, shown below, which allows
+    you to specify your choice of <guilabel>Solver</guilabel> (i.e., your
+    choice of <guilabel>DifferentialCorrector</guilabel>), <guilabel>Solver
+    Mode</guilabel>, and <guilabel>Exit Mode</guilabel>. As described in the
+    Remarks section, the <guilabel>Target</guilabel> command dialog box also
+    allows you to apply corrections to your <guilabel>Target</guilabel>
+    command sequence.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Command_Target_Default.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>If you set <guilabel>ShowProgressWindow</guilabel> to true, then a
+    dynamic display is shown during targeting that contains values of
+    variables and constraints as shown below.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Command_Target_SolverStatusWindow.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+  </refsection>
+
+  <refsection xml:id="Target_Remarks">
+    <title>Remarks</title>
+
+    <refsection>
+      <title>Content of a Target/EndTarget Sequence</title>
+
+      <para>A <guilabel>Target/EndTarget</guilabel> sequence must contain at
+      least one <guilabel>Vary</guilabel> command and at least one
+      <guilabel>Achieve</guilabel> Command. See the <guilabel>Vary</guilabel>
+      and <guilabel>Achieve</guilabel> command sections for details on the
+      syntax for those commands. The First <guilabel>Vary</guilabel> command
+      must occur before the first <guilabel>Achieve</guilabel> command.
+      <guilabel>Target</guilabel> commands must be be coupled with one and
+      only one <guilabel>EndTarget</guilabel> command. Each
+      <guilabel>Targe</guilabel>t command field in the curly braces is
+      optional. You can omit the entire list and the curly braces and the
+      default values will be used for <guilabel>Target</guilabel>
+      configuration fields such as <guilabel>SolveMode</guilabel> and
+      <guilabel>ExitMode</guilabel>.</para>
+    </refsection>
+
+    <refsection>
+      <title>Use of a Target/EndTarget Sequence</title>
+
+      <para>GMAT <guilabel>Target</guilabel> sequences can solve square
+      problems (the number of Control Variables equals the number of
+      constraints), over-determined problems (the number of Control Variables
+      is less than the number of constraints) and under-determined problems
+      (the number of Control Variables is greater than the number of
+      constraints). In any of these cases, there may not be a solution and the
+      type of solution found depends on the selection of the targeter
+      (currently, only differential correctors are supported). Assuming a
+      solution to the problem exists and assuming certain mathematical
+      conditions are satisfied, there is often one solution for a square
+      problem and many solutions to an under-determined problem. Problems with
+      more goals (i.e., constraints) than variables may not have a solution.
+      If your problem is under-determined, consider using an
+      <guilabel>Optimize</guilabel> sequence to find an optimal solution in
+      the space of feasible solutions.</para>
+
+      <caution>
+        <para>If you configure a <guilabel>Target</guilabel> sequence and get
+        the error “Rmatrix error: matrix is singular”, then your control
+        variables defined in the <guilabel>Vary</guilabel> commands do not
+        affect the constraints defined in the <guilabel>Achieve</guilabel>
+        commands. A common mistake in this case is that you forgot to apply a
+        maneuver.</para>
+      </caution>
+    </refsection>
+
+    <refsection>
+      <title>Note on Using Apply Corrections</title>
+
+      <para>After the <guilabel>Target</guilabel> sequence has been run, you
+      may choose to apply corrections by navigating to the
+      <guilabel>Mission</guilabel> tree, right-clicking the
+      <guilabel>Target</guilabel> command to bring up the
+      <guilabel>Target</guilabel> window, and clicking the <guilabel>Apply
+      Corrections</guilabel> button. The <guilabel>Apply
+      Corrections</guilabel> button replaces the initial guess values
+      specified in the <guilabel>Vary</guilabel> commands . If the
+      <guilabel>Target</guilabel> sequence converged, the converged values are
+      applied. If the <guilabel>Target</guilabel> sequence did not converge,
+      the last calculated values are applied. Note that the <guilabel>Apply
+      Corrections</guilabel> feature is only currently available through the
+      GUI interface.</para>
+
+      <para>There is one situation where the action specified above, where the
+      initial guess values specified in the <guilabel>Vary</guilabel> commands
+      are replaced, does not occur. This happens, as illustrated in the
+      example below, when the initial guess value specified in the
+      <guilabel>Vary</guilabel> command is given by a variable. In this
+      situation, the <guilabel>Apply Corrections</guilabel> button has no
+      effect since GMAT does not allow variables to be overwritten.</para>
+
+      <programlisting><code>Create Variable InitialGuess_BurnDuration BurnDuration
+Create DifferentialCorrector aDC
+BeginMissionSequence
+Target aDC
+Vary aDC(BurnDuration = InitialGuess_BurnDuration)
+Achieve aDC(BurnDuration = 10) % atypical Achieve command for
+                               % illustrative purposes only
+EndTarget</code>     </programlisting>
+    </refsection>
+
+    <refsection>
+      <title>Command Interactions</title>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="2">
+          <colspec colnum="1" colwidth=".5*"/>
+
+          <colspec colnum="2" colwidth="3*"/>
+
+          <tbody>
+            <row>
+              <entry><guilabel>Vary command </guilabel></entry>
+
+              <entry><para> Every <guilabel>Target</guilabel> sequence must
+              contain at least one <guilabel>Vary</guilabel> command.
+              <guilabel>Vary</guilabel> commands are used to define the
+              control variables associated with a <guilabel>Target</guilabel>
+              sequence. </para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Achieve command</guilabel></entry>
+
+              <entry><para> Every <guilabel>Target</guilabel> sequence must
+              contain at least one <guilabel>Achieve</guilabel> command.
+              <guilabel>Achieve</guilabel> commands are used to define the
+              goals associated with a <guilabel>Target</guilabel> sequence.
+              </para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Use a <guilabel>Target </guilabel>sequence to solve for a root of
+      an algebraic equation. Here we provide an initial guess of 5 for the
+      Control Variable (or independent variable) x, and solve for the value of
+      x that satisfies the Constraint y = 0, where y :=3*x^3 + 2*x^2 - 4*x +
+      8. After executing this example you can look in the message window to
+      see the solution for the variable x. You can easily check that the value
+      obtained does indeed satisfy the constraint.</para>
+
+      <programlisting><code>Create Variable x y
+Create DifferentialCorrector aDC
+
+BeginMissionSequence
+
+Target aDC
+  Vary aDC(x = 5)
+  y = 3*x^3 + 2*x^2 - 4*x + 8
+  Achieve aDC(y = 0,{Tolerance = 0.0000001})
+EndTarget</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Use a <guilabel>Target</guilabel> sequence to raise orbit apogee.
+      Here the control variable is the velocity component of an
+      <guilabel>ImpulsiveBurn</guilabel> object. The Constraint is that the
+      position vector magnitude at orbit apogee is 42164. Report the
+      convergence status to a file.</para>
+
+      <programlisting><code>Create Spacecraft aSat
+Create Propagator aPropagator
+Create Variable I
+
+Create ImpulsiveBurn aBurn
+Create DifferentialCorrector aDC
+Create OrbitView EarthView
+EarthView.Add = {Earth,aSat}
+EarthView.ViewScaleFactor = 5
+
+Create ReportFile aReport
+
+BeginMissionSequence
+Target aDC
+   Vary aDC(aBurn.Element1 = 1.0, {Upper = 3})
+   Maneuver aBurn(aSat)
+   Propagate aPropagator(aSat,{aSat.Apoapsis})
+   Achieve aDC(aSat.RMAG = 42164)
+EndTarget
+Report aReport aDC.SolverStatus aDC.SolverState</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Similar to the previous example, we use a
+      <guilabel>Target</guilabel> sequence to raise orbit apogee except that
+      this time we use a finite burn. Here the control variable is the
+      duration of the Velocity component of a <guilabel>FiniteBurn</guilabel>
+      object. The Constraint is that the position vector magnitude at orbit
+      apogee is 12000. Additional detail on the example below can be found in
+      the Target Finite Burn to Raise Apogee tutorial.</para>
+
+      <programlisting><code>Create Spacecraft DefaultSC
+Create Propagator DefaultProp
+Create ChemicalThruster Thruster1
+Thruster1.C1 = 1000
+Thruster1.DecrementMass = true
+Create ChemicalTank FuelTank1
+Thruster1.Tank = {FuelTank1}
+Create FiniteBurn FiniteBurn1
+FiniteBurn1.Thrusters = {Thruster1}
+DefaultSC.Tanks = {FuelTank1}
+DefaultSC.Thrusters = {Thruster1}
+Create Variable BurnDuration
+Create DifferentialCorrector DC1
+
+BeginMissionSequence
+
+Propagate DefaultProp(DefaultSC) {DefaultSC.Earth.Periapsis}
+Target DC1
+  Vary DC1(BurnDuration = 200, {Upper = 10000})
+  BeginFiniteBurn FiniteBurn1(DefaultSC)
+  Propagate DefaultProp(DefaultSC){DefaultSC.ElapsedSecs=BurnDuration}
+  EndFiniteBurn FiniteBurn1(DefaultSC)
+  Propagate DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis}
+  Achieve DC1(DefaultSC.Earth.RMAG = 12000)
+EndTarget</code></programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

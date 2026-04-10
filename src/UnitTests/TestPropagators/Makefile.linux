@@ -1,0 +1,96 @@
+# Makefile for GMAT ForceModel tester
+# Initial Version, DJC, 3/1/2004
+
+all: TestProp
+
+CPP = g++
+
+OPTIMIZATIONS = -O2
+
+CPPFLAGS = $(OPTIMIZATIONS)
+
+LINKFLAGS = -L../../base/lib
+
+OBJECTS = TestGators.o ConsoleAppException.o
+
+# LIBRARIES = ../../base/lib/libGMATBaseConsole.a
+
+# Currently using the ugly form to link the libraries -- this way cyclic 
+# dependencies are resolved
+#LIBRARIES = -lUtilities \
+#            -lFoundation \
+#            -lSolarSystem \
+#            -lSpacecraft \
+#            -lForceModel \
+#            -lPropagator \
+#            -lParameter \
+#            -lBurn \
+#            -lParameter \
+#            -lPropagator \
+#            -lForceModel \
+#            -lSpacecraft \
+#            -lSolarSystem \
+#            -lFoundation \
+#            -lUtilities \
+            
+LIBRARIES = -lFoundation \
+            -lUtilities \
+            -lSolarSystem \
+            -lSpacecraft \
+            -lForceModel \
+            -lPropagator \
+            -lParameter \
+            -lBurn \
+            -lInterpolator \
+            -lRefFrame \
+            -lSolver \
+            -lStopCondition \
+            -lSubscriber \
+            -lCommand \
+            -lFactory \
+            -lConfiguration \
+            -lInterpreter \
+            -lExecutiveConsole \
+            -lInterpreter \
+            -lConfiguration \
+            -lFactory \
+            -lCommand \
+            -lSubscriber \
+            -lStopCondition \
+            -lSolver \
+            -lRefFrame \
+            -lInterpolator \
+            -lBurn \
+            -lParameter \
+            -lPropagator \
+            -lForceModel \
+            -lSpacecraft \
+            -lSolarSystem \
+            -lUtilities \
+            -lFoundation \
+            -lExecutiveConsole
+
+
+HEADERS = -I../../base/include -I../../base/foundation \
+          -I../../base/executive -I../../base/factory \
+          -I../../base/forcemodel -I../../base/subscriber \
+          -I../../base/command -I../../base/spacecraft \
+          -I../../base/solarsys -I../../base/propagator \
+          -I../../base/interpreter -I../../base/parameter \
+          -I../../base/interpolator -I../../base/util \
+          -I../../base/stopcond -I../../base/refframe \
+          -I../../base/configs -I../../base/burn
+
+clean : archclean
+
+archclean :
+	rm -rf *.o *~ core $(OBJECTS) TestProp
+	rm -rf ../../base/lib/libPropagator.a
+	rm -rf ../../base/propagator/*.o
+
+.cpp.o: 
+	$(CPP) $(CPPFLAGS) $(HEADERS) -c $<
+
+TestProp: $(OBJECTS)
+	cd ../../base; make -f Makefile.linux all
+	$(CPP) $(OBJECTS) $(LINKFLAGS) $(LIBRARIES) -o TestProp

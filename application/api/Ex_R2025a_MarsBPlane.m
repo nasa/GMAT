@@ -1,0 +1,205 @@
+load_gmat();
+
+GMATAPI.EchoLogFile();
+
+MAVEN = GMATAPI.Construct("Spacecraft", "MAVEN");
+MAVEN = gmat.Spacecraft.SetClass(MAVEN);
+MAVEN.SetField("DateFormat", "UTCGregorian");
+MAVEN.SetField("Epoch", "18 Nov 2013 20:26:24.315");
+MAVEN.SetField("CoordinateSystem", "EarthMJ2000Eq");
+MAVEN.SetField("DisplayStateType", "Cartesian");
+MAVEN.SetField("X", 3728.345810006184);
+MAVEN.SetField("Y", 4697.943961035268);
+MAVEN.SetField("Z", -2784.040094879185);
+MAVEN.SetField("VX", -9.502477543864449);
+MAVEN.SetField("VY", 5.935188001372066);
+MAVEN.SetField("VZ", -2.696272103530009);
+MAVEN.SetField("DryMass", 904);
+MAVEN.SetField("Cd", 2.2);
+MAVEN.SetField("Cr", 1);
+MAVEN.SetField("DragArea", 20);
+MAVEN.SetField("SRPArea", 20);
+MAVEN.SetField("Tanks", "{MainTank}");
+MAVEN.SetField("NAIFId", -123456789);
+MAVEN.SetField("NAIFIdReferenceFrame", -123456789);
+MAVEN.SetField("Id", "SatId");
+MAVEN.SetField("Attitude", "CoordinateSystemFixed");
+MAVEN.SetField("SPADSRPScaleFactor", 1);
+MAVEN.SetField("ModelFile", "../data/vehicle/models/aura.3ds");
+MAVEN.SetField("ModelOffsetX", 0);
+MAVEN.SetField("ModelOffsetY", 0);
+MAVEN.SetField("ModelOffsetZ", 0);
+MAVEN.SetField("ModelRotationX", 0);
+MAVEN.SetField("ModelRotationY", 0);
+MAVEN.SetField("ModelRotationZ", 0);
+MAVEN.SetField("ModelScale", 1);
+MAVEN.SetField("AttitudeDisplayStateType", "Quaternion");
+MAVEN.SetField("AttitudeRateDisplayStateType", "AngularVelocity");
+MAVEN.SetField("AttitudeCoordinateSystem", "EarthMJ2000Eq");
+MAVEN.SetField("EulerAngleSequence", "321");
+
+MainTank = GMATAPI.Construct("ChemicalTank", "MainTank");
+MainTank = gmat.ChemicalTank.SetClass(MainTank);
+MainTank.SetField("FuelMass", 1718);
+MainTank.SetField("Pressure", 5000);
+MainTank.SetField("Temperature", 20);
+MainTank.SetField("RefTemperature", 20);
+MainTank.SetField("Volume", 2);
+MainTank.SetField("FuelDensity", 1000);
+MainTank.SetField("PressureModel", "PressureRegulated");
+
+SunPoint = GMATAPI.Construct("PointMassForce", "SunPoint");
+SunPoint.SetField("BodyName","Sun");
+VenusPoint = GMATAPI.Construct("PointMassForce", "VenusPoint");
+VenusPoint.SetField("BodyName","Venus");
+EarthPoint = GMATAPI.Construct("PointMassForce", "EarthPoint");
+EarthPoint.SetField("BodyName","Earth");
+MoonPoint = GMATAPI.Construct("PointMassForce", "MoonPoint");
+MoonPoint.SetField("BodyName","Luna");
+MarsPoint = GMATAPI.Construct("PointMassForce", "MarsPoint");
+MarsPoint.SetField("BodyName","Mars");
+JupiterPoint = GMATAPI.Construct("PointMassForce", "JupiterPoint");
+JupiterPoint.SetField("BodyName","Jupiter");
+SaturnPoint = GMATAPI.Construct("PointMassForce", "SaturnPoint");
+SaturnPoint.SetField("BodyName","Saturn");
+UranusPoint = GMATAPI.Construct("PointMassForce", "UranusPoint");
+UranusPoint.SetField("BodyName","Uranus");
+NeptunePoint = GMATAPI.Construct("PointMassForce", "NeptunePoint");
+NeptunePoint.SetField("BodyName","Neptune");
+
+SRP = GMATAPI.Construct("SolarRadiationPressure", "SRP");
+SRP.SetField("Flux", 1358);
+SRP.SetField("SRPModel", "Spherical");
+SRP.SetField("Nominal_Sun", 149597870.691);
+
+NearEarth_ForceModel = GMATAPI.Construct("ForceModel", "NearEarth_ForceModel");
+NearEarth_ForceModel.SetField("CentralBody", "Earth");
+NearEarth_ForceModel.AddForce(SunPoint);
+NearEarth_ForceModel.AddForce(MoonPoint);
+earthgrav = GMATAPI.Construct("GravityField");
+earthgrav.SetField("BodyName", "Earth");
+earthgrav.SetField("Degree", 8);
+earthgrav.SetField("Order", 8);
+earthgrav.SetField("PotentialFile", 'JGM2.cof');
+earthgrav.SetField("TideModel", 'None');
+NearEarth_ForceModel.AddForce(earthgrav);
+NearEarth_ForceModel.AddForce(SRP);
+
+DeepSpace_ForceModel = GMATAPI.Construct("ForceModel", "DeepSpace_ForceModel");
+DeepSpace_ForceModel.SetField("CentralBody", "Sun");
+DeepSpace_ForceModel.AddForce(SunPoint);
+DeepSpace_ForceModel.AddForce(VenusPoint);
+DeepSpace_ForceModel.AddForce(EarthPoint);
+DeepSpace_ForceModel.AddForce(MoonPoint);
+DeepSpace_ForceModel.AddForce(MarsPoint);
+DeepSpace_ForceModel.AddForce(JupiterPoint);
+DeepSpace_ForceModel.AddForce(SaturnPoint);
+DeepSpace_ForceModel.AddForce(UranusPoint);
+DeepSpace_ForceModel.AddForce(NeptunePoint);
+DeepSpace_ForceModel.AddForce(SRP);
+
+NearMars_ForceModel = GMATAPI.Construct("ForceModel", "NearMars_ForceModel");
+NearMars_ForceModel.SetField("CentralBody", "Mars");
+NearMars_ForceModel.AddForce(SunPoint);
+marsgrav = GMATAPI.Construct("GravityField");
+marsgrav.SetField("BodyName", "Mars");
+marsgrav.SetField("Degree", 8);
+marsgrav.SetField("Order", 8);
+marsgrav.SetField("PotentialFile", 'Mars50c.cof');
+NearMars_ForceModel.AddForce(marsgrav);
+NearMars_ForceModel.AddForce(SRP);
+
+PDgator = GMATAPI.Construct("PrinceDormand78", "PDgator");
+RKgator = GMATAPI.Construct("RungeKutta89", "RKgator");
+
+NearEarth = GMATAPI.Construct("Propagator", "NearEarth");
+NearEarth.SetReference(RKgator);
+NearEarth.SetReference(NearEarth_ForceModel);
+NearEarth.SetField("InitialStepSize", 600);
+NearEarth.SetField("Accuracy", 1e-013);
+NearEarth.SetField("MinStep", 0);
+NearEarth.SetField("MaxStep", 600);
+NearEarth.SetField("MaxStepAttempts", 50);
+NearEarth.SetField("StopIfAccuracyIsViolated", true);
+
+DeepSpace = GMATAPI.Construct("Propagator", "DeepSpace");
+DeepSpace.SetReference(PDgator);
+DeepSpace.SetReference(DeepSpace_ForceModel);
+DeepSpace.SetField("InitialStepSize", 600);
+DeepSpace.SetField("Accuracy", 1e-012);
+DeepSpace.SetField("MinStep", 0);
+DeepSpace.SetField("MaxStep", 864000);
+DeepSpace.SetField("MaxStepAttempts", 50);
+DeepSpace.SetField("StopIfAccuracyIsViolated", true);
+
+NearMars = GMATAPI.Construct("Propagator", "NearMars");
+NearMars.SetReference(PDgator);
+NearMars.SetReference(NearMars_ForceModel);
+NearMars.SetField("InitialStepSize", 600);
+NearMars.SetField("Accuracy", 1e-012);
+NearMars.SetField("MinStep", 0);
+NearMars.SetField("MaxStep", 86400);
+NearMars.SetField("MaxStepAttempts", 50);
+NearMars.SetField("StopIfAccuracyIsViolated", true);
+
+TCM1 = GMATAPI.Construct("ImpulsiveBurn", "TCM1");
+TCM1.SetField("CoordinateSystem", "Local");
+TCM1.SetField("Origin", "Earth");
+TCM1.SetField("Axes", "VNB");
+TCM1.SetField("Element1", 0);
+TCM1.SetField("Element2", 0);
+TCM1.SetField("Element3", 0);
+TCM1.SetField("DecrementMass", false);
+TCM1.SetField("Isp", 300);
+TCM1.SetField("GravitationalAccel", 9.810000000000001);
+
+MOI = GMATAPI.Construct("ImpulsiveBurn", "MOI");
+MOI.SetField("CoordinateSystem", "Local");
+MOI.SetField("Origin", "Mars");
+MOI.SetField("Axes", "VNB");
+MOI.SetField("Element1", 0);
+MOI.SetField("Element2", 0);
+MOI.SetField("Element3", 0);
+MOI.SetField("DecrementMass", false);
+MOI.SetField("Isp", 300);
+MOI.SetField("GravitationalAccel", 9.810000000000001);
+
+MarsInertial = GMATAPI.Construct("CoordinateSystem", "MarsInertial", "Mars", "BodyInertial");
+
+DC = GMATAPI.Construct("DifferentialCorrector", "DC");
+DC.SetField("ShowProgress", true);
+DC.SetField("ReportStyle", "Normal");
+DC.SetField("ReportFile", "DifferentialCorrectorDC1.data");
+DC.SetField("MaximumIterations", 25);
+DC.SetField("DerivativeMethod", "ForwardDifference");
+DC.SetField("Algorithm", "NewtonRaphson");
+
+BdotT = GMATAPI.Construct("Variable", "BdotT");
+BdotR = GMATAPI.Construct("Variable", "BdotR");
+
+GMATAPI.Command("Target", "DC {SolveMode = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true}");
+GMATAPI.Command("Vary", "'Vary TOI.V' DC(TCM1.Element1 = 1e-005, {Perturbation = .00001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = .002, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0})");
+GMATAPI.Command("Vary", "'Vary TOI.N' DC(TCM1.Element2 = 1e-005, {Perturbation = .00001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = .002, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0})");
+GMATAPI.Command("Vary", "'Vary TOI.B' DC(TCM1.Element3 = 1e-005, {Perturbation = .00001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = .002, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0})");
+GMATAPI.Command("Propagate","'Prop 3 Days' NearEarth(MAVEN) {MAVEN.ElapsedDays = 3, StopTolerance = 1e-005}");
+GMATAPI.Command("Propagate","'Prop to TCM1' DeepSpace(MAVEN) {MAVEN.ElapsedDays = 12, StopTolerance = 1e-005}");
+GMATAPI.Command("Maneuver","'Apply TCM1' TCM1(MAVEN)");
+GMATAPI.Command("Propagate","'Prop 280 Days' DeepSpace(MAVEN) {MAVEN.ElapsedDays = 280}");
+GMATAPI.Command("Propagate","'Prop to Mars Periapsis' NearMars(MAVEN) {MAVEN.Mars.Periapsis, MAVEN.ElapsedDays = 20}");
+GMATAPI.Command("Achieve","'Achieve BdotT' DC(MAVEN.MarsInertial.BdotT = 2700, {Tolerance = .1})");
+GMATAPI.Command("Achieve","'Achieve BdotR' DC(MAVEN.MarsInertial.BdotR = -7000, {Tolerance = .1})");
+GMATAPI.Command("EndTarget");
+
+GMATAPI.Command("Target","DC {SolveMode = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true}");
+GMATAPI.Command("Vary", "'Vary MOI.V' DC(MOI.Element1 = -2, {Perturbation = .00001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = .1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0})");
+GMATAPI.Command("Maneuver","'Apply MOI' MOI(MAVEN)");
+GMATAPI.Command("Propagate","'Prop to Mars Apoapsis' NearMars(MAVEN) {MAVEN.Mars.Apoapsis}");
+GMATAPI.Command("Achieve","'Achieve RMAG' DC(MAVEN.Mars.RMAG = 12000, {Tolerance = .1})");
+GMATAPI.Command("EndTarget");
+
+GMATAPI.Command("Propagate","'Prop 1 Day' NearMars(MAVEN) {MAVEN.ElapsedDays = 1}");
+
+GMATAPI.Initialize();
+
+status = GMATAPI.Execute();
+disp(status);

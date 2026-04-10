@@ -1,0 +1,104 @@
+%
+%  Ex_Attitude_Inertial
+%
+%  Use an inertially-fixed spacecraft attitude.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+DefaultSC.DateFormat                   = UTCGregorian;
+DefaultSC.Epoch                        = '01 Jul 2000 11:59:28.000';
+DefaultSC.SMA                          = 8999.999999999995;
+DefaultSC.ECC                          = 0.02454974900598272;
+DefaultSC.INC                          = 12.85008005658097;
+DefaultSC.RAAN                         = 306.6148021947984;
+DefaultSC.AOP                          = 314.1905515359913;
+DefaultSC.TA                           = 99.88774933204955;
+DefaultSC.Attitude                     = CoordinateSystemFixed;
+DefaultSC.AttitudeDisplayStateType     = 'EulerAngles';
+DefaultSC.AttitudeRateDisplayStateType = 'AngularVelocity';
+DefaultSC.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+DefaultSC.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM      = DefaultProp_ForceModel;
+DefaultProp.MaxStep = 1;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.SolverIterations = Current;
+OFI_EarthView.UpperLeft        = [ 0.1 0.05 ];
+OFI_EarthView.Size             = [ 0.8 0.9 ];
+OFI_EarthView.Maximized        = false;
+
+OFI_EarthView.Add              = {DefaultSC, Earth};
+OFI_EarthView.View             = {CoordinateSystemView, Earth_View, DefaultSC_View};
+
+OFI_EarthView.DrawObject       = [ true true];
+OFI_EarthView.DrawXYPlane      = [ false false];
+OFI_EarthView.DrawLabel        = [ true true];
+OFI_EarthView.DrawGrid         = [ false false];
+
+OFI_EarthView.Axes             = On;
+OFI_EarthView.XYPlane          = On;
+OFI_EarthView.EclipticPlane    = Off;
+OFI_EarthView.EnableStars      = On;
+OFI_EarthView.StarCount        = 40000;
+OFI_EarthView.ShowPlot         = true;
+
+
+Create OpenFramesView CoordinateSystemView;
+
+CoordinateSystemView.ViewFrame           = CoordinateSystem;
+CoordinateSystemView.ViewTrajectory      = Off;
+CoordinateSystemView.SetDefaultLocation  = On;
+CoordinateSystemView.SetCurrentLocation  = Off;
+			   
+CoordinateSystemView.DefaultEye          = [ 27000 27000 0]; 
+CoordinateSystemView.DefaultCenter       = [ 0 0 0 ];
+CoordinateSystemView.DefaultUp           = [ 0 0 1 ];
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame              = Earth;
+Earth_View.ViewTrajectory         = Off;
+Earth_View.InertialFrame          = Off;
+Earth_View.SetDefaultLocation     = Off;
+Earth_View.SetCurrentLocation     = Off;
+
+
+Create OpenFramesView DefaultSC_View;
+
+DefaultSC_View.ViewFrame          = DefaultSC;
+DefaultSC_View.ViewTrajectory     = Off;
+DefaultSC_View.InertialFrame      = Off;
+DefaultSC_View.SetDefaultLocation = Off;
+DefaultSC_View.SetCurrentLocation = On;
+DefaultSC_View.CurrentEye         = [ 600 500 450 ];
+DefaultSC_View.CurrentCenter      = [ 0 0 0 ];
+DefaultSC_View.CurrentUp          = [ 0 0 1 ]
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+Propagate 'Prop 10000 s' DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 10000.0};

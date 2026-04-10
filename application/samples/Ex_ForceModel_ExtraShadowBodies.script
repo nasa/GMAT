@@ -1,0 +1,216 @@
+%
+%   This script demonstrates the use of ForceModel.SRP.ExtraShadowBodies
+%
+%   ExtraShadowBodies tells GMAT to check additional bodies for shadowing effects
+%   in a given ForceModel
+%
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft GEOSat;
+
+GEOSat.DateFormat               = UTCGregorian;
+GEOSat.Epoch                    = '28 Feb 2025 00:00:00.000';
+GEOSat.CoordinateSystem         = EarthMJ2000Eq;
+GEOSat.DisplayStateType         = Cartesian;
+GEOSat.X                        = -19275;
+GEOSat.Y                        = -36440;
+GEOSat.Z                        = -9352;
+GEOSat.VX                       = 2.7;
+GEOSat.VY                       = -1.4;
+GEOSat.VZ                       = -0.25;
+GEOSat.DryMass                  = 2000;
+GEOSat.Cd                       = 2.2;
+GEOSat.Cr                       = 1.4;
+GEOSat.DragArea                 = 40;
+GEOSat.SRPArea                  = 40;
+GEOSat.Id                       = 'GEOSat';
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+
+Create ForceModel FmGeo;
+
+FmGeo.CentralBody                           = Earth;
+FmGeo.PrimaryBodies                         = {Earth};
+FmGeo.PointMasses                           = {Sun, Luna};
+FmGeo.Drag                                  = None;
+FmGeo.SRP                                   = On;
+FmGeo.GravityField.Earth.Degree             = 8;
+FmGeo.GravityField.Earth.Order              = 8;
+FmGeo.GravityField.Earth.PotentialFile      = 'JGM2.cof';
+FmGeo.GravityField.Earth.TideModel          = 'None';
+
+% This line controls the additional shadow bodies GMAT will check
+FmGeo.SRP.ExtraShadowBodies                 = {'Luna'};
+
+FmGeo.SRP.Flux                              = 1367;
+FmGeo.SRP.SRPModel                          = Spherical;
+FmGeo.SRP.Nominal_Sun                       = 149597870.7;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator PropGeo;
+
+PropGeo.FM                  = FmGeo;
+PropGeo.Type                = RungeKutta89;
+PropGeo.InitialStepSize     = 300;
+PropGeo.Accuracy            = 1e-13;
+PropGeo.MinStep             = 0;
+PropGeo.MaxStep             = 300;
+PropGeo.MaxStepAttempts     = 50;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+%
+%   Report file
+%
+
+Create ReportFile RF;
+
+RF.Filename         = 'Ex_ForceModel_ExtraShadowBodies.txt';
+RF.WriteHeaders     = false;
+
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+
+%
+%   Mission sequence
+%
+
+Create String Str;
+
+
+%----------------------------------------
+%---------- OpenFramesInterface
+%----------------------------------------
+Create OpenFramesInterface OpenFrames1;
+OpenFrames1.SolverIterations        = Current;
+OpenFrames1.UpperLeft               = [ 0.02235294117647059 0.04231625835189309 ];
+OpenFrames1.Size                    = [ 0.5994117647058823 0.856347438752784 ];
+OpenFrames1.RelativeZOrder          = 17;
+OpenFrames1.Maximized               = false;
+OpenFrames1.Add                     = {GEOSat, Earth, Luna, Sun};
+OpenFrames1.View                    = {CoordinateSystemView1, EarthView1, LunaView1, GEOSatView1};
+OpenFrames1.Vector                  = {SunPointing, MoonPointing};
+OpenFrames1.CoordinateSystem        = EarthMJ2000Eq;
+OpenFrames1.DrawObject              = [ true true true true ];
+OpenFrames1.DrawTrajectory          = [ true true true true ];
+OpenFrames1.DrawAxes                = [ false false false false ];
+OpenFrames1.DrawXYPlane             = [ false false false false ];
+OpenFrames1.DrawLabel               = [ true true true true ];
+OpenFrames1.DrawUsePropLabel        = [ false false false false ];
+OpenFrames1.DrawCenterPoint         = [ true false false false ];
+OpenFrames1.DrawEndPoints           = [ true false false false ];
+OpenFrames1.DrawVelocity            = [ false false false false ];
+OpenFrames1.DrawGrid                = [ false false false false ];
+OpenFrames1.DrawLineWidth           = [ 2 2 2 2 ];
+OpenFrames1.DrawMarkerSize          = [ 10 10 10 10 ];
+OpenFrames1.DrawFontSize            = [ 20 20 20 20 ];
+OpenFrames1.Axes                    = On;
+OpenFrames1.AxesLength              = 12756.2726;
+OpenFrames1.AxesLabels              = On;
+OpenFrames1.FrameLabel              = Off;
+OpenFrames1.XYPlane                 = On;
+OpenFrames1.EclipticPlane           = Off;
+OpenFrames1.EnableStars             = On;
+OpenFrames1.StarCatalog             = 'inp_StarsHYGv3.txt';
+OpenFrames1.StarCount               = 40000;
+OpenFrames1.MinStarMag              = -2;
+OpenFrames1.MaxStarMag              = 6;
+OpenFrames1.MinStarPixels           = 1;
+OpenFrames1.MaxStarPixels           = 10;
+OpenFrames1.MinStarDimRatio         = 0.5;
+OpenFrames1.ShowPlot                = true;
+OpenFrames1.ShowToolbar             = true;
+OpenFrames1.SolverIterLastN         = 0;
+OpenFrames1.ShowVR                  = false;
+OpenFrames1.PlaybackTimeScale       = 3600;
+OpenFrames1.MultisampleAntiAliasing = On;
+OpenFrames1.MSAASamples             = 2;
+OpenFrames1.DrawFontPosition        = {'Top-Right', 'Top-Right', 'Top-Right', 'Top-Right'};
+
+Create OpenFramesView CoordinateSystemView1;
+CoordinateSystemView1.ViewFrame          = CoordinateSystem;
+CoordinateSystemView1.ViewTrajectory     = Off;
+CoordinateSystemView1.InertialFrame      = Off;
+CoordinateSystemView1.SetDefaultLocation = Off;
+CoordinateSystemView1.SetCurrentLocation = On;
+CoordinateSystemView1.CurrentEye         = [ -190742.555337618 -58841.18966435131 12489.17484280641 ];
+CoordinateSystemView1.CurrentCenter      = [ 1.164153218269348e-10 0 1.818989403545856e-12 ];
+CoordinateSystemView1.CurrentUp          = [ 0.1339663573931953 -0.2296594096700963 0.9640070386863271 ];
+CoordinateSystemView1.FOVy               = 45;
+
+Create OpenFramesView EarthView1;
+EarthView1.ViewFrame          = Earth;
+EarthView1.ViewTrajectory     = Off;
+EarthView1.InertialFrame      = Off;
+EarthView1.SetDefaultLocation = Off;
+EarthView1.SetCurrentLocation = Off;
+EarthView1.FOVy               = 45;
+
+Create OpenFramesView LunaView1;
+LunaView1.ViewFrame           = Luna;
+LunaView1.ViewTrajectory      = Off;
+LunaView1.InertialFrame       = Off;
+LunaView1.SetDefaultLocation  = Off;
+LunaView1.SetCurrentLocation  = On;
+LunaView1.CurrentEye          = [ 1999.145607703917 -2623.161367392036 3122.288910571456 ];
+LunaView1.CurrentCenter       = [ 2.273736754432321e-13 -4.547473508864641e-13 0 ];
+LunaView1.CurrentUp           = [ -0.6164543697307593 0.3622996160876869 0.6990872608069516 ];
+LunaView1.FOVy                = 45;
+
+Create OpenFramesView GEOSatView1;
+GEOSatView1.ViewFrame          = GEOSat;
+GEOSatView1.ViewTrajectory     = Off;
+GEOSatView1.InertialFrame      = Off;
+GEOSatView1.SetDefaultLocation = Off;
+GEOSatView1.SetCurrentLocation = On;
+GEOSatView1.CurrentEye         = [ -840.3074902949379 524.6864930308844 -70.81985160119682 ];
+GEOSatView1.CurrentCenter      = [ 12.50000000000011 237.2500000000001 118.5000000000002 ];
+GEOSatView1.CurrentUp          = [ -0.30264481476204 -0.3026615064834191 0.903771059832543 ];
+GEOSatView1.FOVy               = 45;
+
+Create OpenFramesVector SunPointing;
+SunPointing.VectorColor        = [255 255 0];
+SunPointing.SourceObject       = GEOSat;
+SunPointing.VectorType         = Relative Position;
+SunPointing.DestinationObject  = Sun;
+SunPointing.VectorLabel        = 'SunPointing';
+SunPointing.VectorLengthType   = 'Auto';
+
+Create OpenFramesVector MoonPointing;
+MoonPointing.VectorColor       = [192 192 192];
+MoonPointing.SourceObject      = GEOSat;
+MoonPointing.VectorType        = Relative Position;
+MoonPointing.DestinationObject = Luna;
+MoonPointing.VectorLabel       = 'MoonPointing';
+MoonPointing.VectorLengthType  = 'Auto';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+
+BeginMissionSequence;
+
+Propagate PropGeo(GEOSat) {GEOSat.ElapsedDays = 1};
+
+%Turn on and off Luna as an Extra Shadow Body to see these outputs change
+Str = sprintf('%.15f %.15f %.15f %.15f %.15f %.15f', ...  
+      GEOSat.EarthMJ2000Eq.X, GEOSat.EarthMJ2000Eq.Y, GEOSat.EarthMJ2000Eq.Z,...     
+      GEOSat.EarthMJ2000Eq.VX, GEOSat.EarthMJ2000Eq.VY, GEOSat.EarthMJ2000Eq.VZ);
+
+Write Str { ReportFile = RF }

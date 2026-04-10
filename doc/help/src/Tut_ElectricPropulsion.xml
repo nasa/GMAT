@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="Tut_ElectricPropulsion"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Electric Propulsion</title>
+
+  <variablelist>
+    <varlistentry>
+      <term>Audience</term>
+
+      <listitem>
+        <para>Beginner</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Length</term>
+
+      <listitem>
+        <para>15 minutes</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Prerequisites</term>
+
+      <listitem>
+        <para>Complete <xref linkend="SimulatingAnOrbit"
+        xrefstyle="select:title"/></para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Script File</term>
+
+      <listitem>
+        <para><filename>Tut_ElectricPropulsionModelling.script</filename></para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>In this tutorial, we will use GMAT to perform a finite burn for a
+    spacecraft using an electric propulsion system.  Note that targeting and
+    design using electric propulsion is identical to chemical propulsion and
+    we refer you to the tutorial named <xref linkend="Tut_TargetFiniteBurn"
+    xrefstyle="select:title"/> for targeting configuration. This tutorial
+    focuses only on configuration and modeling using electric propulsion
+    systems.</para>
+
+    <para>The basic steps of this tutorial are:</para>
+
+    <procedure>
+      <step>
+        <para>Create and configure the <guilabel>Spacecraft</guilabel>
+        hardware and <guilabel>FiniteBurn</guilabel> Resources</para>
+      </step>
+
+      <step>
+        <para>Configure the Mission Sequence. To do this, we will</para>
+
+        <substeps>
+          <step>
+            <para>Create <guilabel>Begin/End FiniteBurn</guilabel> commands
+            with default settings.</para>
+          </step>
+
+          <step>
+            <para>Create a <guilabel>Propagate</guilabel> command to propagate
+            while applying thrust from the electric propulsion system.</para>
+          </step>
+        </substeps>
+      </step>
+
+      <step>
+        <para>Run the mission</para>
+      </step>
+    </procedure>
+  </section>
+
+  <section>
+    <title>Create and Configure Spacecraft Hardware and Finite Burn</title>
+
+    <para>For this tutorial, you’ll need GMAT open with the default mission
+    loaded. To load the default mission, click <guibutton>New
+    Mission</guibutton> (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/NewMission.png" width="1em"/>
+        </imageobject>
+      </inlinemediaobject>) or start a new GMAT session. We will use the
+    default configurations for the spacecraft (<guilabel>DefaultSC</guilabel>)
+    and the propagator (<guilabel>DefaultProp</guilabel>).
+    <guilabel>DefaultSC</guilabel> is configured by default to a near-circular
+    orbit, and <guilabel>DefaultProp</guilabel> is configured to use Earth as
+    the central body with a nonspherical gravity model of degree and order 4.
+    You may want to open the dialog boxes for these objects and inspect them
+    more closely as we will leave them at their default settings.</para>
+
+    <section>
+      <title>Create a Thruster, Fuel Tank, and Solar Power System</title>
+
+      <para>To model thrust and fuel use associated with a finite burn, we
+      must create an <guilabel>ElectricThruster</guilabel>, an
+      <guilabel>ElectricTank</guilabel>, a power system, and then attach the
+      newly created <guilabel>ElectricTank</guilabel> to the
+      <guilabel>ElectricThruster</guilabel>, and attach all hardware to the
+      spacecraft. We'll start by creating the hardware objects.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, right-click on the
+          <guilabel>Hardware</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click
+          <guilabel>ElectricThruster</guilabel>.  A Resource named
+          <guilabel>ElectricThruster1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, right-click on the
+          <guilabel>Hardware</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click
+          <guilabel>ElectricTank</guilabel>.  A Resource named
+          <guilabel>ElectricTank1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, right-click on the
+          <guilabel>Hardware</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click
+          <guilabel>SolarPowerSystem</guilabel>.  A Resource named
+          <guilabel>SolarPowerSystem1</guilabel> will be created.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Configure the Hardware</title>
+
+      <para>Now we'll configure the hardware models for this exercise.</para>
+
+      <procedure>
+        <step>
+          <para>Double-click<guilabel> ElectricThruster1</guilabel> to edit
+          its properties.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Mass Change</guilabel> group box, check
+          <guilabel>Decrement Mass</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Mass Change</guilabel> group box, select
+          <guilabel>ElectricTank1</guilabel> for the
+          <guilabel>Tank.</guilabel> </para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Thrust Config</guilabel> group box, select
+          <guilabel>ConstantThrustAndIsp</guilabel> for
+          <guilabel>ThrustModel</guilabel> and set
+          <guilabel>ConstantThrust</guilabel> to 5.0 N. </para>
+        </step>
+      </procedure>
+
+      <para><xref
+      linkend="Tut_ElectricPropulsion_Fig2_Thruster1_Configuration"/> below
+      shows the <guilabel>ElectricThruster1</guilabel> configuration that we
+      will use.</para>
+
+      <figure xml:id="Tut_ElectricPropulsion_Fig2_Thruster1_Configuration">
+        <title><guilabel>ElectricThruster1</guilabel> Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_ElectricPropulsion_Thruster.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <para>We will use the default tank settings. <xref
+      linkend="Tut_ElectricPropulsion_Fig1_FuelTank1_Configuration"/> shows
+      the finished <guilabel>ElectricTank1</guilabel> configuration.</para>
+
+      <figure xml:id="Tut_ElectricPropulsion_Fig1_FuelTank1_Configuration">
+        <title><guilabel>ElectricTank1</guilabel> Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_ElectricPropulsion_Tank.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <procedure>
+        <step>
+          <para>Double-click<guilabel> SolarPowerSystem1</guilabel> to edit
+          its properties.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>General</guilabel> group box, click the
+          <guilabel>Select</guilabel> button next to
+          <guilabel>ShadowBodies</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Remove <guilabel>Earth</guilabel> from the
+          <guilabel>ShadowBodies</guilabel> list. </para>
+        </step>
+      </procedure>
+
+      <para><xref linkend="Tut_ElectricPropulsion_PowerSystemConfig"/> shows
+      the finished <guilabel>SolarPowerSystem1</guilabel>
+      configuration.</para>
+
+      <figure xml:id="Tut_ElectricPropulsion_PowerSystemConfig">
+        <title><guilabel>SolarPowerSystem1</guilabel> Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_ElectricPropulsion_PowerSystem.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Attach Hardware to the Spacecraft</title>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, double-click
+          <guilabel>DefaultSC</guilabel> to edit its properties.</para>
+        </step>
+
+        <step>
+          <para>Select the <guilabel>Tanks</guilabel> tab. In the
+          <guilabel>Available Tanks</guilabel> column, select
+          <guilabel>ElectricTank1</guilabel>. Then click the right arrow
+          button to add <guilabel>ElectricTank1</guilabel> to the
+          <guilabel>SelectedTanks</guilabel> list. Click
+          <guilabel>Apply</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Select the <guilabel>Actuators</guilabel> tab. In the
+          <guilabel>Available Thrusters</guilabel> column, select
+          <guilabel>ElectricThruster1</guilabel>. Then click the right arrow
+          button to add <guilabel>ElectricThruster1</guilabel> to the
+          <guilabel>SelectedThrusters</guilabel> list. Click
+          <guilabel>APPLY</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Select the <guilabel>PowerSystem</guilabel> tab. In the
+          <guilabel>PowerSystem</guilabel> tab, select
+          <guilabel>SolarPowerSystem1</guilabel>. Click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+      </procedure>
+
+      <figure xml:id="Tut_ElectricPropulsion_Fig4_Attach_FuelTank1_to_DefaultSC">
+        <title>Attach <guilabel>ElectricTank1</guilabel> to
+        <guilabel>DefaultSC</guilabel></title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_ElectricPropulsion_AddTanksToSat.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <figure xml:id="Tut_ElectricPropulsion_Fig5_Attach_Thruster1_to_DefaultSC">
+        <title>Attach <guilabel>ElectricThruster1</guilabel> to
+        <guilabel>DefaultSC</guilabel></title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_ElectricPropulsion_AddThrusterToSat.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <figure xml:id="Tut_ElectricPropulsion_AddPowerSystemToSat">
+        <title>Attach <guilabel>SolarPowerSystem1</guilabel> to
+        <guilabel>DefaultSC</guilabel></title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_ElectricPropulsion_AddPowerSystemToSat.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Create the Finite Burn Maneuver</title>
+
+      <para>We’ll need a single <guilabel>FiniteBurn</guilabel> Resource for
+      this tutorial.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, right-click the
+          <guilabel>Burns</guilabel> folder and add a
+          <guilabel>FiniteBurn</guilabel>. A Resource named<guilabel>
+          FiniteBurn1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>FiniteBurn1</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Select the <guilabel>ElectricThruster1</guilabel> from the
+          left side and use the <emphasis role="bold">-&gt;</emphasis> button
+          to move it to the right, setting it as a thruster associated with
+          <guilabel>FiniteBurn1</guilabel>. Click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+      </procedure>
+
+      <figure xml:id="Tut_ElectricPropulsion_Fig6_Creation_of_FiniteBurn_Resource_FiniteBurn1">
+        <title>Creation of <guilabel>FiniteBurn</guilabel> Resource
+        <guilabel>FiniteBurn1</guilabel></title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_ElectricPropulsion_FiniteBurn.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+  </section>
+
+  <section>
+    <title>Configure the Mission Sequence</title>
+
+    <para>Now we will configure the mission sequence to apply a finite
+    maneuver using electric propulsion for a two day propagation. When we're
+    done, the mission sequence will appear as shown below.</para>
+
+    <figure xml:id="Tut_ElectricPropulsion_Fig9_Final_Mission_Sequence">
+      <title>Final Mission Sequence</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_ElectricPropulsion_MissionSequence.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+
+    <section>
+      <title>Create the Commands</title>
+
+      <procedure>
+        <step>
+          <para>In the Mission Tree, right click on
+          <guilabel>Propagate1</guilabel>, select <guilabel>Rename</guilabel>,
+          and enter <guilabel>Propagate Two Days</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Right click on the command named <guilabel>Propagate Two
+          Days</guilabel>, select <guilabel>Insert Before</guilabel>, then
+          select <guilabel>BeginFiniteBurn</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Right click on the command named <guilabel>Propagate Two
+          Days</guilabel>, select <guilabel>Insert After</guilabel>, then
+          select <guilabel>EndFiniteBurn</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Rename the command named <guilabel>BeginFiniteBurn1</guilabel>
+          to <guilabel>StartTheManeuver</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Rename the command named <guilabel>EndFiniteBurn1</guilabel>
+          to <guilabel>EndTheManeuver</guilabel>.</para>
+        </step>
+      </procedure>
+
+      <para>Note that for more complex analysis that has multiple
+      <guilabel>FiniteBurn</guilabel> objects, you will need to configure the
+      <guilabel>BeginFiniteBurn</guilabel> and
+      <guilabel>EndFiniteBurn</guilabel> commands to select the desired
+      <guilabel>FiniteBurn</guilabel> Resource. As there is only one
+      <guilabel>FiniteBurn</guilabel> Resource in this example, the system
+      automatically selected the correct <guilabel>FiniteBurn</guilabel>
+      Resource.</para>
+    </section>
+
+    <section>
+      <title>Configure the Propagate Command</title>
+
+      <para>Configure the <guilabel>Propagate Two Days</guilabel> command to
+      propagate for DefaultSC.ElapsedDays = 2.0</para>
+
+      <figure xml:id="Tut_ElectricPropulsion_Fig8">
+        <title><guilabel>Prop To Perigee </guilabel>Command
+        Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_ElectricPropulsion_Propagate.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+  </section>
+
+  <section>
+    <title>Run the Mission</title>
+
+    <para>Before running the mission, click <guilabel>Save</guilabel> to save
+    the mission to a file of your choice. Now click <guilabel>Run</guilabel>.
+    As the mission runs, you will see the orbit spiral way from Earth. Note we
+    exaggerated the thrust level so that an appreciable change in the orbit
+    occurs in two days.</para>
+
+    <figure xml:id="Tut_ElectricPropulsion_Fig17_3D_View_of_Finite_Burn_to_Raise_Apogee">
+      <title>3D View of <guilabel>Finite Electric Maneuver</guilabel></title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_ElectricPropulsion_OrbitViewGraphic.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+  </section>
+</chapter>

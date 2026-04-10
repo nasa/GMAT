@@ -1,0 +1,34 @@
+function [R] = ComputeAlignConstrainedDCM(aVec1, aVec2,...
+                                          cVec1, cVec2)
+%  This function computes a rotation matrix based on an aligned-constrained 
+%  coordinate system definition.  The function returns the matrix from
+%  frame 2 to frame 1.
+%
+%  Inputs:
+%       
+%  Author: S. Hughes.  steven.p.hughes@nasa.gov
+
+%% Initializations                                      
+aVec1Hat = aVec1/norm(aVec1);
+aVec2Hat = aVec2/norm(aVec2);
+cVec1Hat = cVec1/norm(cVec1);
+cVec2Hat = cVec2/norm(cVec2);
+
+%% Compute first rotation which aligns the desired coordinate axis
+phi    = acos(aVec1Hat'*aVec2Hat);
+rotVec = cross(aVec1Hat,aVec2Hat);
+rotVec = rotVec/norm(rotVec);
+R1     = aphi2R(rotVec,phi);
+
+%% Compute Second rotation which constraintes the coordinates
+rotVec     = R1*aVec1Hat;
+cVec1Prime = R1*cVec1Hat;
+nVec1      = cross(aVec2Hat,cVec1Prime);
+nVec1      = nVec1/norm(nVec1);
+nVec2      = cross(aVec2Hat,cVec2Hat);
+nVec2      = nVec2/norm(nVec2);
+phi        = -acos(nVec2'*nVec1);
+R2         =  aphi2R(rotVec,phi);
+
+%% Assemble the rotation Matrix
+R = (R2*R1);

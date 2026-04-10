@@ -1,0 +1,45 @@
+# Project: ScriptInterpreter
+# Makefile created by Dev-C++ 4.9.8.3
+# Modified for MacOS X - Joey Gurganus - 2003/11/12
+# Modified for MacOS X - Joey Gurganus - 2003/11/21
+
+PROJECT_ROOT    = ../..
+BINDIR	= $(PROJECT_ROOT)/bin
+LIBDIR	= $(PROJECT_ROOT)/lib
+INCDIR	= $(PROJECT_ROOT)/include
+INSTALLED_LIB	= $(LIBDIR)/libgmatbase.a	
+EXECUTABLE = $(BINDIR)/TestScriptInterpreter 
+
+# Include g77 library directory
+G77_LIBDIR = /sw/lib
+
+TEST_FLAGS = -D__DEBUG__ -D__CONSOLE_APP__
+
+# Source files for EXECUTABLE
+SRC	= driver.cpp ConsoleAppException.cpp PrintUtility.cpp
+#
+# LIB need to compile the EXECUTABLE  
+LIB	= -L$(LIBDIR) -L$(G77_LIBDIR)
+
+# How they are invoked on the compile  line
+LIBS	= -lgmatbase -lg2c
+#
+# Define macro for using the included file
+INCMK = $(PROJECT_ROOT)/test/inc.mac
+include ${INCMK}
+#
+###############################################################################
+# Target defiitions
+#
+all: $(EXECUTABLE)
+
+$(EXECUTABLE): $(OBJ) $(INSTALLED_LIB) 
+	@if [ ! -x $(BINDIR) ]; then mkdir $(BINDIR); fi
+	$(CPP) $(OBJ) $(LIB) $(LIBS) -o $@ 
+	@chmod -R 755 $(BINDIR)
+
+clean:
+	rm -f $(OBJ) core
+
+bare: clean
+	rm -f $(EXECUTABLE) 

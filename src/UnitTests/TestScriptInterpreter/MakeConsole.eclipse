@@ -1,0 +1,56 @@
+# Makefile for console version of GMAT (aka the Script Interpreter tester)
+# Initial Version, DJC, 11/8/2005
+
+include ../../BuildEnv.mk
+
+ifdef LINUX_MAC
+EXTENSION =
+else
+EXTENSION = .exe
+endif
+
+ifeq ($(USE_PROFILING),0)
+	TARGET = gmatConsole$(EXTENSION)
+else
+	TARGET = gmatConsoleP$(EXTENSION)
+endif
+
+all: clean $(TARGET)
+
+OBJECTS = driver.o ConsoleAppException.o PrintUtility.o
+
+LIBRARIES = -lGmatConsole
+
+HEADERS = -I../../base/include -I../../base/foundation \
+          -I../../base/executive -I../../base/factory \
+          -I../../base/forcemodel -I../../base/subscriber \
+          -I../../base/command -I../../base/spacecraft \
+          -I../../base/solarsys -I../../base/propagator \
+          -I../../base/interpreter -I../../base/parameter \
+          -I../../base/interpolator -I../../base/util \
+          -I../../base/stopcond -I../../base/refframe \
+          -I../../base/configs -I../../base/burn \
+          -I../../base/solver -I../../base/function \
+          -I../../base/coordsystem -I../../base/attitude \
+          -I../../base/math
+
+clean : archclean
+
+archclean :
+	rm -r -f *.o
+	rm -r -f *.a
+	rm -r -f *~
+	rm -r -f core
+	rm -r -f */core
+	rm -rf TestScriptInterpreter
+	rm -rf $(TARGET)
+	rm -rf ../../bin/$(TARGET)
+
+.cpp.o: 
+	$(CPP) $(CPPFLAGS) $(HEADERS) $(OPTIMIZATIONS) -c $<
+
+$(TARGET): $(OBJECTS)
+	$(CPP) $(OBJECTS) $(CONSOLE_LINK_FLAGS) $(LIBRARIES) $(OPTIMIZATIONS) \
+	$(FORTRAN_LIB) -o $(TARGET)
+	mkdir -p ../../bin
+	cp $(TARGET) ../../bin/$(TARGET)

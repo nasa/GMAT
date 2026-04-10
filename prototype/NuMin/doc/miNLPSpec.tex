@@ -1,0 +1,163 @@
+\documentclass[]{aiaa-tc}% insert '[draft]' option to show overfull boxes
+\usepackage{amsmath}
+
+ \title{A Rigorous Specification for a Medium Scale Sequential Quadratic Programming (SQP) Algorithm\\DRAFT}
+
+ \author{
+  Steven P. Hughes
+ }
+
+
+\newcommand{\st}[1]{\begin{ttfamily}#1\end{ttfamily}}
+ % Define commands to assure consistent treatment throughout document
+ \newcommand{\eqnref}[1]{(\ref{#1})}
+ \newcommand{\class}[1]{\texttt{#1}}
+ \newcommand{\package}[1]{\texttt{#1}}
+ \newcommand{\file}[1]{\texttt{#1}}
+
+ \renewcommand{\thefigure}{\arabic{figure}}
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+   This document contains a rigorous mathematical and algorithmic specification for
+   a medium scale SQP code.  The Quadratic Programming (QP) subproblem is solved using
+   an active set method and the KKT system is solved using the null space method.  Matrix
+   factorizations are performed using QR factorization.
+\end{abstract}
+
+\section{Quadratic Programming Subproblem}
+
+\begin{eqnarray}
+   \mbox{min} & & \frac{1}{2}\mathbf{x}^T\mathbf{G}\mathbf{x} + \mathbf{d}^T \mathbf{x}\\
+   \mbox{subject to} & & a_i \geq b_i \hspace{.05 in} (i \in \mathcal{I})\\
+     & & a_i = b_i \hspace{.05 in} (i \in \mathcal{E})
+\end{eqnarray}
+
+
+\begin{equation}
+    \nabla_x f - \sum_i \lambda_i a_i = 0
+\end{equation}
+
+\section{Line Search Algorithm}
+
+The merit function is given by
+%
+\begin{equation}
+     \mathcal{L}(\mathbf{x},\boldsymbol{\lambda},\mathbf{s},\boldsymbol{\rho}) = f(\mathbf{x}) - \boldsymbol{\lambda}^T\left(\mathbf{c}(\mathbf{x}) - \mathbf{s}\right)
+      + \frac{1}{2} \left(\mathbf{c}(\mathbf{x}) - \mathbf{s}\right)^T \mathbf{D}(\boldsymbol{\rho}) \left(\mathbf{c}(\mathbf{x}) - \mathbf{s}\right)
+\end{equation}
+%
+where
+%
+\begin{equation}
+     \mathbf{D}(\boldsymbol{\rho}) = \mbox{diag}(\boldsymbol{\rho})
+\end{equation}
+%
+and
+%
+\begin{equation}
+ s_i = \left\{
+    \begin{array}{llcc}
+        0                               & \mbox{if $i \in \mathcal{E}$}\\
+        \mbox{max(0,$c_i(\mathbf{x})$)} & \mbox{if $i \in \mathcal{I}$ and $\rho = 0$}\\
+        \mbox{max(0,$c_i(\mathbf{x}) - \lambda_i/\rho$)} & \mbox{otherwise}\\
+    \end{array}
+ \right.
+\end{equation}
+%
+Define the search direction for the slack variables to be $q$ where
+%
+\begin{equation}
+     q_k \equiv J_k p_k + c_k - s_k
+\end{equation}
+%
+and the search direction for the Lagrange multiplier estimates to be
+%
+\begin{equation}
+     \xi_k = \mu_k - \lambda_k
+\end{equation}
+%
+The step in terms of $\alpha$ is then,
+%
+\begin{equation}
+   \left(
+   \begin{array}{ccc}
+       x_{k+1}\\
+       s_{k+1}\\
+       \lambda_{k+1}
+   \end{array}
+   \right) =
+   %
+    \left(
+    \begin{array}{ccc}
+       x_{k}\\
+       s_{k}\\
+       \lambda_{k}
+   \end{array}
+   \right) +
+      %
+    \alpha  \left(
+    \begin{array}{ccc}
+       p_{k}\\
+       q_{k}\\
+       xi_{k}
+   \end{array}
+   \right)
+\end{equation}
+%
+\begin{equation}
+     \nabla \mathcal{L}\left( \mathbf{x}, \boldsymbol{\lambda}, \mathbf{s} \right) = \left(
+     \begin{array}{c}
+          \mathbf{g}  -  \mathbf{J}(\mathbf{x})^T \boldsymbol{\lambda} + \left(\mathbf{c}(\mathbf{x}) - \mathbf{s} \right)^T \mathbf{D}(\boldsymbol{\rho}) \mathbf{J}(\mathbf{x})\\
+           -\left(\mathbf{c}(\mathbf{x}) - \mathbf{s} \right) \\
+           \boldsymbol{\lambda} - \left(\mathbf{c}(\mathbf{x}) - \mathbf{s} \right)\mathbf{D}(\boldsymbol{\rho})
+     \end{array}
+     \right)
+\end{equation}
+%
+\begin{equation}
+     \phi'(\alpha) = \left[\mathbf{p}^T  \hspace{.05 in} \boldsymbol{\xi}^T \hspace{.05 in} \mathbf{q}^T \right]
+      \nabla \mathcal{L}\left( \mathbf{x}+\alpha \mathbf{p}, \boldsymbol{\lambda}+\alpha \mathbf{q}, \mathbf{s} +\alpha \boldsymbol{\xi}\right)
+\end{equation}
+%
+Define $\mathbf{r}$ such that $ \mathbf{r} \equiv \left( r_1,
+r_2,...,r_m\right)$ where $r_i = (c_i - s_i)^2$.  We chan choose the
+penalty parameters to minimize ...
+%
+\begin{equation}
+    \boldsymbol{\rho}* = \frac{\theta}{\mathbf{r}^T \mathbf{r}} \mathbf{r}
+\end{equation}
+%
+\begin{equation}
+    \theta = \mathbf{g}^T\mathbf{p} + (2 \boldsymbol{\lambda} - \boldsymbol{\mu})^T(\mathbf{c} - \mathbf{s}) +
+    \displaystyle\frac{1}{2}\mathbf{p}^T\mathbf{H}\mathbf{p}
+\end{equation}
+%
+\begin{equation}
+    \Delta_\rho
+\end{equation}
+%
+\begin{equation}
+ \bar{\rho}_i = \mbox{max}(\rho^*_i, \hat{\rho_i} ),  \hspace{.1 in} \mbox{where} \hspace{.1 in} \hat{\rho_i} = \left\{
+    \begin{array}{llcc}
+        \rho_i                                & \rho_i < 4(\rho_i^* + \Delta_\rho)  \\
+        (\rho_i(\rho_i^* + \Delta \rho)^{1/2} & \mbox{otherwise}  \\
+    \end{array}
+ \right.
+\end{equation}
+%
+The sufficient decrease conditions are
+%
+\begin{eqnarray}
+    \phi(\alpha) - \phi(0) &\leq& \sigma \alpha \phi'(0)\\
+    %
+    | \phi'(\alpha) | & \leq & -\eta \phi'(0)
+\end{eqnarray}
+%
+where $0 \leq \sigma \leq \eta \leq \frac{1}{2}$.
+
+
+
+\end{document}

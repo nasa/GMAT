@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Executing Finite Burns &#8212; API Cookbook R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    
+    <script src="../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Accessing GMAT Commands" href="commandaccess.html" />
+    <link rel="prev" title="STM and Covariance Propagation" href="stmpropagation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="commandaccess.html" title="Accessing GMAT Commands"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="stmpropagation.html" title="STM and Covariance Propagation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>Executing Finite Burns</strong></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="executing-finite-burns">
+<h1><strong>Executing Finite Burns</strong><a class="headerlink" href="#executing-finite-burns" title="Link to this heading">¶</a></h1>
+<section id="problem">
+<h2><strong>Problem</strong><a class="headerlink" href="#problem" title="Link to this heading">¶</a></h2>
+<p>GMAT’s thruster resources allow users to perform finite burns with control over their burn duration, burn direction, etc. in order to propagate maneuvers. A simple GMAT script example of the activation and deactivation of a finite burn can be found below:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">BeginMissionSequence</span><span class="p">;</span>
+<span class="c">%  Propagate for 1/10 of a day, without thrusters on.</span>
+<span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop 0.1 Days&#39;</span><span class="w"> </span><span class="s">prop(Sc)</span><span class="w"> </span><span class="s">{Sc.ElapsedSecs</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">8640</span><span class="p">};</span>
+
+<span class="c">%  Turn on thrusters....they will remain on through all events until the</span>
+<span class="c">%  &quot;EndFiniteBurn fb(Sc)&quot; command is executed.</span>
+<span class="n">BeginFiniteBurn</span><span class="w"> </span><span class="s">&#39;Turn on Thruster&#39;</span><span class="w"> </span><span class="s">fb(Sc)</span><span class="p">;</span>
+
+<span class="c">%  Propagate for 1 day, while thrusters are turned on.</span>
+<span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop 1 day&#39;</span><span class="w"> </span><span class="s">prop(Sc)</span><span class="w"> </span><span class="s">{Sc.ElapsedDays</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">};</span>
+
+<span class="c">%  Turn off thrusters</span>
+<span class="n">EndFiniteBurn</span><span class="w"> </span><span class="s">&#39;Turn off Thruster&#39;</span><span class="w"> </span><span class="s">fb(Sc)</span><span class="p">;</span>
+
+<span class="c">%  Propagate for 1 day</span>
+<span class="n">Propagate</span><span class="w"> </span><span class="s">&#39;Prop 1 Day&#39;</span><span class="w"> </span><span class="s">prop(Sc)</span><span class="w"> </span><span class="s">{Sc.ElapsedDays</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">};</span>
+</pre></div>
+</div>
+<p>API users need to be able to perform finite burn maneuvers while easily being able to modify propagation and burn sequences in order to make corrections to achieve desired maneuver goals.</p>
+</section>
+<section id="solution">
+<h2><strong>Solution</strong><a class="headerlink" href="#solution" title="Link to this heading">¶</a></h2>
+<p>To utilize GMAT’s finite burn capabilities through the API, users will need tank, thruster, FiniteBurn, and FiniteThrust objects. In this guide, we will focus on using a ChemicalTank and ChemicalThruster, but electric tanks and thrusters are also available options. The hardware will be attached to the desired Spacecraft, and the thrust force will be added to the ForceModel in use to propagate the Spacecraft with burns active. With everything set up, API users can turn thrusters on and off through the “IsFiring” boolean on a thruster and setting a Spacecraft’s and corresponding FiniteBurn’s maneuvering flags. An example covering these steps is shown below.</p>
+<section id="example-api-finite-burn">
+<h3>Example API Finite Burn<a class="headerlink" href="#example-api-finite-burn" title="Link to this heading">¶</a></h3>
+<p><strong>Step 1</strong>: Instantiate Spacecraft</p>
+<p>We need to create a spacecraft that will perform the maneuver. Most of the default Spacecraft settings will be used. The dry mass is reduced to allow more acceleration on the spacecraft during the maneuver. We will also set up a simple default Earth point mass ForceModel and a propagator.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Setup a spacecraft and basic propagation system</span>
+<span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;Sat&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DryMass&quot;</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">)</span>
+
+<span class="n">fm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ForceModel&quot;</span><span class="p">,</span> <span class="s2">&quot;FM&quot;</span><span class="p">)</span>
+<span class="n">epm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PointMassForce&quot;</span><span class="p">,</span> <span class="s2">&quot;EPM&quot;</span><span class="p">)</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">epm</span><span class="p">)</span>
+
+<span class="n">prop</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Propagator&quot;</span><span class="p">,</span> <span class="s2">&quot;Prop&quot;</span><span class="p">)</span>
+<span class="n">gator</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PrinceDormand78&quot;</span><span class="p">,</span> <span class="s2">&quot;Gator&quot;</span><span class="p">)</span>
+<span class="n">prop</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">gator</span><span class="p">)</span>
+<span class="n">prop</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">fm</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Step 2</strong>: Set Finite Burn specific settings</p>
+<p>To model fuel use and thrusting on a Spacecraft, we will attach a ChemicalTank and ChemicalThruster to the Spacecraft. Meanwhile for the burn sequence itself, we create a FiniteBurn object and connect it to the ChemicalThruster. Finally, a burn force is created as a FiniteThrust object and connected to both the FiniteBurn and the Spacecraft that is maneuvering. This force will later be added to the ForceModel so that the force can be applied.</p>
+<p>Note that the ChemicalThruster is where we set the thrust direction for the burn. For this case, we will simply use the default settings, applying thrust in the positive velocity direction of the Spacecraft with respect to the Earth.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Setup the spacecraft hardware</span>
+<span class="n">tank</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ChemicalTank&quot;</span><span class="p">,</span> <span class="s2">&quot;Fuel&quot;</span><span class="p">)</span>
+<span class="n">tank</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;FuelMass&quot;</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">)</span>
+<span class="n">thruster</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ChemicalThruster&quot;</span><span class="p">,</span> <span class="s2">&quot;Thruster&quot;</span><span class="p">)</span>
+<span class="n">thruster</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Tank&quot;</span><span class="p">,</span> <span class="s2">&quot;Fuel&quot;</span><span class="p">)</span>
+<span class="n">thruster</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DecrementMass&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Tanks&quot;</span><span class="p">,</span> <span class="s2">&quot;Fuel&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Thrusters&quot;</span><span class="p">,</span> <span class="s2">&quot;Thruster&quot;</span><span class="p">)</span>
+
+<span class="c1"># Ensure the system is up to date</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+
+<span class="c1"># Build the burn model used for the burn</span>
+<span class="n">burn</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;FiniteBurn&quot;</span><span class="p">,</span> <span class="s2">&quot;TheBurn&quot;</span><span class="p">)</span>
+<span class="n">burn</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Thrusters&quot;</span><span class="p">,</span> <span class="s2">&quot;Thruster&quot;</span><span class="p">)</span>
+<span class="n">burn</span><span class="o">.</span><span class="n">SetSolarSystem</span><span class="p">(</span><span class="n">gmat</span><span class="o">.</span><span class="n">GetSolarSystem</span><span class="p">())</span>
+<span class="n">burn</span><span class="o">.</span><span class="n">SetSpacecraftToManeuver</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+
+<span class="c1"># Build the force that applies the burn</span>
+<span class="k">def</span> <span class="nf">setThrust</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">bf</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">FiniteThrust</span><span class="p">(</span><span class="s2">&quot;Thrust&quot;</span><span class="p">)</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">SetRefObjectName</span><span class="p">(</span><span class="n">gmat</span><span class="o">.</span><span class="n">SPACECRAFT</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">GetName</span><span class="p">())</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">gmat</span><span class="o">.</span><span class="n">ConfigManager</span><span class="o">.</span><span class="n">Instance</span><span class="p">()</span><span class="o">.</span><span class="n">AddPhysicalModel</span><span class="p">(</span><span class="n">bf</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">bf</span>
+
+<span class="n">burnForce</span> <span class="o">=</span> <span class="n">setThrust</span><span class="p">(</span><span class="n">sat</span><span class="p">,</span> <span class="n">burn</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Step 3</strong>: Wire the objects together</p>
+<p>Here we initialize our setup and grab the ChemicalThruster object specifically owned by our Spacecraft. This ensures we are working with the thruster acting on and decreasing the fuel of our Spacecraft.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="n">prop</span><span class="o">.</span><span class="n">AddPropObject</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+<span class="n">prop</span><span class="o">.</span><span class="n">PrepareInternals</span><span class="p">()</span>
+
+<span class="c1"># Access the thruster cloned onto the spacecraft</span>
+<span class="n">theThruster</span> <span class="o">=</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetRefObject</span><span class="p">(</span><span class="n">gmat</span><span class="o">.</span><span class="n">THRUSTER</span><span class="p">,</span> <span class="s2">&quot;Thruster&quot;</span><span class="p">)</span>
+
+<span class="c1"># Check the spacecraft mass</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sat</span><span class="o">.</span><span class="n">GetName</span><span class="p">(),</span> <span class="s2">&quot; current mass:  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;TotalMass&quot;</span><span class="p">),</span> <span class="s2">&quot; kg</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Step 4</strong>: Propagate</p>
+<p>In order to switch between a non-firing and firing state, we will need to set whether our ChemicalThruster is firing, our Spacecraft is maneuvering, and what Spacecraft our FiniteBurn is affecting. With everything turned on, we then add our FiniteThrust object from Step 2 to the ForceModel. In this example, our burn will be used to raise the SMA.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Take a few steps</span>
+<span class="n">elapsed</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="n">dt</span> <span class="o">=</span> <span class="mf">60.0</span>
+<span class="n">gator</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">GetPropagator</span><span class="p">()</span>
+
+<span class="c1"># Step for 10 minutes</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> Propagate 10 minutes without a        burn</span><span class="se">\n</span><span class="s2">-------------------------------------------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Firing: &quot;</span><span class="p">,</span> <span class="n">theThruster</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;IsFiring&quot;</span><span class="p">),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">state</span> <span class="o">=</span> <span class="n">gator</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">vsq</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+<span class="n">sma</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">vsq</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">elapsed</span><span class="p">,</span> <span class="n">sma</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;TotalMass&quot;</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">gator</span><span class="o">.</span><span class="n">Step</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">elapsed</span> <span class="o">+</span> <span class="n">dt</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">gator</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">vsq</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">sma</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">vsq</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">elapsed</span><span class="p">,</span> <span class="n">sma</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;TotalMass&quot;</span><span class="p">))</span>
+        <span class="n">gator</span><span class="o">.</span><span class="n">UpdateSpaceObject</span><span class="p">()</span>
+
+<span class="c1"># Step for 30 minutes with a burn</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> Propagate 30 minutes with a burn</span><span class="se">\n</span><span class="s2">-------------------------------------------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># -----------------------------</span>
+<span class="c1"># Finite Burn Specific Settings</span>
+<span class="c1"># -----------------------------</span>
+<span class="c1"># Turn on the thruster</span>
+<span class="n">theThruster</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;IsFiring&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">IsManeuvering</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1">#sat.SetPropItem(&quot;MassFlow&quot;)</span>
+<span class="n">burn</span><span class="o">.</span><span class="n">SetSpacecraftToManeuver</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+<span class="c1">#burn.TakeAction(&quot;SetData&quot;)</span>
+
+<span class="c1"># Add the thrust to the force model</span>
+<span class="n">prop</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">burnForce</span><span class="p">)</span>
+<span class="n">psm</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">GetPropStateManager</span><span class="p">()</span>
+<span class="n">psm</span><span class="o">.</span><span class="n">SetProperty</span><span class="p">(</span><span class="s2">&quot;MassFlow&quot;</span><span class="p">)</span>
+<span class="c1"># -----------------------------</span>
+
+<span class="n">prop</span><span class="o">.</span><span class="n">PrepareInternals</span><span class="p">()</span>
+<span class="n">gator</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">GetPropagator</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Firing: &quot;</span><span class="p">,</span> <span class="n">theThruster</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;IsFiring&quot;</span><span class="p">),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Now propagate thruogh the burn</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+        <span class="n">gator</span><span class="o">.</span><span class="n">Step</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">elapsed</span> <span class="o">+</span> <span class="n">dt</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">gator</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">vsq</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">sma</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">vsq</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">elapsed</span><span class="p">,</span> <span class="n">sma</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;TotalMass&quot;</span><span class="p">))</span>
+        <span class="n">gator</span><span class="o">.</span><span class="n">UpdateSpaceObject</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Step 5</strong>: Turn off the Thruster</p>
+<p>We now simply undo our work from Step 4, turning off the burn.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">GetODEModel</span><span class="p">()</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">DeleteForce</span><span class="p">(</span><span class="n">burnForce</span><span class="p">)</span>
+<span class="n">theThruster</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;IsFiring&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">IsManeuvering</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">prop</span><span class="o">.</span><span class="n">PrepareInternals</span><span class="p">()</span>
+<span class="n">gator</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">GetPropagator</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="discussion">
+<h2><strong>Discussion</strong><a class="headerlink" href="#discussion" title="Link to this heading">¶</a></h2>
+<p>This example provides all the core elements required to develop more complex maneuvers through finite burns. By using the IsFiring field on thrusters and managing ForceModel forces, finite burns can be controlled through propagation to apply staggered burn sequences. Here a simple loop stepping through 30 time steps was used for the burn, but a user could also set up different goals through Python (for example, having the burn run until a desired SMA was achieved).</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#"><strong>Executing Finite Burns</strong></a><ul>
+<li><a class="reference internal" href="#problem"><strong>Problem</strong></a></li>
+<li><a class="reference internal" href="#solution"><strong>Solution</strong></a><ul>
+<li><a class="reference internal" href="#example-api-finite-burn">Example API Finite Burn</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#discussion"><strong>Discussion</strong></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="stmpropagation.html"
+                          title="previous chapter"><strong>STM and Covariance Propagation</strong></a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="commandaccess.html"
+                          title="next chapter">Accessing GMAT Commands</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/finiteBurn.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="commandaccess.html" title="Accessing GMAT Commands"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="stmpropagation.html" title="STM and Covariance Propagation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>Executing Finite Burns</strong></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

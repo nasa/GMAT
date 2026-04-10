@@ -1,0 +1,182 @@
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+GMAT DefaultSC.DateFormat = TAIModJulian;
+GMAT DefaultSC.Epoch = 21545.000000000;
+GMAT DefaultSC.CoordinateSystem = EarthMJ2000Eq;
+GMAT DefaultSC.DisplayStateType = Cartesian;
+GMAT DefaultSC.X = 7100;
+GMAT DefaultSC.Y = 0;
+GMAT DefaultSC.Z = 1300;
+GMAT DefaultSC.VX = 0;
+GMAT DefaultSC.VY = 7.35;
+GMAT DefaultSC.VZ = 1;
+GMAT DefaultSC.DryMass = 850;
+GMAT DefaultSC.Cd = 2.2;
+GMAT DefaultSC.Cr = 1.8;
+GMAT DefaultSC.DragArea = 15;
+GMAT DefaultSC.SRPArea = 1;
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+GMAT DefaultProp_ForceModel.CentralBody = Earth;
+GMAT DefaultProp_ForceModel.PrimaryBodies = {Earth};
+GMAT DefaultProp_ForceModel.Drag = None;
+GMAT DefaultProp_ForceModel.SRP = Off;
+GMAT DefaultProp_ForceModel.ErrorControl = RSSStep;
+GMAT DefaultProp_ForceModel.Gravity.Earth.Degree = 4;
+GMAT DefaultProp_ForceModel.Gravity.Earth.Order = 4;
+GMAT DefaultProp_ForceModel.Gravity.Earth.PotentialFile = JGM2.cof;
+
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+GMAT DefaultProp.FM = DefaultProp_ForceModel;
+GMAT DefaultProp.Type = RungeKutta89;
+GMAT DefaultProp.InitialStepSize = 60;
+GMAT DefaultProp.Accuracy = 9.999999999999999e-012;
+GMAT DefaultProp.MinStep = 0.001;
+GMAT DefaultProp.MaxStep = 2700;
+GMAT DefaultProp.MaxStepAttempts = 50;
+
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn DefaultIB;
+GMAT DefaultIB.Origin = Earth;
+GMAT DefaultIB.Axes = VNB;
+GMAT DefaultIB.VectorFormat = Cartesian;
+GMAT DefaultIB.Element1 = 0;
+GMAT DefaultIB.Element2 = 0;
+GMAT DefaultIB.Element3 = 0;
+
+
+%----------------------------------------
+%---------- Parameters
+%----------------------------------------
+
+
+Create String stringVar 
+GMAT stringVar = stringVar
+
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthMJ2000Eq;
+GMAT EarthMJ2000Eq.Origin = Earth;
+GMAT EarthMJ2000Eq.Axes = MJ2000Eq;
+GMAT EarthMJ2000Eq.UpdateInterval = 60;
+GMAT EarthMJ2000Eq.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthMJ2000Ec;
+GMAT EarthMJ2000Ec.Origin = Earth;
+GMAT EarthMJ2000Ec.Axes = MJ2000Ec;
+GMAT EarthMJ2000Ec.UpdateInterval = 60;
+GMAT EarthMJ2000Ec.OverrideOriginInterval = false;
+
+Create CoordinateSystem EarthFixed;
+GMAT EarthFixed.Origin = Earth;
+GMAT EarthFixed.Axes = BodyFixed;
+GMAT EarthFixed.UpdateInterval = 60;
+GMAT EarthFixed.OverrideOriginInterval = false;
+
+
+%----------------------------------------
+%---------- Plots and Reports
+%----------------------------------------
+
+Create OpenGLPlot DefaultOpenGL;
+GMAT DefaultOpenGL.SolverIterations = None;
+GMAT DefaultOpenGL.Add = {DefaultSC, Earth};
+GMAT DefaultOpenGL.OrbitColor = [ 255 32768 ];
+GMAT DefaultOpenGL.CoordinateSystem = EarthMJ2000Eq;
+GMAT DefaultOpenGL.ViewPointReference = Earth;
+GMAT DefaultOpenGL.ViewPointVector = [ 0 0 30000 ];
+GMAT DefaultOpenGL.ViewDirection = Earth;
+GMAT DefaultOpenGL.ViewScaleFactor = 1;
+GMAT DefaultOpenGL.ViewUpCoordinateSystem = EarthMJ2000Eq;
+GMAT DefaultOpenGL.ViewUpAxis = Z;
+GMAT DefaultOpenGL.CelestialPlane = Off;
+GMAT DefaultOpenGL.XYPlane = On;
+GMAT DefaultOpenGL.WireFrame = Off;
+GMAT DefaultOpenGL.Axes = On;
+GMAT DefaultOpenGL.Grid = Off;
+GMAT DefaultOpenGL.SunLine = Off;
+GMAT DefaultOpenGL.UseInitialView = On;
+GMAT DefaultOpenGL.DataCollectFrequency = 1;
+GMAT DefaultOpenGL.UpdatePlotFrequency = 50;
+GMAT DefaultOpenGL.NumPointsToRedraw = 0;
+GMAT DefaultOpenGL.ShowPlot = true;
+
+Create ReportFile AutoReport;
+GMAT AutoReport.SolverIterations = None;
+GMAT AutoReport.Filename = ./output/AutoReport.txt;
+GMAT AutoReport.Precision = 16;
+GMAT AutoReport.Add = {DefaultSC.UTCGregorian, DefaultSC.EarthMJ2000Eq.X, DefaultSC.EarthMJ2000Eq.Y, DefaultSC.EarthMJ2000Eq.Z, DefaultSC.EarthMJ2000Eq.VX, DefaultSC.EarthMJ2000Eq.VY, DefaultSC.EarthMJ2000Eq.VZ};
+GMAT AutoReport.WriteHeaders = On;
+GMAT AutoReport.LeftJustify = On;
+GMAT AutoReport.ZeroFill = Off;
+GMAT AutoReport.ColumnWidth = 20;
+
+Create ReportFile ManualReport;
+GMAT ManualReport.SolverIterations = None;
+GMAT ManualReport.Filename = ./output/ManualReport.txt;
+GMAT ManualReport.Precision = 16;
+GMAT ManualReport.WriteHeaders = On;
+GMAT ManualReport.LeftJustify = On;
+GMAT ManualReport.ZeroFill = Off;
+GMAT ManualReport.ColumnWidth = 20;
+
+Create ReportFile DecoratedReport;
+GMAT DecoratedReport.SolverIterations = None;
+GMAT DecoratedReport.Filename = ./output/DecoratedReport.txt;
+GMAT DecoratedReport.Precision = 16;
+GMAT DecoratedReport.Add = {DefaultSC.UTCGregorian, DefaultSC.EarthMJ2000Eq.X, DefaultSC.EarthMJ2000Eq.Y, DefaultSC.EarthMJ2000Eq.Z, DefaultSC.EarthMJ2000Eq.VX, DefaultSC.EarthMJ2000Eq.VY, DefaultSC.EarthMJ2000Eq.VZ};
+GMAT DecoratedReport.WriteHeaders = On;
+GMAT DecoratedReport.LeftJustify = On;
+GMAT DecoratedReport.ZeroFill = Off;
+GMAT DecoratedReport.ColumnWidth = 20;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+
+Report ManualReport DefaultSC.UTCGregorian DefaultSC.EarthMJ2000Eq.X DefaultSC.EarthMJ2000Eq.Y DefaultSC.EarthMJ2000Eq.Z DefaultSC.EarthMJ2000Eq.VX DefaultSC.EarthMJ2000Eq.VY DefaultSC.EarthMJ2000Eq.VZ 
+
+BeginScript;
+   GMAT DecoratedReport.WriteHeaders = Off; % Turn report headers off
+   GMAT stringVar = '=================================================='; % Heading
+   Report DecoratedReport stringVar;   % Outputs the string variable to the report
+   GMAT stringVar = GMAT Report File in Time X Y Z VX VY VZ format; % Heading
+   Report DecoratedReport stringVar;   % Outputs the string variable to the report
+   GMAT stringVar = '=================================================='; % Heading
+   Report DecoratedReport stringVar;   % Outputs the string variable to the report
+   GMAT DecoratedReport.WriteHeaders = On; % Turn report headers back on
+EndScript;
+
+Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 8640.0};
+
+Maneuver DefaultIB(DefaultSC);
+
+BeginScript;
+EndScript;
+
+Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 8640.0};
+Report ManualReport DefaultSC.UTCGregorian DefaultSC.EarthMJ2000Eq.X DefaultSC.EarthMJ2000Eq.Y DefaultSC.EarthMJ2000Eq.Z DefaultSC.EarthMJ2000Eq.VX DefaultSC.EarthMJ2000Eq.VY DefaultSC.EarthMJ2000Eq.VZ 
+

@@ -1,0 +1,195 @@
+%
+%  Ex_Phase_Type_ImplicitRKOrder6
+%
+%  Sample optimal control script using a 6th-order implicit Runge-Kutta (IRK) transcription.
+%
+%  Released: R2020a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+%----------------------------------------
+% Create a spacecraft names aSat.  Guess is set later.
+%----------------------------------------
+Create Spacecraft aSat
+
+aSat.DryMass = 1000
+aSat.Tanks   = {ChemicalTank1};
+
+%----------------------------------------
+% Create a chemical tank
+%----------------------------------------
+
+Create ChemicalTank ChemicalTank1;
+
+ChemicalTank1.AllowNegativeFuelMass = false;
+ChemicalTank1.FuelMass              = 3000;
+ChemicalTank1.Pressure              = 1500;
+ChemicalTank1.Temperature           = 20;
+ChemicalTank1.RefTemperature        = 20;
+ChemicalTank1.Volume                = 3;
+ChemicalTank1.FuelDensity           = 1260;
+ChemicalTank1.PressureModel         = PressureRegulated;
+
+%----------------------------------------
+% Create an orbit dynamics model with Earth, Sun, Moon point mass
+%----------------------------------------
+Create ForceModel DeepSpaceForceModel;
+
+DeepSpaceForceModel.CentralBody = Sun;
+DeepSpaceForceModel.PointMasses = {Sun};
+DeepSpaceForceModel.Drag        = None;
+DeepSpaceForceModel.SRP         = Off;
+
+%----------------------------------------
+% Create an emtgThrustModel Resource
+%----------------------------------------
+Create EMTGSpacecraft emtgThrustModel;
+
+emtgThrustModel.SpacecraftFile = FixedThrustAndIsp_Model2.emtg_spacecraftopt
+emtgThrustModel.DutyCycle      = 1.0
+
+%----------------------------------------
+% Create a DynamicsConfiguration object and add spacecraft
+% ForceModel and Thrust model
+%----------------------------------------
+Create DynamicsConfiguration SunThrustDynConfig
+
+SunThrustDynConfig.ForceModels    = {DeepSpaceForceModel};
+SunThrustDynConfig.Spacecraft     = {aSat}
+SunThrustDynConfig.FiniteBurns    = {emtgThrustModel}
+SunThrustDynConfig.EMTGTankConfig = {ChemicalTank1};
+
+%----------------------------------------
+% Create a guess object that uses a file-based guess source
+%----------------------------------------
+Create OptimalControlGuess trajectoryGuess
+
+trajectoryGuess.Type     = CollocationGuessFile  
+trajectoryGuess.FileName = ../data/misc/GuessWithUnityControl.och
+
+%----------------------------------------
+%  Create a phase and set transcription and parameter bounds
+%----------------------------------------
+Create Phase thePhase
+
+thePhase.Type                  = ImplicitRKOrder6	
+thePhase.ThrustMode            = Thrust
+thePhase.DynamicsConfiguration = SunThrustDynConfig
+thePhase.SubPhaseBoundaries    = [0 1]
+thePhase.PointsPerSubPhase     = [30]
+thePhase.GuessSource           = trajectoryGuess
+thePhase.EpochFormat           = A1ModJulian
+
+thePhase.EpochLowerBound = 30537.58129245887
+thePhase.EpochUpperBound = 32406.49962790855
+thePhase.StateLowerBound =  [ -1.49598e+09 -1.49598e+09 -1.49598e+09 ...
+                              -100 -100 -100 0.00001]
+thePhase.StateUpperBound = [ 1.49598e+09  1.49598e+09 1.49598e+09 ...
+                             100 100 100 4000]
+thePhase.ControlLowerBound         = [ -1  -1  -1]
+thePhase.ControlUpperBound         = [ 1  1  1]
+thePhase.InitialEpoch              = 30542.0
+thePhase.FinalEpoch                = 30692.0
+thePhase.MaxRelativeErrorTolerance = 1e-4
+thePhase.BuiltInCost               = 'RMAGFinal'
+
+%----------------------------------------
+% Create constraint that applies the initial conditions
+%----------------------------------------
+Create CustomLinkageConstraint initialConditions;
+
+initialConditions.ConstraintMode           = Absolute;
+initialConditions.InitialPhase             = thePhase;
+initialConditions.InitialPhaseBoundaryType = Start;
+initialConditions.SetModelParameter('TimeLowerBound', 'A1ModJulian', 30542)
+initialConditions.SetModelParameter('TimeUpperBound', 'A1ModJulian', 30542)
+initialConditions.SetModelParameter('PositionLowerBound', [125291184 -75613036 -32788527])
+initialConditions.SetModelParameter('PositionUpperBound', [125291184 -75613036 -32788527])
+initialConditions.SetModelParameter('VelocityLowerBound', [13.438 25.234 10.903])
+initialConditions.SetModelParameter('VelocityUpperBound', [13.438 25.234 10.903])
+initialConditions.SetModelParameter('MassLowerBound', 4000)
+initialConditions.SetModelParameter('MassUpperBound', 4000)
+
+%----------------------------------------
+% Create a constraint on Phase duration. Duration must be 
+% 250 days = 21600000 seconds
+%----------------------------------------
+
+Create CustomLinkageConstraint duration_Thrust;
+
+duration_Thrust.ConstraintMode           = Difference;
+duration_Thrust.InitialPhase             = thePhase;
+duration_Thrust.InitialPhaseBoundaryType = Start;
+duration_Thrust.FinalPhase               = thePhase;
+duration_Thrust.FinalPhaseBoundaryType   = End;
+duration_Thrust.SetModelParameter('TimeLowerBound', ElapsedDays, 250)
+duration_Thrust.SetModelParameter('TimeUpperBound', ElapsedDays, 250)
+
+%----------------------------------------
+% Create the trajectory and add constraints
+%----------------------------------------
+
+Create Trajectory traj
+
+traj.PhaseList                    = {thePhase}
+traj.GuessSource                  = trajectoryGuess;
+traj.SolutionFile                 = 'Phase_Type_ImplicitRKOrder6.och';
+traj.StateScaleMode               = Canonical;
+traj.MassScaleFactor              = 4000;
+traj.MaxMeshRefinementIterations  = 5;
+traj.CustomLinkages               = {initialConditions, duration_Thrust}
+traj.MajorIterationsLimits        = [200 500];
+traj.TotalIterationsLimits        = [20000];
+traj.FeasibilityTolerances        = [1e-3,1e-3,1e-7];
+traj.MajorOptimalityTolerances    = [1e-2,1e-2,1e-5];
+traj.OptimizationMode             = {Maximize};
+traj.AllowFailedMeshOptimizations = True
+traj.PublishUpdateRate            = 10
+
+
+Create CoordinateSystem SunMJ2000Ec;
+
+SunMJ2000Ec.Origin = Sun;
+SunMJ2000Ec.Axes   = MJ2000Ec;
+
+
+Create CoordinateSystem SunMJ2000Eq;
+
+SunMJ2000Eq.Origin = Sun;
+SunMJ2000Eq.Axes   = MJ2000Eq;
+
+
+Create ReportFile rf;
+
+rf.SolverIterations = Current;
+rf.UpperLeft        = [ 0 0 ];
+rf.Size             = [ 0 0 ];
+rf.RelativeZOrder   = 0;
+rf.Maximized        = false;
+rf.Filename         = 'rf.txt';
+rf.Precision        = 16;
+rf.Add              = {aSat.A1ModJulian, aSat.SunMJ2000Eq.X, aSat.SunMJ2000Eq.Y, aSat.SunMJ2000Eq.Z, aSat.SunMJ2000Eq.VX, aSat.SunMJ2000Eq.VY, aSat.SunMJ2000Eq.VZ};
+rf.WriteHeaders     = true;
+rf.LeftJustify      = On;
+rf.ZeroFill         = Off;
+rf.FixedWidth       = true;
+rf.Delimiter        = ' ';
+rf.ColumnWidth      = 23;
+rf.WriteReport      = true;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+%----------------------------------------
+% Run the mission
+%----------------------------------------
+   
+BeginMissionSequence
+
+Collocate traj

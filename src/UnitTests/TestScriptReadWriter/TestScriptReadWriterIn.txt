@@ -1,0 +1,286 @@
+%  Script Mission - Lunar Transfer Example
+%
+%  This script demonstrates how to set up a lunar transfer mission
+%
+%  REVSION HISTORY
+%  $Id: Ex_LunarTransfer.script,v 1.1 2007/08/22 19:15:13 shughes Exp $
+
+
+%**************************************************************************
+%************ Create Objects for Use in Mission Sequence ******************
+%**************************************************************************
+
+
+%--------------------------------------------------------------------------
+%----------------- SpaceCraft, Formations, Constellations -----------------
+%--------------------------------------------------------------------------
+
+
+Create Spacecraft MMSRef;
+GMAT MMSRef.Epoch.UTCGregorian = 22 Jul 2014 11:29:10.811;
+GMAT MMSRef.CoordinateSystem = EarthMJ2000Eq;
+GMAT MMSRef.DisplayStateType = Cartesian;
+GMAT MMSRef.AnomalyType = TA;
+GMAT MMSRef.X = -137380.19843385062;
+GMAT MMSRef.Y = 75679.878675370544;
+GMAT MMSRef.Z = 21487.638751878556;
+GMAT MMSRef.VX = -0.23245320142355028;
+GMAT MMSRef.VY = -0.44627539677580192;
+GMAT MMSRef.VZ = 0.085612056628771024;
+GMAT MMSRef.DryMass = 1000;
+GMAT MMSRef.Cd = 2.2000000000000002;
+GMAT MMSRef.Cr = 1.7;
+GMAT MMSRef.DragArea = 15;
+GMAT MMSRef.SRPArea = 1;
+
+Create CoordinateSystem EarthSunRot;
+GMAT EarthSunRot.Origin = Earth;
+GMAT EarthSunRot.J2000Body = Earth;
+GMAT EarthSunRot.Axes = ObjectReferenced;
+GMAT EarthSunRot.Epoch = 21545.000000397937;
+GMAT EarthSunRot.UpdateInterval = 60;
+GMAT EarthSunRot.XAxis = R;
+GMAT EarthSunRot.ZAxis = N;
+GMAT EarthSunRot.Primary = Sun;
+GMAT EarthSunRot.Secondary = Earth; 
+
+%--------------------------------------------------------------------------
+%--------------------------------- Burns ----------------------------------
+%--------------------------------------------------------------------------
+
+Create ImpulsiveBurn LSI;
+GMAT LSI.Origin = Earth;
+GMAT LSI.Axes = VNB;
+GMAT LSI.VectorFormat = Cartesian;
+GMAT LSI.V = 0.14676929889000001;
+GMAT LSI.N = 0.046042675892;
+GMAT LSI.B = 0.090223244096999999;
+
+
+Create ImpulsiveBurn ALM;
+GMAT ALM.Origin = Earth;
+GMAT ALM.Axes = VNB;
+GMAT ALM.VectorFormat = Cartesian;
+GMAT ALM.V = -0.3198120104;
+
+Create ImpulsiveBurn LOI
+GMAT LOI.Origin = Luna;
+GMAT LOI.Axes   = VNB;
+GMAT LOI.V      = -0.652;
+
+%--------------------------------------------------------------------------
+%------------------------------ Propagators -------------------------------
+%--------------------------------------------------------------------------
+
+Create ForceModel LunarSB_ForceModel;
+GMAT LunarSB_ForceModel.CentralBody = Earth;
+GMAT LunarSB_ForceModel.PointMasses = {Earth, Sun, Luna};
+GMAT LunarSB_ForceModel.Drag = None;
+GMAT LunarSB_ForceModel.SRP = Off;
+GMAT LunarSB_ForceModel.ErrorControl = RSSStep;
+
+Create Propagator LunarSB;
+GMAT LunarSB.FM = LunarSB_ForceModel;
+GMAT LunarSB.Type = RungeKutta89;
+GMAT LunarSB.InitialStepSize = 60;
+GMAT LunarSB.Accuracy = 1e-011;
+GMAT LunarSB.MinStep = 0.001;
+GMAT LunarSB.MaxStep = 45000;
+GMAT LunarSB.MaxStepAttempts = 50;
+
+Create ForceModel MoonCentered_ForceModel;
+GMAT MoonCentered_ForceModel.CentralBody = Luna;
+GMAT MoonCentered_ForceModel.PointMasses = {Earth, Sun, Luna};
+GMAT MoonCentered_ForceModel.Drag = None;
+GMAT MoonCentered_ForceModel.SRP = Off;
+GMAT MoonCentered_ForceModel.ErrorControl = RSSStep;
+
+Create Propagator MoonCentered;
+GMAT MoonCentered.FM = MoonCentered_ForceModel;
+GMAT MoonCentered.Type = RungeKutta89;
+GMAT MoonCentered.InitialStepSize = 60;
+GMAT MoonCentered.Accuracy = 1e-011;
+GMAT MoonCentered.MinStep = 0.001;
+GMAT MoonCentered.MaxStep = 15000;
+GMAT MoonCentered.MaxStepAttempts = 50;
+
+
+GMAT SolarSystem.EphemerisUpdateInterval = 0.0
+
+%--------------------------------------------------------------------------
+%-------------------------------- Solvers ---------------------------------
+%--------------------------------------------------------------------------
+
+Create DifferentialCorrector DC1;
+
+
+%--------------------------------------------------------------------------
+%-------------------------- Plots and Reports -----------------------------
+%--------------------------------------------------------------------------
+
+Create OpenGLPlot OGL_EarthMJ2K;
+GMAT OGL_EarthMJ2K.Add = {MMSRef, Earth, Luna};
+GMAT OGL_EarthMJ2K.CoordinateSystem = EarthMJ2000Eq;
+GMAT OGL_EarthMJ2K.ViewPointRef = Earth;
+GMAT OGL_EarthMJ2K.ViewPointVector = Vector;
+GMAT OGL_EarthMJ2K.ViewDirection = Earth;
+GMAT OGL_EarthMJ2K.ViewScaleFactor = 30;
+GMAT OGL_EarthMJ2K.FixedFovAngle = 50;
+GMAT OGL_EarthMJ2K.ViewUpCoordinateSystem = EarthMJ2000Eq;
+GMAT OGL_EarthMJ2K.ViewUpAxis = X;
+GMAT OGL_EarthMJ2K.CelestialPlane = Off;
+GMAT OGL_EarthMJ2K.XYPlane = On;
+GMAT OGL_EarthMJ2K.WireFrame = Off;
+GMAT OGL_EarthMJ2K.TargetStatus = Off;
+GMAT OGL_EarthMJ2K.Axes = On;
+GMAT OGL_EarthMJ2K.PerspectiveMode = Off;
+GMAT OGL_EarthMJ2K.UseFixedFov = Off;
+GMAT OGL_EarthMJ2K.DataCollectFrequency = 1;
+GMAT OGL_EarthMJ2K.UpdatePlotFrequency = 50;
+GMAT OGL_EarthMJ2K.NumPointsToRedraw = 0;
+GMAT OGL_EarthMJ2K.UseInitialView = On;
+
+Create OpenGLPlot OGL_MoonMJ2K;
+GMAT OGL_MoonMJ2K.Add = {MMSRef, Earth, Luna};
+GMAT OGL_MoonMJ2K.CoordinateSystem = MoonMJ2000Eq;
+GMAT OGL_MoonMJ2K.ViewPointRef = Luna;
+GMAT OGL_MoonMJ2K.ViewPointVector = Vector;
+GMAT OGL_MoonMJ2K.ViewDirection = Luna;
+GMAT OGL_MoonMJ2K.ViewScaleFactor = 1;
+GMAT OGL_MoonMJ2K.FixedFovAngle = 45;
+GMAT OGL_MoonMJ2K.ViewUpCoordinateSystem = MoonMJ2000Eq;
+GMAT OGL_MoonMJ2K.ViewUpAxis = X;
+GMAT OGL_MoonMJ2K.CelestialPlane = Off;
+GMAT OGL_MoonMJ2K.XYPlane = On;
+GMAT OGL_MoonMJ2K.WireFrame = Off;
+GMAT OGL_MoonMJ2K.TargetStatus = On;
+GMAT OGL_MoonMJ2K.Axes = On;
+GMAT OGL_MoonMJ2K.EarthSunLines = Off;
+GMAT OGL_MoonMJ2K.PerspectiveMode = Off;
+GMAT OGL_MoonMJ2K.UseFixedFov = Off;
+GMAT OGL_MoonMJ2K.DataCollectFrequency = 1;
+GMAT OGL_MoonMJ2K.UpdatePlotFrequency = 50;
+GMAT OGL_MoonMJ2K.NumPointsToRedraw = 0;
+
+
+Create OpenGLPlot OGL_EarthMoonRot;
+GMAT OGL_EarthMoonRot.Add = {MMSRef, Earth, Luna};
+GMAT OGL_EarthMoonRot.CoordinateSystem = EarthMoonRot;
+GMAT OGL_EarthMoonRot.ViewPointRef = Luna;
+GMAT OGL_EarthMoonRot.ViewPointVector = Vector;
+GMAT OGL_EarthMoonRot.ViewDirection = Luna;
+GMAT OGL_EarthMoonRot.ViewScaleFactor = 10;
+GMAT OGL_EarthMoonRot.FixedFovAngle = 5;
+GMAT OGL_EarthMoonRot.ViewUpCoordinateSystem = EarthMoonRot;
+GMAT OGL_EarthMoonRot.ViewUpAxis = X;
+GMAT OGL_EarthMoonRot.CelestialPlane = Off;
+GMAT OGL_EarthMoonRot.XYPlane = On;
+GMAT OGL_EarthMoonRot.WireFrame = Off;
+GMAT OGL_EarthMoonRot.TargetStatus = On;
+GMAT OGL_EarthMoonRot.Axes = On;
+GMAT OGL_EarthMoonRot.EarthSunLines = Off;
+GMAT OGL_EarthMoonRot.PerspectiveMode = Off;
+GMAT OGL_EarthMoonRot.UseFixedFov = Off;
+GMAT OGL_EarthMoonRot.DataCollectFrequency = 1;
+GMAT OGL_EarthMoonRot.UpdatePlotFrequency = 50;
+GMAT OGL_EarthMoonRot.NumPointsToRedraw = 0;
+
+Create XYPlot RadApoPlot
+GMAT RadApoPlot.IndVar = MMSRef.CurrA1MJD;
+GMAT RadApoPlot.Add    = { MMSRef.RMAG };
+GMAT RadApoPlot.Grid = On;
+GMAT RadApoPlot.TargetStatus = Off;
+
+Create ReportFile Data;
+GMAT Data.Filename = ./output/SampleMissions/Ex_LunarTransfer.report;
+GMAT Data.Precision = 16
+GMAT Data.WriteHeaders = On;
+GMAT Data.ColumnWidth = 20;
+
+%--------------------------------------------------------------------------
+%-------------------------- Coordinate Systems ----------------------------
+%--------------------------------------------------------------------------
+
+Create CoordinateSystem MoonMJ2000Eq;
+GMAT MoonMJ2000Eq.Origin = Luna;
+GMAT MoonMJ2000Eq.Axes = MJ2000Eq;
+
+Create CoordinateSystem EarthMoonRot;
+GMAT EarthMoonRot.Origin = Luna;
+GMAT EarthMoonRot.Axes = ObjectReferenced;
+GMAT EarthMoonRot.XAxis = R;
+GMAT EarthMoonRot.ZAxis = N;
+GMAT EarthMoonRot.Primary = Earth;
+GMAT EarthMoonRot.Secondary = Luna;
+
+%--------------------------------------------------------------------------
+%**************************************************************************
+%**************************The Mission Sequence****************************
+%**************************************************************************
+%--------------------------------------------------------------------------
+
+Toggle RadApoPlot Off;
+
+%------------------------------
+%  Propagate to Earth periapsis
+%------------------------------
+Report Data MMSRef.A1ModJulian MMSRef.X MMSRef.Y MMSRef.Z MMSRef.VX MMSRef.VY MMSRef.VZ;
+GMAT Data.WriteHeaders = Off;
+Propagate LunarSB(MMSRef, {MMSRef.Periapsis});
+Report Data MMSRef.A1ModJulian MMSRef.X MMSRef.Y MMSRef.Z MMSRef.VX MMSRef.VY MMSRef.VZ;
+
+%------------------------------
+%  Target Lunar B-plane
+%------------------------------
+Target DC1
+
+     %--  This varies the LSI maneuver
+     %  My Comment Stuff
+     %--
+
+     Vary DC1(LSI.V = 0.1462 , {Perturbation = 1e-005, MaxStep = .01, Lower = .13, Upper = .5});
+     %Vary DC1(LSI.N = 0.046042 , {Perturbation = 1e-005, MaxStep = .01, Lower = -.5, Upper = .5});
+     Vary DC1(LSI.B = 0.1086 , {Perturbation = 1e-005, MaxStep = .01, Lower = -.5, Upper = .5});
+
+     %----------------------------
+     %  Another comment block test
+     %  Another comment block test
+     %  Another comment block test
+     %----------------------------
+     Maneuver LSI(MMSRef);
+     
+     Propagate LunarSB(MMSRef, {MMSRef.ElapsedDays = 1.5});
+     Propagate MoonCentered(MMSRef, {MMSRef.Luna.Periapsis});
+
+
+     %  My Comment Stuff
+     Achieve DC1(MMSRef.MoonMJ2000Eq.BdotT = 15000.4401777 , {Tolerance = 3}); 
+     Achieve DC1(MMSRef.MoonMJ2000Eq.BdotR = 4000.59308992  , {Tolerance = 3}); 
+     %Achieve DC1(MMSRef.RMAG = 390000 , {Tolerance = 200000}); 
+
+EndTarget
+Report Data MMSRef.A1ModJulian MMSRef.X MMSRef.Y MMSRef.Z MMSRef.VX MMSRef.VY MMSRef.VZ;
+
+%------------------------------
+% Target to orbit the Moon
+%------------------------------
+Target DC1
+
+     Vary DC1(LOI.V = -0.65198120104, {Perturbation = 1e-003, MaxStep = .3, Lower = -3, Upper = 0});
+
+     Maneuver LOI(MMSRef);
+     Propagate MoonCentered(MMSRef, {MMSRef.Luna.Periapsis});
+
+     Achieve DC1(MMSRef.MoonMJ2000Eq.VMAG = 1, {Tolerance = 0.01}); 
+
+EndTarget
+Report Data MMSRef.A1ModJulian MMSRef.X MMSRef.Y MMSRef.Z MMSRef.VX MMSRef.VY MMSRef.VZ;
+
+%------------------------------
+% Propagate for a few days
+%------------------------------
+Toggle RadApoPlot On;
+
+Propagate MoonCentered(MMSRef, {MMSRef.ElapsedDays = 15});
+Save Earth;
+Report Data MMSRef.A1ModJulian MMSRef.X MMSRef.Y MMSRef.Z MMSRef.VX MMSRef.VY MMSRef.VZ;

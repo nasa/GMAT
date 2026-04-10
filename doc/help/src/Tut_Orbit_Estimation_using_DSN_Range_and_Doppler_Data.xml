@@ -1,0 +1,1593 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0"
+         xml:id="Orbit_Estimation_using_DSN_Range_and_Doppler_Data"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Orbit Estimation using DSN Range and Doppler Data</title>
+
+  <variablelist>
+    <varlistentry>
+      <term>Audience</term>
+
+      <listitem>
+        <para>Intermediate level</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Length</term>
+
+      <listitem>
+        <para>60 minutes</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Prerequisites</term>
+
+      <listitem>
+        <para>Simulate DSN Range and Doppler Data Tutorial</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Script Files</term>
+
+      <listitem>
+        <para><filename>Tut_Orbit_Estimation_using_DSN_Range_and_Doppler_Data.script</filename></para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <note>
+      <para>GMAT currently implements a number of different data types for
+      orbit determination. Please refer to <xref linkend="TrackingDataTypes"/>
+      for details on all the measurment types currently supported by GMAT. The
+      measurements being considered here are DSN two way range and DSN two way
+      Doppler.</para>
+    </note>
+
+    <para>In this tutorial, we will use GMAT to read in simulated DSN range
+    and Doppler measurement data for a sample spacecraft in orbit about the
+    Sun and determine its orbit. The spacecraft is in an Earth “drift away”
+    type orbit about 1 AU away from the Sun and almost 300 million km away
+    from the Earth. This tutorial has many similarities with the Simulate DSN
+    Range and Doppler Data Tutorial in that most of the same GMAT resources
+    need to be created and configured. There are differences, however, in how
+    GMAT uses the resources that we will point out as we go along.</para>
+
+    <para>The basic steps of this tutorial are:</para>
+
+    <procedure>
+      <step>
+        <para>Create and configure the spacecraft, spacecraft transponder, and
+        related parameters</para>
+      </step>
+
+      <step>
+        <para>Create and configure the Ground Station and related
+        parameters</para>
+      </step>
+
+      <step>
+        <para>Define the types of measurements to be processed</para>
+      </step>
+
+      <step>
+        <para>Create and configure Force model and propagator</para>
+      </step>
+
+      <step>
+        <para>Create and configure Batch Estimator object</para>
+      </step>
+
+      <step>
+        <para>Run the mission and analyze the results</para>
+      </step>
+    </procedure>
+
+    <para>Note that this tutorial, unlike most of the mission design
+    tutorials, will be entirely script based. This is because most of the
+    resources and commands related to navigation are not implemented in the
+    GUI and are only available via the script interface.</para>
+
+    <para>As you go through the tutorial below, it is recommended that you
+    paste the script segments into GMAT as you go along. After each paste into
+    GMAT, you should perform a syntax check by hitting the Save, Sync button
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="11"
+                     fileref="files/images/icons/Save_Sync.png" scalefit="1"
+                     valign="bottom"/>
+        </imageobject>
+      </inlinemediaobject>). To avoid syntax errors, where needed, don’t
+    forget to add the following command, as needed, to the last line of the
+    script segment you are checking.</para>
+
+    <programlisting>BeginMissionSequence</programlisting>
+
+    <para>We note that in addition to the material presented here, you should
+    also look at the individual Help resources for all the objects and
+    commands we create and use here. For example,
+    <guilabel>Spacecraft</guilabel>, <guilabel>Transponder</guilabel>,
+    <guilabel>Transmitter</guilabel>, <guilabel>GroundStation</guilabel>,
+    <guilabel>ErrorModel</guilabel>, <guilabel>TrackingFileSet</guilabel>,
+    <guilabel>RunEstimator</guilabel>, etc all have their own Help
+    pages.</para>
+  </section>
+
+  <section xml:id="DSN_Estimation_Create_and_configure_the_spacecraft_spacecraft_transponder_and_related_parameters">
+    <title>Create and configure the spacecraft, spacecraft transponder, and
+    related parameters</title>
+
+    <para>For this tutorial, you’ll need GMAT open, with a new empty script
+    open. To create a new script, click <guibutton>New Script</guibutton>,
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="11"
+                     fileref="files/images/icons/NewScript.png"
+                     valign="bottom" width="1em"/>
+        </imageobject>
+      </inlinemediaobject>)</para>
+
+    <section>
+      <title>Create a satellite and set its epoch and Cartesian
+      coordinates</title>
+
+      <para>Since this is a Sun-orbiting spacecraft, we choose to represent
+      the orbit in a Sun-centered coordinate frame which we define using the
+      scripting below.</para>
+
+      <programlisting>%  Create the Sun-centered J2000 frame.
+Create CoordinateSystem SunMJ2000Eq;
+SunMJ2000Eq.Origin = Sun;
+SunMJ2000Eq.Axes   = MJ2000Eq;  %Earth mean equator axes</programlisting>
+
+      <para>Next, we create a new spacecraft, <guilabel>Sat</guilabel>, and
+      set its epoch and Cartesian coordinates.</para>
+
+      <programlisting>Create Spacecraft Sat;
+Sat.DateFormat       = UTCGregorian;
+Sat.CoordinateSystem = SunMJ2000Eq;
+Sat.DisplayStateType = Cartesian;
+Sat.Epoch            = 19 Aug 2015 00:00:00.000;
+Sat.X                = -126544963   %-126544968
+Sat.Y                = 61978518     %61978514
+Sat.Z                = 24133225     %24133221
+Sat.VX               = -13.789
+Sat.VY               = -24.673
+Sat.VZ               = -10.662
+
+Sat.Id               = 11111;</programlisting>
+
+      <para>Note that, in addition to setting <guilabel>Sat’s</guilabel>
+      coordinates, we also assigned it an ID number. When GMAT finds this
+      number in the GMD file that it reads in, it will know that the
+      associated data corresponds to the <guilabel>Sat</guilabel>
+      <guilabel>Spacecraft</guilabel>.</para>
+
+      <para>For the simulation tutorial, the Cartesian state above represented
+      the “true” state. Here, the Cartesian state represents the spacecraft
+      operator’s best “estimate” of the state, the so-called <emphasis>a
+      priori</emphasis> estimate. Because, one never has exact knowledge of
+      the true state, we have perturbed the Cartesian state above by a few km
+      in each component as compared to the simulated true state shown in the
+      comment field.</para>
+    </section>
+
+    <section>
+      <title>Create a Transponder object and attach it to our
+      spacecraft</title>
+
+      <para>To estimate an orbit state for a given spacecraft, GMAT requires
+      that a <guilabel>Transponder</guilabel> object, which receives the
+      ground station uplink signal and re-transmits it, typically, to a ground
+      station, be attached to the spacecraft. Below, we create the
+      <guilabel>Transponder</guilabel> object and attach it to our spacecraft.
+      Note that after we create the <guilabel>Transponder</guilabel> object,
+      there are three fields, <guilabel>PrimaryAntenna</guilabel>,
+      <guilabel>HardwareDelay</guilabel>, and
+      <guilabel>TurnAroundRatio</guilabel> that must be set.</para>
+
+      <programlisting>Create Antenna HGA;  %High Gain Antenna
+
+Create Transponder SatTransponder;
+SatTransponder.PrimaryAntenna   = HGA;
+SatTransponder.HardwareDelay    = 1e-06; %seconds
+SatTransponder.TurnAroundRatio  = '880/749';
+
+Sat.AddHardware                 = {SatTransponder, HGA};
+Sat.SolveFors                   = {CartesianState};</programlisting>
+
+      <para>The <guilabel>PrimaryAntenna</guilabel> is the antenna that the
+      spacecraft transponder, <guilabel>SatTransponder</guilabel>, uses to
+      receive and retransmit RF signals. In the example above, we set this
+      field to <guilabel>HGA</guilabel> which is an
+      <guilabel>Antenna</guilabel> object we have created. Currently the
+      <guilabel>Antenna</guilabel> resource has no function but in a future
+      release, it may have a function. <guilabel>HardwareDelay</guilabel>, the
+      transponder signal delay in seconds, is set to one micro-second.</para>
+
+      <para>We set <guilabel>TurnAroundRatio</guilabel>, which is the ratio of
+      the retransmitted to the input signal, to '880/749.' See the
+      <guilabel>RunEstimator</guilabel> Help for a discussion on how GMAT uses
+      this input field. Recall that, as part of their calculations, estimators
+      need to form a quantity called the observation residual, O-C, where O is
+      the “Observed” value of a measurement and C is the “Computed,” based
+      upon the current knowledge of the orbit state, value of a measurement.
+      As described in the Help, since our DSN data, for this tutorial, uses a
+      ramp table, this input turn around ratio is not used to calculate the
+      computed, C, Doppler measurements. Instead, the turn-around ratio used
+      to calculate the computed Doppler measurement will be inferred from the
+      value of the uplink band contained in the ramp table.</para>
+
+      <para>Note that in the second to last script command above, we attach
+      our newly created <guilabel>Transponder</guilabel> resource,
+      <guilabel>SatTransponder</guilabel>, and its related
+      <guilabel>Antenna</guilabel> resource, <guilabel>HGA</guilabel>, to our
+      spacecraft, <guilabel>Sat</guilabel>.</para>
+
+      <para>The last script line, which was not present in the simulation
+      script, is needed to tell GMAT what quantities the estimator will be
+      estimating, the so-called “solve-fors.” Here, we tell GMAT to solve for
+      the 6 components of our satellite’s Cartesian state. Since we input the
+      <guilabel>Sat</guilabel> state in SunMJ2000 coordinates, this is the
+      coordinate system GMAT will use to solve for the Cartesian state.</para>
+    </section>
+  </section>
+
+  <section xml:id="DSN_Estimation_Create_and_configure_the_Ground_Station_and_related_parameters">
+    <title>Create and configure the Ground Station and related
+    parameters</title>
+
+    <section>
+      <title>Create Ground Station Transmitter, Receiver, and Antenna
+      objects</title>
+
+      <para>Before we create the <guilabel>GroundStation</guilabel> object
+      itself, as shown below, we first create the
+      <guilabel>Transmitter</guilabel>, <guilabel>Receiver</guilabel>, and
+      <guilabel>Antenna</guilabel> objects that must be associated with any
+      <guilabel>GroundStation</guilabel>.</para>
+
+      <programlisting>%  Ground Station electronics. 
+Create Transmitter DSNTransmitter;
+Create Receiver DSNReceiver;
+Create Antenna DSNAntenna;
+
+DSNTransmitter.PrimaryAntenna     = DSNAntenna;
+DSNReceiver.PrimaryAntenna        = DSNAntenna;
+DSNTransmitter.Frequency          = 7200;   %MHz</programlisting>
+
+      <para>In the script segment above, we first created
+      <guilabel>Transmitter</guilabel>, <guilabel>Receiver</guilabel>, and
+      <guilabel>Antenna</guilabel> objects. The GMAT script line
+      <code>DSNTransmitter.PrimaryAntenna = DSNAntenna</code>, sets the main
+      antenna that the <guilabel>Transmitter</guilabel> resource,
+      <guilabel>DSNTransmitter</guilabel>, will be using. Likewise, the
+      <code>DSNReceiver.PrimaryAntenna = DSNAntenna</code> script line sets
+      the main antenna that the <guilabel>Receiver</guilabel> resource,
+      <guilabel>DSNReceiver</guilabel>, will be using. As previously
+      mentioned, the <guilabel>Antenna</guilabel> object currently has no
+      function, but we include it here both because GMAT requires it and for
+      completeness since the <guilabel>Antenna</guilabel> resource may have a
+      function in a future GMAT release. Finally, we set the transmitter
+      frequency in the last GMAT script line above. See the
+      <guilabel>RunEstimator</guilabel> Help for a complete description of how
+      this input frequency is used. As described in the Help, since in this
+      example we will be using a ramp table, this input frequency will not be
+      used to calculate the computed value of the range and Doppler
+      observations. Instead, the frequency value in the ramp table will be
+      used to calculate the computed range and Doppler observations.</para>
+
+      <para>There is one clarification to the statement above. As discussed in
+      the <guilabel>RunEstimator</guilabel> Help, the
+      <guilabel>DSNTransmitter.Frequency</guilabel> value discussed above as
+      well as the previously discussed <guilabel>SatTransponder</guilabel>
+      <guilabel>TurnAroundRatio</guilabel> value will be used to calculate
+      the, typically small, media corrections needed to determine the
+      computed, C, value of the range and Doppler measurements.</para>
+    </section>
+
+    <section>
+      <title>Create Ground Station</title>
+
+      <para>Below, we create and configure our <guilabel>CAN</guilabel>
+      <guilabel>GroundStation</guilabel> object.</para>
+
+      <programlisting>%   Create ground station and associated error models
+Create GroundStation CAN;
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514
+CAN.Location2             = 2682.281745
+CAN.Location3             = -3674.570392
+CAN.Id                    = 22222;
+CAN.MinimumElevationAngle = 7.0;
+CAN.IonosphereModel       = 'IRI2007';
+CAN.TroposphereModel      = 'HopfieldSaastamoinen';
+CAN.AddHardware           = {DSNTransmitter, DSNAntenna, ...
+                                DSNReceiver};</programlisting>
+
+      <para>The script segment above is broken into five sections. In the
+      first section, we create our <guilabel>GroundStation</guilabel> object
+      and we set our Earth-Centered Fixed Cartesian coordinates. In the second
+      section, we set the ID of the ground station so that GMAT will be able
+      to identify data from this ground station contained in the GMD
+      file.</para>
+
+      <para>In the third section, we set the minimum elevation angle to 7
+      degrees. Below this ground station to spacecraft elevation angle, no
+      measurement data will be used to form an orbit estimate. In the fourth
+      section, we specify which troposphere and ionosphere model we wish to
+      use to model RF signal atmospheric refraction effects. Finally, in the
+      fifth section, we attach three pieces of previously created required
+      hardware to our ground station, a transmitter, a receiver, and an
+      antenna.</para>
+
+      <para>Next, we create and configure the <guilabel>GDS</guilabel>
+      <guilabel>GroundStation</guilabel> resource, and associated
+      <guilabel>Transmitter</guilabel> resource.</para>
+
+      <programlisting>%   Create GDS transmitter and ground station 
+Create GroundStation GDS;  
+GDS.CentralBody           = Earth;
+GDS.StateType             = Cartesian;
+GDS.HorizonReference      = Ellipsoid;
+GDS.Location1             = -2353.621251;
+GDS.Location2             = -4641.341542;
+GDS.Location3             = 3677.052370;
+GDS.Id                    = '33333';
+GDS.MinimumElevationAngle = 7.0;
+GDS.IonosphereModel       = 'IRI2007';
+GDS.TroposphereModel      = 'HopfieldSaastamoinen';
+GDS.AddHardware           = {DSNTransmitter, DSNAntenna, ...
+                                DSNReceiver};</programlisting>
+
+      <para>Next, we create and configure the <guilabel>MAD</guilabel>
+      <guilabel>GroundStation</guilabel> resource, and associated
+      <guilabel>Transmitter</guilabel> resource.</para>
+
+      <programlisting>%   Create MAD transmitter and ground station 
+Create GroundStation MAD;  
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4849.519988;
+MAD.Location2             = -360.641653;
+MAD.Location3             = 4114.504590;
+MAD.Id                    = '44444';
+MAD.MinimumElevationAngle = 7.0;
+MAD.IonosphereModel       = 'IRI2007';
+MAD.TroposphereModel      = 'HopfieldSaastamoinen';
+MAD.AddHardware           = {DSNTransmitter, DSNAntenna, ...
+                                DSNReceiver};</programlisting>
+    </section>
+
+    <section>
+      <title>Create Ground Station Error Models</title>
+
+      <para>It is well known that all measurement types have random noise
+      and/or biases associated with them. For GMAT, these effects are modelled
+      using ground station error models. Since we have already created the
+      <guilabel>GroundStation</guilabel> object and its related hardware, we
+      now create the ground station error models. Since we wish to form an
+      orbit estimate using both range and Doppler data, we need to create two
+      error models as shown below, one for range measurements and one for
+      Doppler measurements.</para>
+
+      <programlisting>%   Create Ground station error models
+Create ErrorModel DSNrange;
+DSNrange.Type                   = 'DSN_SeqRange';
+DSNrange.NoiseSigma             = 10.63;
+DSNrange.Bias                   = 0.0;
+
+Create ErrorModel DSNdoppler;
+DSNdoppler.Type                 = 'DSN_TCP';
+DSNdoppler.NoiseSigma           = 0.0282;
+DSNdoppler.Bias                 = 0.0;
+
+CAN.ErrorModels                 = {DSNrange, DSNdoppler};
+GDS.ErrorModels                 = {DSNrange, DSNdoppler};
+MAD.ErrorModels                 = {DSNrange, DSNdoppler};</programlisting>
+
+      <para>The script segment above is broken into three sections. The first
+      section defines an <guilabel>ErrorModel</guilabel> named
+      <guilabel>DSNrange</guilabel>. The error model Type is DSN_SeqRange
+      which indicates that it is an error model for DSN sequential range
+      measurements. The 1 sigma standard deviation of the Gaussian white noise
+      is set to 10.63 Range Units (RU) and the measurement bias is set to 0
+      RU.</para>
+
+      <para>The second section above defines an
+      <guilabel>ErrorModel</guilabel> named <guilabel>DSNdoppler</guilabel>.
+      The error model <guilabel>Type</guilabel> is DSN_TCP which indicates
+      that it is an error model for DSN total count phase-derived Doppler
+      measurements. The 1 sigma standard deviation of the Gaussian white noise
+      is set to 0.0282 Hz and the measurement bias is set to 0 Hz. The range
+      and Doppler <guilabel>NoiseSigma</guilabel> values above will be used to
+      form measurement weighting matrices used by the estimator
+      algorithm.</para>
+
+      <para>The third section above attaches the two
+      <guilabel>ErrorModel</guilabel> resources we have just created to the
+      <guilabel>CAN</guilabel>, <guilabel>GDS</guilabel>, and
+      <guilabel>MAD</guilabel> <guilabel>GroundStation</guilabel> resources.
+      Note that in GMAT, the measurement noise or bias is defined on a per
+      ground station basis. Thus, any range measurement error involving the
+      <guilabel>CAN</guilabel>, <guilabel>GDS</guilabel>, and
+      <guilabel>MAD</guilabel> <guilabel>GroundStation</guilabel> is defined
+      by the <guilabel>DSNRange</guilabel> <guilabel>ErrorModel</guilabel> and
+      any Doppler measurement error involving the <guilabel>CAN</guilabel>,
+      <guilabel>GDS</guilabel>, and <guilabel>MAD</guilabel>
+      <guilabel>GroundStation</guilabel> is defined by the
+      <guilabel>DSNdoppler</guilabel> <guilabel>ErrorModel</guilabel>. Note
+      that, if desired, we could have created 6 different
+      <guilabel>ErrorModel</guilabel> resources, two error models representing
+      the two data types for 3 ground stations.</para>
+    </section>
+  </section>
+
+  <section xml:id="DSN_Estimation_Define_the_types_of_measurements_that_will_be_processed">
+    <title>Define the types of measurements that will be processed</title>
+
+    <para>Now we will create and configure a
+    <guilabel>TrackingFileSet</guilabel> resource. This resource defines the
+    type of data to be processed, the ground stations that will be used, and
+    the file name of the input GMD file which will contain the measurement
+    data. Note that in order to just cut and paste from our simulation
+    tutorial, we name our resource <guilabel>DSNsimData</guilabel>. But,
+    since, in this script, we are estimating, perhaps a better name would have
+    been <guilabel>DSNestData</guilabel>.</para>
+
+    <programlisting><?db-font-size 90% ?>Create TrackingFileSet DSNsimData;
+DSNsimData.AddTrackingConfig         = {{CAN, Sat, CAN}, 'DSN_SeqRange'};   
+DSNsimData.AddTrackingConfig         = {{CAN, Sat, CAN}, 'DSN_TCP'};                 
+DSNsimData.AddTrackingConfig         = {{GDS, Sat, GDS}, 'DSN_SeqRange'};   
+DSNsimData.AddTrackingConfig         = {{GDS, Sat, GDS}, 'DSN_TCP'};                 
+DSNsimData.AddTrackingConfig         = {{MAD, Sat, MAD}, 'DSN_SeqRange'};   
+DSNsimData.AddTrackingConfig         = {{MAD, Sat, MAD}, 'DSN_TCP'};                 
+DSNsimData.FileName                  = ...
+      {'../output/Simulate DSN Range and Doppler Data 3 weeks.gmd'};
+DSNsimData.RampTable                 = ... 
+      {'../output/Simulate DSN Range and Doppler Data 3 weeks.rmp'};
+
+DSNsimData.UseLightTime              = true;
+DSNsimData.UseRelativityCorrection   = true;
+DSNsimData.UseETminusTAI             = true;</programlisting>
+
+    <para>The script lines above are broken into three sections. In the first
+    section, the resource name, <guilabel>DSNsimData</guilabel>, is declared,
+    the data types are defined, and the input GMD file and ramp table name are
+    specified. <guilabel>AddTrackingConfig</guilabel> is the field that is
+    used to define the data types. The first
+    <guilabel>AddTrackingConfig</guilabel> line tells GMAT to process DSN
+    range two way measurements for the <guilabel>CAN</guilabel> to
+    <guilabel>Sat</guilabel> to <guilabel>CAN</guilabel> measurement strand.
+    The second <guilabel>AddTrackingConfig</guilabel> line tells GMAT to
+    process DSN Doppler two way measurements for the <guilabel>CAN</guilabel>
+    to <guilabel>Sat</guilabel> to <guilabel>CAN</guilabel> measurement
+    strand. The remaining 4 <guilabel>AddTrackingConfig</guilabel> script
+    lines tell GMAT to also process <guilabel>GDS</guilabel> and
+    <guilabel>MAD</guilabel> range and Doppler measurements. Note that the
+    input GMD and ramp table files that we specified are files that we created
+    as part of the <emphasis role="bold">Simulate DSN Range and Doppler Data
+    Tutorial</emphasis>. Don’t forget to put these files in the GMAT “output”
+    directory.</para>
+
+    <para>The second section above sets some processing parameters that apply
+    to both the range and Doppler measurements. We set
+    <guilabel>UseLightTime</guilabel> to True in order to generate realistic
+    computed, C, measurements that take into account the finite speed of
+    light. The last two parameters in this section,
+    <guilabel>UseRelativityCorrection</guilabel> and
+    <guilabel>UseETminusTAI</guilabel>, are set to True so that general
+    relativistic corrections, as described in Moyer [2000], are applied to the
+    light time equations.</para>
+
+    <para>Note that, in the simulation tutorial, we set two other
+    <guilabel>DSNsimData</guilabel> fields,
+    <guilabel>SimDopplerCountInterval</guilabel> and
+    <guilabel>SimRangeModuloConstant</guilabel>. Since these fields only apply
+    to simulations, there is no need to set them here as their values would
+    only be ignored.</para>
+  </section>
+
+  <section xml:id="DSN_Estimation_Create_and_configure_Force_model_and_propagator">
+    <title>Create and configure Force model and propagator</title>
+
+    <para>We now create and configure the force model and propagator that will
+    be used for the simulation. For this deep space drift away orbit, we
+    naturally choose the Sun as our central body. Since we are far away from
+    all the planets, we use point mass gravity models and we include the
+    effects of the Sun, Earth, Moon, and most of the other planets. In
+    addition, we model Solar Radiation Pressure (SRP) effects and we include
+    the effect of general relativity on the dynamics. The script segment
+    accomplishing this is shown below.</para>
+
+    <programlisting>Create ForceModel Fm;
+Create Propagator Prop;
+Fm.CentralBody             = Sun;
+Fm.PointMasses             = {Sun, Earth, Luna, Mars, Saturn, ...
+                             Uranus, Mercury, Venus, Jupiter};
+Fm.SRP                     = On;
+Fm.RelativisticCorrection  = On;
+Fm.ErrorControl            = None;
+Prop.FM                    = Fm;
+Prop.MinStep               = 0;    </programlisting>
+
+    <para>We set <code>ErrorControl = None</code> because for the current
+    release of GMAT, batch estimation requires fixed step numerical
+    integration. The fixed step size is given by
+    <code>Prop.InitialStepSize</code> which has a default value of 60 seconds.
+    For our deep space orbit, the dynamics are slowly changing and this step
+    size is not too big. For more dynamic force models, a smaller step size
+    may be needed.</para>
+  </section>
+
+  <section xml:id="DSN_Estimation_Create_and_configure_BatchEstimator_object">
+    <title>Create and configure BatchEstimator object</title>
+
+    <para>As shown below, we create and configure the
+    <guilabel>BatchEstimator</guilabel> object used to define our estimation
+    process.</para>
+
+    <programlisting>Create BatchEstimator bat
+bat.ShowProgress               = true;
+bat.ReportStyle                = Normal;
+bat.ReportFile                 =  ...
+         'Orbit Estimation using DSN Range and Doppler Data.report';
+bat.Measurements               = {DSNsimData} 
+bat.AbsoluteTol                = 0.001;
+bat.RelativeTol                = 0.0001;
+bat.MaximumIterations          = 10
+bat.MaxConsecutiveDivergences  = 3;
+bat.Propagator                 = Prop;
+bat.ShowAllResiduals           = On;
+bat.OLSEInitialRMSSigma        = 10000;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant       = 0;
+bat.EstimationEpochFormat      = 'FromParticipants'; 
+bat.InversionAlgorithm         = 'Internal';    
+bat.MatlabFile                 =  ...
+           'Orbit Estimation using DSN Range and Doppler Data.mat'</programlisting>
+
+    <para>All of the fields above are described in
+    <guilabel>BatchEstimator</guilabel> Help but we describe them briefly here
+    as well. In the first script line above, we create a
+    <guilabel>BatchEstimator</guilabel> object, <guilabel>bat</guilabel>. In
+    the next line, we set the <guilabel>ShowProgress</guilabel> field to true
+    so that detailed output of the batch estimator will be shown in the
+    message window.</para>
+
+    <para>In the third line, we set the <guilabel>ReportStyle</guilabel> to
+    Normal. If we wanted to see additional data such as
+    measurement partial derivatives, we would use the Verbose style by setting
+    RUN_MODE = Testing in the GMAT startup file. In the next line, we set the
+    <guilabel>ReportFile</guilabel> field to the name of our desired output
+    file which by default is written to GMAT’s ‘output’ directory.</para>
+
+    <para>We set the Measurements field to the name of the
+    <guilabel>TrackingFileSet</guilabel> resource we wish to use. Recall that
+    the <guilabel>TrackingFileSet</guilabel>, <guilabel>DSNsimData</guilabel>,
+    that we created in the <xref
+    linkend="DSN_Estimation_Define_the_types_of_measurements_that_will_be_processed"
+    xrefstyle="select:title"/> section defines the type of measurements that
+    we wish to process. In our case, we wish to process DSN range and Doppler
+    data associated with the <guilabel>CAN</guilabel>,
+    <guilabel>GDS</guilabel>, and <guilabel>MAD</guilabel> ground
+    stations.</para>
+
+    <para>The next four fields, <guilabel>AbsoluteTol</guilabel>,
+    <guilabel>RelativeTol</guilabel>, <guilabel>MaximumIterations</guilabel>,
+    and <guilabel>MaxConsecutiveDivergences</guilabel> define the batch
+    estimator convergence criteria. See the “Behavior of Convergence Criteria”
+    discussion in the <guilabel>BatchEstimator</guilabel> Help for complete
+    details.</para>
+
+    <para>The next script line sets the Propagator field which specifies which
+    <guilabel>Propagator</guilabel> object should be used during estimation.
+    We set this field to the <guilabel>Prop</guilabel>
+    <guilabel>Propagator</guilabel> object which we created in the <xref
+    linkend="DSN_Estimation_Define_the_types_of_measurements_that_will_be_processed"
+    xrefstyle="select:title"/> section.</para>
+
+    <para>In the 11th script line, we set the
+    <guilabel>ShowAllResiduals</guilabel> field to true show that the
+    observation residuals plots, associated with the various ground stations,
+    will be displayed</para>
+
+    <para>The next three script lines set fields,
+    <guilabel>OLSEInitialRMSSigma</guilabel>,
+    <guilabel>OLSEMultiplicativeConstant</guilabel>, and
+    <guilabel>OLSEAdditiveConstant</guilabel>, that are associated with GMAT’s
+    Outer Loop Sigma Editing (OLSE) capability that is used to edit, i.e.,
+    remove, certain measurements so that they are not used to calculate the
+    orbit estimate. See the “Behavior of Outer Loop Sigma Editing (OLSE)”
+    discussion in the <guilabel>BatchEstimator</guilabel> Help for complete
+    details.</para>
+
+    <para>Next, we set the <guilabel>EstimationEpochFormat</guilabel> field to
+    'FromParticipants’ which tells GMAT that the epoch associated with the
+    solve-for variables, in this case the Cartesian State of
+    <guilabel>Sat</guilabel>, comes from the value of
+    <guilabel>Sat.Epoch</guilabel> which we have set to “19 Aug 2015
+    00:00:00.000 UTCG.”</para>
+
+    <para>Next, we set the <guilabel>InversionAlgorithm</guilabel> field to
+    'Internal' which specifies which algorithm GMAT should use to invert the
+    normal equations. There are two other inversion algorithms, 'Cholesky' or
+    'Schur' that we could optionally use.</para>
+
+    <para>Finally, we set the value of <guilabel>MatlabFile</guilabel>. This
+    is the name of the MATLAB output file that will be created, which, by
+    default, is written to GMAT’s ‘output’ directory. This file can be read
+    into MATLAB to perform detailed calculations and analysis. The MATLAB file
+    can only be created if you have MATLAB installed and properly configured
+    for use with GMAT.</para>
+  </section>
+
+  <section xml:id="DSN_Estimation_Run_the_mission_and_analyze_the_results">
+    <title>Run the mission and analyze the results</title>
+
+    <para>The script segment used to run the mission is shown below.</para>
+
+    <programlisting>BeginMissionSequence
+ 
+RunEstimator bat</programlisting>
+
+    <para>The first script line, <guilabel>BeginMissionSequence</guilabel>, is
+    a required command which indicates that the “Command” section of the GMAT
+    script has begun. The second line of the script issues the
+    <guilabel>RunEstimator</guilabel> command with the bat
+    <guilabel>BatchEstimator</guilabel> resource, defined in the <xref
+    linkend="DSN_Estimation_Create_and_configure_BatchEstimator_object"
+    xrefstyle="select:title"/> section, as an argument. This tells GMAT to
+    perform the estimation using parameters specified by the bat
+    resource.</para>
+
+    <para>We have now completed all of our script segments. See the file,
+    <filename>Tut_Orbit_Estimation_using_DSN_Range_and_Doppler_Data.script</filename>,
+    in the samples folder, for a listing of the entire script. We are now
+    ready to run the script. Hit the Save,Sync,Run button, (<inlinemediaobject>
+        <imageobject>
+          <imagedata contentdepth="10"
+                     fileref="files/images/icons/Save_Sync_Run.png"
+                     valign="bottom"/>
+        </imageobject>
+      </inlinemediaobject>). Given the amount of data we are processing, our
+    mission orbit, and our choice of force model, the script should finish
+    execution in about 1-2 minutes.</para>
+
+    <para>We analyze the results of this script in many ways. In the first
+    subsection, we analyze the Message window output. In the second
+    subsection, we look at the plots of the observation residuals, and in the
+    third subsection, we analyze the batch estimation report. Finally, in the
+    fourth subsection, we discuss how the contents of the MATLAB output file
+    can be used to analyze the results of our estimation process.</para>
+
+    <section xml:id="DSN_Estimation_Message_Window_Output">
+      <title>Message Window Output</title>
+
+      <para>We first analyze the message window output focusing on the
+      messages that may require some explanation. Follow along using <xref
+      linkend="DSN_Estimation_Appendix_A" xrefstyle="select:title"/> where we
+      have put a full listing of the output. Soon into the message flow, we
+      get a message telling us how many measurement records were read
+      in.</para>
+
+      <programlisting><?db-font-size 80% ?>Data file '../output/Simulate DSN Range and Doppler Data 3 weeks.gmd' has 1348 
+	  of 1348 records used for estimation.</programlisting>
+
+      <para>The value of 1348 is the number of lines of measurement data in
+      the GMD file listed above.</para>
+
+      <para>Next, the window output contains a description of the tracking
+      configuration. The output below confirms that we are processing range
+      and Doppler data from the <guilabel>CAN</guilabel>,
+      <guilabel>GDS</guilabel>, and <guilabel>MAD</guilabel> ground
+      stations.</para>
+
+      <programlisting>List of tracking configurations (present in participant ID) for load 
+	  records from data file 
+	  '../output/Simulate DSN Range and Doppler Data 3 weeks.gmd':
+   Config 0: {{22222,11111,22222},DSN_SeqRange}
+   Config 1: {{22222,11111,22222},DSN_TCP}
+   Config 2: {{33333,11111,33333},DSN_SeqRange}
+   Config 3: {{33333,11111,33333},DSN_TCP}
+   Config 4: {{44444,11111,44444},DSN_SeqRange}
+   Config 5: {{44444,11111,44444},DSN_TCP}</programlisting>
+
+      <para>Later on in the output, GMAT echoes out the a priori estimate that
+      we input into the script.</para>
+
+      <programlisting>a priori state:
+   Estimation Epoch:
+   27253.5004170646025158930570 A.1 modified Julian
+   27253.5004166666661733004647 TAI modified Julian
+   19 Aug 2015 00:00:00.000 UTCG
+   Sat.SunMJ2000Eq.X = -126544963
+   Sat.SunMJ2000Eq.Y = 61978518
+   Sat.SunMJ2000Eq.Z = 24133225
+   Sat.SunMJ2000Eq.VX = -13.789
+   Sat.SunMJ2000Eq.VY = -24.673
+   Sat.SunMJ2000Eq.VZ = -10.662</programlisting>
+
+      <para>Next, GMAT outputs some data associated with the initial iteration
+      of the Outer Loop Sigma Editing (OLSE) process as shown below.</para>
+
+      <para><programlisting>Number of Records Removed Due To:
+   . No Computed Value Configuration Available : 0
+   . Out of Ramp Table Range   : 0
+   . Signal Blocked            : 0
+   . Initial RMS Sigma Filter  : 0
+   . Outer-Loop Sigma Editor   : 0
+Number of records used for estimation: 1348</programlisting>As previously
+      mentioned, the OLSE process can edit (i.e., remove) certain data from
+      use as part of the estimation algorithm. There are five conditions which
+      could cause a data point to be edited. For each condition, the output
+      above specifies how many data points were edited. We now discuss the
+      meaning of the five conditions.</para>
+
+      <para>The first condition, “No Computed Value Configuration Available”
+      means that GMAT has read in some measurement data but no corresponding
+      tracking configuration has been defined in the GMAT script. Thus, GMAT
+      has no way to form the computed, C, value of the measurement. For
+      example, this might happen if our script did not define a
+      <guilabel>GroundStation</guilabel> object corresponding to some data in
+      the GMD file. Since we have defined everything we need to, no data
+      points are edited for this condition.</para>
+
+      <para>The second condition, “Out of Ramp Table Range,” means that while
+      solving the light time equations, GMAT needs to know the transmit
+      frequency, for some ground station, at a time that is not covered by the
+      ramp table specified in our <guilabel>TrackingFileSet</guilabel>
+      resource, <guilabel>DSNsimData</guilabel>. Looking at our input GMD
+      file, we see that our measurement times range from 27253.5004166... to
+      27274.5004166666... TAIMJD. Since our ramp table has a ramp record for
+      all three ground stations at 27252 TAIMJD which is about 1 ½ days before
+      the first measurement and since our <emphasis>a priori</emphasis>
+      Cartesian state estimate is fairly good, it makes sense that no
+      measurements were edited for this condition.</para>
+
+      <para>The third condition, “Signal Blocked,” indicates that while taking
+      into account its current estimate of the state, GMAT calculates that a
+      measurement for a certain measurement strand is not possible because the
+      signal is “blocked.” Actually, the signal does not have to blocked, it
+      just has to violate the minimum elevation angle constraint associated
+      with a given ground station. Consider a <guilabel>GDS</guilabel> to
+      <guilabel>Sat</guilabel> to <guilabel>GDS</guilabel> range two way range
+      measurement at given time. If the <guilabel>GDS</guilabel> to
+      <guilabel>Sat</guilabel> elevation angle was 6 degrees, the measurement
+      would be edited out since the minimum elevation angle, as specified by
+      the <guilabel>GDS.MinimumElevationAngle</guilabel> field, is set at 7
+      degrees. Since, in our simulation, we specified that only data meeting
+      this 7 degree constraint should be written out, it is plausible that no
+      data were edited because of this condition.</para>
+
+      <para>The fourth condition, “Initial RMS Sigma Filter,” corresponds to
+      GMAT’s OLSE processing for the initial iteration. As mentioned before,
+      you can find a complete description of the OLSE in the “Behavior of
+      Outer Loop Sigma Editing (OLSE)” discussion in the
+      <guilabel>BatchEstimator</guilabel> Help. As described in the Help, for
+      the initial iteration, data is edited if</para>
+
+      <para>        |Weighted Measurement Residual| &gt;
+      <guilabel>OLSEInitialRMSSigma</guilabel></para>
+
+      <para>where the Weighted Measurement Residual for a given measurement is
+      given by</para>
+
+      <para>        (O-C)/<guilabel>NoiseSigma</guilabel></para>
+
+      <para>and where <guilabel>NoiseSigma</guilabel> are inputs that we set
+      when we created the various <guilabel>ErrorModel</guilabel>
+      resources.</para>
+
+      <para>We note that for a good orbit solution, the Weighted Measurement
+      Residual has a value of approximately one. Since our <emphasis>a
+      priori</emphasis> state estimate is not that far off from the truth and
+      since we have set <guilabel>OLSEInitialRMSSigma</guilabel> to a very
+      large value of 10,000, we do not expect any data to be edited for this
+      condition.</para>
+
+      <para>The fifth condition, “Outer-Loop Sigma Editor,” corresponds to
+      GMAT’s OLSE processing for the second or later iteration. Since the
+      output we are analyzing is for the initial iteration of the batch
+      estimator, the number of data points edited because of this condition is
+      0. We will discuss the OLSE processing for the second or later
+      iterations when we analyze the output for a later iteration.</para>
+
+      <programlisting>   WeightedRMS residuals for this iteration : 1459.96324774
+   BestRMS residuals                        : 1459.96324774
+   PredictedRMS residuals for next iteration: 0.977684716761
+</programlisting>
+
+      <para>The first output line above gives the weighted RMS calculated when
+      the estimate of the state is the input a priori state (i.e., the 0th
+      iteration state). The weighted RMS value of approximately 1460 is
+      significantly far away from the value of 1 associated with a good orbit
+      solution. The second output line gives the best (smallest) weighted RMS
+      value for all of the iterations. Since this is our initial iteration,
+      the value of the BestRMS is the same as the WeightedRMS. The third
+      output line is the predicted weighted RMS value for the next iteration.
+      Because of the random noise involved in generating the simulated input
+      data, the numbers you see will differ from that above.</para>
+
+      <para>Next, GMAT outputs the state associated with the first iteration
+      of the batch estimator. Let’s define what we mean by iteration. The
+      state at iteration ‘n’ is the state after GMAT has solved the so-called
+      normal equations (e.g., Eq. 4.3.22 or 4.3.25 in Tapley [2004]) ‘n’
+      successive times. By convention, the state at iteration 0 is the input
+      <emphasis>a priori</emphasis> state.</para>
+
+      <programlisting>------------------------------------------------------
+Iteration 1
+
+Current estimated state:
+   Estimation Epoch:
+   27253.5004170646025158930570 A.1 modified Julian
+   27253.5004166666661733004647 TAI modified Julian
+   19 Aug 2015 00:00:00.000 UTCG
+   Sat.SunMJ2000Eq.X  = -126544964.083
+   Sat.SunMJ2000Eq.Y  = 61978520.0714
+   Sat.SunMJ2000Eq.Z  = 24133223.2424
+   Sat.SunMJ2000Eq.VX = -13.789001388
+   Sat.SunMJ2000Eq.VY = -24.6729990628
+   Sat.SunMJ2000Eq.VZ = -10.662000523
+</programlisting>
+
+      <para>Next, GMAT outputs statistics on how many data points were edited
+      for this iteration.</para>
+
+      <programlisting>Number of Records Removed Due To:
+   . No Computed Value Configuration Available : 0
+   . Out of Ramp Table Range   : 0
+   . Signal Blocked : 0
+   . Initial RMS Sigma Filter  : 0
+   . Outer-Loop Sigma Editor : 1
+Number of records used for estimation: 1347</programlisting>
+
+      <para>For the same reasons we discussed for the initial 0th iteration,
+      as expected, no data points were edited because “No Computed Value
+      Configuration Available” or because a requested frequency was “Out of
+      Ramp Table Range.” Also, for the same reasons discussed for the 0th
+      iteration, it is plausible that no data points were edited for this
+      iteration because of signal blockage. Note that there are no data points
+      edited because of the “Initial RMS Sigma Filter” condition. This is as
+      expected because this condition only edits data on the initial 0th
+      iteration. Finally, we note that, in this example, 1 data point out of
+      1348 data points are edited because of the OLSE condition. Due to the
+      randomness of the noise added in the simulation step, you may see more
+      or fewer points edited.</para>
+
+      <para>As discussed in the “Behavior of Outer Loop Sigma Editing (OLSE)”
+      section in the <guilabel>BatchEstimator</guilabel> Help,” data is edited
+      if</para>
+
+      <para>        |Weighted Measurement Residual| &gt;
+      OLSEMultiplicativeConstant * WRMSP + OLSEAdditiveConstant</para>
+
+      <para>where</para>
+
+      <para>        WRMSP is the predicted weighted RMS calculated at the end
+      of the previous iteration.</para>
+
+      <para>In the <xref
+      linkend="DSN_Estimation_Create_and_configure_BatchEstimator_object"
+      xrefstyle="select:title"/> section, we chose
+      <guilabel>OLSEMultiplicativeConstant</guilabel> = 3 and
+      <guilabel>OLSEAdditiveConstant</guilabel> = 0 and thus the equation
+      above becomes</para>
+
+      <para>        |Weighted Measurement Residual| &gt; 3 * WRMSP</para>
+
+      <para>It is a good sign that only a few points are edited out. If too
+      much data is edited out, even if you have a good weighted RMS value, it
+      indicates that you may have a problem with your state estimate. Next,
+      GMAT outputs some root mean square, (RMS), statistical data associated
+      with iteration 1.</para>
+
+      <programlisting>   WeightedRMS residuals for this iteration : 0.974259069508
+   BestRMS residuals                        : 0.974259069508
+   PredictedRMS residuals for next iteration: 0.974224174165
+</programlisting>
+
+      <para>The first output line above gives the weighted RMS calculated when
+      the estimate of the state is the iteration 1 state. The weighted RMS
+      value shown here of 0.974 is close to the value of 1 associated with a
+      good orbit solution. The second output line gives the best (smallest)
+      weighted RMS value for all of the iterations. Since this iteration 1
+      WeightedRMS value is the best so far, BestRMS is set to the current
+      WeightedRMS value. The third output line is the predicted weighted RMS
+      value for the next iteration. Note that the RMS values calculated above
+      only use data points that are used to form the state estimate. Thus, the
+      edited points are not used to calculate the RMS.</para>
+
+      <para>Because the predicted WeightedRMS value is very close to the
+      BestRMS value, GMAT, as shown in the output below, concludes that the
+      estimation process has converged. As previously mentioned, see the
+      “Behavior of Convergence Criteria” discussion in the
+      <guilabel>BatchEstimator</guilabel> Help for complete details.</para>
+
+      <programlisting>This iteration is converged due to relative convergence criteria.
+
+
+********************************************************
+*** Estimating Completed in 2 iterations
+********************************************************
+
+Estimation converged!
+      |1 - RMSP/RMSB| = | 1- 0.974224 / 0.974259| = 3.58173e-05 is 
+	  less than RelativeTol, 0.0001</programlisting>
+
+      <para>GMAT then outputs the final, iteration 2, state. Note that GMAT
+      does not actually calculate the weighted RMS associated with this state
+      but we assume that it is close to the predicted value of 1.00804237273
+      that was previously output.</para>
+
+      <programlisting>Final Estimated State:
+
+   Estimation Epoch:
+   27253.5004170646025158930570 A.1 modified Julian
+   27253.5004166666661733004647 TAI modified Julian
+   19 Aug 2015 00:00:00.000 UTCG
+   Sat.SunMJ2000Eq.X  = -126544963.637
+   Sat.SunMJ2000Eq.Y  = 61978520.6939
+   Sat.SunMJ2000Eq.Z  = 24133223.6628
+   Sat.SunMJ2000Eq.VX = -13.7890015517
+   Sat.SunMJ2000Eq.VY = -24.6729992038
+   Sat.SunMJ2000Eq.VZ = -10.6620000077
+</programlisting>
+
+      <para>Finally, GMAT outputs the final Cartesian state error covariance
+      matrix and correlation matrix, as well as the time required to complete
+      this script.</para>
+
+      <programlisting width="100"><?db-font-size 50% ?>Final Covariance Matrix:
+
+         6.568631977218e+00         1.044777728608e+01         3.117063688646e+00        -2.346661054173e-06         4.986079628477e-07         1.614625814366e-06
+         1.044777710993e+01         2.043036379635e+01        -4.249227712186e+00        -3.704711284679e-06         1.982306082751e-07         3.981551919217e-06
+         3.117064114026e+00        -4.249226952008e+00         2.371354504010e+01        -1.180689659682e-06         1.672460285882e-06        -2.645600028262e-06
+        -2.346661055323e-06        -3.704711349403e-06        -1.180689508343e-06         8.389295488954e-13        -1.640460214611e-13        -6.093050987987e-13
+         4.986079968962e-07         1.982306774906e-07         1.672460265672e-06        -1.640460335201e-13         1.032410080241e-12        -2.192341045550e-12
+         1.614625733805e-06         3.981551830454e-06        -2.645600161576e-06        -6.093050697768e-13        -2.192341060048e-12         5.785215030292e-12
+
+Final Correlation Matrix:
+
+             1.000000000000             0.901879241925             0.249752571898            -0.999655028427             0.191467746900             0.261923625542
+             0.901879226720             1.000000000000            -0.193051736939            -0.894856861497             0.043162495440             0.366230559395
+             0.249752605981            -0.193051702403             1.000000000000            -0.264712696708             0.338011482643            -0.225873973518
+            -0.999655028917            -0.894856877130            -0.264712662778             1.000000000000            -0.176269364287            -0.276574613248
+             0.191467759975             0.043162510510             0.338011478559            -0.176269377245             1.000000000000            -0.897061553257
+             0.261923612473             0.366230551230            -0.225873984900            -0.276574600074            -0.897061559189             1.000000000000
+
+********************************************************
+</programlisting>
+
+      <programlisting>
+Mission run completed.
+===&gt; Total Run Time: 220.532 seconds
+
+========================================</programlisting>
+    </section>
+
+    <section xml:id="DSN_Estimation_Plots_of_Observation_Residuals">
+      <title>Plots of Observation Residuals</title>
+
+      <para>GMAT creates plots on a per iteration, per ground station, and per
+      measurement type basis. We elaborate on what this means. When the script
+      first runs, the first plots that show up are the 0th iteration
+      residuals. This means that when calculating the ‘O-C’ observation
+      residual, GMAT calculates the Computed, C, value of the residual using
+      the a priori state. As shown in <xref
+      linkend="DSN_Estimation_Appendix_B" xrefstyle="select:title"/>, there
+      are 6 of these 0th iteration residual plots. For each of the 3 stations,
+      there is one plot of the range residuals and one plot of the Doppler
+      residuals. After iteration 1 processing is complete, GMAT outputs the
+      iteration 1 residuals as shown in <xref
+      linkend="DSN_Estimation_Appendix_C" xrefstyle="select:title"/>. As
+      previously mentioned, although for this script, GMAT takes two
+      iterations to converge, the actual iteration 2 residuals are neither
+      calculated nor plotted.
+      DSN_Estimation_Create_and_configure_the_Ground_Station_and_related_parameters</para>
+
+      <para>We now analyze the CAN range and Doppler residuals. For the 0th
+      iteration, the range residuals vary from approximately 11,000 to 31,000
+      RU. These residuals are this large because our a priori estimate of the
+      state was deliberately perturbed from the truth. There are multiple
+      indicators on this graph that indicate that GMAT has not yet converged.
+      First, the residuals have an approximate linear structure. If you have
+      modeled the dynamics and measurements correctly, the plots should have a
+      random appearance with no structure. Additionally, the residuals are
+      biased, i.e., they do not have zero mean. For a well modeled system, the
+      mean value of the residuals should be near zero. Finally, the magnitude
+      of the range residuals is significantly too large. Recall that in the
+      <xref
+      linkend="DSN_Estimation_Create_and_configure_the_Ground_Station_and_related_parameters"
+      xrefstyle="select:title"/> section, we set the 1 sigma measurement noise
+      for the CAN range measurements to 10.63 RU. Thus, for a large sample of
+      measurements, we expect, roughly, that the vast majority of measurements
+      will lie between the values of approximately -32 and +32 RU. Taking a
+      look at the 1st iteration CAN range residuals, this is, approximately,
+      what we get.</para>
+
+      <para>The 0th iteration <guilabel>CAN</guilabel> Doppler residuals range
+      from approximately 0.0050 to 0.01535 Hz. As was the case for the range
+      0th iteration residuals, the fact that the Doppler residuals are biased
+      indicates that GMAT has not yet converged. Recall that in the <xref
+      linkend="DSN_Estimation_Create_and_configure_the_Ground_Station_and_related_parameters"
+      xrefstyle="select:title"/> section, we set the 1 sigma measurement noise
+      for the <guilabel>CAN</guilabel> Doppler measurements to 0.0282 Hz.
+      Thus, for a large sample of measurements, we expect, roughly, that the
+      vast majority of measurements will lie between the values of
+      approximately -0.0846 and +0.0846 RU. Taking a look at the 1st iteration
+      <guilabel>CAN</guilabel> Doppler residuals, this is, approximately, what
+      we get.</para>
+
+      <para>There is one important detail on these graphs that you should be
+      aware of. GMAT only plots the residuals for data points that are
+      actually used to calculate the solution. Recall that for iteration 0,
+      all 1348 of 1348 total measurements were used to calculate the orbit
+      state, i.e., no data points were edited. Thus, if you counted up all the
+      data points on the 6 iteration 0 plots, you would find 1348 points. The
+      situation is different for the 1st iteration. Recall that for iteration
+      1, 1347 of 1348 total measurements were used to calculate the orbit
+      state, i.e., 1 data point was edited. Thus, if you counted up all the
+      data points on the 6 iteration 1 plots, you would find 1347 points. If
+      you wish to generate plots that contain both non-edited and edited
+      measurements, you will need to generate them yourself using the MATLAB
+      output file as discussed in the <xref
+      linkend="DSN_Estimation_Matlab_Output_File" xrefstyle="select:title"/>
+      section.</para>
+
+      <para>We note that the graphs have some interactive features. Hover your
+      mouse over the graph of interest and then right click. You will see that
+      you have four options. You can toggle both the grid lines and the Legend
+      on and off. You can also export the graph data to a text file, and
+      finally, you can export the graph image to a bmp file.</para>
+    </section>
+
+    <section xml:id="DSN_Estimation_Batch_Estimator_Output_Report">
+      <title>Batch Estimator Output Report</title>
+
+      <para>When we created our BatchEstimator resource, bat, in the <xref
+      linkend="DSN_Estimation_Create_and_configure_BatchEstimator_object"
+      xrefstyle="select:title"/> section, we specified that the output file
+      name would be 'Orbit Estimation using DSN Range and Doppler Data.report.
+      Go to GMAT’s ‘output’ directory and open this file, preferably using an
+      editor such as Notepad++ where you can easily scroll across the rows of
+      data.</para>
+
+      <para>The first approximately 150 lines of the report are mainly an echo
+      of the parameters we input into the script such as initial spacecraft
+      state, force model, propagator settings, measurement types to be
+      processed, etc.</para>
+
+      <para>After this echo of the input data, the output report contains
+      measurement residuals associated with the initial 0th iteration. Search
+      the file for the words, ‘ITERATION 0: MEASUREMENT RESIDUALS’ to find the
+      location of where the relevant output begins. This output sections
+      contains information on all of the measurements, both non-edited and
+      edited, that can possibly be used in the estimation process. Each row of
+      data corresponds to one measurement. For each measurement, the output
+      tells you the following</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Iteration Number</para>
+        </listitem>
+
+        <listitem>
+          <para>Record Number</para>
+        </listitem>
+
+        <listitem>
+          <para>Epoch in UTC Gregorian format</para>
+        </listitem>
+
+        <listitem>
+          <para>Observation type. ‘DSN_SeqRange’ corresponds to DSN sequential
+          range and ‘DSN_TCP’ corresponds to DSN total count phase-derived
+          Doppler.</para>
+        </listitem>
+
+        <listitem>
+          <para>Participants. For example, ‘22222,11111,22222’ tells you that
+          your measurement comes from a <guilabel>CAN</guilabel> to
+          <guilabel>Sat</guilabel> to <guilabel>CAN</guilabel> link.</para>
+        </listitem>
+
+        <listitem>
+          <para>Edit Criteria.</para>
+        </listitem>
+
+        <listitem>
+          <para>Observed Value (O)</para>
+        </listitem>
+
+        <listitem>
+          <para>Computed Value (C)</para>
+        </listitem>
+
+        <listitem>
+          <para>Observation Residual (O-C)</para>
+        </listitem>
+
+        <listitem>
+          <para>Elevation Angle</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>We have previously discussed the edit criteria. In particular, we
+      discussed the various reasons why data might be edited. If no edit code
+      is shown for a residual record, this means that the data was not edited
+      and the data was used, for this iteration, to calculate a state
+      estimate.</para>
+
+      <para>Note that if the elevation angle of any of the measurements is
+      below our input criteria of 7 degrees, then the measurement would be
+      edited because the signal would be considered to be “blocked.” For range
+      data, we would see Bn where n is an integer specifying the leg number.
+      For our two way range data type, we have two legs, the uplink leg
+      represented by the integer, 1, and the downlink leg, represented by the
+      integer 2. Thus, if we saw “B1” in this field, this would mean that the
+      signal was blocked for the uplink leg. Correspondingly, for Doppler
+      data, we would also see Bn, but the integer n would be 1 or 2 depending
+      upon whether the blockage occurred in the start path (n=1) or the end
+      path (n=2).</para>
+
+      <para>After all of the individual iteration 0 residuals are printed out,
+      four different iteration 0 observation summary reports, as shown below,
+      are printed out.</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Observation Summary by Station and Data Type</para>
+        </listitem>
+
+        <listitem>
+          <para>Observation Summary by Data Type and Station</para>
+        </listitem>
+
+        <listitem>
+          <para>Observation Summary by Station</para>
+        </listitem>
+
+        <listitem>
+          <para>Observation Summary by Data Type</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>After all of the observation summaries are printed out, the
+      updated state and covariance information, obtained by processing the
+      previous residual information, are printed out. The output also contains
+      statistical information about how much the individual components of the
+      state estimate have changed for this iteration.</para>
+
+      <para>At this point, the output content repeats itself for the next
+      iteration. The new state estimate is used to calculate new residuals and
+      the process starts all over again. The process stops when the estimator
+      has either converged or diverged.</para>
+
+      <para>We now give an example of how this report can be used. In the
+      <xref linkend="DSN_Estimation_Message_Window_Output"
+      xrefstyle="select:title"/> section, we noted that, for iteration 1, some
+      measurements were edited because of the OLSE criteria. Let’s investigate
+      this in more detail. What type of data was edited? From what station?
+      Could there be a problem with this data type at this station? We look at
+      the ‘Observation Summary by Station and Data Type’ for iteration 1. We
+      see that one range measurement from the <guilabel>CAN</guilabel> station
+      was edited. The mean residual and 1-sigma standard deviation for
+      <guilabel>GDS</guilabel> range measurements was -0.222339 and 10.082896
+      RU, respectively. The mean residual and 1-sigma standard deviation for
+      <guilabel>MAD</guilabel> range measurements was 0.199925 and 10.205535
+      RU, respectively.</para>
+
+      <para>Now that we know that the issue was with <guilabel>GDS</guilabel>
+      and <guilabel>MAD</guilabel> range measurements, we look at the detailed
+      residual output, for iteration 1, to determine the time these
+      measurements occurred. We can search for the OLSE keyword to help do
+      this. We determine that a <guilabel>CAN</guilabel> range measurement was
+      edited at 02 Sep 2015 04:00:00.000 UTCG and that it had an observation
+      residual of -33.161377 RU. This is just a bit beyond the 3-sigma value
+      and we conclude that there is no real problem with the
+      <guilabel>CAN</guilabel> range measurements. This is just normal
+      statistical variation.</para>
+
+      <para>We remind you, that when you do your run, you may have a different
+      number of data points edited. This is because, when you do your
+      simulation, GMAT uses a random number generator and you will be using a
+      different data set.</para>
+    </section>
+
+    <section xml:id="DSN_Estimation_Matlab_Output_File">
+      <title>Matlab Output File</title>
+
+      <para>In the <xref
+      linkend="DSN_Estimation_Create_and_configure_BatchEstimator_object"
+      xrefstyle="select:title"/> section, when we created our
+      <guilabel>BatchEstimator</guilabel> resource, bat, we chose our MATLAB
+      output file name, '<filename>Orbit Estimation using DSN Range and
+      Doppler Data.mat</filename>.' By default, this file is created in GMAT’s
+      ‘output’ directory. This file will only be created if you have MATLAB
+      installed and properly configured for use with GMAT.</para>
+
+      <para>Start up a MATLAB session. Change the directory to your GMAT
+      ‘output’ directory and then type the following at the MATLAB command
+      prompt.</para>
+
+      <programlisting>&gt;&gt; load 'Orbit Estimation using DSN Range and Doppler Data.mat'</programlisting>
+
+      <para>After the file has loaded, type the following command to obtain a
+      list of available variable names inside this file.</para>
+
+      <programlisting>&gt;&gt; whos</programlisting>
+
+      <para>You should see something similar to the following:</para>
+
+      <para><programlisting>&gt;&gt; whos
+  Name                  Size              Bytes  Class     Attributes
+
+  EstimationConfig      1x1                2894  struct              
+  Iteration             2x1             1479640  struct              
+  Observed              1x1             1232484  struct              </programlisting></para>
+
+      <para>Each of the variables is a structure with multiple fields
+      containing arrays of data such as measurements, residuals, edit flags,
+      state information, and other information useful for analysis. Full
+      details on the contents of the BatchEstimator MATLAB file can be found
+      in <xref linkend="BatchEstimator_MatlabFile"/> in the BatchEstimator
+      resource documentation.</para>
+
+      <para>You can use the data in the MATLAB file to perform custom plots
+      and statistical analysis using MATLAB. For example, to produce a plot of
+      all range residuals from the second iteration, you can do the
+      following:</para>
+
+      <para><programlisting>&gt;&gt; I = find(strcmp(Observed.MeasurementType, 'DSN_SeqRange'));
+&gt;&gt; t = Observed.EpochUTC(1,I);
+&gt;&gt; y = cell2mat(Iteration(2).Residual(I));
+&gt;&gt; plot(t, y, 'go');
+&gt;&gt; datetick</programlisting></para>
+    </section>
+  </section>
+
+  <section>
+    <title>References</title>
+
+    <informaltable colsep="0" frame="none" rowsep="0">
+      <tgroup cols="2">
+        <colspec colwidth="182*"/>
+
+        <colspec colwidth="818*"/>
+
+        <tbody>
+          <row>
+            <entry>GTDS [1989]</entry>
+
+            <entry>Goddard Trajectory Mathematical Theory, Revision 1, Edited
+            by A. Long, J. Cappellari, et al., Computer Sciences Corporation,
+            FDD, FDD-552-89-0001, July 1989.</entry>
+          </row>
+
+          <row>
+            <entry>GTDS [2007]</entry>
+
+            <entry>Goddard Trajectory Determination System User’s Guide,
+            National Aeronautics and Space Administration, GSFC, Greenbelt,
+            MD, MOMS-FD-UG-0346, July 2007</entry>
+          </row>
+
+          <row>
+            <entry>Moyer [2000]</entry>
+
+            <entry>Moyer, Theodore D., Formulation for Observed and Computed
+            Values of Deep Space Network Data Types for Navigation (JPL
+            Publication 00-7), Jet Propulsion Laboratory, California Institute
+            of Technology, October 2000.</entry>
+          </row>
+
+          <row>
+            <entry>Tapley [2004]</entry>
+
+            <entry>Tapley, Schutz, Born, Statistical Orbit Determination,
+            Elsevier, 2004</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
+
+  <section xml:id="DSN_Estimation_Appendix_A">
+    <title>Appendix A – GMAT Message Window Output</title>
+
+    <programlisting width="80"><?db-font-size 50% ?>Running mission...
+Number of thrown records due to:
+     .Invalid measurement value : 0
+     .Record duplication or time order : 0
+Data file '../output/Simulate DSN Range and Doppler Data 3 weeks.gmd' has 1348 of 1348 records used for estimation.
+Total number of load records : 1348
+
+List of tracking configurations (present in participant ID) for load records from data file '../output/Simulate DSN Range and Doppler Data 3 weeks.gmd':
+   Config 0: {{22222,11111,22222},DSN_SeqRange}
+   Config 1: {{22222,11111,22222},DSN_TCP}
+   Config 2: {{33333,11111,33333},DSN_SeqRange}
+   Config 3: {{33333,11111,33333},DSN_TCP}
+   Config 4: {{44444,11111,44444},DSN_SeqRange}
+   Config 5: {{44444,11111,44444},DSN_TCP}
+
+****   No tracking configuration was generated because the tracking configuration is defined in the script.
+
+Initializing new mat data writer
+MATLAB file will be written to C:\Users\sslojkow\Documents\gmat\builds\LatestCompleteVersion\bin\..\output\Orbit Estimation using DSN Range and Doppler Data.mat
+MATLAB Writer .mat version w5 invalid; defaulting to w6
+********************************************************
+*** Performing Estimation (using "bat")
+*** 
+********************************************************
+
+a priori state:
+   Estimation Epoch:
+   27253.5004170646025158930570 A.1 modified Julian
+   27253.5004166666661733004647 TAI modified Julian
+   19 Aug 2015 00:00:00.000 UTCG
+   Sat.SunMJ2000Eq.X = -126544963
+   Sat.SunMJ2000Eq.Y = 61978518
+   Sat.SunMJ2000Eq.Z = 24133225
+   Sat.SunMJ2000Eq.VX = -13.789
+   Sat.SunMJ2000Eq.VY = -24.673
+   Sat.SunMJ2000Eq.VZ = -10.662
+
+Number of Records Removed Due To:
+   . No Computed Value Configuration Available : 0
+   . Out of Ramp Table Range   : 0
+   . Signal Blocked : 0
+   . Initial RMS Sigma Filter  : 0
+   . Outer-Loop Sigma Editor : 0
+Number of records used for estimation: 1348
+
+   WeightedRMS residuals for this iteration : 1459.96324774
+   BestRMS residuals                        : 1459.96324774
+   PredictedRMS residuals for next iteration: 0.977684716761
+
+------------------------------------------------------
+Iteration 1
+
+Current estimated state:
+   Estimation Epoch:
+   27253.5004170646025158930570 A.1 modified Julian
+   27253.5004166666661733004647 TAI modified Julian
+   19 Aug 2015 00:00:00.000 UTCG
+   Sat.SunMJ2000Eq.X = -126544964.083
+   Sat.SunMJ2000Eq.Y = 61978520.0714
+   Sat.SunMJ2000Eq.Z = 24133223.2424
+   Sat.SunMJ2000Eq.VX = -13.789001388
+   Sat.SunMJ2000Eq.VY = -24.6729990628
+   Sat.SunMJ2000Eq.VZ = -10.662000523
+
+Number of Records Removed Due To:
+   . No Computed Value Configuration Available : 0
+   . Out of Ramp Table Range   : 0
+   . Signal Blocked : 0
+   . Initial RMS Sigma Filter  : 0
+   . Outer-Loop Sigma Editor : 1
+Number of records used for estimation: 1347
+
+   WeightedRMS residuals for this iteration : 0.974259069508
+   BestRMS residuals                        : 0.974259069508
+   PredictedRMS residuals for next iteration: 0.974224174165
+This iteration is converged due to relative convergence criteria.
+
+
+********************************************************
+*** Estimation Completed in 2 iterations
+********************************************************
+
+Estimation converged!
+      |1 - RMSP/RMSB| = | 1- 0.974224 / 0.974259| = 3.58173e-05 is less than RelativeTol, 0.0001
+
+Final Estimated State:
+
+   Estimation Epoch:
+   27253.5004170646025158930570 A.1 modified Julian
+   27253.5004166666661733004647 TAI modified Julian
+   19 Aug 2015 00:00:00.000 UTCG
+   Sat.SunMJ2000Eq.X = -126544963.637
+   Sat.SunMJ2000Eq.Y = 61978520.6939
+   Sat.SunMJ2000Eq.Z = 24133223.6628
+   Sat.SunMJ2000Eq.VX = -13.7890015517
+   Sat.SunMJ2000Eq.VY = -24.6729992038
+   Sat.SunMJ2000Eq.VZ = -10.6620000077
+</programlisting>
+
+    <programlisting width="80"><?db-font-size 50% ?>
+Final Covariance Matrix:
+
+         6.568631977218e+00         1.044777728608e+01         3.117063688646e+00        -2.346661054173e-06         4.986079628477e-07         1.614625814366e-06
+         1.044777710993e+01         2.043036379635e+01        -4.249227712186e+00        -3.704711284679e-06         1.982306082751e-07         3.981551919217e-06
+         3.117064114026e+00        -4.249226952008e+00         2.371354504010e+01        -1.180689659682e-06         1.672460285882e-06        -2.645600028262e-06
+        -2.346661055323e-06        -3.704711349403e-06        -1.180689508343e-06         8.389295488954e-13        -1.640460214611e-13        -6.093050987987e-13
+         4.986079968962e-07         1.982306774906e-07         1.672460265672e-06        -1.640460335201e-13         1.032410080241e-12        -2.192341045550e-12
+         1.614625733805e-06         3.981551830454e-06        -2.645600161576e-06        -6.093050697768e-13        -2.192341060048e-12         5.785215030292e-12
+
+Final Correlation Matrix:
+
+             1.000000000000             0.901879241925             0.249752571898            -0.999655028427             0.191467746900             0.261923625542
+             0.901879226720             1.000000000000            -0.193051736939            -0.894856861497             0.043162495440             0.366230559395
+             0.249752605981            -0.193051702403             1.000000000000            -0.264712696708             0.338011482643            -0.225873973518
+            -0.999655028917            -0.894856877130            -0.264712662778             1.000000000000            -0.176269364287            -0.276574613248
+             0.191467759975             0.043162510510             0.338011478559            -0.176269377245             1.000000000000            -0.897061553257
+             0.261923612473             0.366230551230            -0.225873984900            -0.276574600074            -0.897061559189             1.000000000000
+
+********************************************************
+
+
+
+Writing Estimator MATLAB File...
+Finished Writing Estimator MATLAB File.
+
+Mission run completed.
+===&gt; Total Run Time: 220.532 seconds
+
+========================================
+</programlisting>
+  </section>
+
+  <section xml:id="DSN_Estimation_Appendix_B">
+    <title>Appendix B – Zeroth Iteration Plots of Observation
+    Residuals</title>
+
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="files/images/Tut_Orbit_Estimation_using_DSN_Range_and_Doppler_Data_0_it_residual.png"
+                   scale="45"/>
+      </imageobject>
+    </mediaobject>
+  </section>
+
+  <section xml:id="DSN_Estimation_Appendix_C">
+    <title>Appendix C – First Iteration Plots of Observation Residuals</title>
+
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="files/images/Tut_Orbit_Estimation_using_DSN_Range_and_Doppler_Data_1_it_residual.png"
+                   scale="45"/>
+      </imageobject>
+    </mediaobject>
+  </section>
+
+  <section xml:id="DSN_Estimation_Appendix_D">
+    <title>Appendix D – Change Scripts to use Ground Network (GN) Data</title>
+
+    <para>In this tutorial, we performed estimation using DSN data. In this
+    appendix, we take a look at how our simulation script described in the
+    previous tutorial,
+    <filename>Tut_Simulate_DSN_Range_and_Doppler_Data_3_weeks.script</filename>,
+    and our estimation script described in this tutorial,
+    <filename>Tut_Orbit_Estimation_using_DSN_Range_and_Doppler_Data.script</filename>,
+    need to be changed in order to process GN instead of DSN data. Recall that
+    both of these scripts can be found in the GMAT "samples" folder. We note
+    that these tutorials used a deep space spacecraft state which is
+    consistent with using using DSN data. For the discussion that follows, we
+    will use this same spacecraft state even though typically the GN data type
+    is used with a spacecraft closer to Earth.</para>
+
+    <para>In the discussion that follows, we will comment out the old commands
+    using DSN data and replace it with new commands using GN data. We start
+    first with the simulation script. In what follows, we will use the object
+    names previously created even though the object names may no longer be
+    accurate. For example, in the simulation script, we created an
+    <guilabel>Antenna</guilabel> object, <guilabel>DSNAntenna</guilabel>. We
+    will continue to use this object name although clearly a better name for
+    this object would be <guilabel>GNAntenna</guilabel>. Let's consider the
+    spacecraft and ground station electronics. For the GN, S-band is typically
+    used. We change the value of the spacecraft transponder turn-around ratio
+    and the ground station transmitter frequency to account for this.</para>
+
+    <programlisting>SatTransponder.TurnAroundRatio = '240/221';       % was '880/749';
+
+DSNTransmitter.Frequency       = 2067.5;   %MHz.  % was 7200</programlisting>
+
+    <para>We now consider the<guilabel> ErrorModels</guilabel> objects,
+    attached to our 3 <guilabel>GroundStation</guilabel> objects, used to
+    describe the DSN noise characteristics. Since we will now be using the GN,
+    we must change the <guilabel>ErrorModels</guilabel> to describe GN noise
+    characteristics. As shown below, the Range 1-sigma noise is set to 10
+    meters and the RangeRate 1-sigma noise is set to 1 cm/s.</para>
+
+    <programlisting width="80">DSNrange.Type             = 'Range'       % was 'DSN_SeqRange';
+DSNrange.NoiseSigma       = 0.010;        % was 10.63;
+
+DSNdoppler.Type           = 'RangeRate';  %was 'DSN_TCP';
+DSNdoppler.NoiseSigma     = 0.00001;      %was 0.0282;</programlisting>
+
+    <para>As shown below, we need to tell GMAT to simulate Range and RangeRate
+    data instead of DSN_SeqRange and DSN_TCP data.</para>
+
+    <programlisting width="80">DSNsimData.AddTrackingConfig = {{CAN, Sat, CAN},'Range'};      %was 'DSN_SeqRange'
+DSNsimData.AddTrackingConfig = {{CAN, Sat, CAN},'RangeRate'};  %was 'DSN_TCP'
+DSNsimData.AddTrackingConfig = {{GDS, Sat, GDS},'Range'};      %was 'DSN_SeqRange'
+DSNsimData.AddTrackingConfig = {{GDS, Sat, GDS},'RangeRate'};  %was 'DSN_TCP'
+DSNsimData.AddTrackingConfig = {{MAD, Sat, MAD},'Range'};      %was 'DSN_SeqRange'
+DSNsimData.AddTrackingConfig = {{MAD, Sat, MAD},'RangeRate'};  %was 'DSN_TCP'</programlisting>
+
+    <para>Our original simulation script used a ramp table to specify the
+    ground station transmit frequencies. Since ramp tables are not used with
+    the GN, as shown below, we want to comment out the command that reads in a
+    ramp file. For script clarity, we also comment out a command that does not
+    apply for GN data.</para>
+
+    <programlisting width="80">%DSNsimData.RampTable  = ...
+             {'../data/navdata/Simulate DSN Range and Doppler Data 3 weeks.rmp'};
+
+%DSNsimData.SimRangeModuloConstant  = 3.3554432e+07;</programlisting>
+
+    <para>With all the changes above made to script,
+    <filename>Tut_Simulate_DSN_Range_and_Doppler_Data_3_weeks</filename>, save
+    the script to a new name, say, <filename>Simulate_GN_data</filename>.
+    Then, run this new script. As we know from the simulation tutorial, a file
+    named <filename>Simulate DSN Range and Doppler Data 3 weeks.gmd</filename>
+    will be written to the local GMAT installation "output" folder
+    location.</para>
+
+    <para>We now move on the examining the estimation script. Open up the
+    estimation script from the tutorial and save it to a new name, say
+    <filename>Estimation_GN_data</filename>. As was done for the simulation
+    script, we change the value of the spacecraft transponder turn-around
+    ratio and the ground station transmitter frequencies to account for the
+    fact that we are using the GN.</para>
+
+    <programlisting width="80">SatTransponder.TurnAroundRatio = '240/221';      % was '880/749';
+DSNTransmitter.Frequency       = 2067.5;   %MHz.  % was 7200
+</programlisting>
+
+    <para>As was done for the simulation script, we configure the
+    <guilabel>ErrorModels</guilabel> objects to describe GN data as opposed to
+    DSN data.</para>
+
+    <programlisting width="80">DSNrange.Type             = 'Range'       % was 'DSN_SeqRange';
+DSNrange.NoiseSigma       = 0.010;        % was 10.63;
+
+DSNdoppler.Type           = 'RangeRate';  %was 'DSN_TCP';
+DSNdoppler.NoiseSigma     = 0.00001;      %was 0.0282;</programlisting>
+
+    <para>Next, we need to tell GMAT to estimate using Range and RangeRate
+    data instead of DSN_SeqRange and DSN_TCP data. We note that, if desired,
+    the new lines below can be deleted and the script will still work. GMAT
+    will just read in the GMD file and automatically detect which ground
+    stations and data types are being used.</para>
+
+    <programlisting width="80">DSNsimData.AddTrackingConfig = {{CAN, Sat, CAN},'Range'};      %was 'DSN_SeqRange'
+DSNsimData.AddTrackingConfig = {{CAN, Sat, CAN},'RangeRate'};  %was 'DSN_TCP'
+DSNsimData.AddTrackingConfig = {{GDS, Sat, GDS},'Range'};      %was 'DSN_SeqRange'
+DSNsimData.AddTrackingConfig = {{GDS, Sat, GDS},'RangeRate'};  %was 'DSN_TCP'
+DSNsimData.AddTrackingConfig = {{MAD, Sat, MAD},'Range'};      %was 'DSN_SeqRange'
+DSNsimData.AddTrackingConfig = {{MAD, Sat, MAD},'RangeRate'};  %was 'DSN_TCP'</programlisting>
+
+    <para>Recall that our new GN simulation script is configured to output the
+    GMD file to the GMAT "output" directory. Let's change our estimation
+    script, which will read in this file, accordingly.</para>
+
+    <programlisting width="85">% DSNsimData.FileName = {'../data/navdata/Simulate DSN Range and Doppler Data 3 weeks.gmd'};
+DSNsimData.FileName   = {'../output/Simulate DSN Range and Doppler Data 3 weeks.gmd'};</programlisting>
+
+    <para>As was done for our simulation script, we comment out the line that
+    reads in a ramp table.</para>
+
+    <programlisting width="85">%DSNsimData.RampTable  = {'../data/navdata/Simulate DSN Range and Doppler Data 3 weeks.rmp'};</programlisting>
+
+    <para>The last step is to run our new <filename>Estimation_GN_data
+    script</filename> and then analyze the results in a similar fashion as to
+    what was done in the Estimation tutorial.</para>
+  </section>
+</chapter>

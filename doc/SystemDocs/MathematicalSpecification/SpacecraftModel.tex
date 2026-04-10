@@ -1,0 +1,369 @@
+\section{Spacecraft Model}
+
+\subsection{RF Hardware Models}
+
+The RF Hardware models in GMAT include transmitters, receiver, and transponders.  For each type of RF Hardware there are models for signal transmission/reception feasibility, received frequency, and transmitted frequency to name a few.  In the sections below we present these models for each type of RF Hardware.
+
+\subsubsection{Receiver}
+
+The receiver model supports a frequency model and a reception feasibility model.  The frequency model allows the user to specify the frequency capabilities of the receiver using different methods.  The feasibility model determines whether an RF signal sensed at the receiver can feasibly detected given the receivers capability as defined by the frequency model.
+  
+When the frequency model \st{CenterAndBandwidth} is selected, the feasibility test is as follows.  Define the frequency transmitted by the originating transmitter as $F_t$, the receiver's center frequency as $F_C$, the bandwidth as $\Delta F$, and the range rate between transmitter and receiver as $\dot{\rho}$ (which is positive when the distance $\rho$ is increasing).  The frequency at the receiver is calculated using
+%
+\begin{equation}
+     F_r = F_t(1 - \frac{\dot{\rho}}{c})
+\end{equation}
+%
+where $c$ is the speed of light.  Define the upper limit of the receiver as $F_u = F_c + \Delta F / 2$ and the lower limit as $F_l = F_c - \Delta F / 2$ .  If
+%
+\begin{equation}
+       F_l \leq F_r \leq F_u
+\end{equation}
+%
+then the received frequency is received by the receiver model.  If the above test fails, the receiver does not receive the signal.
+
+\subsubsection{Transmitter}
+
+
+
+\subsubsection{Transponder}
+
+
+\subsubsection{Antenna}
+
+\subsection{Thruster Models}
+
+GMAT supports several thruster models.  The thruster models employ
+physics and empirical data provided by the thruster manufacturer to
+model thrust and mass flow rate used in orbit and attitude equations
+of motion.   The thrust magnitude and $I_{sp}$ are assumed to be
+functions of thruster inlet flow conditions including  pressure,
+temperature, and for bi-propellant thrusters, the oxidizer to fuel
+ratio.
+
+In the following subsections we present models for thrust magnitude
+and mass flow rates for several thruster types.  All thrusters have
+a location and orientation.  The location is described in the
+spacecraft body system.  The orientation can be described with
+respect to any coordinate system known to GMAT. Let's define the
+rotation matrix from the thruster frame $\mathcal{F}_T$ to Earth's
+MJ2000 Equator as $\mathbf{R}_T$. Then, the thrust used in the orbit
+equations of motion is
+%
+\begin{equation}
+    \mathbf{F}_T = F_T \mathbf{R}_T \hat{\mathbf{T}}
+\end{equation}
+%
+where $F_T$ is the thrust magnitude and is thruster dependent, and
+$\hat{\mathbf{T}}$
+
+Now let's look at how to calculate the thrust magnitude for a
+mono-propellant chemical thruster.
+
+\subsubsection{Mono-Propellant Chemical Thruster}
+
+temperature.  The specific form of Eqs.~(\ref{Eq:MonoPropThrust})
+and (\ref{Eq:MonoPropIsp}) are determined by fitting test data to
+approximate thrust and $I_{sp}$ as function $T_i$ and $P_i$.  The
+user can supply this relationship via a scripte
+%
+\begin{figure}[h!]
+\centerline{
+\begin{picture}(100,480)
+\special{psfile= ./Images/MonoPropThruster.eps hoffset= -20 voffset= 250
+hscale=25 vscale=25}
+\makebox(100,540){$\dot{m}_e$,$P_e$,$v_e$}
+%
+\makebox(-105,710){$\dot{m}_c$,$T_c$,$P_c$}
+%
+\makebox(-105,920){$m_f$,$T_f$,$P_f$}
+%
+\makebox(-255,880){Catalyst Bed}
+\end{picture}}\vskip -3.75 in  \caption{ Mono-Prop Thruster Diagram} \label{fig:MonoPropThruster}
+\end{figure}
+
+We assume thruster data is given as a function of thruster inlet
+properties (as opposed to thrust chamber properties), and thrust
+magnitude and $I_{sp}$ are modelled using
+%
+\begin{equation}
+    F_T = f(P_i,T_i)\label{Eq:MonoPropThrust}
+\end{equation}
+%
+\begin{equation}
+    I_{sp} = f(P_i,T_i)\label{Eq:MonoPropIsp}
+\end{equation}
+%
+where $P_i$ and $T_i$ are the thruster inlet pressure and
+temperature.  The specific form of Eqs.~(\ref{Eq:MonoPropThrust})
+and (\ref{Eq:MonoPropIsp}) are determined by fitting test data to
+approximate thrust and $I_{sp}$ as function $T_i$ and $P_i$.  The
+user can supply this relationship via a scripted equation or by
+providing a function name.  After calculating $F_T$ and $I_{sp}$, we
+calculate the mass flow rate using
+%
+\begin{equation}
+   \dot{m}_e = \frac{F_T}{I_{sp}}
+\end{equation}
+
+\subsubsection{Bi-Propellant Chemical Thruster}
+
+\begin{figure}[h!]
+\centerline{
+    \begin{picture}(100,470)
+    \special{psfile= ./Images/BiPropThruster.eps hoffset= -20 voffset= 260
+    hscale=25 vscale=25}
+    \makebox(80,545){$\dot{m}_e$,}\makebox(-47,545){$P_e$,}
+    \makebox(-30,545){$v_e$}
+    \makebox(-70,730){$\dot{m}_c$,$m_r$,$T_c$,$P_c$}
+    \makebox(-30,938){$m_f$,$T_f$,$P_f$}
+    \makebox(-140,938){$m_o$,$T_o$,$P_o$}
+    \end{picture}}\vskip -3.75 in  \caption{ Bi-Prop Thruster Diagram} \label{fig:BiPropThruster}
+\end{figure}
+
+\begin{equation}
+    m_r = \frac{\dot{m}_o}{\dot{m}_f}
+\end{equation}
+%
+\begin{equation}
+    \dot{m}_c = \dot{m}_o + \dot{m}_f
+\end{equation}
+%
+\begin{equation}
+    T'=  \frac{\dot{m}_o T_o + \dot{m}_f T_f}{\dot{m}_o + \dot{m}_f}
+\end{equation}
+%
+\begin{equation}
+    P' =  \frac{\dot{m}_o P_o + \dot{m}_f P_f}{\dot{m}_o + \dot{m}_f}
+\end{equation}
+%
+\begin{equation}
+   F = f(P_c,T_c,of)
+\end{equation}
+%
+\begin{equation}
+   I_{sp} = f(P_c,T_c,of)
+\end{equation}
+%
+\begin{equation}
+   \dot{m}_e = \frac{\mathbf{F}_T}{I_{sp}}
+\end{equation}
+
+\subsubsection{Thruster Pulse Modelling}
+
+\begin{equation}
+T'=\frac{T(t)}{T_{max}} = \left\{\begin{array}{ll}
+             \displaystyle\frac{t^2(t - t_{si})^2}{t_{si}^4} &
+             \mbox{$t \leq t_{si}$}\\
+             1 & \mbox{$t_{si}<t<t_{sf}$}\\
+             \displaystyle\frac{(t - 2 t_{sf} + t_{f})^2(t - t_f)^2}{(t_f - t_{sf})^4}
+             & \mbox{$t_{sf} \leq t \leq t_f$}\\
+             \end{array}\label{eq:quartic}
+      \right.
+\end{equation}
+%
+\begin{figure}[ht]
+\centerline{
+    \begin{picture}(100,385)
+    \special{psfile= ./Images/ThrustPulseProfile.eps hoffset= -150 voffset= 60
+    hscale=65 vscale=65}
+    \end{picture}}\vskip -3.75 in  \caption{ Sample Thrust Pulse Profile } \label{fig:ThrustPulseProfile}
+\end{figure}
+%
+%
+The time to the thrust centroid, $t_c$, is calculated using
+%
+\begin{equation}
+     t_c = \displaystyle\frac{\displaystyle\int_0^{t_{f}} t \mbox{ }T'(t) dt}{\displaystyle\int_0^{t_{f}} T'(t)dt}
+\end{equation}
+%
+performing the integral yields
+%
+\begin{equation}
+    t_c = \frac{-4 t_{si}^2  + 4 t_{sf}^2  + 6 t_{sf} t_f + 5 t_f^2 }{-14 t_{si} + 14 t_{sf} + 16 t_f}
+\end{equation}
+
+\subsubsection{Thruster Hot Fire Test Data \\ and Thruster Models}
+
+Thruster hot fire test data is used to develop empirical models that
+describe thruster performance as a function of inlet conditions such
+as fuel pressure and temperature.  In this section we'll discuss how
+the empirical models are developed and discuss how the empirical
+models are consistent with the physical models.  First we present
+the physics model  for a thruster test stand experiment.  Next we
+present what is measured during a thrust stand test, and show how
+the measurements are used in combination with the physics model to
+generate a model of thruster performance over  a given range of
+thruster inlet conditions.
+
+In Fig.~\ref{fig:ThrustStand} we see an illustration of a simple
+thrust test setup.  The thruster is mounted to a rigid surface.
+%
+\begin{figure}[h!]
+\centerline{
+\begin{picture}(100,400)
+\special{psfile= ./Images/ThrusterOnStand.eps hoffset= -35 voffset= 220
+hscale=25 vscale=25}
+\makebox(-120,700){$\dot{m}$}\makebox(-120,675){$T_i$}
+\makebox(-125,650){$P_i$}\makebox(225,705){$\dot{m}$}\makebox(-190,680){$c^*=
+I_{sp}g$}\makebox(-225,655){$P_e$}\makebox(-225,530){$F_T$}
+\end{picture}}\vskip -3.5 in  \caption{ Thrust Stand Illustration} \label{fig:ThrustStand}
+\end{figure}
+%
+The force due to thrust, $F_T$, can be written as
+%
+\begin{equation}
+    F_T = \dot{m}v_e - (P_e - P_a)A_e
+\end{equation}
+%
+where
+\begin{tabbing}
+    12345678 \= Reynolds number based on length $s$ \kill
+    $\dot{m}$    \>  mass flow rate, kg/s \\
+    $T_i$        \>  fuel inlet temperature, K$^{\circ}$\\
+    $P_i$        \>  fuel inlet pressure, Pa\\
+    $c^*$        \>  characteristic velcocity, m/s \\
+    $I_sp$       \>  specific impulse, s \\
+    $g_o$        \>  9.801 m/s$^2$ \\
+    $P_e$        \>  nozzle exit pressure, Pa\\
+    $A_e$        \>  nozzle exit area, m$^2$\\
+    $F_T$        \>  force due to thrust, N\\
+\end{tabbing}
+%
+we can rewrite this as
+\begin{equation}
+    F_T = \dot{m}\left(v_e - \frac{(P_e - P_a)A_e}{\dot{m}}\right)  \label{Eq:Fvsmv}
+\end{equation}
+%
+From this equation we define the characteristic velocity, $c^*$,
+using
+%
+\begin{equation}
+    c^* = \left(v_e - \frac{(P_e - P_a)A_e}{\dot{m}}\right)
+\end{equation}
+%
+In practice, $v_e$ or $P_e$ are not measured.  We'll assume the
+tests are performed in a vacuum so $P_a = 0$.  To understand how we
+relate the measurements to physical model, let's define a new
+quantity $I_{sp}$, where
+%
+\begin{equation}
+    I_{sp} = \frac{F_T}{\dot{m} g_o}
+\end{equation}
+%
+we can rewrite this as
+%
+\begin{equation}
+    F_T = \dot{m} I_{sp} g_o \label{Eq:IspVer2}
+\end{equation}
+%
+Comparing Eq.s~(\ref{Eq:Fvsmv}) and (\ref{Eq:IspVer2}) we see that
+%
+\begin{equation}
+     c^* = I_{sp} g_o = v_e - \frac{(P_e - P_a)A_e}{\dot{m}}
+     \label{Eq:CstarIsp}
+\end{equation}
+%
+Equation (\ref{Eq:CstarIsp}) shows that $I_{sp}$ is a measure of the
+effective (characteristic) exhaust velocity.  $I_{sp}$ contains
+information on the energy stored in the fuel and how that energy
+translates to exit velocity.   When $I_{sp}$ is calculated from
+measured thrust data, the $I_{sp}$ contains a correction for exhaust
+velocity for force due to pressure $(P_e - P_a)A_e$.
+
+The characteristic velocity, and hence $I_{sp}$, depend on the type
+of fuel and the inlet temperature and pressure of the fuel.
+Experimental data determines how
+%
+\begin{equation}
+    I_{sp}(T_i,P_i) = \left.\frac{F_T}{\dot{m}g_o}\right|_{(T_i,P_i)}
+\end{equation}
+%
+\begin{tabbing}
+    12345678     \= Reynolds number based on length $s$ \kill
+    $\dot{m}$    \>  Known      \\
+    $T_i$        \>  Known      \\
+    $P_i$        \>  Known      \\
+    $g_o$        \>  Known      \\
+    $F_T$        \>  Measured   \\
+    $I_sp$       \>  Calculated \\
+\end{tabbing}
+
+\include{TankModels}
+
+\subsection{Mass Properties}
+
+\subsubsection{Spherical Tank}
+\clearpage
+\begin{figure}[ht]
+\centerline{
+    \begin{picture}(110,440)
+    \special{psfile= ./Images/PartiallyFilledTank.eps hoffset= -110 voffset=
+    90
+    hscale=55 vscale=55}
+    \makebox(-47,665){$h$}
+    \makebox(135,620){$r$}
+    \makebox(0,695){$\hat{y}$}
+    \makebox(-165,850){$\hat{z}$}
+    \makebox(-165,515){($\hat{x}$ is out of the page)}
+    \end{picture}}\vskip -3.65 in  \caption{ Geometry For Mass Properties of Partially Filled Spherical Tank} \label{fig:PartiallyFilledTank}
+\end{figure}
+
+\begin{equation}
+    V = \frac{1}{3}\pi \left( 3r - h \right)h^2
+\end{equation}
+%
+\begin{equation}
+    cg_z = \displaystyle\frac{-\displaystyle\frac{3}{4}h^2 + 3hr - 3r^2}{3r - h}
+\end{equation}
+%
+\begin{equation}
+    cg_x = cg_y = 0
+\end{equation}
+%
+\begin{equation}
+   I_{zz} = \frac{\pi \rho}{2}\left(\frac{1}{5}\left( h - r\right)^5 - \frac{2}{3}r^2\left( h - r\right)^3  + r^4(h-r) + \frac{8}{15}r^5 \right)
+\end{equation}
+%
+\begin{equation}
+   I_{xx} = \frac{\pi \rho}{2}\left(-\frac{3}{10}\left( h - r\right)^5 + \frac{1}{3}r^2\left( h - r\right)^3  + \frac{1}{2}r^4(h-r) + \frac{8}{15}r^5 \right)
+\end{equation}
+%
+\begin{equation}
+   I_{yy} = I_{xx}
+\end{equation}
+%
+\begin{equation}
+    \mathbf{I}' = \mathbf{R}_{bt}^T
+    \left(\begin{array}{ccc}
+         I_{xx} & 0 & 0 \\
+         0 & I_{yy} & 0\\
+         0 & 0 & I_{zz}\\
+    \end{array}\right)
+     \mathbf{R}_{bt} \
+\end{equation}
+%
+Estey \cite{Estey:83} gives appoximate equations for the area of
+different portions for a partially filled sphere. The area of the
+spherical shell in contact with the gaseous region is given by
+%
+\begin{equation}
+   A_g = 4.0675 \cdot V^{2/3}\left(\frac{V_g}{V}\right)^{0.62376}
+\end{equation}
+%
+The area of the boundary between the liquid and the gaseous region
+is given by
+%
+\begin{equation}
+   A_b = A_g - 3.4211 \cdot V^{2/3}\left(\frac{V_g}{V}\right)^{1.24752}
+\end{equation}
+%
+Finally, the area of the spherical shell in contact with the liquid
+is given by
+%
+\begin{equation}
+   A_l = \pi D^2 - A_g
+\end{equation}
+%
+
+%\input{FlowModelling}

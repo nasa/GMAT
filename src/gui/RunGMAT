@@ -1,0 +1,222 @@
+#!/bin/bash
+# Sets up the environment for GMAT, then runs the executable.
+#
+#  Copyright (c) 2002-2026 United States Government as represented by the
+#  Administrator of The National Aeronautics and Space Administration.
+#  All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); 
+# You may not use this file except in compliance with the License. 
+# You may obtain a copy of the License at:
+# http://www.apache.org/licenses/LICENSE-2.0 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
+# express or implied.   See the License for the specific language
+# governing permissions and limitations under the License.
+#
+# This assumes that the user has set the following MATLAB_APP_PATH in her/his
+# MacConfigure.txt file and that this MacConfigure.txt file resides in the
+# bin folder where the GMAT.app bundle resides:
+# MATLAB_APP_PATH - should point to the MATLAB app in the directory where MATLAB
+#                   has been installed, e.g. /Applications/MATLAB_R2019b.app
+# SNOPT_LIB_PATH  - should point to where you have installed your snopt dylibs
+# GFORTRAN_LIB_PATH  - should point to where you have your gfortran installation
+#
+# NOTE that currently, we are running 64-bit GUI versions of GMAT and therefore,
+# we need to use 64-bit version(s) of all libraries here.
+#
+# To debug errors, set the debugit flag to 'yesdoit'.  By default, debug is
+# written to a file inside the bundle in the directory from which this script is
+# run.  This may be changed to write to a different file by setting debugfile
+# (see below).
+#
+
+# Display an error dialog
+function InstallErrorMessage() {
+  osascript <<EOT
+    set kStopIcon to stop
+    tell app "System Events"
+      display dialog "$1" buttons {"Quit"} default button 1 with icon kStopIcon with title "GMAT Incorrectly Installed"
+      return -- Suppress result
+    end tell
+EOT
+}
+
+# we need the absolute path to this script
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Set debug file and flag here ......................
+debugfile="$here/debugrungmat.txt"
+# uncomment the next line for debug output
+# debugit='yesdoit'
+if [ "$debugit" = 'yesdoit' ]
+then
+   echo "The value of debugfile is "$debugfile"" > "$debugfile"
+fi
+# ...................................................
+
+
+# What do we want to run?
+#cmd="$( ls -1 "$here"/GMAT* | xargs basename )" # Supports release & debug GMAT
+# NOTE - the debug app GMATd does not work here yet!!!
+if [ -f "$here/GMAT" ]
+then
+cmd="GMAT"
+elif [ -f "$here/GMATd" ]
+then
+cmd="GMATd"
+else
+   echo "CANNOT find GMAT executable!!!" >> "$debugfile"
+   exit 1
+fi
+# Where is the Mac config file?  It has to be in the bin directory for now
+FILE="$here/../../../MacConfigure.txt"
+
+# begin debugging
+if [ "$debugit" = 'yesdoit' ]
+then
+   echo "DEBUG " >> "$debugfile"
+   echo "The meaning of here is "$here"" >> "$debugfile"
+   echo "The meaning of cmd is "$cmd"" >> "$debugfile"
+   pwd >> "$debugfile"
+   if [ -f "$FILE" ]
+   then
+      echo "Now about to read file $FILE" >> "$debugfile"
+   else
+      echo "DOES NOT EXIST -  file $FILE" >> "$debugfile"
+      exit 1
+   fi
+fi
+# end debugging
+
+# turn ON extended globbing
+shopt -s extglob
+
+keywordmatlab="MATLAB_APP_PATH"
+keylenmatlab=${#keywordmatlab}
+
+keywordsnopt="SNOPT_LIB_PATH"
+keylensnopt=${#keywordsnopt}
+
+keywordfortran="GFORTRAN_LIB_PATH"
+keylenfortran=${#keywordfortran}
+
+# read until we find the location keyword(s)
+# then strip off leading blanks, the equal sign,
+# leading blanks (again), then trailing blanks
+while read line
+   do
+      # skip commented-out lines
+      if [[ ${line:0:1} == "#" ]]; then continue
+      fi
+      case "$line" in
+      ${keywordmatlab}*)
+         valuematlab=${line:$keylenmatlab}
+         matlabloc=${valuematlab##+([[:space:]])}
+         matlabloc=${matlabloc#=}
+         matlabloc=${matlabloc##+([[:space:]])}
+         matlabloc=${matlabloc%%+([[:space:]])}
+      ;;
+      esac
+      case "$line" in
+      ${keywordsnopt}*)
+         valuesnopt=${line:$keylensnopt}
+         snoptloc=${valuesnopt##+([[:space:]])}
+         snoptloc=${snoptloc#=}
+         snoptloc=${snoptloc##+([[:space:]])}
+         snoptloc=${snoptloc%%+([[:space:]])}
+      ;;
+      esac
+      case "$line" in
+      ${keywordfortran}*)
+         valuefortran=${line:$keylenfortran}
+         fortranloc=${valuefortran##+([[:space:]])}
+         fortranloc=${fortranloc#=}
+         fortranloc=${fortranloc##+([[:space:]])}
+         fortranloc=${fortranloc%%+([[:space:]])}
+      ;;
+      esac
+   done < "$FILE"
+
+# begin debugging
+if [ "$debugit" = 'yesdoit' ]
+then
+   echo "valuematlab is |$valuematlab|"  >> "$debugfile"
+   echo "valuesnopt is |$valuesnopt|"  >> "$debugfile"
+   echo "valuefortran is |$valuefortran|"  >> "$debugfile"
+fi
+# end debugging
+
+if [ -n "$matlabloc" ]
+then
+   if [ -d "$matlabloc" ]
+   then
+      # begin debugging
+      if [ "$debugit" = 'yesdoit' ]
+      then
+         echo "setting matlab location to |$matlabloc|"  >> "$debugfile"
+      fi
+      # end debugging
+      export DYLD_LIBRARY_PATH="$matlabloc/bin/maci64:$matlabloc/sys/os/maci64:$matlabloc/extern/bin/maci64:$DYLD_LIBRARY_PATH"
+      export DYLD_LIBRARY_PATH="$matlabloc/bin/maca64:$matlabloc/sys/os/maca64:$matlabloc/extern/bin/maca64:$DYLD_LIBRARY_PATH"
+      export PATH="$matlabloc/bin:$PATH"
+   fi
+fi
+
+if [ -n "$snoptloc" ]
+then
+   if [ -d "$snoptloc" ]
+   then
+      # begin debugging
+      if [ "$debugit" = 'yesdoit' ]
+      then
+         echo "setting snopt location to |$snoptloc|"  >> "$debugfile"
+      fi
+      # end debugging
+      export DYLD_LIBRARY_PATH="$snoptloc:$DYLD_LIBRARY_PATH"
+   fi
+fi
+
+
+if [ -n "$fortranloc" ]
+then
+   if [ -d "$fortranloc" ]
+   then
+      # begin debugging
+      if [ "$debugit" = 'yesdoit' ]
+      then
+         echo "setting gfortran location to |$fortranloc|"  >> "$debugfile"
+      fi
+      # end debugging
+      export DYLD_LIBRARY_PATH="$fortranloc:$DYLD_LIBRARY_PATH"
+   fi
+fi
+
+# we need to point to the correct version of gfortran
+# export DYLD_LIBRARY_PATH="$here/../Frameworks:$DYLD_LIBRARY_PATH"
+
+# Allow OFI to load fonts on macOS 10.15+
+export OSG_FILE_PATH="/System/Library/Fonts/Supplemental:$OSG_FILE_PATH"
+
+# On macOS, the osgPlugins-x.x.x folder cannot be signed due to the
+# dots in the folder name, so it is renamed to 'osgPlugins' before signing.
+# OSG_LIBRARY_PATH allows OSG to still find plugins in the renamed folder.
+# Ref: https://stackoverflow.com/questions/37737829/codesign-osx-app-bundle-with-periods-in-macos-directory-names
+export OSG_LIBRARY_PATH="$here/../Frameworks/osgPlugins"
+
+# turn OFF extended globbing
+shopt -u extglob
+
+# for CSPICE
+ulimit -s 61440
+
+# begin debugging
+if [ "$debugit" = 'yesdoit' ]
+then
+   echo "NOW running GMAT at location |$here/$cmd|"  >> "$debugfile"
+fi
+# end debugging
+
+# We need this dollar-sign-at-sign thing here in order to pass arguments into GMAT!!!
+exec "$here/$cmd" "$@"

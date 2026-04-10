@@ -1,0 +1,134 @@
+%
+%   Ex_MultibodySphericalHarmonicGravity
+%
+%   Multibody spherical harmonic gravity
+%   Trajectory is a near-rectilinear halo orbit (NRHO)
+%
+%   Released: R2025a
+%
+
+
+Create CoordinateSystem MoonMJ2000Eq
+
+MoonMJ2000Eq.Origin = Luna
+MoonMJ2000Eq.Axes   = MJ2000Eq
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft PropSat
+
+PropSat.DateFormat       = UTCGregorian
+PropSat.DisplayStateType = Cartesian
+PropSat.Epoch            = '1 Jun 2023 00:00:00.000'
+PropSat.CoordinateSystem = MoonMJ2000Eq
+PropSat.X                =  -8992.197
+PropSat.Y                =  17505.351
+PropSat.Z                = -61412.481
+PropSat.VX               = -0.04684787
+PropSat.VY               =  0.10867048
+PropSat.VZ               = -0.09986946
+PropSat.DryMass          = 130
+PropSat.Cd               = 2.2
+PropSat.Cr               = 1.8
+PropSat.DragArea         = 15
+PropSat.SRPArea          = 1
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel FM
+
+FM.CentralBody                      = Earth
+FM.PrimaryBodies                    = {Earth, Luna}
+FM.PointMasses                      = {Sun}
+FM.GravityField.Earth.Degree        = 12
+FM.GravityField.Earth.Order         = 12
+FM.GravityField.Earth.TideModel     = 'None'
+FM.GravityField.Earth.PotentialFile = 'EGM96.cof'
+FM.GravityField.Luna.Degree         = 30
+FM.GravityField.Luna.Order          = 30
+FM.GravityField.Luna.PotentialFile  = 'grgm900c.cof'
+FM.GravityField.Luna.TideModel      = 'None'
+FM.SRP                              = Off
+FM.ErrorControl                     = 'None'
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator Prop
+
+Prop.Type            = RungeKutta89
+Prop.FM              = FM
+Prop.Accuracy        = 1e-13
+Prop.InitialStepSize = 60
+Prop.MinStep         = 0 
+Prop.MaxStep         = 60
+Prop.MaxStepAttempts = 50
+
+%----------------------------------------
+%----- Set up visualizations
+%----------------------------------------
+
+Create CoordinateSystem EML1
+
+EML1.Origin    = Luna
+EML1.Axes      = ObjectReferenced
+EML1.XAxis     = R
+EML1.ZAxis     = N
+EML1.Primary   = Earth
+EML1.Secondary = Luna
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OpenFrames1
+
+OpenFrames1.Add              = {PropSat, Luna, Earth, Sun}
+OpenFrames1.CoordinateSystem = EarthICRF
+OpenFrames1.UpperLeft        = [ 0   0 ]
+OpenFrames1.Size             = [ 0.5 1 ]
+OpenFrames1.View             = {CoordinateSystemView1}
+
+Create OpenFramesView CoordinateSystemView1
+
+CoordinateSystemView1.ViewFrame          = CoordinateSystem
+CoordinateSystemView1.ViewTrajectory     = Off
+CoordinateSystemView1.InertialFrame      = Off
+CoordinateSystemView1.SetDefaultLocation = On
+CoordinateSystemView1.SetCurrentLocation = Off
+
+CoordinateSystemView1.DefaultEye         = [ 0 0 1200000 ]
+CoordinateSystemView1.DefaultCenter      = [ 0 0 0 ]
+CoordinateSystemView1.DefaultUp          = [ 0 1 0 ]
+CoordinateSystemView1.FOVy               = 45
+
+Create OpenFramesInterface OpenFrames2
+
+OpenFrames2.UpperLeft        = [ 0.5 0 ]
+OpenFrames2.Size             = [ 0.5 1 ]
+OpenFrames2.Add              = {PropSat, Luna, Earth, Sun}
+OpenFrames2.View             = {LunaView}
+OpenFrames2.CoordinateSystem = EML1
+
+Create OpenFramesView LunaView
+
+LunaView.ViewFrame           = CoordinateSystem
+LunaView.ViewTrajectory      = Off
+LunaView.InertialFrame       = Off
+LunaView.SetDefaultLocation  = On
+LunaView.SetCurrentLocation  = Off
+LunaView.DefaultEye          = [ 250000 10000 30000 ]
+LunaView.DefaultCenter       = [ 0 0 0 ]
+LunaView.DefaultUp           = [ 0 0 1 ]
+LunaView.FOVy                = 45
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Propagate Prop(PropSat) {PropSat.ElapsedDays = 30}

@@ -1,0 +1,138 @@
+%
+%  Ex_StationContactLocator
+%
+%  Generate a station contacts/view periods report.
+%
+%  Released: R2015a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft GEOSat;
+
+GEOSat.DateFormat       = UTCGregorian;
+GEOSat.Epoch            = '01 Jan 2015 11:59:28.000';
+GEOSat.CoordinateSystem = EarthMJ2000Eq;
+GEOSat.DisplayStateType = Keplerian;
+GEOSat.SMA              = 7191.938817629017;
+GEOSat.ECC              = 0.02454974900598101;
+GEOSat.INC              = 56.70000000000002;
+GEOSat.RAAN             = 306.6148021947984;
+GEOSat.AOP              = 314.1905515359922;
+GEOSat.TA               = 99.88774933204861;
+
+%----------------------------------------
+%---------- GroundStations
+%----------------------------------------
+
+Create GroundStation myStation;
+
+myStation.StateType = Spherical;
+myStation.Location1 = 28.5383355;
+myStation.Location2 = 278.6207635;
+myStation.Location3 = 0;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn DefaultIB;
+
+DefaultIB.CoordinateSystem = Local;
+DefaultIB.Origin           = Earth;
+DefaultIB.Axes             = VNB;
+DefaultIB.Element1         = 0;
+DefaultIB.Element2         = 0;
+DefaultIB.Element3         = 0;
+DefaultIB.DecrementMass    = false;
+DefaultIB.Isp              = 300;
+DefaultIB.GravitationalAccel = 9.810000000000001;
+
+%----------------------------------------
+%---------- EventLocators
+%----------------------------------------
+
+Create ContactLocator ContactLocator1;
+
+ContactLocator1.Target               = GEOSat;
+ContactLocator1.Filename             = 'ContactLocator1.txt';
+ContactLocator1.InputEpochFormat     = 'TAIModJulian';
+ContactLocator1.InitialEpoch         = '21545';
+ContactLocator1.StepSize             = 300;
+ContactLocator1.FinalEpoch           = '21545.138';
+ContactLocator1.UseLightTimeDelay    = true;
+ContactLocator1.UseStellarAberration = true;
+ContactLocator1.WriteReport          = true;
+ContactLocator1.RunMode              = Automatic;
+ContactLocator1.UseEntireInterval    = true;
+ContactLocator1.Observers            = {myStation};
+ContactLocator1.LightTimeDirection   = Transmit;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_ThreeDView;
+
+OFI_ThreeDView.SolverIterations    = Current;
+OFI_ThreeDView.UpperLeft           = [ 0.002352941176470588 0 ];
+OFI_ThreeDView.Size                = [ 0.5 0.4496021220159151 ];
+OFI_ThreeDView.RelativeZOrder      = 1011;
+OFI_ThreeDView.Maximized           = false;
+
+OFI_ThreeDView.Add                 = {GEOSat, Earth};
+OFI_ThreeDView.View                = {ThreeD_View};
+
+%OFI_ThreeDView.CoordinateSystem    = MoonMJ2000Eq;
+OFI_ThreeDView.DrawObject          = [ true true true];
+OFI_ThreeDView.DrawXYPlane         = [ false false false];
+OFI_ThreeDView.DrawLabel           = [ true true true ];
+OFI_ThreeDView.DrawGrid            = [ false false false];
+
+OFI_ThreeDView.Axes                = On;
+OFI_ThreeDView.XYPlane             = On;
+OFI_ThreeDView.EclipticPlane       = Off;
+OFI_ThreeDView.EnableStars         = On;
+OFI_ThreeDView.StarCount           = 40000;
+OFI_ThreeDView.ShowPlot            = true;
+
+Create OpenFramesView ThreeD_View;
+
+ThreeD_View.ViewFrame              = CoordinateSystem;
+ThreeD_View.SetDefaultLocation     = On;
+ThreeD_View.SetCurrentLocation     = Off;
+
+ThreeD_View.DefaultEye             = [ 30000 0 0 ];
+ThreeD_View.DefaultCenter          = [ 0 0 0 ];
+ThreeD_View.DefaultUp              = [ 0 0 1 ];
+
+Create GroundTrackPlot GroundTrackPlot;
+
+GroundTrackPlot.UpperLeft      = [ 0.002352941176470588 0.4522546419098144 ];
+GroundTrackPlot.Size           = [ 0.5 0.4496021220159151 ];
+GroundTrackPlot.RelativeZOrder = 1030;
+GroundTrackPlot.Maximized      = false;
+GroundTrackPlot.Add            = {GEOSat, myStation};
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+Propagate DefaultProp(GEOSat) {GEOSat.ElapsedDays = 5};

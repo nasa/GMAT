@@ -1,0 +1,57 @@
+%
+%   Ex_TLE_Propagation
+%
+%   TLE propagation using the SGP4 propagator
+%
+%   Use the Write command to send data to the log file or a report.
+%
+%   The sample TLE is in the Ex_TLE_Propagation_TLE.txt file and the 
+%   spacecraft Id must match the TLE "line 0" name or the TLE five-digit ID.
+%
+%   Released: R2022a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft ExampleSat
+
+ExampleSat.EphemerisName = '../samples/SupportFiles/Ex_TLE_Propagation_TLE.txt'
+ExampleSat.Id            = 'ExampleSat'
+% ExampleSat.Id          = 27421 % This also works
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator TLEProp
+
+TLEProp.Type            = SPICESGP4
+TLEProp.InitialStepSize = 300
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create ReportFile RF
+
+RF.Filename     = 'Ex_TLE_Propagation.txt'
+RF.Precision    = 16
+RF.Add          = { ...
+    ExampleSat.UTCGregorian, ExampleSat.X, ExampleSat.Y, ExampleSat.Z, ...
+    ExampleSat.VX, ExampleSat.VY, ExampleSat.VZ}
+	
+RF.WriteHeaders = True
+RF.FixedWidth   = True
+RF.Delimiter    = ' '
+RF.ColumnWidth  = 23
+RF.WriteReport  = True
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Propagate TLEProp(ExampleSat) {ExampleSat.ElapsedDays = 1.0}

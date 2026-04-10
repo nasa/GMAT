@@ -1,0 +1,83 @@
+%
+%  Ex_MarsGRAM2005
+%
+%  Use the MarsGRAM2005 Mars atmospheric density model.
+%
+%  Released: R2014a
+% 
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft MarsSC;
+
+MarsSC.DateFormat       = UTCGregorian;
+MarsSC.Epoch            = '01 Jun 2004 12:00:00.000';
+MarsSC.CoordinateSystem = MarsMJ2000Eq;
+MarsSC.DisplayStateType = Cartesian;
+MarsSC.X                = 3547;
+MarsSC.Y                = 0;
+MarsSC.Z                = 0;
+MarsSC.VX               = 0;
+MarsSC.VY               = 2.457083402459184;
+MarsSC.VZ               = 2.457083402459184;
+MarsSC.DryMass          = 350;
+MarsSC.Cd               = 2.2;
+MarsSC.Cr               = 1.2;
+MarsSC.DragArea         = 20;
+MarsSC.SRPArea          = 20;
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel MarsDrag;
+
+MarsDrag.CentralBody                     = Mars;
+MarsDrag.PrimaryBodies                   = {Mars};
+MarsDrag.SRP                             = Off;
+MarsDrag.RelativisticCorrection          = Off;
+MarsDrag.ErrorControl                    = RSSStep;
+MarsDrag.GravityField.Mars.Degree        = 0;
+MarsDrag.GravityField.Mars.Order         = 0;
+MarsDrag.GravityField.Mars.PotentialFile = 'Mars50c.cof';
+MarsDrag.Drag.AtmosphereModel            = MarsGRAM2005;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator RKV89;
+
+RKV89.FM                       = MarsDrag;
+RKV89.Type                     = RungeKutta89;
+RKV89.InitialStepSize          = 60;
+RKV89.Accuracy                 = 1e-013;
+RKV89.MinStep                  = 0;
+RKV89.MaxStep                  = 2700;
+RKV89.MaxStepAttempts          = 50;
+RKV89.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MarsMJ2000Eq;
+MarsMJ2000Eq.Origin = Mars;
+
+MarsMJ2000Eq.Axes   = MJ2000Eq;
+
+Create CoordinateSystem MarsFixed;
+MarsFixed.Origin = Mars;
+MarsFixed.Axes   = BodyFixed;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate RKV89(MarsSC) {MarsSC.ElapsedSecs = 300};

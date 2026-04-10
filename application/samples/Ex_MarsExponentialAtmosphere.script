@@ -1,0 +1,85 @@
+%
+%   Ex_MarsExponentialAtmosphere
+%
+%   Demonstrates the configuration and use of an exponential atmosphere at Mars.
+%
+%   Released: R2026a
+%
+
+ 
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft MarsSat;
+MarsSat.DateFormat = UTCGregorian;
+MarsSat.Epoch = '11 Mar 2026 12:00:00.000';
+MarsSat.CoordinateSystem = MarsInertial;
+MarsSat.DisplayStateType = Keplerian;
+MarsSat.SMA = 3550;
+MarsSat.ECC = 0.0011;
+MarsSat.INC = 78;
+MarsSat.RAAN = 0;
+MarsSat.AOP = 90;
+MarsSat.TA = 0;
+MarsSat.DryMass = 85;
+MarsSat.Cd = 2.2;
+MarsSat.Cr = 1.8;
+MarsSat.DragArea = 2;
+MarsSat.SRPArea = 2;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel MarsProp_ForceModel;
+MarsProp_ForceModel.CentralBody = Mars;
+MarsProp_ForceModel.PrimaryBodies = {Mars};
+MarsProp_ForceModel.PointMasses = {Jupiter, Sun};
+
+% This line specifies that an exponential atmosphere is used in the run
+MarsProp_ForceModel.Drag.AtmosphereModel = Exponential;
+MarsProp_ForceModel.Drag.DragModel = 'Spherical';
+
+% This line sets the atmosphere's data table
+MarsProp_ForceModel.Drag.InputFile = '../data/atmosphere/mars/MarsExponentialAtmosphereData.txt';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator MarsProp;
+MarsProp.FM = MarsProp_ForceModel;
+MarsProp.Type = PrinceDormand78;
+MarsProp.InitialStepSize = 60;
+MarsProp.Accuracy = 1e-12;
+MarsProp.MinStep = 0;
+MarsProp.MaxStep = 2700;
+MarsProp.MaxStepAttempts = 50;
+MarsProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MarsInertial;
+MarsInertial.Origin = Mars;
+MarsInertial.Axes = BodyInertial;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create XYPlot XYPlot1;
+XYPlot1.XVariable = MarsSat.ElapsedDays;
+XYPlot1.YVariables = {MarsSat.Mars.Altitude};
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+% Propagate to 10 km from the surface or 30 days, whichever comes first
+Propagate MarsProp(MarsSat) {MarsSat.ElapsedDays = 30, MarsSat.Mars.Altitude = 10};

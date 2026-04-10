@@ -1,0 +1,39 @@
+% This script shows how to call a GMAT function
+% named SatSep
+
+Create Spacecraft Sat1 Sat2;
+Sat1.RAAN = 45;
+Sat1.TA   = 0.5;
+Sat2.RAAN = 44.5;
+Sat2.TA   = 0.0;
+
+Create ForceModel fm;
+fm.PrimaryBodies = {Earth};
+
+Create Propagator prop;
+prop.FM = fm;
+
+Create ReportFile sepData
+sepData.Filename = Sat1_Sat2_Sep.txt;
+
+Create ImpulsiveBurn mnvr;
+mnvr.Axes = VNB;
+mnvr.Element2 = 0.05;
+
+Create Variable dx dy dz dr;
+Global dx dy dz;
+
+While Sat1.ElapsedDays < 0.1
+   Propagate prop(Sat1, Sat2);
+   [dr] = SatSep(Sat1, Sat2);     % 1st function call
+   Report sepData Sat1.A1ModJulian dx dy dz dr;
+EndWhile;
+
+Maneuver mnvr(Sat1);
+
+While Sat1.ElapsedDays < 0.2
+   Propagate prop(Sat1, Sat2);
+   [dr] = SatSep(Sat1, Sat2);     % 2nd function call
+   Report sepData Sat1.A1ModJulian dx dy dz dr;
+EndWhile;
+

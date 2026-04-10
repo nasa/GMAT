@@ -1,0 +1,13 @@
+# settings.py
+#
+# Shared settings between Monte and GMAT for the Lunar Transfer Example
+
+# Shared Spacecraft Settings
+scName = "LunarExpedition"
+scNAIFId = -421
+startEpoch = "24 Jul 2014 00:00:00.000"
+
+# Ephemeris Settings
+InitialEphem  = "Monte_" + scName + ".bsp"
+EphemSpan     = 10.0   # days
+ManeuverEphem = "GMAT_" + scName + ".bsp"

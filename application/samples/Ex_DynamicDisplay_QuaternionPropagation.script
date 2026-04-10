@@ -1,0 +1,384 @@
+%
+%  Ex_DynamicDisplay_QuaternionPropagation
+%
+%  Script using GMAT's ThreeAxisKinematics for quaternion propagation in support
+%  of the animation of satellite rotation and for producing a dynamic data display
+%
+%  Author: Mike Stark (attitude) & Ravi Mathur (OpenFrames animation)
+%  April 2020
+%
+%  Released: R2020a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+DefaultSC.DateFormat                   = TAIModJulian;
+DefaultSC.Epoch                        = '28755.995';
+DefaultSC.CoordinateSystem             = EarthMJ2000Eq;
+DefaultSC.DisplayStateType             = Cartesian;
+DefaultSC.X                            = 7100;
+DefaultSC.Y                            = 0;
+DefaultSC.Z                            = 1300;
+DefaultSC.VX                           = 0;
+DefaultSC.VY                           = 7.35;
+DefaultSC.VZ                           = 1;
+DefaultSC.DryMass                      = 850;
+DefaultSC.Cd                           = 2.2;
+DefaultSC.Cr                           = 1.8;
+DefaultSC.DragArea                     = 15;
+DefaultSC.SRPArea                      = 1;
+DefaultSC.SPADDragScaleFactor          = 1;
+DefaultSC.SPADSRPScaleFactor           = 1;
+DefaultSC.NAIFId                       = -10000001;
+DefaultSC.NAIFIdReferenceFrame         = -9000001;
+DefaultSC.OrbitColor                   = Red;
+DefaultSC.TargetColor                  = Teal;
+DefaultSC.OrbitErrorCovariance         = [ 1e+70 0 0 0 0 0 ; 0 1e+70 0 0 0 0 ; 0 0 1e+70 0 0 0 ; 0 0 0 1e+70 0 0 ; 0 0 0 0 1e+70 0 ; 0 0 0 0 0 1e+70 ];
+DefaultSC.CdSigma                      = 1e+70;
+DefaultSC.CrSigma                      = 1e+70;
+DefaultSC.Id                           = 'SatId';
+DefaultSC.Attitude                     = ThreeAxisKinematic;
+DefaultSC.SPADSRPInterpolationMethod   = Bilinear;
+DefaultSC.SPADSRPScaleFactorSigma      = 1e+70;
+DefaultSC.SPADDragInterpolationMethod  = Bilinear;
+DefaultSC.SPADDragScaleFactorSigma     = 1e+70;
+DefaultSC.ModelFile                    = 'aura.3ds';
+DefaultSC.ModelOffsetX                 = 0;
+DefaultSC.ModelOffsetY                 = 0;
+DefaultSC.ModelOffsetZ                 = 0;
+DefaultSC.ModelRotationX               = 0;
+DefaultSC.ModelRotationY               = 0;
+DefaultSC.ModelRotationZ               = 0;
+DefaultSC.ModelScale                   = 1;
+DefaultSC.AttitudeDisplayStateType     = 'EulerAngles';
+DefaultSC.AttitudeRateDisplayStateType = 'AngularVelocity';
+DefaultSC.EulerAngleSequence           = '321';
+DefaultSC.EulerAngle1                  = 0;
+DefaultSC.EulerAngle2                  = -0;
+DefaultSC.EulerAngle3                  = 0;
+DefaultSC.AngularVelocityX             = 0.05;
+DefaultSC.AngularVelocityY             = 0;
+DefaultSC.AngularVelocityZ             = 0.005;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp_ForceModel.CentralBody                      = Earth;
+DefaultProp_ForceModel.PrimaryBodies                    = {Earth};
+DefaultProp_ForceModel.Drag                             = None;
+DefaultProp_ForceModel.SRP                              = Off;
+DefaultProp_ForceModel.RelativisticCorrection           = Off;
+DefaultProp_ForceModel.ErrorControl                     = RSSStep;
+DefaultProp_ForceModel.GravityField.Earth.Degree        = 4;
+DefaultProp_ForceModel.GravityField.Earth.Order         = 4;
+DefaultProp_ForceModel.GravityField.Earth.StmLimit      = 100;
+DefaultProp_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+DefaultProp_ForceModel.GravityField.Earth.TideModel     = 'None';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM              = DefaultProp_ForceModel;
+DefaultProp.Type            = RungeKutta56;
+DefaultProp.InitialStepSize = 60;
+DefaultProp.Accuracy        = 9.999999999999999e-12;
+DefaultProp.MinStep         = 0.001;
+DefaultProp.MaxStep         = 2700;
+DefaultProp.MaxStepAttempts = 50;
+DefaultProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem SC_Inertial;
+
+SC_Inertial.Origin = DefaultSC;
+SC_Inertial.Axes   = MJ2000Eq;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create DynamicDataDisplay AngleRateDisplay;
+
+AngleRateDisplay.UpperLeft      = [ 0.2401041666666667 0.05925925925925926 ];
+AngleRateDisplay.Size           = [ 0.5947916666666667 0.2083333333333333 ];
+AngleRateDisplay.RelativeZOrder = 20;
+AngleRateDisplay.Maximized      = false;
+AngleRateDisplay.AddParameters  = {1, timeTag, roll, pitch, yaw};
+AngleRateDisplay.AddParameters  = {2, t, wx, wy, wz};
+AngleRateDisplay.RowTextColors  = {1, [0 0 0], [0 0 0], [0 0 0], [0 0 0]};
+AngleRateDisplay.RowTextColors  = {2, [0 0 0], [0 0 0], [0 0 0], [0 0 0]};
+AngleRateDisplay.WarnColor      = [218 165 32];
+AngleRateDisplay.CritColor      = [255 0 0];
+
+Create OpenFramesInterface OpenFrames1;
+
+OpenFrames1.SolverIterations  = Current;
+OpenFrames1.UpperLeft         = [ 0.3864705882352941 0.1833333333333333 ];
+OpenFrames1.Size              = [ 0.4941176470588236 0.5773809523809523 ];
+OpenFrames1.RelativeZOrder    = 32;
+OpenFrames1.Maximized         = true;
+OpenFrames1.Add               = {DefaultSC, Earth, Sun};
+OpenFrames1.View              = {SC_InertialView, SC_EarthView};
+OpenFrames1.Vector            = {ToSun};
+OpenFrames1.CoordinateSystem  = EarthMJ2000Eq;
+OpenFrames1.DrawObject        = [ true true true ];
+OpenFrames1.DrawTrajectory    = [ true true true ];
+OpenFrames1.DrawAxes          = [ false false false ];
+OpenFrames1.DrawXYPlane       = [ false false false ];
+OpenFrames1.DrawLabel         = [ false true true ];
+OpenFrames1.DrawUsePropLabel  = [ false false false ];
+OpenFrames1.DrawCenterPoint   = [ true true true ];
+OpenFrames1.DrawEndPoints     = [ true true true ];
+OpenFrames1.DrawVelocity      = [ false false false ];
+OpenFrames1.DrawGrid          = [ false false false ];
+OpenFrames1.DrawLineWidth     = [ 2 2 2 ];
+OpenFrames1.DrawMarkerSize    = [ 10 10 10 ];
+OpenFrames1.DrawFontSize      = [ 14 14 14 ];
+OpenFrames1.Axes              = Off;
+OpenFrames1.AxesLength        = 1;
+OpenFrames1.AxesLabels        = On;
+OpenFrames1.FrameLabel        = Off;
+OpenFrames1.XYPlane           = Off;
+OpenFrames1.EclipticPlane     = Off;
+OpenFrames1.EnableStars       = On;
+OpenFrames1.StarCatalog       = 'inp_StarsHYGv3.txt';
+OpenFrames1.StarCount         = 40000;
+OpenFrames1.MinStarMag        = -2;
+OpenFrames1.MaxStarMag        = 6;
+OpenFrames1.MinStarPixels     = 1;
+OpenFrames1.MaxStarPixels     = 10;
+OpenFrames1.MinStarDimRatio   = 0.5;
+OpenFrames1.ShowPlot          = true;
+OpenFrames1.ShowToolbar       = true;
+OpenFrames1.SolverIterLastN   = 1;
+OpenFrames1.ShowVR            = false;
+OpenFrames1.PlaybackTimeScale = 3600;
+OpenFrames1.MultisampleAntiAliasing = On;
+OpenFrames1.MSAASamples             = 8;
+OpenFrames1.DrawFontPosition        = {'Top-Right', 'Top-Right', 'Top-Right'};
+
+% report file with time, RPY and rates
+% should match what is on dynamic displays
+Create ReportFile RPY_view;
+
+RPY_view.SolverIterations = Current;
+RPY_view.UpperLeft        = [ 0 0 ];
+RPY_view.Size             = [ 0 0 ];
+RPY_view.RelativeZOrder   = 0;
+RPY_view.Maximized        = false;
+RPY_view.Filename         = 'AnglesAndRates.txt';
+RPY_view.Precision        = 16;
+RPY_view.WriteHeaders     = true;
+RPY_view.LeftJustify      = On;
+RPY_view.ZeroFill         = Off;
+RPY_view.FixedWidth       = true;
+RPY_view.Delimiter        = ' ';
+RPY_view.ColumnWidth      = 23;
+RPY_view.WriteReport      = true;
+
+% detailed debug file for every propagation step
+Create ReportFile DebugOut;
+
+DebugOut.SolverIterations = Current;
+DebugOut.UpperLeft        = [ 0 0 ];
+DebugOut.Size             = [ 0 0 ];
+DebugOut.RelativeZOrder   = 0;
+DebugOut.Maximized        = false;
+DebugOut.Filename         = 'Debug.txt';
+DebugOut.Precision        = 14;
+DebugOut.WriteHeaders     = true;
+DebugOut.LeftJustify      = On;
+DebugOut.ZeroFill         = Off;
+DebugOut.FixedWidth       = true;
+DebugOut.Delimiter        = ' ';
+DebugOut.ColumnWidth      = 20;
+DebugOut.WriteReport      = true;
+
+%----------------------------------------
+%---------- Open Frames User Objects
+%----------------------------------------
+
+Create OpenFramesView SC_InertialView;
+
+SC_InertialView.ViewFrame          = DefaultSC;
+SC_InertialView.ViewTrajectory     = Off;
+SC_InertialView.InertialFrame      = On;
+SC_InertialView.SetDefaultLocation = Off;
+SC_InertialView.SetCurrentLocation = On;
+SC_InertialView.CurrentEye         = [ 0 -205.0596160888672 0 ];
+SC_InertialView.CurrentCenter      = [ 0 0 0 ];
+SC_InertialView.CurrentUp          = [ 0 0 1 ];
+SC_InertialView.FOVy               = 45;
+
+Create OpenFramesView SC_EarthView;
+
+SC_EarthView.ViewFrame          = DefaultSC;
+SC_EarthView.ViewTrajectory     = Off;
+SC_EarthView.InertialFrame      = On;
+SC_EarthView.LookAtFrame        = Earth;
+SC_EarthView.ShortestAngle      = Off;
+SC_EarthView.SetDefaultLocation = Off;
+SC_EarthView.SetCurrentLocation = On;
+SC_EarthView.CurrentEye         = [ 0 -205.0596160888672 0 ];
+SC_EarthView.CurrentCenter      = [ 0 0 0 ];
+SC_EarthView.CurrentUp          = [ 0 0 1 ];
+SC_EarthView.FOVy               = 45;
+
+Create OpenFramesVector ToSun;
+
+ToSun.VectorColor               = [255 255 128];
+ToSun.SourceObject              = DefaultSC;
+ToSun.VectorType                = Relative Position;
+ToSun.DestinationObject         = Sun;
+ToSun.VectorLabel               = 'Sun';
+ToSun.VectorLengthType          = 'Auto';
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+
+% conversion constants
+Create Variable SECONDS_PER_DAY, RTD;
+SECONDS_PER_DAY = 86400;
+
+% radian to degree multiplier = 180/pi
+%RTD = 180.0 / 3.14159265358979323846264338327950288419716939937511;
+
+% variables for dynamic display
+Create Variable timeTag;  % time tag of attitude & rate data points
+Create Variable t;        % elapsed time from start of propagation
+Create Variable  roll pitch yaw wx wy wz % attitude and rates
+
+% variables for inner loop debug
+Create Array  Q[1,4];    % quaternion
+Create Array  W[1,3];    % angular velocity  (rad/sec)
+
+% loop control for real time propagation
+Create Variable i, j;
+% assures attitude displays, reports and graphics change at realtime pace
+Create Variable next now; % system clock time for current and next step
+Create Variable delay     % time to wait before propagating again
+
+%Time & duration tracking variables
+Create Variable date;     % Modified Julian Date controlling propagation
+Create Variable dt;       % realtime stepsize in seconds
+Create Variable dtInDays; % stepsize converted to days for MJD arithmetic
+t  = 0;
+dt = 0.025;
+%dtInDays = dt/SECONDS_PER_DAY; % step size for MJD arithmetic
+
+% output flags
+Create Variable debugDetailEnabled     % enable detailed write every step
+Create Variable attitudeReportEnabled  % enable writing of angles and rates
+                                       %   when data is read
+debugDetailEnabled    = 0
+attitudeReportEnabled = 1
+
+% variables to time initial propagation
+Create Variable tstart,tend dtprop
+
+% Strings
+Create String gregorianTimeString; % time for report header [& perhaps more]
+Create String textString           % used to insert text into reports
+
+%---------------------------------------------------------------
+% Quaternion propagation for animation & dynamic data display
+%---------------------------------------------------------------
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+% INITIAL SETUP
+% constants
+dtInDays = dt/SECONDS_PER_DAY; % step size for MJD arithmetic
+RTD      = 180.0 / 3.14159265358979323846264338327950288419716939937511;
+
+
+% set up synchronization with system clock.
+[now] = Python.time.time;
+next  = now+dt;
+
+% get initial time, s/c attitude & rates for output
+timeTag = 28755.995 % Initial value correspondsw to spacecraft epoch
+roll    = DefaultSC.EulerAngle3;
+pitch   = DefaultSC.EulerAngle2;
+yaw     = DefaultSC.EulerAngle1;
+wx      = DefaultSC.AngularVelocityX;
+wy      = DefaultSC.AngularVelocityY;
+wz      = DefaultSC.AngularVelocityZ;
+  
+% write data to display and (optionally) file with same data
+UpdateDynamicData AngleRateDisplay;
+If 'write initial angles and rates' attitudeReportEnabled ~= 0
+   Report RPY_view timeTag roll pitch yaw wx wy wz 
+EndIf
+
+% PROPAGATION LOOP:
+
+% outer loop represents 1 second; dynamic data display updates at this rate
+For i = 1:20
+   % inner loop represents 40 Hz update rate for animation
+   For j = 1:40
+	   % delay until next time
+      [now] = Python.time.time;
+      delay = next-now;
+      If delay > 0.0
+         Python.time.sleep(delay);
+      EndIf;
+		
+      % Propagate to next time
+      timeTag = timeTag + dtInDays;
+      t    = t+dt
+      next = next + dt
+      Propagate DefaultProp(DefaultSC) {DefaultSC.TAIModJulian = timeTag}
+      
+      % optionally write debug
+		If 'write angles and rates' debugDetailEnabled ~= 0
+         roll  = DefaultSC.EulerAngle3;
+         pitch = DefaultSC.EulerAngle2;
+         yaw   = DefaultSC.EulerAngle1;
+         wx    = DefaultSC.AngularVelocityX;
+         wy    = DefaultSC.AngularVelocityY;
+         wz    = DefaultSC.AngularVelocityZ;
+			Report DebugOut timeTag t roll pitch yaw wx wy wz now next delay
+		EndIf
+      % delay until next time
+      [now] = Python.time.time;
+      delay = next-now;
+      If delay > 0.0
+          Python.time.sleep(delay);
+       EndIf;
+   EndFor
+
+   % get s/c attitude & rates for output
+   roll  = DefaultSC.EulerAngle3;
+   pitch = DefaultSC.EulerAngle2;
+   yaw   = DefaultSC.EulerAngle1;
+   wx    = DefaultSC.AngularVelocityX;
+   wy    = DefaultSC.AngularVelocityY;
+   wz    = DefaultSC.AngularVelocityZ;
+   
+   % write data to display and (optionally) file with same data
+   UpdateDynamicData AngleRateDisplay;
+   If 'write angles and rates' attitudeReportEnabled ~= 0
+      Report RPY_view timeTag t roll pitch yaw wx wy wz
+   EndIf
+   
+EndFor

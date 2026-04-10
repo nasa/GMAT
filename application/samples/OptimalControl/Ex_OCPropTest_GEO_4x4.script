@@ -1,0 +1,195 @@
+%
+%  Ex_OCPropTest_GEO_4x4
+%
+%  Sample optimal control script of a simple propagation (no control) in GEO.
+%
+%  Released: R2020a
+%
+
+
+%----------------------------------------
+% Create a spacecraft named GEO.  Guess is set later.
+%----------------------------------------
+Create Spacecraft GEO;
+
+GEO.DateFormat         = UTCGregorian
+GEO.Epoch              = '01 Jun 2004 12:00:00.000';
+GEO.DisplayStateType   = Cartesian;
+GEO.CoordinateSystem   = EarthMJ2000Eq;
+GEO.X                  = 36607.3582560;
+GEO.Y                  = -20921.723703;
+GEO.Z                  = 0.0;
+GEO.VX                 = 1.52563600;
+GEO.VY                 = 2.66945100;
+GEO.VZ                 = 0.0;
+GEO.Cd                 = 2.2;
+GEO.Cr                 = 1.2;
+GEO.DragArea           = 20;
+GEO.SRPArea            = 20;
+GEO.DryMass            = 850;
+GEO.Tanks              = {ChemicalTank1};
+ 
+Create ChemicalTank ChemicalTank1;
+
+ChemicalTank1.AllowNegativeFuelMass = false;
+ChemicalTank1.FuelMass              = 150;
+ChemicalTank1.Pressure              = 1500;
+ChemicalTank1.Temperature           = 20;
+ChemicalTank1.RefTemperature        = 20;
+ChemicalTank1.Volume                = 1;
+ChemicalTank1.FuelDensity           = 1260;
+ChemicalTank1.PressureModel         = PressureRegulated;
+
+Create ForceModel theForceModel;
+
+theForceModel.PrimaryBodies        = {Earth};
+theForceModel.Drag                 = None;
+theForceModel.SRP                  = Off;
+theForceModel.Gravity.Earth.Model  = ../data/gravity/earth/JGM2.cof;
+theForceModel.Gravity.Earth.Degree = 4;
+theForceModel.Gravity.Earth.Order  = 4;
+theForceModel.PointMasses          = {};
+
+
+Create Propagator theProp;
+
+theProp.FM              = theForceModel;
+theProp.Type            = RungeKutta89;
+theProp.InitialStepSize = 60;
+theProp.Accuracy        = 1e-013;
+theProp.MinStep         = 60;
+theProp.MaxStep         = 60;
+theProp.MaxStepAttempts = 50; 
+ 
+SolarSystem.EphemerisUpdateInterval      = 0.0;
+SolarSystem.Earth.NutationUpdateInterval = 60.0; 
+
+%----------------------------------------
+% Create an emtgThrustModel Resource
+%----------------------------------------
+Create EMTGSpacecraft emtgThrustModel;
+
+emtgThrustModel.SpacecraftFile = spacecraft.emtg_spacecraftopt
+emtgThrustModel.DutyCycle      = 1.0;
+
+%----------------------------------------
+% Create a DynamicsConfiguration object and add spacecraft
+% ForceModel and Thrust model
+%----------------------------------------
+Create DynamicsConfiguration EarthThrustDynConfig
+
+EarthThrustDynConfig.ForceModels    = {theForceModel};
+EarthThrustDynConfig.Spacecraft     = {GEO}
+EarthThrustDynConfig.FiniteBurns    = {emtgThrustModel}
+EarthThrustDynConfig.EMTGTankConfig = {ChemicalTank1}
+
+%----------------------------------------
+% Create a guess object that uses a file-based guess source
+%----------------------------------------
+Create OptimalControlGuess trajectoryGuess
+
+trajectoryGuess.Type = CollocationGuessFile  
+trajectoryGuess.FileName = ../data/misc/GMAT_GEO_GuessData.och
+
+%----------------------------------------
+%  Create a phase and set transcription and parameter bounds
+%----------------------------------------
+Create Phase thePhase
+
+thePhase.Type                  = RadauPseudospectral
+thePhase.ThrustMode            = Coast
+thePhase.DynamicsConfiguration = EarthThrustDynConfig
+thePhase.SubPhaseBoundaries    = [-1.0  -.8  -.6  -.4  -.2   0   .2   .4  .6  .8   1.0]
+thePhase.PointsPerSubPhase     =  [5 5 5 5 5 5 5 5 5 5 ]
+
+thePhase.GuessSource     = trajectoryGuess
+thePhase.EpochFormat     = A1ModJulian
+thePhase.EpochLowerBound = 23158.00037076831
+thePhase.EpochUpperBound = 23168.00037076831
+thePhase.StateLowerBound =  [ -1e6 -1e6 -1e6 ...
+                              -100 -100 -100 0.0001]
+thePhase.StateUpperBound = [ 1e6  1e6 1e6 ...
+                             100 100 100 1000]
+							  
+thePhase.ControlLowerBound         = [ -1  -1  -1]
+thePhase.ControlUpperBound         = [ 1  1  1]
+thePhase.InitialEpoch              = 23158.00037076831
+thePhase.FinalEpoch                = 23158.2253707683
+thePhase.MaxRelativeErrorTolerance = 1e-9;
+
+%----------------------------------------
+% Create constraint that applies the initial conditions
+%----------------------------------------
+Create CustomLinkageConstraint initialConditions;
+
+initialConditions.ConstraintMode           = Absolute;
+initialConditions.InitialPhase             = thePhase;
+initialConditions.InitialPhaseBoundaryType = Start;
+initialConditions.SetModelParameter('TimeLowerBound', A1ModJulian, 23158.00037076831)
+initialConditions.SetModelParameter('TimeUpperBound', A1ModJulian, 23158.00037076831)
+initialConditions.SetModelParameter('PositionLowerBound', [36607.3582560 -20921.723703 0])
+initialConditions.SetModelParameter('PositionUpperBound', [36607.3582560 -20921.723703 0])
+initialConditions.SetModelParameter('VelocityLowerBound', [1.52563600 2.66945100 0])
+initialConditions.SetModelParameter('VelocityUpperBound', [1.52563600 2.66945100 0])
+initialConditions.SetModelParameter('MassLowerBound', 1000)
+initialConditions.SetModelParameter('MassUpperBound', 1000)
+
+%----------------------------------------
+% Create a constraint on Phase duration. 
+%----------------------------------------
+
+Create CustomLinkageConstraint duration_Thrust;
+
+duration_Thrust.ConstraintMode           = Difference;
+duration_Thrust.InitialPhase             = thePhase;
+duration_Thrust.InitialPhaseBoundaryType = Start;
+duration_Thrust.FinalPhase               = thePhase;
+duration_Thrust.FinalPhaseBoundaryType   = End;
+duration_Thrust.SetModelParameter('TimeLowerBound', ElapsedSeconds, 19439.9999992456)
+duration_Thrust.SetModelParameter('TimeUpperBound', ElapsedSeconds, 19439.9999992456)
+
+%
+% Create the trajectory and add constraints
+%
+
+Create Trajectory traj
+
+traj.PhaseList                    = {thePhase}
+traj.GuessSource                  = trajectoryGuess;
+traj.SolutionFile                 = 'OCPropTest_GEO_4x4.och';
+traj.StateScaleMode               = Canonical;
+traj.MassScaleFactor              = 4000;
+traj.MaxMeshRefinementIterations  = 5;
+traj.CustomLinkages               = {initialConditions, duration_Thrust}
+traj.MajorIterationsLimits        = [3000];
+traj.TotalIterationsLimits        = [20000];
+traj.FeasibilityTolerances        = [1e-6];
+traj.MajorOptimalityTolerances    = [1e-6];
+traj.OptimizationMode             = {'Feasible point'};
+traj.MeshRefinementGuessMode      = 'BestSolutionMostRecentMesh'
+traj.AllowFailedMeshOptimizations = True
+
+Create ReportFile rf
+
+rf.Filename     = OCPropTest_GEO_4x4.report
+rf.WriteHeaders = false
+rf.Add          = {GEO.A1ModJulian, GEO.EarthMJ2000Eq.X,GEO.EarthMJ2000Eq.Y,GEO.EarthMJ2000Eq.Z,GEO.EarthMJ2000Eq.VX,GEO.EarthMJ2000Eq.VY,GEO.EarthMJ2000Eq.VZ,GEO.TotalMass}
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+%----------------------------------------
+% Run the mission. includes an explicit Runge-Kutta propagation for comparison
+%----------------------------------------
+   
+BeginMissionSequence
+Toggle rf Off
+Propagate BackProp theProp(GEO){GEO.ElapsedSecs = -3600}
+Toggle rf On
+
+Propagate theProp(GEO){GEO.ElapsedSecs = 3600}
+Propagate theProp(GEO){GEO.ElapsedSecs = 19439.9999992456}
+Propagate theProp(GEO){GEO.ElapsedSecs = 3600}
+Collocate traj

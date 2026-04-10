@@ -1,0 +1,370 @@
+%
+%  Ex_MinFuelLunarTransfer
+%
+%  Script Mission - Lunar Transfer Example
+%
+%  This script demonstrates how to set up a lunar transfer mission
+%
+%  Released: R2015a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft MMSRef;
+
+MMSRef.DateFormat                   = UTCGregorian;
+MMSRef.Epoch                        = '22 Jul 2014 11:29:10.811';
+MMSRef.CoordinateSystem             = EarthMJ2000Eq;
+MMSRef.DisplayStateType             = Cartesian;
+MMSRef.X                            = -137380.1984338506;
+MMSRef.Y                            = 75679.87867537055;
+MMSRef.Z                            = 21487.63875187856;
+MMSRef.VX                           = -0.2324532014235503;
+MMSRef.VY                           = -0.4462753967758019;
+MMSRef.VZ                           = 0.08561205662877103;
+MMSRef.DryMass                      = 1000;
+MMSRef.Cd                           = 2.2;
+MMSRef.Cr                           = 1.7;
+MMSRef.DragArea                     = 15;
+MMSRef.SRPArea                      = 1;
+MMSRef.NAIFId                       = -123456789;
+MMSRef.NAIFIdReferenceFrame         = -123456789;
+MMSRef.Id                           = 'SatId';
+MMSRef.Attitude                     = CoordinateSystemFixed;
+MMSRef.ModelFile                    = '../data/vehicle/models/aura.3ds';
+MMSRef.ModelOffsetX                 = 1;
+MMSRef.ModelOffsetY                 = 0;
+MMSRef.ModelOffsetZ                 = 0;
+MMSRef.ModelRotationX               = 0;
+MMSRef.ModelRotationY               = 0;
+MMSRef.ModelRotationZ               = 0;
+MMSRef.ModelScale                   = 0.5;
+MMSRef.AttitudeDisplayStateType     = 'Quaternion';
+MMSRef.AttitudeRateDisplayStateType = 'AngularVelocity';
+MMSRef.AttitudeCoordinateSystem     = 'EarthMJ2000Eq';
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel LunarSB_ForceModel;
+
+LunarSB_ForceModel.CentralBody            = Earth;
+LunarSB_ForceModel.PointMasses            = {Earth, Sun, Luna};
+LunarSB_ForceModel.Drag                   = None;
+LunarSB_ForceModel.SRP                    = Off;
+LunarSB_ForceModel.RelativisticCorrection = Off;
+LunarSB_ForceModel.ErrorControl           = RSSStep;
+
+
+Create ForceModel MoonCentered_ForceModel;
+
+MoonCentered_ForceModel.CentralBody            = Luna;
+MoonCentered_ForceModel.PointMasses            = {Earth, Sun, Luna};
+MoonCentered_ForceModel.Drag                   = None;
+MoonCentered_ForceModel.SRP                    = Off;
+MoonCentered_ForceModel.RelativisticCorrection = Off;
+MoonCentered_ForceModel.ErrorControl           = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator LunarSB;
+
+LunarSB.FM                       = LunarSB_ForceModel;
+LunarSB.Type                     = RungeKutta89;
+LunarSB.InitialStepSize          = 60;
+LunarSB.Accuracy                 = 9.999999999999999e-012;
+LunarSB.MinStep                  = 0.001;
+LunarSB.MaxStep                  = 45000;
+LunarSB.MaxStepAttempts          = 50;
+LunarSB.StopIfAccuracyIsViolated = true;
+
+
+Create Propagator MoonCentered;
+
+MoonCentered.FM                       = MoonCentered_ForceModel;
+MoonCentered.Type                     = RungeKutta89;
+MoonCentered.InitialStepSize          = 60;
+MoonCentered.Accuracy                 = 9.999999999999999e-012;
+MoonCentered.MinStep                  = 0.001;
+MoonCentered.MaxStep                  = 15000;
+MoonCentered.MaxStepAttempts          = 50;
+MoonCentered.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TOI;
+
+TOI.CoordinateSystem = Local;
+TOI.Origin           = Earth;
+TOI.Axes             = VNB;
+TOI.Element1         = 0.14676929889;
+TOI.Element2         = 0.046042675892;
+TOI.Element3         = 0.090223244097;
+TOI.DecrementMass    = false;
+TOI.Isp              = 300;
+TOI.GravitationalAccel = 9.810000000000001;
+
+
+Create ImpulsiveBurn LOI;
+
+LOI.CoordinateSystem = Local;
+LOI.Origin           = Luna;
+LOI.Axes             = VNB;
+LOI.Element1         = -0.652;
+LOI.Element2         = 0;
+LOI.Element3         = 0;
+LOI.DecrementMass    = false;
+LOI.Isp              = 300;
+LOI.GravitationalAccel = 9.810000000000001;
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable Cost;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthSunRot;
+
+EarthSunRot.Origin    = Earth;
+EarthSunRot.Axes      = ObjectReferenced;
+EarthSunRot.XAxis     = R;
+EarthSunRot.ZAxis     = N;
+EarthSunRot.Primary   = Sun;
+EarthSunRot.Secondary = Earth;
+
+
+Create CoordinateSystem MoonMJ2000Eq;
+
+MoonMJ2000Eq.Origin = Luna;
+MoonMJ2000Eq.Axes   = MJ2000Eq;
+
+
+Create CoordinateSystem EarthMoonRot;
+
+EarthMoonRot.Origin    = Luna;
+EarthMoonRot.Axes      = ObjectReferenced;
+EarthMoonRot.XAxis     = R;
+EarthMoonRot.ZAxis     = N;
+EarthMoonRot.Primary   = Earth;
+EarthMoonRot.Secondary = Luna;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC1;
+
+DC1.ShowProgress      = true;
+DC1.ReportStyle       = Normal;
+DC1.ReportFile        = 'DifferentialCorrectorDC1.data';
+DC1.MaximumIterations = 25;
+DC1.DerivativeMethod  = CentralDifference;
+
+
+% Create VF13ad SQP1;
+% SQP1.ShowProgress          = true;
+% SQP1.ReportStyle           = Normal;
+% SQP1.ReportFile            = 'VF13adVF13ad1.data';
+% SQP1.MaximumIterations     = 200;
+% SQP1.Tolerance             = 1e-005;
+% SQP1.UseCentralDifferences = false;
+% SQP1.FeasibilityTolerance  = 1;
+
+
+Create SNOPT SQP1;
+
+SQP1.ShowProgress              = true;
+SQP1.ReportStyle               = Normal;
+SQP1.ReportFile                = 'SNOPTSNOPT1.data';
+SQP1.MajorOptimalityTolerance  = 1e-5;
+SQP1.MajorFeasibilityTolerance = 1e-005;
+SQP1.MajorIterationsLimit      = 100;
+SQP1.TotalIterationsLimit      = 100000;
+SQP1.OutputFileName            = 'SNOPT.out';
+SQP1.OverrideSpecsFileValues   = true;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_OGL_EarthMJ2K;
+
+OFI_OGL_EarthMJ2K.SolverIterations     = None;
+OFI_OGL_EarthMJ2K.UpperLeft            = [ 0.2803468208092486 0.03641456582633054 ];
+OFI_OGL_EarthMJ2K.Size                 = [ 0.3554913294797688 0.453781512605042 ];
+OFI_OGL_EarthMJ2K.RelativeZOrder       = 1790;
+OFI_OGL_EarthMJ2K.Maximized            = false;
+
+OFI_OGL_EarthMJ2K.Add                  = {MMSRef, Earth, Luna};
+OFI_OGL_EarthMJ2K.View                 = {OGL_EarthMJ2K_View};
+
+OFI_OGL_EarthMJ2K.CoordinateSystem     = EarthMJ2000Eq;
+OFI_OGL_EarthMJ2K.DrawObject           = [ true true true];
+OFI_OGL_EarthMJ2K.DrawXYPlane          = [ false false false];
+OFI_OGL_EarthMJ2K.DrawLabel            = [ true true true];
+OFI_OGL_EarthMJ2K.DrawGrid             = [ false false false];
+
+OFI_OGL_EarthMJ2K.Axes                 = On;
+OFI_OGL_EarthMJ2K.XYPlane              = Off;
+OFI_OGL_EarthMJ2K.EclipticPlane        = Off;
+OFI_OGL_EarthMJ2K.EnableStars          = On;
+OFI_OGL_EarthMJ2K.StarCount            = 40000;
+OFI_OGL_EarthMJ2K.ShowPlot             = true;
+
+Create OpenFramesView OGL_EarthMJ2K_View;
+
+OGL_EarthMJ2K_View.ViewFrame          = CoordinateSystem;
+OGL_EarthMJ2K_View.SetDefaultLocation = On;
+OGL_EarthMJ2K_View.SetCurrentLocation = Off;
+
+OGL_EarthMJ2K_View.DefaultEye         = [ 500000 500000 500000 ];
+OGL_EarthMJ2K_View.DefaultCenter      = [ 0 0 0 ];
+OGL_EarthMJ2K_View.DefaultUp          = [ 0 0 1 ];
+
+
+Create OpenFramesInterface OFI_OGL_MoonMJ2K;
+
+OFI_OGL_MoonMJ2K.SolverIterations     = Current;
+OFI_OGL_MoonMJ2K.UpperLeft            = [ 0.2813102119460501 0.5028011204481793 ];
+OFI_OGL_MoonMJ2K.Size                 = [ 0.3554913294797688 0.453781512605042 ];
+OFI_OGL_MoonMJ2K.RelativeZOrder       = 1801;
+OFI_OGL_MoonMJ2K.Maximized            = false;
+
+OFI_OGL_MoonMJ2K.Add                  = {MMSRef, Earth, Luna};
+OFI_OGL_MoonMJ2K.View                 = {OGL_MoonMJ2K_View};
+
+OFI_OGL_MoonMJ2K.CoordinateSystem     = MoonMJ2000Eq;
+OFI_OGL_MoonMJ2K.DrawObject           = [ true true true];
+OFI_OGL_MoonMJ2K.DrawXYPlane          = [ false false false];
+OFI_OGL_MoonMJ2K.DrawLabel            = [ true true true];
+OFI_OGL_MoonMJ2K.DrawGrid             = [ false false false];
+
+OFI_OGL_MoonMJ2K.Axes                 = On;
+OFI_OGL_MoonMJ2K.XYPlane              = Off;
+OFI_OGL_MoonMJ2K.EclipticPlane        = Off;
+OFI_OGL_MoonMJ2K.EnableStars          = On;
+OFI_OGL_MoonMJ2K.StarCount            = 40000;
+OFI_OGL_MoonMJ2K.ShowPlot             = true;
+
+Create OpenFramesView OGL_MoonMJ2K_View;
+
+OGL_MoonMJ2K_View.ViewFrame          = CoordinateSystem;
+OGL_MoonMJ2K_View.SetDefaultLocation = On;
+OGL_MoonMJ2K_View.SetCurrentLocation = Off;
+
+OGL_MoonMJ2K_View.DefaultEye         = [ 0 0 30000 ];
+OGL_MoonMJ2K_View.DefaultCenter      = [ 0 0 0 ];
+OGL_MoonMJ2K_View.DefaultUp          = [ 1 0 0 ];
+
+
+Create OpenFramesInterface OFI_OGL_EarthMoonRot;
+
+OFI_OGL_EarthMoonRot.SolverIterations     = Current;
+OFI_OGL_EarthMoonRot.UpperLeft            = [ 0.640655105973025 0.5014005602240896 ];
+OFI_OGL_EarthMoonRot.Size                 = [ 0.3554913294797688 0.453781512605042 ];
+OFI_OGL_EarthMoonRot.RelativeZOrder       = 1795;
+OFI_OGL_EarthMoonRot.Maximized            = false;
+
+OFI_OGL_EarthMoonRot.Add                  = {MMSRef, Earth, Luna, Sun};
+OFI_OGL_EarthMoonRot.View                 = {OGL_EarthMoonRot_View};
+
+OFI_OGL_EarthMoonRot.CoordinateSystem     = EarthMoonRot;
+OFI_OGL_EarthMoonRot.DrawObject           = [ true true true true];
+OFI_OGL_EarthMoonRot.DrawXYPlane          = [ false false false false];
+OFI_OGL_EarthMoonRot.DrawLabel            = [ true true true true];
+OFI_OGL_EarthMoonRot.DrawGrid             = [ false false false false];
+
+OFI_OGL_EarthMoonRot.Axes                 = On;
+OFI_OGL_EarthMoonRot.XYPlane              = Off;
+OFI_OGL_EarthMoonRot.EclipticPlane        = Off;
+OFI_OGL_EarthMoonRot.EnableStars          = On;
+OFI_OGL_EarthMoonRot.StarCount            = 40000;
+OFI_OGL_EarthMoonRot.ShowPlot             = true;
+
+Create OpenFramesView OGL_EarthMoonRot_View;
+
+OGL_EarthMoonRot_View.ViewFrame          = CoordinateSystem;
+OGL_EarthMoonRot_View.SetDefaultLocation = On;
+OGL_EarthMoonRot_View.SetCurrentLocation = Off;
+
+OGL_EarthMoonRot_View.DefaultEye         = [ 30000 30000 30000 ];
+OGL_EarthMoonRot_View.DefaultCenter      = [ 0 0 0 ];
+OGL_EarthMoonRot_View.DefaultUp          = [ 1 0 0 ];
+
+%----------------------------------------
+%---------- Plots and Reports -----------
+%----------------------------------------
+
+Create XYPlot RadApoPlot;
+
+RadApoPlot.SolverIterations = None;
+RadApoPlot.UpperLeft        = [ 0.6377649325626205 0.04061624649859944 ];
+RadApoPlot.Size             = [ 0.3554913294797688 0.453781512605042 ];
+RadApoPlot.RelativeZOrder   = 1785;
+RadApoPlot.XVariable        = MMSRef.A1ModJulian;
+RadApoPlot.YVariables       = {MMSRef.RMAG};
+RadApoPlot.ShowGrid         = true;
+RadApoPlot.ShowPlot         = true;
+
+
+Create ReportFile Residuals
+
+Create ReportFile solData
+
+solData.Filename     = Ex_MinFuelLunarTransfer.report
+solData.WriteHeaders = false;
+
+Create Variable smaCon eccCon incCon count 
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop to Periapsis' LunarSB(MMSRef) {MMSRef.Periapsis};
+
+Optimize 'Optimal Transfer' SQP1 {SolveMode = Solve, ExitMode = DiscardAndContinue};
+
+Vary 'Vary TOI.V' SQP1(TOI.Element1 = 0.1562, {Perturbation = 1e-005, Lower = 0, Upper = 1, AdditiveScaleFactor = 1.0, MultiplicativeScaleFactor = 10.0});
+   Vary 'Vary TOI.N' SQP1(TOI.Element2 = 0.056042, {Perturbation = 1e-005, Lower = 0, Upper = 1, AdditiveScaleFactor = 1.0, MultiplicativeScaleFactor = 10.0});
+   Vary 'Vary TOI.B' SQP1(TOI.Element3 = 0.1386, {Perturbation = 1e-005, Lower = 0, Upper = 1, AdditiveScaleFactor = 1.0, MultiplicativeScaleFactor = 10.0});
+   
+     count = count + 1;
+   Maneuver 'Apply TOI' TOI(MMSRef);
+   
+   Propagate 'Prop 1.5 Days' LunarSB(MMSRef) {MMSRef.ElapsedDays = 1.5};
+   Propagate 'Prop to Periselene' MoonCentered(MMSRef) {MMSRef.Luna.Periapsis};
+   
+   Vary 'Vary LOI.V' SQP1(LOI.Element1 = -0.6, {Perturbation = 1e-003, Lower = -2, Upper = 2, AdditiveScaleFactor = 1.0, MultiplicativeScaleFactor = 10.0});
+   
+   Maneuver 'Apply LOI' LOI(MMSRef);
+   'Compute Total delta V' Cost = sqrt(TOI.Element1^2 +TOI.Element2^2 + TOI.Element3^2) + TOI.Element1;
+   
+	smaCon = (MMSRef.Luna.SMA - 2300)/1000;
+	incCon = (MMSRef.MoonMJ2000Eq.INC - 65)/100;
+	eccCon = (MMSRef.Luna.ECC-0.01)
+	
+   NonlinearConstraint 'SMA = 2300' SQP1(smaCon = 0);
+   NonlinearConstraint 'Inc = 65'   SQP1(incCon = 0);
+   NonlinearConstraint 'ECC = 0.01' SQP1(eccCon = 0);
+   Minimize 'Minimize delta V' SQP1(Cost);
+	
+	Report Residuals count smaCon incCon eccCon 
+
+EndOptimize;  % For targeter DC1
+
+Report solData smaCon incCon eccCon Cost
+
+Propagate 'Prop to Periselene' MoonCentered(MMSRef) {MMSRef.Luna.Periapsis};
+Propagate 'Prop 1 Day' MoonCentered(MMSRef) {MMSRef.ElapsedDays = 1};

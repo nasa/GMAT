@@ -1,0 +1,2535 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="FilterSmoother_GpsPosVec"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Filter and Smoother Orbit Determination using GPS_PosVec Data</title>
+
+  <variablelist>
+    <varlistentry>
+      <term>Audience</term>
+
+      <listitem>
+        <para>Advanced</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Length</term>
+
+      <listitem>
+        <para>2 hours</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Prerequisites</term>
+
+      <listitem>
+        <para>None</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Script File</term>
+
+      <listitem>
+        <para><filename>Ex_FilterSmoother_GpsPosVec.script</filename></para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>This exercise will demonstrate the use of GMAT for orbit
+    determination using spacecraft on-board GPS position estimates. We will go
+    through the following steps:</para>
+
+    <orderedlist>
+      <listitem>
+        <para>Create a script to simulate GPS measurements,</para>
+      </listitem>
+
+      <listitem>
+        <para>Create a script to use an Extended Kalman Filter to estimate the
+        orbit state using the simulated measurements,</para>
+      </listitem>
+
+      <listitem>
+        <para>Review and quality check the filter run,</para>
+      </listitem>
+
+      <listitem>
+        <para>Modify the estimation script to use a Fraser-Potter smoother to
+        improve the estimates by backward filtering and forward smoothing the
+        filter solution,</para>
+      </listitem>
+
+      <listitem>
+        <para>Review the output and execute analysis scripts to evaluate the
+        smoother run,</para>
+      </listitem>
+
+      <listitem>
+        <para>Explore a demonstration of “warm-starting” the filter.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>We’ll wrap up at the end with a few words about filter
+    tuning.</para>
+  </section>
+
+  <section>
+    <title>Simulate GPS_PosVec measurements</title>
+
+    <para>We’ll begin by creating objects and configuring a GMAT script to
+    simulate on-board GPS position measurements. Of course, in real life you
+    won’t run the simulator for orbit determination (OD), you will use the
+    actual measurements from satellite telemetry.</para>
+
+    <para>Start by opening GMAT.</para>
+
+    <orderedlist>
+      <listitem>
+        <para>Find your GMAT installation directory, and in the
+        <emphasis>&lt;GMAT Installation&gt;</emphasis>/bin directory, find and
+        double-click on GMAT.exe to start the application.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>You can dismiss the welcome window that appears. Next we’ll start a
+    blank script file.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>In the GMAT File menu, choose New &gt; Script</para>
+      </listitem>
+    </orderedlist>
+
+    <para>A script window will open in the GMAT GUI. We will be working in
+    this script window for the rest of this tutorial. We’ll begin by creating
+    the Spacecraft object that will be used for simulating the
+    measurements.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>Type or paste the following into the GMAT script window.</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting>%
+%   Spacecraft
+%
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat        = UTCGregorian;
+SimSat.Epoch             = '10 Jun 2014 00:00:00.000';
+SimSat.CoordinateSystem  = EarthMJ2000Eq;
+SimSat.DisplayStateType  = Cartesian;
+SimSat.X                 = 576.869556
+SimSat.Y                 = -5701.142761
+SimSat.Z                 = -4170.593691
+SimSat.VX                = -1.76450794
+SimSat.VY                = 4.18128798
+SimSat.VZ                = -5.96578986
+SimSat.DryMass           = 10;
+SimSat.Cd                = 2.2;
+SimSat.Cr                = 1.8;
+SimSat.DragArea          = 10;
+SimSat.SRPArea           = 10;
+SimSat.Id                = 'LEOSat';
+
+%
+%   Mission sequence
+%
+
+BeginMissionSequence
+</programlisting>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>At the bottom of the script window, click on the “Save,Sync”
+        button.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT will ask if you would like to save the script and make it
+        the active script. Click on “Yes” and choose a directory to save the
+        script. Let’s call it “simulate.script”.</para>
+
+        <para>a. After saving, the GMAT console window should show the message
+        “Successfully interpreted the script”</para>
+      </listitem>
+    </orderedlist>
+
+    <para>Let’s take a minute here to understand the relationship between the
+    script and the GUI. Firstly, while GMAT has a sophisticated GUI, most GMAT
+    OD components do not have GUI interfaces and can only be configured
+    through the script. Some OD resources (like the Spacecraft, GroundStation,
+    and ForceModel) do have GUI interfaces, and can be created and configured
+    either through the GUI or the script. The “Sync” feature is used to
+    “synchronize” the script object configurations with those in the GUI
+    resources tree. When you hit the “Save,Sync” or “Save,Sync,Run” button
+    GMAT will save your script changes, and then update all applicable objects
+    in the GUI Resource tree to reflect any changes you have made to them in
+    the script. You can verify this by double-clicking on any object in the
+    Resource tree after performing a “Sync” operation. You can do this now for
+    the SimSat spacecraft if you like. The GUI interface for the selected
+    object will display the current settings from your script. You should see
+    that the initial state and spacecraft parameters in the GUI match those
+    assigned in the script. The same is true for the Mission tab of the GUI.
+    We haven’t yet configured any steps in the mission sequence, but once we
+    do, they will appear under the Mission tab in the GUI. However, since much
+    of the orbit determination processing is not configurable through the GUI,
+    we will ignore the GUI for the remainder of this tutorial and focus only
+    on using the script editor to accomplish our OD task.</para>
+
+    <note>
+      <para>In this tutorial, avoid using Control-S or the tool bar “Save”
+      icon to save your script. These operations go the “other way” from the
+      “Save/Sync” button. Using Control-S or the Save icon will result in GMAT
+      replacing your script file with code automatically generated by dumping
+      the object configurations into script format. While this in no way
+      affects the functionality of your script, it generally results in a more
+      verbose and “uglier” presentation of the code. When doing this, GMAT
+      makes a “.bak” backup version of your original script in the same
+      directory as your script. If you accidentally do this, you can recover
+      your original script from the “.bak” copy.</para>
+    </note>
+
+    <para>The GMAT scripting language is “object-oriented”, which means that
+    each component in the system is a self-contained object (in GMAT, these
+    are called “resources”) with a collection of parameters which need to be
+    specified to configure the state of the resource. GMAT has many built-in
+    resources for modeling various aspects of spacecraft mission planning. The
+    names of these resources, their descriptions, and available parameters are
+    found in the “Reference Guide” section of the User’s Guide. In order to
+    use a resource, the user must create an instance of the resource and
+    configure it as desired. The resource name is fixed by GMAT, but the
+    instance name can be chosen by the user, within rules of syntax. In the
+    example above, <guilabel>Spacecraft</guilabel> is the name of the built-in
+    spacecraft resource class, and we here create an instance of a spacecraft
+    and choose to name it SimSat. The user then works with the instance of the
+    resource they have created. Hopefully this paradigm is familiar to you
+    already due to its similarity to other common object-oriented programming
+    languages like Java and Python.</para>
+
+    <para>Before going on and creating the rest of our simulation script, we
+    should take some time to understand a little more about the structure of a
+    GMAT script file. Overall, there are two parts to a GMAT script – the
+    object configuration section and the mission sequence. In the “object
+    configuration” section of the script, we create and specify initial
+    configurations for all the GMAT resources (objects) which are required for
+    the task we wish to accomplish. The “mission sequence” defines the steps
+    that will execute the desired task using the objects we have configured.
+    It could be to propagate a Spacecraft, target a maneuver, or (in our case)
+    to simulate and estimate an orbit. The object configurations must always
+    come before the mission sequence, and the two sections are separated by
+    the BeginMissionSequence keyword. The code steps in the mission sequence
+    will eventually populate the “Mission” tab in the GUI left sidebar, but we
+    won’t be interacting with the GUI for our OD task. For now, we will
+    proceed first with creating all the objects we will need, and fill in the
+    mission sequence later.</para>
+
+    <para>Everything you are instructed to paste in to the script below should
+    be inserted ahead of the BeginMissionSequence line until we get to the
+    section of the exercise where we are working in the mission
+    sequence.</para>
+
+    <para>Let’s continue with working on building out the script to simulate
+    GPS position measurement data. The next thing we need to do is to create a
+    GPS receiver for our spacecraft. In GMAT, the GPS receiver object handles
+    the modeling of the GPS measurement data.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist><programlisting>%
+%   Spacecraft hardware
+%
+
+Create Antenna GpsAntenna;
+Create Receiver GpsReceiver;
+
+GpsReceiver.PrimaryAntenna = GpsAntenna;
+GpsReceiver.Id             = 800;
+GpsReceiver.ErrorModels    = {PosVecModel}
+
+Create ErrorModel PosVecModel;
+ 
+PosVecModel.Type       = 'GPS_PosVec'
+PosVecModel.NoiseSigma = 0.010;
+</programlisting><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist>Here we are creating three new objects – an Antenna, a
+    Receiver, and an ErrorModel. Our GpsReceiver object connects to an Antenna
+    and possesses an Id and an ErrorModel. The Antenna is used to determine
+    the signal path of the GPS measurement, but otherwise has no
+    functionality. The Receiver Id is a unique identifier for the receiver.
+    When you are simulating GPS data, you can choose any value for this and it
+    will be applied to the simulated data, but when using actual GPS
+    spacecraft measurement records, this Id must match the Id on the formatted
+    GMAT input GPS records. The format of GMAT input data records will be
+    described in more detail shortly.</para>
+
+    <para>Lastly, we have created an ErrorModel and attached it to the
+    Receiver. A GMAT ErrorModel is a generic object that describes the
+    properties of the measurements used for OD. Since ErrorModels are generic,
+    we first specify which of GMAT’s measurement types we are configuring it
+    for, in this case the GPS_PosVec measurement type. GPS_PosVec is a
+    built-in name that must be used when specifying GPS measurement data.
+    Other measurement types have similar built-in names. Refer to <xref
+    linkend="TrackingDataTypes"/> for more details.</para>
+
+    <para>Next, we specify the measurement noise associated with the GPS
+    measurement data. The NoiseSigma represents the 1-sigma noise of the
+    measurement data. Since we are setting up a simulation script, this
+    represents the noise that will be added to the simulated measurements.
+    When we get to the estimation steps, this NoiseSigma will instead be
+    interpreted as the measurement noise assumed to exist in the measurements.
+    Each measurement type in GMAT has different units for NoiseSigma. For the
+    GPS_PosVec measurements, the units are kilometers, so here we are
+    specifying a 1-sigma measurement noise of 10 meters. When working with
+    real spacecraft GPS measurement data, some analysis is usually required to
+    determine an appropriate value of the noise.</para>
+
+    <para>Note that we attach our instance of the ErrorModel (PosVecModel) to
+    the GPS receiver, not ErrorModel itself. Again, this fits the common
+    object-oriented programming paradigm. We must now also attach the receiver
+    we have created to our spacecraft.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>In the script, go back to the spacecraft parameter
+          configuration section and add the following at the bottom of the
+          spacecraft parameters list.</para>
+        </listitem>
+      </orderedlist><programlisting>SimSat.AddHardware       = {GpsReceiver, GpsAntenna};
+</programlisting><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist>Although it’s not strictly necessary, it’s convenient to
+    keep all the spacecraft parameters grouped together. Here we attach the
+    receiver and antenna (and implicitly as well the receiver GPS measurement
+    error model) to our spacecraft, for use when we run the simulation.</para>
+
+    <para>Our goal here is to simulate some GPS measurement data for later use
+    in an estimation run. GMAT handles measurement data through the
+    TrackingFileSet resource.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist><programlisting>%
+%   Tracking file sets
+%
+
+Create TrackingFileSet SimData;
+
+SimData.AddTrackingConfig = {{SimSat.GpsReceiver}, 'GPS_PosVec'};
+SimData.FileName          = {'gps_posvec.gmd'};
+</programlisting><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist>Here we create an instance of a tracking file set that
+    will write out the simulated measurements. For GPS_PosVec measurement
+    data, we only need to specify two things – the tracking configuration (or
+    measurement path) for the simulated data, and the name of the output file
+    that will contain the simulated measurements. The inner curly braces of
+    the AddTrackingConfig parameter specify the measurement path for the
+    simulated data. GPS_PosVec data, while in reality derived from measuring
+    the location of the spacecraft relative to multiple GPS satellites,
+    consists only of X, Y, and Z estimates of the spacecraft state, so our
+    simulation case only requires us to specify which GPS receiver is to be
+    used in the simulation. Recall that the ErrorModel attached to this
+    receiver will provide the measurement noise to be applied in the
+    simulation. Outside the inner curly braces, we specify that the
+    measurement data we wish to simulate is the GPS_PosVec measurement type.
+    Other measurement types typically have more complicated measurement paths
+    and require more parameters of the tracking file set. You can refer to the
+    User’s Guide for examples.</para>
+
+    <para>The tracking file set FileName specifies the output file for
+    simulated measurements. Here we just specify a file name (without a full
+    path). In this instance, GMAT will by default write the file into the
+    <emphasis>&lt;GMAT Installation&gt;</emphasis>/output directory. If you
+    want to write the file to a different directory, specify the full path for
+    the file.</para>
+
+    <para>By the way, if after hitting “Save,Sync” you ever see a message
+    indicating a syntax or script error, stop and check your work. All of the
+    code we are adding as we go should always parse successfully.</para>
+
+    <para>Next we need to create a force model that we wish to use for this
+    orbit simulation.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist><programlisting>%
+%   Force model
+%
+
+Create ForceModel FM;
+
+FM.CentralBody                       = Earth;
+FM.PrimaryBodies                     = {Earth};
+FM.GravityField.Earth.Degree         = 8;
+FM.GravityField.Earth.Order          = 8;
+FM.GravityField.Earth.PotentialFile  = 'JGM2.cof';
+FM.SRP                               = On;
+FM.Drag.AtmosphereModel              = 'JacchiaRoberts';
+FM.Drag.CSSISpaceWeatherFile         = 'SpaceWeather-All-v1.2.txt'
+FM.Drag.HistoricWeatherSource        = 'CSSISpaceWeatherFile';
+FM.ErrorControl                      = None;
+</programlisting><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist>FM is an instance of a ForceModel that includes Earth 8x8
+    gravity modeling, atmospheric drag using the Jacchia-Roberts atmospheric
+    density model, and solar radiation pressure. We configure the force model
+    to use the CSSI-formatted space weather file for atmospheric density
+    modeling. This file contains daily solar flux and 3-hourly planetary
+    geomagnetic indices. In this case, since we have not specified a full
+    path, we will just use the default copy of the file, located in the
+    <emphasis>&lt;GMAT Installation&gt;</emphasis>/data/atmosphere/earth
+    directory. If you want to use a different version of the file, you can
+    specify the full path. Using a daily updated version of this file is a
+    best practice for orbit determination of low-earth satellites affected by
+    drag.</para>
+
+    <para>It’s worth mentioning that the setting <literal>FM.ErrorControl =
+    None</literal> forces GMAT to use fixed-step integration when propagating
+    the orbit. This is currently required for orbit determination using
+    GMAT.</para>
+
+    <para>We’re almost there, just a few more objects to create. We’ll
+    configure the propagator now.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist><programlisting>%
+%   Propagator
+%
+
+Create Propagator Prop;
+
+Prop.FM              = FM;
+Prop.Type            = 'RungeKutta89';
+Prop.InitialStepSize = 60;
+Prop.MinStep         = 0;
+Prop.MaxStep         = 60;
+</programlisting><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist>Our instance FM of the ForceModel is assigned for use by
+    the propagator. Since on the force model we specified fixed-step
+    integration (<literal>FM.ErrorControl = None</literal>) for the orbit, on
+    the propagator we must specify the step size for integration. Here we use
+    a 60-second step size, which is typical for low-earth orbiting satellites.
+    We are also using a high-order numerical integrator (the RungeKutta89
+    propagator), which makes it safer to use a 60-second step size. The
+    appropriate step size to use will vary by the mission orbit type,
+    integrator choice, and force modeling. Note that to configure a 60-second
+    fixed integration step size, you must specify 60 seconds on both the
+    InitialStepSize and MaxStep parameters, while setting MinStep to
+    zero.</para>
+
+    <para>We’re almost there now! One more object to configure and then we’ll
+    go on to the mission sequence required to run the simulation. Before we do
+    that, we have to lastly create the simulator resource.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist><programlisting>%
+%    Simulator
+%
+
+Create Simulator Sim;
+
+Sim.AddData              = {SimData};
+Sim.EpochFormat          = 'UTCGregorian';
+Sim.InitialEpoch         = '10 Jun 2014 00:00:00.000';
+Sim.FinalEpoch           = '11 Jun 2014 00:00:00.000'; 
+Sim.MeasurementTimeStep  = 600;
+Sim.Propagator           = Prop;
+Sim.AddNoise             = On;
+</programlisting><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist>The simulator object will execute the measurement
+    simulation using all of the objects we have configured thus far. On the
+    AddData parameter, we assign the tracking file set, which specifies the
+    measurement paths for data simulation. This links the simulator to the
+    spacecraft, GPS receiver, measurement model, and output file for simulated
+    measurements. The simulator also specifies the start (InitialEpoch) and
+    end (FinalEpoch) times of the data simulation span, and the interval
+    (MeasurementTimeStep) at which observation records will be simulated.
+    Since the simulator will be responsible for propagating the spacecraft
+    over the simulation span, we assign our propagator (and its attached force
+    model) to the simulator as well. Finally, we can choose whether to add
+    noise to the simulated measurements. If AddNoise is set to Off, the noise
+    sigma specified on the spacecraft GPS receiver error model will ignored
+    and the simulated measurements will be “perfect”.</para>
+
+    <para>We now have all the resources that we need for a properly configured
+    simulation and are nearly ready to execute the simulation. It’s now time
+    to build the mission sequence that will perform the simulation using the
+    objects we have created. In this case, only one line of code is
+    needed.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Update the mission sequence as shown below, then click on
+          “Save,Sync”</para>
+        </listitem>
+      </orderedlist><programlisting>%
+%   Mission sequence
+%
+
+BeginMissionSequence
+
+RunSimulator Sim;
+</programlisting>The RunSimulator command has one argument – the name of the
+    simulator instance to execute. This command instructs GMAT to generate the
+    simulated measurements using the measurement strands, propagator,
+    spacecraft, and error models attached to the simulator and its associated
+    objects.</para>
+
+    <para>That’s it for building our simulation script – it’s now finally time
+    to run it.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the
+          “Save,Sync,Run” button. Alternately, you can execute a GMAT script
+          by clicking on the blue “Run” error in the tool bar, or by hitting
+          the F5 key.</para>
+        </listitem>
+      </orderedlist>The script will run very quickly – it should finish in a
+    few seconds. In the console window (the text output area just below the
+    script editor), the message “Mission run completed” should appear. You
+    will also see a warning stating, “The orbit state transition matrix does
+    not currently contain SRP contributions from shadow partial derivatives
+    when using Spherical SRP”. This message is normal when using SRP modeling
+    and warns the user that GMAT is ignoring a small correction in the SRP
+    calculation that we won’t worry about for this exercise.</para>
+
+    <para>The only other output from the run is the simulated measurement
+    file. Recall that on our tracking file set, we set ‘gps_posvec.gmd’ as the
+    simulated data file name. Since we didn’t specify a full path for the
+    file, GMAT has created this file in its default location, the
+    <emphasis>&lt;GMAT Installation&gt;</emphasis>/output directory. Take a
+    look in your output directory and locate the new file.</para>
+
+    <para>Open the gps_posvec.gmd file in a text editor. You will see content
+    similar to the following. Because we configured the simulator to add
+    random noise to the measurements, the data in your file will differ
+    slightly from these values.</para>
+
+    <programlisting><?db-font-size 50% ?>% GMAT Internal Measurement Data File
+
+26818.5004050925930316268847    GPS_PosVec    9014    800    5.4582066502576909e+03    1.7472147130503795e+03    -4.1695115857105557e+03
+26818.5073495370382845110637    GPS_PosVec    9014    800    2.3029538831047935e+03    -1.4045595913124220e+02    -6.7023373462614209e+03
+26818.5142939814798994164372    GPS_PosVec    9014    800    -1.8916402292545524e+03    -1.6523319919249177e+03    -6.6283229876018404e+03
+26818.5212384259251523006163    GPS_PosVec    9014    800    -5.4440068853410785e+03    -2.1862351512631685e+03    -3.9759522335154807e+03
+26818.5281828703704051847946    GPS_PosVec    9014    800    -6.8837933807039817e+03    -1.6533743904192625e+03    2.2781349057542749e+02
+</programlisting>
+
+    <para>This is an example of a GMAT measurement data (or GMD) file. The
+    file format is very similar for all the measurement types that GMAT
+    processes, and consists of a series of time ordered ASCII records with
+    space-delimited data fields. This format is described in <xref
+    linkend="TrackingDataTypes"/> for all of the supported measurement types.
+    For convenience, the format for GPS_PosVec data is reproduced
+    below.</para>
+
+    <informaltable>
+      <tgroup cols="2">
+        <tbody>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+
+          <row>
+            <entry>1</entry>
+
+            <entry>TAI Modified Julian Date of time of observation</entry>
+          </row>
+
+          <row>
+            <entry>2</entry>
+
+            <entry>Observation type name – GPS_PosVec</entry>
+          </row>
+
+          <row>
+            <entry>3</entry>
+
+            <entry>Observation type index number (9014 for GPS_PosVec
+            data)</entry>
+          </row>
+
+          <row>
+            <entry>4</entry>
+
+            <entry>GPS receiver ID</entry>
+          </row>
+
+          <row>
+            <entry>5</entry>
+
+            <entry>Earth-fixed position X component (km)</entry>
+          </row>
+
+          <row>
+            <entry>6</entry>
+
+            <entry>Earth-fixed position Y component (km)</entry>
+          </row>
+
+          <row>
+            <entry>7</entry>
+
+            <entry>Earth-fixed position Z component (km)</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+
+    <para>Notice that the receiver ID in the simulated records matches the Id
+    we assigned our GpsReceiver object in the script. The X, Y, and Z
+    components shown are simply the predicted (propagated) X, Y, and Z
+    position of the spacecraft in the Earth-fixed reference frame, with 10
+    meters of random noise (as specified on the PosVecModel error model)
+    added. This completes the task of simulating some on-board GPS position
+    estimates.</para>
+
+    <para>In the next section, we’ll go on to creating a script that uses this
+    data to estimate the orbit of the spacecraft.</para>
+  </section>
+
+  <section>
+    <title>Estimate the orbit</title>
+
+    <para>In this section, we’ll walk through the process of creating a script
+    to estimate an orbit using an Extended Kalman Filter. Many of the
+    resources required for this task are the same as those we used in the
+    simulation exercise. But there are a few new resources to contend with,
+    and we’ll cover those as we encounter them.</para>
+
+    <para>First, we’ll start a blank script file for our estimation task. You
+    can do this without closing the simulation script – GMAT can load multiple
+    scripts simultaneously, but we’ll be ignoring the simulation script from
+    now on.</para>
+
+    <orderedlist>
+      <listitem>
+        <para>In the GMAT File menu, choose New &gt; Script</para>
+      </listitem>
+    </orderedlist>
+
+    <para>As before, a new script window will open in the GMAT GUI.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>Create Spacecraft EstSat;
+
+EstSat.DateFormat        = UTCGregorian;
+EstSat.Epoch             = '10 Jun 2014 00:00:00.000';
+EstSat.CoordinateSystem  = EarthMJ2000Eq;
+EstSat.DisplayStateType  = Cartesian;
+EstSat.X                 =  576.8
+EstSat.Y                 = -5701.1
+EstSat.Z                 = -4170.5
+EstSat.VX                = -1.7645
+EstSat.VY                =  4.1813
+EstSat.VZ                = -5.9658
+EstSat.DryMass           = 10;
+EstSat.Cd                = 2.0;
+EstSat.CdSigma           = 0.1;
+EstSat.Cr                = 1.8;
+EstSat.DragArea          = 10;
+EstSat.SRPArea           = 10;
+EstSat.Id                = 'LEOSat';
+EstSat.SolveFors         = {CartesianState};
+
+%
+%   Mission sequence
+%
+
+BeginMissionSequence
+</programlisting>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the
+          “Save,Sync,Run” button.</para>
+        </listitem>
+
+        <listitem>
+          <para>GMAT will ask if you would like to save the script and make it
+          the active script. Click on “Yes” and choose a directory to save the
+          script. Save it to the same location as the simulation script and
+          call it “filter.script”.</para>
+
+          <para>a. After saving, the GMAT console window should show the
+          message “Successfully interpreted the script.”</para>
+        </listitem>
+      </orderedlist>Just like in the simulation exercise, we are starting with
+    a spacecraft object. In the simulation case, this represented the
+    spacecraft initial condition for the orbit we wished to simulate. In this
+    case, our spacecraft object is configured with the initial conditions for
+    estimation. To avoid “cheating” and giving the estimation process too
+    accurate an initial estimate of the state, we have reduced the precision
+    of the initial state, effectively introducing about 100 meters position
+    error and a couple of cm/sec velocity error, which is typical for a
+    well-tracked LEO satellite.</para>
+
+    <para>We have also added a new parameter – SolveFors. This lists one or
+    more spacecraft parameters that we wish to estimate in the filter run.
+    Here we are using one of GMAT’s built-in solve-for keywords to specify
+    that we intend to estimate the spacecraft Cartesian state, which means the
+    spacecraft position and velocity in Cartesian coordinates (X, Y, X, VX,
+    VY, VZ) in the J2000 Earth-centered coordinate system. Later in this
+    tutorial we will add estimation of the coefficient of drag to this
+    list.</para>
+
+    <para>You may also notice that we have changed the spacecraft Cd
+    (coefficient of drag) value from 2.2 in the simulator to 2.0 here for the
+    estimation. This is because we are going to try to estimate the
+    coefficient of drag in addition to the spacecraft position and velocity.
+    Because we are going to estimate Cd, we have also added a new parameter,
+    CdSigma, to set the presumed uncertainty of our initial estimate of the
+    coefficient of drag. Although in this case we know how much error our
+    guess has, of course in practice you don’t know this, and some
+    experimentation may be needed.</para>
+
+    <para>Next we’ll add the spacecraft hardware we need to model the GPS
+    measurements.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>%
+%   Spacecraft hardware
+%
+
+Create Antenna GpsAntenna;
+Create Receiver GpsReceiver;
+
+GpsReceiver.PrimaryAntenna = GpsAntenna;
+GpsReceiver.Id             = 800;
+GpsReceiver.ErrorModels    = {PosVecModel}
+
+Create ErrorModel PosVecModel;
+ 
+PosVecModel.Type       = 'GPS_PosVec'
+PosVecModel.NoiseSigma = 0.010;
+</programlisting>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>In the script, go back to the spacecraft parameter
+          configuration section and add the following at the bottom of the
+          spacecraft parameters list.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>EstSat.AddHardware       = {GpsReceiver, GpsAntenna};
+</programlisting>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>Here we are just reusing the same hardware configuration we used for
+    the simulation. However, in this instance the NoiseSigma assigned on the
+    error model is now the assumed measurement noise in the existing data. We
+    are “cheating” slightly by using the same value we set in the simulation.
+    In practice, you won’t know the measurement noise so well and may need
+    experiment or perform analysis on the orbit determination residuals to
+    find an appropriate value to use.</para>
+
+    <para>Next, let’s quickly create our tracking file set, force model, and
+    propagator.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>%
+%   Tracking file sets
+%
+
+Create TrackingFileSet EstData;
+
+EstData.FileName = {'gps_posvec.gmd'};
+
+%
+%   Force model
+%
+
+Create ForceModel FM;
+
+FM.CentralBody                       = Earth;
+FM.PrimaryBodies                     = {Earth};
+FM.GravityField.Earth.Degree         = 8;
+FM.GravityField.Earth.Order          = 8;
+FM.GravityField.Earth.PotentialFile  = 'JGM2.cof';
+FM.SRP                               = On;
+FM.Drag.AtmosphereModel              = 'JacchiaRoberts';
+FM.Drag.CSSISpaceWeatherFile         = 'SpaceWeather-All-v1.2.txt'
+FM.Drag.HistoricWeatherSource        = 'CSSISpaceWeatherFile';
+FM.ErrorControl                      = None;
+
+%
+%   Propagator
+%
+
+Create Propagator Prop;
+
+Prop.FM              = FM;
+Prop.Type            = 'RungeKutta89';
+Prop.InitialStepSize = 60;
+Prop.MinStep         = 0;
+Prop.MaxStep         = 60;
+</programlisting>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>The force model and propagator are identical to those we used in the
+    simulation script. For the tracking file set, we have changed the instance
+    name to the more appropriate “EstData”. The assigned tracking data file is
+    now an input file to be read in the estimation process, so it points to
+    the file we created in our simulation run. Note that we have dropped the
+    AddTrackingConfig assignment. When you are using a tracking file set for
+    estimation, GMAT will examine the data in the input tracking data file and
+    automatically determine the tracking measurement paths. The user does not
+    have to specify these for the estimation process. Next let’s create the
+    Kalman filter estimator object.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>%
+%   Estimator
+%
+
+Create ExtendedKalmanFilter EKF;
+
+EKF.ShowProgress         = True;
+EKF.Measurements         = {EstData};
+EKF.Propagator           = Prop;
+EKF.ShowAllResiduals     = On;
+EKF.OutputWarmStartFile  = 'filter.csv';
+EKF.ReportFile           = 'filter.txt';
+EKF.MatlabFile           = 'filter.mat';
+</programlisting>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist>Just like the simulator, the estimation gets assigned the
+    tracking file set. In this case, the tracking file set contains the input
+    data to the estimator. The receiver ID on each input measurement record
+    links the input data to our configured GPS receiver, spacecraft, and error
+    model resources. We also assign the estimator a propagator (with its
+    attached force model) for use in propagating the spacecraft orbit during
+    the estimation process.</para>
+
+    <para>The ShowProgress setting causes GMAT to provide verbose output in
+    the console window while the estimation is running, and ShowAllResiduals
+    will tell GMAT to display a plot of the residuals while the estimation is
+    running. The EKF ReportFile is a detailed report that the filter will
+    generate to help us interpret and quality check (QA) the run. The
+    MatlabFile is a MATLAB-format file that will be generated from the run. It
+    contains useful data that the filter generates as it runs and we will use
+    it later to assist in quality checking the run. Note that the MatlabFile
+    can only be generated if you have MATLAB installed on the machine running
+    GMAT, and GMAT is properly configured to use the MATLAB connection. See
+    <xref linkend="MatlabInterface"/> for details on configuring the MATLAB
+    interface.</para>
+
+    <para>The OutputWarmStartFile is an additional output file that can be
+    used as input to a subsequent run to allow the filter to operate in a
+    “continuous estimation” mode. We’ll come back to this file to see how this
+    works later in the exercise.</para>
+
+    <para>Unlike the simulator, the filter has no start or stop time
+    parameters. The filter will instead start at the initial epoch of the
+    spacecraft object and process all measurements that are present in the
+    input tracking data file.</para>
+
+    <para>The GMAT orbit determination filter operates by continuously
+    propagating the uncertainty of the state estimate and comparing the state
+    uncertainty and measurement noise at each measurement to the measurement
+    residual, to determine if the new measurement should be rejected or
+    accepted, and if accepted, how strongly that measurement should be used to
+    correct the current state estimate. Propagation of the state uncertainty
+    begins from an initial estimate of the state uncertainty and takes into
+    account a presumed model of the force modeling and propagation errors. As
+    we propagate a state in the absence of measurements, the state uncertainty
+    grows due to force modeling errors. When we incorporate, or accept, a
+    measurement, the state uncertainty decreases because the measurement
+    improves our orbit knowledge. We’ll see these effects in action shortly
+    when we run the filter, but first we need to create and configure the
+    objects needed for modeling the state and force model uncertainty.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script window. If
+          you wish, you can move the EstSat.ProcessNoiseModel assignment up to
+          the other spacecraft initial parameter settings to keep them grouped
+          together.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>%
+%   Process noise model
+%
+
+Create ProcessNoiseModel SNC;
+
+SNC.Type             = 'StateNoiseCompensation';
+SNC.CoordinateSystem = EarthMJ2000Eq;
+SNC.AccelNoiseSigma  = [1.0e-9 1.0e-9 1.0e-9];
+SNC.UpdateTimeStep   = 120.
+
+EstSat.ProcessNoiseModel = SNC;
+</programlisting>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>Here we create an instance of a new resource called a Process Noise
+    Model. This resource models the error in spacecraft propagation in the
+    absence of measurements. This is the error in the prediction “process”. It
+    attempts to model things like error due to imprecise gravity, SRP, and
+    drag modeling, as well as errors due to any small forces, known or
+    unknown, that were not modeled explicitly in the force model we
+    configured. You can see that this model assigns a trio of values
+    representing the noise in the computed nominal acceleration in a specified
+    coordinate system (here the Earth J2000 coordinate frame). This model is
+    assigned to the spacecraft, since it is associated with that spacecraft’s
+    orbit and force model. Process noise supplied by this model will be added
+    to the state uncertainty at the interval defined by the process noise
+    model UpdateTimeStep, which we set to be every 120 seconds. Selection of
+    the proper values of process noise in operations normally requires
+    experimentation and analysis.</para>
+
+    <para>The process noise method GMAT implements is called State Noise
+    Compensation, and you can read more about it in Reference 1 if you wish.
+    For now it would take us too far afield to go into the details of this
+    model.</para>
+
+    <para>Next, we’ll add estimation of the coefficient of drag to the filter
+    run. Estimation of a coefficient of drag or some other representation of a
+    drag correction factor is common practice for spacecraft in low-earth
+    orbit. This is because the drag force is the most poorly modeled of the
+    forces affecting a spacecraft in this regime. Analytic atmospheric density
+    models have inherent errors of up to 30% or more just due to the immensity
+    and complexity of atmospheric chemistry. On top of that, the drag force
+    depends not only on a presumed coefficient of drag (Cd), but on the
+    spacecraft area (which is often only coarsely modeled and usually
+    dynamic), and the spacecraft mass (which may be imprecisely known).
+    Estimating a drag correction value has the effect of compensating for all
+    these errors in an aggregate fashion and can significantly improve the
+    accuracy of the orbit estimate and prediction.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Type or paste the following into the GMAT script
+          window.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>%
+%   Create the drag solve-for
+%
+
+Create EstimatedParameter FogmCd
+
+FogmCd.Model            = 'FirstOrderGaussMarkov';
+FogmCd.SolveFor         = 'Cd';
+FogmCd.SteadyStateValue = 2.0;
+FogmCd.SteadyStateSigma = 0.05;
+FogmCd.HalfLife         = 864000;
+</programlisting>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>Here is another new resource – the EstimatedParameter resource. We
+    mentioned previously that GMAT has a collection of built-in solve-for
+    parameters, including a coefficient of drag solve-for parameter. However,
+    the built-in Cd solve-for is not ideal for use with a filter becasue it
+    does not include process noise modeling. The EstimatedParameter resource
+    allows the user to configure more sophisticated modeling for some
+    solve-fors, in a fashion that is more appropriate for a filter and which
+    includes process noise modeling. This resource implements Cd estimation as
+    a “First-Order Gauss-Markov” (FOGM) process. You can read more about this
+    model in Reference 2. This type of model includes three essential
+    parameters – a steady-state value, a steady-state uncertainty (sigma), and
+    a half-life for “decay”.</para>
+
+    <para>When a filter runs, the uncertainty of all estimated parameters
+    always increases when propagating in the absence of measurements, and the
+    uncertainty of all estimated parameters always decreases when a
+    measurement is processed. The steady-state value of a FOGM variable is the
+    value to which the parameter will automatically return, in the absence of
+    measurements. This should generally always be set to your best guess of
+    what the actual value is (again, here we are pretending that we don’t know
+    the actual value). Similarly, the steady-state uncertainty of a FOGM
+    variable is the value to which the parameter uncertainty will
+    automatically return, in the absence of measurements. Rather than grow
+    continuously without upper bound, the FOGM Cd uncertainty will, after a
+    given amount of time, level off at a maximum of the SteadyStateSigma
+    value. The amount of time for both the steady-state value and sigma to
+    level-off is given (in seconds) by the HalfLife parameter, which specifies
+    how long it will take the current Cd estimate to return halfway back to
+    its limiting value set by SteadyStateValue.</para>
+
+    <para>We need to add the estimated parameter to the Spacecraft solve-fors
+    list.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Find the line setting the EstSat.SolveFors parameter and edit
+          it to add FOGM Cd estimation as shown below.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>EstSat.SolveFors         = {CartesianState, FogmCd};
+</programlisting>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>At the bottom of the script window, click on the “Save,Sync”
+          button.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>In GMAT, it doesn’t matter that a parameter or resource instance
+    (like FogmCd) is assigned before it is created. It’s not necessary to put
+    the code that created the FogmCd estimated parameter before the
+    EstSat.SolveFors assignment in the GMAT script. GMAT will attempt to
+    connect everything together properly at run-time. As long as all the
+    required objects are defined somewhere in the script, everything should
+    work.</para>
+
+    <para>The last thing to do is add the code in the mission sequence to
+    execute the filter run.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Update the mission sequence as shown below, then click on
+          “Save,Sync”.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>%
+%   Mission sequence
+%
+
+BeginMissionSequence
+
+EstSat.OrbitErrorCovariance = diag([1e-2 1e-2 1e-2 4e-10 4e-10 4e-10]);
+
+RunEstimator EKF;</programlisting>
+
+    <para>You probably expected to see the RunEstimator command. Just like
+    RunSimulator, the RunEstimator command has one argument – the name of the
+    filter instance to execute. This command instructs GMAT to process the
+    input tracking data measurements and perform the estimation using the
+    propagator, spacecraft, and error and process noise models attached to the
+    filter and its associated objects.</para>
+
+    <para>We have one additional command in the mission sequence. Before
+    running the estimator, we are using the <emphasis
+    role="bold">diag()</emphasis> command to set the spacecraft initial orbit
+    uncertainty. The filter will continuously propagate and adjust the
+    spacecraft uncertainty (“covariance”) as it runs, but it needs some
+    starting value of the uncertainty from which to begin. The spacecraft
+    position and velocity uncertainty is represented by a 6x6 matrix (for
+    three components of position and three components of velocity), but all we
+    care about for initialization are the diagonal components of the matrix.
+    The diag() function is a convenient way of creating a diagonal matrix.
+    Here we specify the initial “covariance” of the three position (1e-2 km^2)
+    and velocity (4e-10 km^2/sec^2) components of the initial state of
+    EstSat.</para>
+
+    <para>You are probably wondering where these values come from. We have in
+    a way slightly “cheated” here again. Since we know the spacecraft state
+    used in the simulation, we also know the error in the EstSat in this run.
+    Recall from above we said that we reduced the precision of the initial
+    state for the estimation script, and thereby and introduced about 100
+    meters position error and a couple cm/sec velocity error. The values we
+    assign here along the diagonal of EstSat.OrbitErrorCovariance are just the
+    squares of these errors (covariance units are squared uncertainties) in
+    km^2 and km^2/sec^2. In operational practice, you don’t know the initial
+    uncertainty so well and usually have to make educated “order of magnitude”
+    guesses at the initial orbit uncertainty either through experience,
+    research, or analysis.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Run the script by clicking on the “Save,Sync,Run” button,
+          clicking on the blue “Run” error in the tool bar, or by hitting the
+          F5 key.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>The script should complete in a few seconds. Unlike the when we ran
+    the simulator, you will this time see a lot of action in the GUI and
+    console window. Firstly, a window similar to that shown below appears in
+    the GUI. This is a plot of all the measurement residuals.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject role="fo">
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig1.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+
+        <imageobject role="html">
+          <imagedata align="center"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig1.png"
+                     scale="50"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>The vertical axis is the measurement residual in kilometers and the
+    horizontal axis is the measurement time in Modified Julian Date (MJD) of
+    atomic time (TAI). Note that the spread of residuals is consistent with
+    the measurement noise (10 meters) that we applied in the
+    simulation.</para>
+
+    <para>If you scroll backwards in the console window, you will find a
+    summary of the initial state and estimated parameters, and the final state
+    and estimated parameters (after processing all measurements), as well as
+    the final covariance matrix. This is useful information, but is not enough
+    for a full quality check of the run, so let’s now dive into the other
+    output files generated from the run.</para>
+  </section>
+
+  <section>
+    <title>Review and quality check the filter run</title>
+
+    <para>Go to your <emphasis>&lt;GMAT Installation&gt;</emphasis>/output
+    directory. You should have three new files there – filter.txt, filter.mat,
+    and filter.csv. Let’s start with filter.txt.</para>
+
+    <note>
+      <para>Generation of the MATLAB data file requires GMAT to be properly
+      connected to a licensed MATLAB instance. If you do not have MATLAB, the
+      MATLAB data file cannot be generated and you should skip the python
+      plotting exercises below. If you don’t have MATLAB it is still possible
+      to generate data files from the run that are suitable for plotting. Many
+      parameters such as Spacecraft OrbitErrorCovariance, Cd, CdSigma, and
+      others can be written dynamically to an external report file. See <xref
+      linkend="ReportFile"/> for details on how to do this.</para>
+    </note>
+
+    <orderedlist>
+      <listitem>
+        <para>Open filter.txt for reading in a text editor.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>The filter.txt file is the detailed estimator output report and is
+    the first stop for reviewing the status of the filter run. There’s a lot
+    of detail in the report, so we’ll just hit the important points here. From
+    top to bottom, the file contains the following content:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>Initial spacecraft state and covariance,</para>
+      </listitem>
+
+      <listitem>
+        <para>Spacecraft hardware summary,</para>
+      </listitem>
+
+      <listitem>
+        <para>Force modeling options summary,</para>
+      </listitem>
+
+      <listitem>
+        <para>Measurement modeling summary,</para>
+      </listitem>
+
+      <listitem>
+        <para>Summary of relevant space environment constants,</para>
+      </listitem>
+
+      <listitem>
+        <para>Report of all filter measurement residuals,</para>
+      </listitem>
+
+      <listitem>
+        <para>Filter estimation summary report,</para>
+      </listitem>
+
+      <listitem>
+        <para>Filter covariance report.</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>Everything prior to the FILTER MEASUREMENT RESIDUALS report is just
+    feeding back the input configuration you supplied to the filter. You can
+    use those sections when troubleshooting, or to confirm that GMAT
+    interpreted your inputs as you intended.</para>
+
+    <para>Review the FILTER MEASUREMENT RESIDUALS report. This shows the
+    results of the filter processing of each measurement. Each input
+    GPS_PosVec tracking data measurement record produces three lines in this
+    report – the first for the X-value, the second for the Y-value, and the
+    third for the Z-value. Each line starts (from left to right) with the
+    measurement record number, the measurement time (now in UTC), the
+    measurement type name (GPS_PosVec), and the name of the spacecraft
+    associated with the measurement. Next is a column in which an edit flag
+    may appear. Since this run used simulated data, it is likely that no edit
+    flags appear in your run, but it is possible that you may see a small
+    number of measurements tagged with the SIG edit criteria. This flag will
+    be described shortly below.</para>
+
+    <para>Next across the line appears the measurement Observed value. This is
+    the exact value of the measurement extracted from the input tracking data
+    file. The next column shows the Computed value of the measurement. The
+    computed value is the predicted value of the measurement, and is obtained
+    by propagating the spacecraft current estimated state using the force
+    modeling options we have configured in the script. The computed value
+    should normally be close to the observed value if estimation is going
+    well. The final column shows the difference between the observed and
+    computed values. This is called the measurement “residual” and is the
+    value that was plotted in the graph that appeared when the filter was
+    running. The last column, “Elev”, is for the measurement elevation angle
+    and it not populated for GPS_PosVec measurements.</para>
+
+    <para>The filter uses the residual value to determine if a measurement
+    should be accepted or rejected. If the computed residual is larger than
+    three times the combined state uncertainty and measurement noise, the
+    filter will ignore the measurement. If this happens, the measurement will
+    be identified with the SIG (for “sigma”) edit flag in the report. This is
+    called the “scaled residual check”, and the multiplier value (in this case
+    the default of 3) can be changed on the EKF resource instance, if desired.
+    Since we used simulated data in this run, you might not see any edited
+    points, but you are much more likely to encounter autonomous sigma editing
+    when using real data. When QA’ing any filter run, you should review this
+    report to ensure that most of the data was accepted across the entire run,
+    from start to finish. If at some point in the report you begin to see
+    excessive data editing, that is a sign that something has gone wrong in
+    the filter. Perhaps you have insufficient process noise and the covariance
+    has gotten too small, maybe your presumed measurement noise is too small,
+    or maybe an unmodeled maneuver has occurred.</para>
+
+    <para>The next section of the output report, FILTER MEASUREMENT
+    STATISTICS, is a useful summary of the residual report. Here you can see
+    the start and end time of the data span. You should make sure they are
+    what you expected them to be. You also see a summary of the total number
+    of observations available in the run and the number accepted (“Used For
+    Estimation”). If any points were edited out, they will be noted here in
+    the “Sigma Editing” count. Below that, you can see at a glance how much
+    data was accepted in the run along with overall residual statistics. A
+    well-operating filter should normally accept nearly all of the available
+    good tracking data. Remember, that we are looking here at simulated
+    tracking data, which is much closer to perfect than real tracking data,
+    which often has more outliers and poor measurements. Your expectations for
+    data acceptance for your mission need to be set by analysis and trending
+    of your data.</para>
+
+    <para>Next in the output report comes the FILTER STATE INFORMATION. This
+    gives a summary of the estimated spacecraft state, and any other estimated
+    parameters, at the end of the run, which specifically is the time of the
+    last measurement processed. In our case, we see the estimated Cartesian
+    state and Cd value, as well as the final uncertainties of each estimated
+    parameter. For convenience, GMAT also reports the Keplerian elements of
+    the estimated state, along with a collection of other useful orbit
+    parameters that may be derived from the Cartesian set. GMAT also reports
+    here the full covariance matrix (here 7x7, since it includes the 6-element
+    Cartesian state and the Cd), and correlation matrix for both the Cartesian
+    and Keplerian element sets.</para>
+
+    <para>Lastly, the output report shows a detailed FILTER COVARIANCE REPORT.
+    The filter covariance report displays records at all of the measurement
+    times, and at the process noise update intervals. Recall that on the
+    process noise model we set the UpdateTimeStep to 120 seconds. In the
+    covariance report, between measurements and at 120-seconds intervals,
+    additional records are written. Each record displays the current orbit
+    position uncertainty in a Velocity-Normal-Binormal frame. You should be
+    able to see that the covariance starts with the input value of 100 meters
+    that we assigned on the EstSat OrbitErrorCovariance, and that the orbit
+    uncertainty always decreases when a measurement is used, and always
+    increases between measurements.</para>
+
+    <para>Each measurement record also includes reporting of the computed
+    scaled residual. This is a unitless value that is computed in the residual
+    sigma edit check mentioned above. Since we are using the default sigma
+    edit criteria of 3, any measurement with a scaled residual value greater
+    than 3 will have been edited. If any points in you run were edited, you
+    can check this by finding their scaled residual in this report section.
+    Note that the scaled residual of each GPS_PosVec component (X, Y, Z) is
+    computed separately, but if any of the triplet exceeds the scaled residual
+    threshold, all three components will be rejected.</para>
+
+    <para>The filter output report, and especially the filter measurement
+    statistics section, is very useful in assessing the status and quality of
+    the filter run, but graphs are often a more useful way of quickly
+    reviewing large amounts of data. Next, let’s take a look at some tools
+    that produce graphs using the filter.mat MATLAB output file. If you have
+    MATLAB but did not get a filter.mat file, then there is a problem with the
+    GMAT MATLAB interface. See <xref linkend="MatlabInterface"/> for
+    information on configuration and troubleshooting.</para>
+
+    <para>Let’s begin by plotting the filter residual ratios. You must have a
+    Python 3 installation that includes scipy, numpy, pandas, and matplotlib
+    to run these examples. If you are using Anaconda Python you should be
+    fine.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Open a DOS prompt and navigate to the directory containing the
+          sample Python analysis scripts. You can find them in the
+          <emphasis>&lt;GMAT
+          installation&gt;</emphasis>/utilities/python/navigation
+          directory.</para>
+        </listitem>
+
+        <listitem>
+          <para>In that directory, type the following:</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>python plot_residual_ratios.py <emphasis>&lt;full path to filter.mat&gt;</emphasis></programlisting>
+
+    <para>In a few seconds, you should see a plot similar to that below. This
+    shows all the scaled residual values that we previously saw in the filter
+    covariance report section of the report file. In plot form, it is easier
+    to assess the overall trends. The green highlighted region between ±3
+    shows the scaled residual threshold gate we are using. Any point plotted
+    inside this region represents an accepted measurement. If any points
+    appear outside the highlighted region, they were rejected by the scaled
+    residual edit criteria.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig2.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>Real tracking data won’t look this good and can be expected to show
+    more “structure” than just random noise. When reviewing a scaled residual
+    plot, you should make sure that the majority of data was accepted, and
+    especially that the distribution of accepted data looks approximately
+    similar over the entire run (beginning, middle, and end). By the way, each
+    of these Python scripts is also generating a PDF version of the plot and
+    comma-separated value (CSV) file of the plot data, for archive or further
+    analysis.</para>
+
+    <para>Next, let’s look at the estimated coefficient of drag.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>In the script directory, type the following:</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>python plot_solve_fors.py <emphasis>&lt;full path to filter.mat&gt;</emphasis></programlisting>
+
+    <para>After a few seconds, you should see a plot similar to the one below.
+    This displays the filter estimate of the coefficient of drag over the run.
+    Recall that for the simulated data we used a Cd of 2.2, but we started the
+    estimator with an initial Cd of 2.0 and with an initial CdSigma of 0.1.
+    This can be seen at the beginning of the graph, where the initial value of
+    Cd is 2.0 and the 3-sigma uncertainty bounds (the green region in the
+    plot) encompass the range 1.7 to 2.3. As the filter runs and incorporates
+    measurements, it “senses” that the value of Cd it was given is not quite
+    right and begins moving it toward the correct (simulated) value of 2.2. At
+    the same time this is happening, the bounds of uncertainty are decreasing
+    as the filter uses more measurements and becomes more “confident” in its
+    estimate.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig3.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>When running a filter, you should always review plots like this of
+    all the “non-position and velocity” estimated parameters in the run. You
+    should make sure the estimated value is staying within expected bounds
+    based on mission experience and any physical limitations that may be
+    inherent in the parameter (for example Cd should always be positive). You
+    should also ensure that the parameter uncertainty does not become too
+    small. This can happen if our FOGM EstimatedParameter process noise
+    (derived from the SteadyStateSigma and HalfLife) is too small. If the
+    uncertainty is too small, the filter may become overconfident in its
+    estimate of the parameter and unable to react to rapid or sudden changes
+    in drag that might occur, for example in the instance of a solar storm.
+    This could ultimately lead to the filter diverging and starting to reject
+    all incoming new measurements.</para>
+
+    <para>We don’t typically look at similar plots of the estimated values of
+    position and velocity, because they will oscillate too dramatically to be
+    useful. Ephemeris comparisons (which won’t be covered in this tutorial)
+    are an essential aid to assessing the estimated position and velocity.
+    However, it’s useful to look at plots of the position and velocity
+    uncertainty, so we’ll do that next.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>In the script directory, type the following:</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>python plot_covariance.py <emphasis>&lt;full path to filter.mat&gt;</emphasis></programlisting>
+
+    <para>After a few seconds, you should see a plot similar to the one below.
+    The image below is a zoom of the plot that will show up for you. You can
+    zoom in on your plot to see something similar. There will actually be two
+    plots, one for position uncertainty and one for velocity uncertainty, but
+    we just show the position uncertainty plot here. The velocity plot looks
+    and is interpreted similarly to the position uncertainty plot. In the
+    velocity plot, the radial velocity uncertainty will be largest (instead of
+    along-track velocity) due to correlation of along-track position with
+    radial velocity.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig4.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>Here we see the filter 1-sigma filter position uncertainty. Notice
+    that the curves all start at the value of 100 meters, which is the value
+    we assigned (in squared form) on the estimated spacecraft initial
+    OrbitErrorCovariance. Secondly, note that the uncertainty rapidly
+    collapses to “steady state” values of about 5 meters in the V (velocity)
+    component, about 2 meters cross-track (N) and about 1 meter or so radial
+    (B). This rapid collapse occurs as the filter begins to incorporate
+    measurements and improves its estimate of the state. The flattening of the
+    covariance curves is a sign of filter “convergence”. When a filter is
+    operating normally, it should remain in a converged state. Because
+    GPS_PosVec data is very consistent in its measurement density, the
+    covariance should remain pretty constant. Other measurement types that
+    come in more randomly will cause the state estimation uncertainty to
+    exhibit larger variations due to gaps in the measurement data. If you zoom
+    in closely on your plot you will be able to observe a “sawtooth” pattern,
+    particularly in the V-component, which is characteristic of filter
+    operation. The uncertainty grows in sawtooth-like fashion between each
+    measurement, and then collapses down again each time a measurement is
+    accepted. This reflects how process noise always drives the filter
+    uncertainty larger in the absence of measurements, while using a
+    measurement always decreases the filter uncertainty. Later if you wish,
+    you can experiment with different values of the ProcessNoiseModel
+    AccelNoiseSigma to see how this affects this behavior.</para>
+
+    <para>All signs show that this is a good filter run, so let’s go on to
+    configure and run the smoother.</para>
+  </section>
+
+  <section>
+    <title>Modify the estimation script to use a smoother to improve the
+    estimates</title>
+
+    <para>Now we are going to add a “smoother” to our script. A smoother
+    allows us to improve the definitive (estimated) states by running a filter
+    backwards from the last measurement to the first measurement and then
+    “fusing” the results of the forward filter and backward filter into a new
+    estimate that combines information from both the forward and backward
+    filter. The backward filter is automatically initialized from the last
+    estimated state in the forward filter. A smoother will not improve the
+    accuracy of any predictions made from the last forward filter measurement
+    because the filter and smoother estimates are identical at that time. The
+    primary advantage of a smoother is an improvement in the accuracy of the
+    states during the measurement span, also called the “definitive”
+    span.</para>
+
+    <para>In GMAT, the filter instance must be attached to the smoother, so
+    the smoother must be run in the same script and mission sequence as the
+    forward filter. We will make the following edits to the filter
+    script.</para>
+
+    <orderedlist>
+      <listitem>
+        <para>Open your filter script file.</para>
+      </listitem>
+
+      <listitem>
+        <para>Type or paste the following into the filter script
+        window.</para>
+
+        <para>a. This must be placed outside the “mission sequence” (before
+        the BeginMissionSequence statement). Put it right under the filter if
+        you wish.</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting>%
+%   Smoother
+%
+
+Create Smoother FPS;
+
+FPS.Filter               = EKF;
+FPS.ShowProgress         = True;
+FPS.ShowAllResiduals     = On;
+FPS.ReportFile           = 'smoother.txt';
+FPS.MatlabFile           = 'smoother.mat';
+</programlisting>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>At the bottom of the script window, click on the “Save,Sync”
+        button.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>There are many different types of smoothers. GMAT implements a
+    “Fraser-Potter” smoother. Details of this are given in Reference 2. To
+    configure the smoother, we attach the instance of our forward filter,
+    which will now be run backwards in time starting at the measurement end
+    time. Like the filter, we can set flags on the smoother to produce verbose
+    output in the console window and a residual plot from the backward filter
+    (ShowProgress and ShowAllResiduals). We also assign an output file for the
+    smoother report file and a smoother MATLAB data file similar to that we
+    got from the filter.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Update the mission sequence as shown below (to add the
+          RunSmoother command), then click on “Save,Sync”</para>
+        </listitem>
+      </orderedlist></para>
+
+    <programlisting>%
+%   Mission sequence
+%
+
+BeginMissionSequence
+
+EstSat.OrbitErrorCovariance = diag([1e-2 1e-2 1e-2 4e-10 4e-10 4e-10]);
+
+RunEstimator EKF;
+RunSmoother FPS;
+</programlisting>
+
+    <para>As you can see, the RunSmoother command works just the same way as
+    RunSimulator and RunEstimator.</para>
+
+    <para><orderedlist continuation="continues">
+        <listitem>
+          <para>Run the script by clicking on the “Save,Sync,Run” button,
+          clicking on the blue “Run” button in the tool bar, or by hitting the
+          F5 key</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>The script should complete in a few seconds. The filter will first
+    run and generate the same output that we have seen already. After the
+    filter runs, the smoother will run. If you watched the filter residual
+    plot window closely, you should see that it actually replotted the
+    residuals running backward (from right to left) when the smoother was
+    running. In addition, you will see a little more output in the console
+    window, this time from the smoother run. We can summarize what happened as
+    follows:</para>
+
+    <orderedlist numeration="lowerroman">
+      <listitem>
+        <para>The filter (in the RunEstimator EKF command) ran forward from
+        the first to last measurement,</para>
+      </listitem>
+
+      <listitem>
+        <para>The smoother (in the RunSmoother FPS) command ran the filter
+        backward from the last measurement to the first measurement,</para>
+      </listitem>
+
+      <listitem>
+        <para>The smoother then ran forward (still in the RunSmoother FPS
+        command) and computed a covariance-weighted average of the forward and
+        backward filter state estimates to obtain the forward smoother
+        estimates.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>To understand all of this, let’s jump to the output directory and
+    review the smoother output file.</para>
+  </section>
+
+  <section>
+    <title>Review and quality check the smoother run</title>
+
+    <para>Go to your <emphasis>&lt;GMAT Installation&gt;</emphasis>/output
+    directory. You should have the filter files we saw previously, and two new
+    files there – smoother.txt and smoother.mat. Let’s start with
+    smoother.txt.</para>
+
+    <orderedlist>
+      <listitem>
+        <para>Open smoother.txt for reading in a text editor.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>The smoother.txt file is identical in format to the filter output
+    file. At the top, we see the smoother initial conditions. Notice now that
+    the starting state for the backward filter is the ending state for the
+    filter forward run. The force modeling, spacecraft hardware, measurement
+    modeling are the same as those used in the forward filter.</para>
+
+    <para>The SMOOTHER MEASUREMENT RESIDUALS is also identical in format to
+    the FILTER MEASUREMENT RESIDUALS report. The smoother residuals report
+    shows the measurement residuals versus states computed from the smoother.
+    For this reason they are reported in forward time order. The smoother
+    operates in forward time order when fusing the forward and backward filter
+    runs. Residuals from the backward filter run are not included by default
+    in the smoother output report, but are included in the smoother MATLAB
+    file.</para>
+
+    <para>Next in the smoother output report are the smoother measurement
+    summary statistics. Again, the report format is identical to that found in
+    the filter. As in the filter, we should expect to see most of the
+    measurements accepted. Under certain circumstances, the backward filter
+    can diverge and edit out large amounts of measurement data, so the analyst
+    should carefully review the smoother output to be certain this did not
+    occur.</para>
+
+    <para>Next comes the smoother state information. This is the smoother
+    state at the end time of the measurement data, and it therefore matches
+    the filter end state exactly. Remember that the backward filter starts at
+    the end time of the forward filter, so the backward filter, the forward
+    filter, and consequently the smoother, all match at the last
+    measurement.</para>
+
+    <para>Lastly comes the SMOOTHER COVARIANCE REPORT. This is again identical
+    in format to the filter covariance report, but instead reporting the
+    smoother covariance. The function of the smoother is to improve the
+    accuracy of the estimated states and due to the mathematics of the
+    smoother, the smoother covariance is always smaller than the covariance of
+    the forward filter. This may be difficult to see in the smoother output
+    report, but it will be clearer when we examine plots of results from the
+    smoother MATLAB file. Let’s do that now.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>If you are not there already, open a DOS prompt and navigate to
+        the directory containing the sample Python analysis scripts.</para>
+      </listitem>
+
+      <listitem>
+        <para>In that directory, type the following:</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting>python plot_covariance.py <emphasis>&lt;full path to smoother.mat&gt;</emphasis>
+</programlisting>
+
+    <para>In a few seconds, you should see a plot similar to that below.
+    Compare this to the plot we previously generated for the filter position
+    covariance and note the differences. This plot does not exhibit the
+    “converging” behavior in the previous forward filter plot, and all the
+    components of uncertainty are at least a little smaller than those from
+    the forward filter. This reflects the fact that each point in the smoother
+    contains information obtained from measurements both in the past and in
+    the future of that point. By contrast, each point in the forward filter
+    run contains only information from the past of that point, since the
+    forward filter only processes measurements forward in time. Having more
+    information about the state at a particular point in time (in this case
+    derived from both the past and future trajectory of that point) improves
+    knowledge of the state and therefore reduces the uncertainty of the
+    state.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig5.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>We notice as well as considerable U-shape to the V-component of
+    uncertainty. The other components also show signs of being noisier at the
+    beginning and end of the span. This is again a consequence of how the
+    smoother operates. States near the start of the span have a lot of
+    information from the backward filter, but not much from the forward
+    filter. Similarly, states near the end have a lot of information from the
+    forward filter, but not much from the backward filter. States near the
+    center of the run have the greatest amount of information from both the
+    forward and backward filter and therefore have the smallest
+    uncertainty.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>In the script directory, type the following:</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting>python plot_solve_fors.py <emphasis>&lt;full path to smoother.mat&gt;</emphasis>
+</programlisting>
+
+    <para>After a few seconds, you should see a plot similar to the one below.
+    This displays the smoother estimate of the coefficient of drag.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig6.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>The envelope of uncertainty around the smoother Cd estimate shows
+    behavior similar to that in the smoother plots for position and velocity.
+    Near the start and end of the run, there is less information about the
+    estimate, and therefore more uncertainty, than near the center.</para>
+
+    <para>The last step in QA of the filter and smoother run requires us to
+    generate what are called “filter-smoother consistency plots”. We now have
+    two complete forward estimated time histories of the spacecraft state –
+    the state estimates we got from the forward filter, and the state
+    estimates from the forward smoother (after backward filtering). These
+    plots will allow us to see if the filter state estimate and uncertainty
+    are “consistent” with the smoother state estimate and uncertainty. In
+    other words, if the forward filter places the spacecraft at a certain
+    location with a particular uncertainty, is the smoother state and its
+    uncertainty reasonably within bounds of the filter state and
+    uncertainty?</para>
+
+    <para>As an example, consider a case where the filter estimate places the
+    spacecraft at point A with an uncertainty of 10 meters. Now let’s say the
+    smoother estimate at the same time places the spacecraft at point B with
+    an uncertainty of 5 meters. If the distance between point A and B is 7
+    meters, then we can say that the filter estimate is “consistent” with the
+    smoother estimate. The distance between point A and point B is within the
+    uncertainties of the locations of point A and point B.</para>
+
+    <para>On the other hand, let’s consider the case where point A (with 10
+    meters uncertainty) and point B (with 5 meters uncertainty), are found to
+    be 100 meters apart. This error in estimated location between the filter
+    (point A) and the smoother (point B) is much larger than should be
+    expected based on the reported uncertainties of each estimate. In this
+    case, we would say that the filter and smoother estimates are not
+    consistent, and should begin to look for sources of modeling error in
+    either the filter or smoother. The filter-smoother consistency plot will
+    perform this comparison for us at every point over the entire span of the
+    run and generate a plot showing a metric that represents the level of
+    consistency between the filter and smoother runs.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>In the script directory, type the following:</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting><?db-font-size 90% ?>python filter_smoother_consistency.py <emphasis>&lt;full path to filter.mat&gt; &lt;full path to smoother.mat&gt;</emphasis>
+</programlisting>
+
+    <para>After a few seconds, you should see a plot similar to the one below.
+    This displays the filter-smoother position consistency.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig7.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>This plot shows the filter-smoother consistency for the components
+    of the spacecraft position vector in a VNB frame. The plot for velocity
+    consistency is similar. You should also review the filter-smoother
+    consistency of all other estimated parameters. The script should also have
+    generated a consistency plot for the coefficient of drag. Since Cd is just
+    a scalar value, the Cd consistency plot shows only one data series. The
+    consistency metric measures the filter and smoother state differences
+    against their uncertainties, so we expect, in a well-tuned filter, to see
+    the majority of the metric in the ±3 range. If this is not the case, you
+    should begin examining the filter configuration. Possible sources of poor
+    filter-smoother consistency are things like poor force modeling, unknown
+    or unmodeled forces like thrusting events, excessive data editing, and
+    inappropriately tuned state noise or FOGM variables.</para>
+  </section>
+
+  <section>
+    <title>Warm-start the filter</title>
+
+    <para>We’ve seen everything that it takes to set up, run, and quality
+    check a GMAT filter/smoother OD run. There’s one more aspect of filter
+    operations that we should take a little time to understand and explore.
+    Recall, or go back and look at, the filter position covariance plot we
+    generated. That plot has a large initial covariance and then takes some
+    amount of time, maybe 6 to 12 hours in our case, to reach a steady or
+    “converged” state. This is because we have performed what is called a
+    filter “initialization” or “cold start”. We started the filter from our
+    own coarse initial guesses of the spacecraft state and uncertainty. As the
+    filter runs forward, it improves the state estimate and uncertainty by
+    processing the measurement data. At the end of the filter run, we now have
+    a state estimate and uncertainty that are much better than those we
+    started with.</para>
+
+    <para>In mission operations, we will need to run the filter on some
+    regular basis, maybe daily, and the next time we start the filter, it
+    would be best to start it from the filter’s own ending state estimate and
+    uncertainty. We might think we could do this manually by updating our
+    script with the filter estimates of the spacecraft state and full (6x6,
+    not just the diagonal elements) spacecraft orbit error covariance matrix.
+    We’d also need to update the spacecraft Cd and Cd uncertainty. This
+    process would be laborious and would not even fully capture the end state
+    of the filter because there’s no way to manually provide GMAT the
+    components of covariance that link Cd to the spacecraft position and
+    velocity.</para>
+
+    <para>The good news is that there’s a much easier way to start the filter
+    from a previously estimated state. When we covered the output files
+    generated by the filter, there was one file we didn’t describe – the
+    filter.csv file assigned on the filter OutputWarmStartFile
+    parameter.</para>
+
+    <orderedlist>
+      <listitem>
+        <para>Go to your <emphasis>&lt;GMAT Installation&gt;</emphasis>/output
+        directory. Find and open filter.csv for reading in a text
+        editor.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>The filter.csv file is a comma-separated file containing a record of
+    the full filter state and covariance at every measurement and time update
+    in the processing span. Scroll to the right in the file and look at the
+    header row (if you prefer, you can open the file in Excel for greater
+    convenience). You should see that each record in the file contains the
+    full state of the filter (that is, the spacecraft position and velocity
+    component estimates along with Cd estimates) and the full (7x7) covariance
+    matrix associated with the state and Cd estimates of the record. Any
+    record in this file contains all the information the filter needs to start
+    up and continue processing forward from the record epoch. Starting the
+    filter in this fashion from a previous estimated state and full covariance
+    matrix is called a “warm start”, and the filter.csv file is called a warm
+    start file.</para>
+
+    <note>
+      <para>The covariance stored in the warm start file is actually the
+      square root of the full covariance matrix. The headers of the covariance
+      columns indicate this (SqrtCovariance). The full covariance matrix P may
+      be recovered from the square root covariance by the formula P =
+      SqrtCovariance * SqrtCovariance<superscript>T</superscript>.</para>
+    </note>
+
+    <para>Let’s go through a quick demonstration of how to perform a warm
+    start.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>Update the filter ExtendedKalmanFilter configuration in the
+        mission sequence as shown below. It may be convenient to just
+        comment-out or remove the current filter instance and paste in this
+        new code.</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting>%
+%   Estimator
+%
+
+Create ExtendedKalmanFilter EKF;
+
+EKF.ShowProgress         = True;
+EKF.Measurements         = {EstData};
+EKF.Propagator           = Prop;
+EKF.ShowAllResiduals     = On;
+EKF.InputWarmStartFile   = 'filter.csv';
+EKF.WarmStartEpochFormat = 'UTCGregorian';
+EKF.WarmStartEpoch       = '10 Jun 2014 18:00:00.000';
+EKF.ReportFile           = 'filter.txt';
+EKF.MatlabFile           = 'filter.mat';
+</programlisting>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>At the bottom of the script window, click on the “Save,Sync”
+        button.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>Here, we’ve assigned the filter.csv warm start file we have as the
+    InputWarmStartFile, meaning that GMAT will now read from that file instead
+    of writing to it. We have also specified a WarmStartEpoch (and epoch
+    format). This tells GMAT which record to use in the input warm start file
+    as GMAT’s starting point. In this case, we’re choosing not to write out a
+    new filter OutputWarmStartFile, but we could do that at the same time, as
+    long as we choose a different file name from the input warm start file.
+    Let’s run the filter and see how a warm start works.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>Run the script by clicking on the “Save,Sync,Run” button,
+        clicking on the blue “Run” error in the tool bar, or by hitting the F5
+        key.</para>
+      </listitem>
+
+      <listitem>
+        <para>When the run completes, go to your <emphasis>&lt;GMAT
+        Installation&gt;</emphasis>/output directory. Find and open filter.txt
+        for reading in a text editor.</para>
+      </listitem>
+    </orderedlist>
+
+    <para>Look at the spacecraft initial conditions at the top of the filter
+    output report file. You should now see that the initial spacecraft epoch
+    state are at the warm start epoch we specified. If you wish, you can
+    manually compare the initial state reported in the filter output report to
+    the 10 Jun 2020 18:00 record in the filter.csv warm start file – they
+    should match. Most importantly, the 7x7 initial covariance reported in the
+    output file will also match the 7x7 covariance from the warm start file
+    record (if you convert the square root covariance in the warm start file
+    to a full covariance).</para>
+
+    <para>Next, scroll down in the output to the filter measurement residuals
+    report. Notice that the residual report begins with the 10 Jun 2014 18:10
+    measurement. When warm-starting the filter, it will automatically ignore
+    any measurements prior to the selected warm start epoch and begin forward
+    processing from the first measurement after the warm start epoch. This is
+    because the warm start record at that epoch already includes the effect of
+    processing all earlier measurement data. (As an aside, since the forward
+    filter ignored measurements prior to 18:00, the backward filter and the
+    smoother will also ignore the earlier measurement data, since their
+    knowledge of what measurements to process comes solely from the forward
+    filter run.)</para>
+
+    <para>If you scroll down further in the output file to the FILTER STATE
+    INFORMATION report, you will see that the end time and final estimated
+    state of the run matches what was obtained in the original full-span run.
+    The purpose of a warm start is to allow the filter to continue running
+    from the warm start epoch as though it had never stopped. Choosing any
+    warm start epoch at all will lead to identically the same estimated state
+    and covariance at the end of the run.</para>
+
+    <para>In this instance, we got the same end state because we were just
+    reprocessing the same set of data as our cold-start run, with the only
+    difference of choosing a different starting point. In normal mission
+    operations, the warm start record is used to advance the filter estimated
+    state continuously forward using the new data that is available each time
+    the filter is run. An outline of this process for a routine OD scenario
+    looks like the following:</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject role="fo">
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig8.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+
+        <imageobject role="html">
+          <imagedata align="center"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig8.png"
+                     scale="50"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>As the flowchart illustrates, ideally the filter is cold-started, or
+    initialized, only once and then is run continuously in warm start mode,
+    with each new day’s run starting from an epoch chosen from the prior run’s
+    output warm start file (normally the last or most recent warm start
+    record). In practice, it is occasionally necessary to re-initialize the
+    filter. This may be required if a severe spacecraft thrusting event occurs
+    which cannot be modeled in the filter, or more commonly, due to changes in
+    the filter scenario due to the addition of new tracking stations or
+    significant changes in current tracking stations.</para>
+  </section>
+
+  <section>
+    <title>A few words about filter tuning</title>
+
+    <para>Throughout this exercise, we have employed some numbers that affect
+    the filter performance, without really explaining where they came from.
+    These are things like the magnitude of the process noise, the sigma and
+    half-life for estimation of the coefficient of drag, and the initial orbit
+    state uncertainty. In an exercise using simulated data, it is not hard to
+    find values that work well, since we already know the “truth” that was
+    employed in the simulation. When working with real mission data however,
+    the situation is much different. You may have some initial guess of the
+    coefficient of drag, but you might not know the error in your guess, or
+    how much the coefficient of drag might vary due to possibly dynamic
+    spacecraft area. Even deciding which parameters to estimate and which to
+    apply can be a difficult question to answer. The process of finding
+    appropriate values for all the parameters that affect filter performance
+    is filter “tuning”. The goal of filter tuning is to achieve a filter that
+    runs continuously (using warm starts) with minimal need for
+    reinitialization, and that yields a covariance that hopefully
+    realistically captures the true orbit uncertainty. The process of tuning a
+    filter often requires analysis and experimentation with all the parameters
+    just mentioned. It is furthermore a good idea to examine filter
+    performance under a range of your spacecraft’s environmental conditions.
+    For example, a tuning for a low-Earth spacecraft that works well during
+    solar minimum may be stressed or fail during solar maximum. We can offer a
+    few tips to those new to the filter tuning game.</para>
+
+    <para>The Spacecraft initial OrbitErrorCovariance represents the
+    uncertainty in the initial spacecraft state you are providing on the
+    Spacecraft object. In general, an “order of magnitude” guess is sufficient
+    for the initial covariance. The filter will soon “forget” this initial
+    value anyway as it automatically adjusts the covariance in response to the
+    measurements and process noise. While the OrbitErrorCovariance is a full
+    6x6 matrix, common practice is to specify only the diagonal elements,
+    representing the uncertainties in the initial position and velocity
+    components. To ascertain whether your values are appropriate, examine the
+    filter output at the start of the run. If your initial state is close in
+    time to the first measurement and the filter diverges (begins
+    sigma-editing most or all data) immediately, or very soon, after the first
+    measurement, adjust the OrbitErrorCovariance. An OrbitErrorCovariance that
+    is too small will result in immediate data editing (“divergence”) due to
+    the scaled residual edit check failing to capture the measurements.
+    However, an OrbitErrorCovariance that is too large can also cause
+    divergence. If the initial uncertainty is too large, the filter will
+    accept the first few measurements, but the covariance will collapse too
+    rapidly around a still poorly-estimated state, which will likely lead
+    rapidly to divergence. Use of measurement deweighting can help ameliorate
+    this condition (see the <xref linkend="ExtendedKalmanFilter"/>
+    MeasDewighting parameters). If possible, it is best to work with an
+    initial state that has an epoch close to the first measurements. If your
+    initial state is not close to the first measurement, propagation of the
+    initial state to the time of the first measurement introduces process
+    noise, which means you will need to try to tune both the initial orbit
+    uncertainty and state noise model at the same time.</para>
+
+    <para>Choosing appropriate values for stochastic models like a first-order
+    Gauss-Markov drag model requires some experimentation. For the spacecraft
+    coefficient of drag, you can begin from the basis that most coefficients
+    of drag are between 2.0 and 2.5. A long half-life (one to ten days) is
+    usually a good choice, especially if you don’t know the actual value of
+    drag very well. A short half-life will cause the drag estimate to rapidly
+    decay back to the nominal (steady-state) value, which is not a good option
+    if your chosen steady-state value is not close to the true value. A longer
+    half-life allows the filter more time to sense and adjust to the true
+    value.</para>
+
+    <para>Choosing appropriate process noise can be the most opaque and
+    mysterious part of filter tuning. The units of acceleration noise sigma
+    for GMAT’s StateNoiseCompensation algorithm are km per second^(3/2), which
+    does not lend itself easily to an intuitive interpretation. Reference 2
+    recommends the following starting point for along-track process noise for
+    near-circular orbits dominated by along-track error (as is the case for
+    most spacecraft affect by drag):</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject role="fo">
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Resource_ProcessNoiseModel_SNC_QTuning.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+
+        <imageobject role="html">
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Resource_ProcessNoiseModel_SNC_QTuning.png"
+                     scale="50"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>Where <inlineequation>
+        <m:math display="inline">
+          <m:msub>
+            <m:mi>σ</m:mi>
+
+            <m:mn>AT</m:mn>
+          </m:msub>
+        </m:math>
+      </inlineequation> is the along-track error per orbit period (perhaps
+    determined empirically), and <emphasis>T</emphasis> is the orbit period in
+    seconds (Reference 2, eq. 2.88). Note that the square root of
+    <emphasis>q<subscript>AT</subscript></emphasis> is specified when
+    inputting the components of the AccelNoiseSigma on a process noise
+    model.</para>
+
+    <para>Process noise drives the growth of position and velocity uncertainty
+    in the absence of measurements. The effect of this is most easily seen by
+    examining plots of position and velocity uncertainty and looking at how
+    large they get while propagating the orbit between tracking passes. Try to
+    make a judgement whether the growth is consistent with what the actual
+    orbit uncertainty might be. For example, a low-Earth orbiting spacecraft
+    receiving one or two 20-minute passes per orbit might be expected to
+    experience less than 100 meters prediction error per orbit, if the orbit
+    is well-estimated and drag conditions are not rapidly changing. If plots
+    of position covariance show the uncertainty growing to a kilometer between
+    passes, it is likely that the process noise is too large. It can be easy
+    for a filter with too much process noise to look like it is performing
+    well, because it will generally easily accept all of the incoming
+    measurement data. However, the estimated state will not be as accurate as
+    it could be and will likely predict poorly.</para>
+
+    <para>Examining the “pre-update” residual of the first measurement of each
+    tracking pass is a useful exercise. The pre-update residual is the filter
+    state measurement residual prior to incorporating (or rejecting) the
+    measurement. This gives you an indication of how well the filter is
+    predicting. Ideally these first-measurement pre-update residuals should
+    not be biased (should not be predominantly positive or negative). Under
+    most conditions, prediction error is larger than measurement noise, so the
+    population of first measurement residuals should roughly reflect the state
+    prediction accuracy. The Filter Measurement Residuals section of GMAT’s
+    filter output report shows pre-update residuals. Examining plots of
+    pre-update residuals is usually more useful than scanning the report
+    visually.</para>
+
+    <para>There are three essential tools for assessing filter performance –
+    scaled residual plots, filter-smoother consistency checks, and ephemeris
+    comparisons.</para>
+
+    <para>“Scaled residuals” or “residual ratios” are the filter raw
+    measurement (pre-update) residual divided by (roughly) the sum of the
+    state uncertainty and measurement noise. The scaled residual is the metric
+    the filter uses when deciding to accept or reject a new measurement. If
+    the scaled residual exceeds the filter ScaledResidualThreshold, the
+    measurement is rejected by the sigma-edit criteria. Another very useful
+    aspect of the scaled residual is that it is dimensionless, which means it
+    gives you a way to examine the processing of all measurement types in a
+    single plot, rather than looking at separate plots of Doppler, range, and
+    angle residuals. You can see the residual ratios in the Filter Covariance
+    Report section of the GMAT filter output report file, but viewing them in
+    a graph (as we did previously in Section 3 above) is much more useful. A
+    scaled residual plot can quickly show you in a glance how much of your
+    data was accepted (below the scaled residual threshold) and how much is
+    rejected. We expect a well-tuned filter to accept nearly all incoming
+    measurements (except for those known to be erroneous, biased, or otherwise
+    anomalous).</para>
+
+    <para>Scaled residual plots can also tell you other useful things about
+    how the filter is performing. Take a look at the scaled residual plot
+    shown below.</para>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Tut_FilterSmoother_GpsPosVec_Fig9.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>If we just looked quickly at our filter output report, we might be
+    happy with this run, because 100% of the data was accepted. However, the
+    scaled residual plot shows that all of the scaled residuals are squashed
+    on a line close to zero. This tells us that the divisor in the scaled
+    residual computation (the sum of the process noise and measurement noise)
+    is much larger than the raw measurement residual. From this, we can
+    conclude that either the process noise or assumed measurement noise is too
+    large. (If you see a plot like this, it is most often the case that the
+    measurement noise is too large. For reasonable values of process noise,
+    the “spread” of scaled residuals is indicative of how large the modeled
+    measurement noise is relative to the actual measurement noise.)
+    Mathematically speaking, we are not extracting as much value from the
+    residuals as we should be. A well-tuned filter should spread the scaled
+    residuals more evenly through the full range of the scaled residual
+    acceptance region. While strictly speaking it might be considered best to
+    see the scaled residuals cover the entire scaled residual acceptance range
+    (with maybe even a little spillover), in operational practice it usually
+    good to leave a little overhead (perhaps 1-sigma) between the envelope of
+    scaled residuals and the scaled residual threshold. This allows the filter
+    to be more robust to small unpredictable variations that come from solar
+    activity, mis-modeled media corrections, small measurement biases, and the
+    like.</para>
+
+    <para>Secondly, when running both the filter and smoother, filter-smoother
+    consistency checks are very useful for assessing your tuning. As was
+    described in above, we should expect that the filter state and associated
+    uncertainty are statistically “consistent” with the smoother state and its
+    uncertainty. For low-Earth spacecraft especially, it is typical for the
+    filter-smoother consistency metric to occasionally stray outside the ideal
+    range, but excesses should not be extreme or of long duration. Poor
+    filter-smoother consistency is a sign that the filter tuning is at least
+    somewhat amiss. Poorly-modeled maneuvers can be one source of poor
+    consistency. In this case, intervention is not typically warranted, as the
+    consistency should return to normal in later post-maneuver runs. Short
+    spans of data editing, sudden solar activity, or other temporary events
+    affecting force modeling can also cause transient issues with
+    filter-smoother consistency. Temporary excesses of the consistency metric
+    are not usually a problem as long as they can be associated with some
+    known or suspected phenomena. Consistently poor filter-smoother
+    consistency should be addressed by reexamining filter tuning in the areas
+    of propagation model fidelity, process noise, and estimated parameter
+    modeling.</para>
+
+    <para>Lastly, ephemeris compares should always be performed, and most
+    importantly, trends of predicted accuracy should be maintained and
+    periodically compared against mission requirements and past results. Prior
+    to launch, most missions perform detailed analysis to determine the proper
+    tracking schedule and measurement types needed to meet mission orbit
+    accuracy requirements. Routine navigation operations should assess orbit
+    determination performance against these requirements. Both predicted and
+    definitive ephemeris data should be generated each time the filter is run,
+    and the accuracy of each new prediction should be later assessed against a
+    definitive ephemeris to measure the prediction error. Keep a record of
+    prediction error over consistent spans that are relevant to mission
+    requirements. For example, if your mission has a requirement of a 48-hour
+    prediction accuracy of better than 2 kilometers, make sure that every
+    filter (or smoother) run generates at least 48 hours of predicted
+    ephemeris data. Compare this prediction later to a new definitive filter
+    ephemeris to determine the accuracy of the prediction. Besides ensuring
+    that you are meeting mission requirements, comparison of actual prediction
+    accuracy to predicted orbit uncertainty covariance is a useful way of
+    assessing the realism of the filter predicted orbit covariance.</para>
+
+    <para>Here are some additional tips to help develop your “filter
+    intuition”.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>If the state estimation error is very small or the measurement
+        is very noisy, the state change when incorporating a measurement is
+        small and the filter “trusts” the current orbit estimate more than the
+        new measurement. This is the situation if the state is “well-known” or
+        the observation is low-quality.</para>
+      </listitem>
+
+      <listitem>
+        <para>If the state is poorly known or the measurement is very good
+        (low noise), the state is strongly corrected by the new measurement.
+        In this case, the filter is “following the data” more than trusting
+        the state estimate.</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>The estimation error covariance after the measurement update is
+    always less than the estimation error covariance before the measurement
+    update. Using an observation always reduces the orbit error covariance, no
+    matter how bad the observation is. Addition of process noise always
+    increases the state uncertainty. So there is a balance here –
+    incorporating a measurement always decreases the state uncertainty and
+    process noise always increases the state uncertainty. Filter convergence
+    and long-term performance depends on this balance. If measurement or
+    process noise are too small, the orbit error covariance may become too
+    small and the filter may begin to reject good measurements. The filter
+    will eventually diverge – this is called “smugness”. If process noise is
+    too large, the filter will predict poorly and have little “memory” of
+    state information. The filter state will depend mostly on only the latest
+    measurements and will act like a short-arc batch least-squares estimator.
+    It is helpful for a filter to have a “memory” of prior measurements, since
+    this allows the filter more accurately estimate sometimes hard-to-observe
+    parameters like drag or orbital plane.</para>
+  </section>
+
+  <section>
+    <title>References</title>
+
+    <orderedlist>
+      <listitem>
+        <para>Tapley, Schutz, and Born, Statistical Orbit Determination,
+        Elsevier Science 2004.</para>
+      </listitem>
+
+      <listitem>
+        <para>Carpenter, Russell and Chris D'Souza. Navigation Filter Best
+        Practices. Technical Report TP-2018-219822, NASA, April 2018.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+
+  <section>
+    <title>Appendix A. Generate an ephemeris while running the filter and
+    smoother</title>
+
+    <para>While just knowing the end state of the filter run is useful, flight
+    dynamics operations often requires a complete ephemeris file of the past
+    (“definitive”) and future predicted orbit to assist in generation of
+    various reports and analysis required for spacecraft mission operations.
+    In this section, we will show how to modify the filter/smoother script to
+    generate an ephemeris file during both the filter and smoother run.</para>
+
+    <orderedlist>
+      <listitem>
+        <para>If you don’t already have it open, start GMAT and load the
+        filter.script script file.</para>
+      </listitem>
+
+      <listitem>
+        <para>Paste the following code into your script before the
+        BeginMissionSequence command, then click on “Save,Sync”.</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting>%
+%   Create ephemeris files
+%
+
+Create EphemerisFile FilterEphem;
+
+FilterEphem.Spacecraft          = EstSat;
+FilterEphem.Filename            = 'filter.e';
+FilterEphem.FileFormat          = 'STK-TimePosVel';
+FilterEphem.IncludeCovariance   = 'Position';
+FilterEphem.CoordinateSystem    = EarthMJ2000Eq;
+FilterEphem.WriteEphemeris      = False;
+
+Create EphemerisFile SmootherEphem;
+
+SmootherEphem.Spacecraft        = EstSat;
+SmootherEphem.Filename          = 'smoother.e';
+SmootherEphem.FileFormat        = 'STK-TimePosVel';
+SmootherEphem.IncludeCovariance = 'Position';
+SmootherEphem.CoordinateSystem  = EarthMJ2000Eq;
+SmootherEphem.WriteEphemeris    = False;
+</programlisting>
+
+    <para>Here we create two instances of the EphemerisFile resource – one for
+    the filter and one for the smoother. We attach the EstSat satellite to the
+    ephemeris object, and specify the ephemeris format to be an STK-format
+    ephemeris. Since the filter creates states at each measurement time, and
+    the measurement times are generally not at a uniform time interval across
+    the filter span, the filter can only use ephemeris formats that support a
+    variable time step between states. In this example, we also choose to
+    include the covariance in the STK ephemeris (not all formats support this
+    option), and we specify a coordinate system for the output
+    ephemeris.</para>
+
+    <para>The WriteEphemeris parameter tells GMAT whether to output states
+    from the attached spacecraft to the configured ephemeris file. We set it
+    to False here to suppress output to the ephemeris file for now. The reason
+    for this will become clear shortly.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>Update the mission sequence as shown below, then click on
+        “Save,Sync”.</para>
+      </listitem>
+    </orderedlist>
+
+    <para><programlisting>%
+%   Mission sequence
+%
+
+BeginMissionSequence
+
+EstSat.OrbitErrorCovariance = diag([1e-2 1e-2 1e-2 4e-10 4e-10 4e-10]);
+
+Toggle FilterEphem On;
+RunEstimator EKF;
+Toggle FilterEphem Off;
+
+Toggle SmootherEphem On;
+RunSmoother FPS;
+Toggle SmootherEphem Off;
+</programlisting>The Toggle command is used to activate and suppress output to
+    each ephemeris file at the appropriate time. Before running the EKF, we
+    turn on output to the filter ephemeris file. At this point in the script,
+    output to the smoother ephemeris file remains off, due to the setting of
+    the WriteEphemeris parameter on the SmootherEphem resource. We then run
+    the filter with output to the filter ephemeris turned on. While the filter
+    runs, each filter estimated state is written to the filter ephemeris via
+    the EstSat spacecraft that is attached to the filter ephemeris resource.
+    If at this point, the output to the smoother ephemeris were also enabled,
+    output would also be written to the smoother ephemeris, since EstSat is
+    also attached to the SmootherEphem resource. This would cause a problem
+    when the smoother runs next and again writes states to the smoother
+    ephemeris file.</para>
+
+    <para>When the filter run completes, output to the filter ephemeris is
+    turned off, and output to the smoother ephemeris is now turned on. The
+    smoother is then run. During the smoother run, output states from EstSat
+    will now go exclusively to the smoother ephemeris file. <orderedlist
+        continuation="continues">
+        <listitem>
+          <para>Run the script by clicking on the “Save,Sync,Run” button,
+          clicking on the blue “Run” error in the tool bar, or by hitting the
+          F5 key.</para>
+        </listitem>
+      </orderedlist></para>
+
+    <para>The filter and smoother will run just the same as we have seen
+    previously. When the run completes the two ephemeris files, filter.e and
+    smoother.e, can be found in the GMAT output directory. In this case, the
+    files will cover only the span of the filter and smoother estimation arcs.
+    GMAT can also generate a prediction past the end time of the tracking
+    data.</para>
+
+    <orderedlist continuation="continues">
+      <listitem>
+        <para>Add the following line of code to the configuration of the
+        smoother object. Update the mission sequence as shown below, then
+        click on “Save,Sync”.</para>
+      </listitem>
+    </orderedlist>
+
+    <para><programlisting>FPS.PredictTimeSpan      = 86400;
+</programlisting><orderedlist continuation="continues">
+        <listitem>
+          <para>Run the script by clicking on the “Save,Sync,Run” button,
+          clicking on the blue “Run” error in the tool bar, or by hitting the
+          F5 key.</para>
+        </listitem>
+      </orderedlist>This parameter instructs the smoother to generate an
+    86400-second (1-day) prediction past the end time (last observation) of
+    the data. Examine the smoother ephemeris file after the run completes to
+    see the extra prediction span in the file. The same parameter is also
+    available for the filter, if you wish to add a prediction to the
+    filter.</para>
+  </section>
+
+  <section>
+    <title>Appendix B. Run the script from the command-line</title>
+
+    <para>In this tutorial, we’ve demonstrated configuring and running a GMAT
+    filter/smoother script from the GMAT application GUI. In mission
+    operations, it is not desirable to have to execute such point-and-click
+    operations regularly, and automated execution is preferred. Here we
+    demonstrate how to run our filter script from the command-line instead of
+    using the GUI.</para>
+
+    <orderedlist>
+      <listitem>
+        <para>Open a command-line prompt on your platform and navigate to the
+        directory containing the GMAT executable.</para>
+      </listitem>
+
+      <listitem>
+        <para>In that directory, type the following:</para>
+
+        <para>a. If you are running the Mac or Linux version, type <emphasis
+        role="bold">GmatConsole</emphasis> instead of <emphasis
+        role="bold">gmat.exe</emphasis>.</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting>gmat.exe --exit --run <emphasis>&lt;full path to filter.script&gt;</emphasis>
+</programlisting>
+
+    <para>In a Windows/DOS environment, this will cause GMAT to start the GUI,
+    load and run the script, and then exit the GUI. The GmatConsole command
+    (not currently supported on Windows), runs the script without the GUI at
+    all. On the Windows platform, you can suppress the GUI by adding the
+    <literal>--minimize</literal> option to the command-line. There are a
+    number of other command-line options. You can type <literal>gmat.exe
+    --help</literal> or look in the User’s Guide under <xref
+    linkend="CommandLine"/>.</para>
+
+    <para>When the script completes, you can examine the GMAT output directory
+    to confirm that all the same files generated when we ran the script inside
+    the GUI were generated from the command-line run.</para>
+
+    <para>You can of course run GMAT in this fashion from any directory by
+    specifying the full path to the GMAT executable. Note however, that in all
+    instances it is necessary to specify the full path to the script, even if
+    the script is in the directory from which you are calling GMAT. GMAT
+    treats all relative paths as relative to its own <emphasis
+    role="bold">bin/</emphasis> directory.</para>
+  </section>
+
+  <section>
+    <title>Appendix C. Check covariance matrix conditioning</title>
+
+    <para>Filters can be susceptible to effects of numerical noise arising
+    from finite machine precision. This tends to manifest itself in numerical
+    instability of the covariance matrix. The covariance of the backward
+    filter step of the Fraser-Potter smoother is particularly vulnerable to
+    this condition if large data gaps occur near the start of backward filter
+    processing (the end of the forward filter processing span). Users can
+    examine the condition number of the forward filter, backward filter, and
+    smoother using the <guilabel>plot_cond_cov.py</guilabel> tool.</para>
+
+    <orderedlist>
+      <listitem>
+        <para>In the python script directory, type the following:</para>
+      </listitem>
+    </orderedlist>
+
+    <programlisting><?db-font-size 90% ?>python plot_cond_cov.py <emphasis>&lt;full path to filter.mat&gt; &lt;full path to smoother.mat&gt;</emphasis>
+</programlisting>
+
+    <para>This command will produce a plot of the base-10 logarithm of the
+    covariance condition numbers over the processing span. Users with access
+    to MATLAB or python can use the filter and smoother MATLAB files for
+    additional analysis of the covariance, such as testing that the covariance
+    eigenvalues are positive and real or checking the symmetry of the
+    covariance matrix.</para>
+  </section>
+</chapter>

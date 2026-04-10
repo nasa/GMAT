@@ -1,0 +1,426 @@
+%
+%  Ex_IntegratedFlyby_MarsFlyby
+%
+%  Sample optimal control script optimizing an integrated (i.e., not patched conic) flyby of Mars.
+%
+%  Released: R2020a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+%----------------------------------------
+% Create a spacecraft names aSat.  Guess is set later.
+%----------------------------------------
+Create Spacecraft emsat;
+
+emsat.DateFormat                   = A1ModJulian;
+emsat.Epoch                        = '21545';
+emsat.CoordinateSystem             = EarthMJ2000Eq;
+emsat.DisplayStateType             = Cartesian;
+emsat.X                            = 7100;
+emsat.Y                            = 0;
+emsat.Z                            = 1300;
+emsat.VX                           = 0;
+emsat.VY                           = 7.35;
+emsat.VZ                           = 1;
+emsat.DryMass                      = 1000;
+emsat.Cd                           = 2.2;
+emsat.Cr                           = 1.8;
+emsat.DragArea                     = 15;
+emsat.SRPArea                      = 1;
+emsat.SPADDragScaleFactor          = 1;
+emsat.SPADSRPScaleFactor           = 1;
+emsat.NAIFId                       = -10010001;
+emsat.NAIFIdReferenceFrame         = -9010001;
+emsat.OrbitColor                   = Red;
+emsat.TargetColor                  = Teal;
+emsat.OrbitErrorCovariance         = [ 1e+70 0 0 0 0 0 ; 0 1e+70 0 0 0 0 ; 0 0 1e+70 0 0 0 ; 0 0 0 1e+70 0 0 ; 0 0 0 0 1e+70 0 ; 0 0 0 0 0 1e+70 ];
+emsat.CdSigma                      = 1e+70;
+emsat.CrSigma                      = 1e+70;
+emsat.Id                           = 'SatId';
+emsat.Attitude                     = CoordinateSystemFixed;
+emsat.SPADSRPInterpolationMethod   = Bilinear;
+emsat.SPADSRPScaleFactorSigma      = 1e+70;
+emsat.SPADDragInterpolationMethod  = Bilinear;
+emsat.SPADDragScaleFactorSigma     = 1e+70;
+emsat.ModelFile                    = 'aura.3ds';
+emsat.ModelOffsetX                 = 0;
+emsat.ModelOffsetY                 = 0;
+emsat.ModelOffsetZ                 = 0;
+emsat.ModelRotationX               = 0;
+emsat.ModelRotationY               = 0;
+emsat.ModelRotationZ               = 0;
+emsat.ModelScale                   = 1;
+emsat.AttitudeDisplayStateType     = 'Quaternion';
+emsat.AttitudeRateDisplayStateType = 'AngularVelocity';
+emsat.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+emsat.EulerAngleSequence           = '321';
+emsat.Tanks                        = {ChemicalTank1};
+
+%----------------------------------------
+%---------- Hardware
+%----------------------------------------
+%
+% Create a chemical tank
+%----------------------------------------
+Create ChemicalTank ChemicalTank1;
+
+ChemicalTank1.AllowNegativeFuelMass = false;
+ChemicalTank1.FuelMass       = 4000;
+ChemicalTank1.Pressure       = 1500;
+ChemicalTank1.Temperature    = 20;
+ChemicalTank1.RefTemperature = 20;
+ChemicalTank1.Volume         = 4;
+ChemicalTank1.FuelDensity    = 1260;
+ChemicalTank1.PressureModel  = PressureRegulated;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+%
+% Create an orbit dynamics model with Earth, Sun, Moon point mass
+%----------------------------------------
+Create ForceModel DeepSpaceForceModel;
+
+DeepSpaceForceModel.CentralBody            = Sun;
+DeepSpaceForceModel.PointMasses            = {Sun};%, Earth, Luna};
+DeepSpaceForceModel.Drag                   = None;
+DeepSpaceForceModel.SRP                    = On;
+DeepSpaceForceModel.RelativisticCorrection = Off;
+DeepSpaceForceModel.ErrorControl           = RSSStep;
+DeepSpaceForceModel.SRP.Flux               = 1367;
+DeepSpaceForceModel.SRP.SRPModel           = Spherical;
+DeepSpaceForceModel.SRP.Nominal_Sun        = 149597870.691;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthJ2000Eq;
+EarthJ2000Eq.Origin = Earth;
+EarthJ2000Eq.Axes   = MJ2000Eq;
+
+Create CoordinateSystem SunMJ2000Ec;
+SunMJ2000Ec.Origin = Sun;
+SunMJ2000Ec.Axes   = MJ2000Ec;
+
+Create CoordinateSystem MarsMJ2000Ec;
+MarsMJ2000Ec.Origin = Mars;
+MarsMJ2000Ec.Axes   = MJ2000Ec;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+Create OrbitView OrbitView1;
+OrbitView1.SolverIterations = Current;
+OrbitView1.UpperLeft = [ 0 0.6394736842105263 ];
+OrbitView1.Size      = [ 0.5705128205128205 0.3228070175438597 ];
+OrbitView1.RelativeZOrder = 160;
+OrbitView1.Maximized = true;
+OrbitView1.Add = {emsat, Earth, Mars};
+OrbitView1.CoordinateSystem = SunMJ2000Ec;
+OrbitView1.DrawObject = [ true true ];
+OrbitView1.DataCollectFrequency = 1;
+OrbitView1.UpdatePlotFrequency = 50;
+OrbitView1.NumPointsToRedraw = 0;
+OrbitView1.ShowPlot = true;
+OrbitView1.MaxPlotPoints = 200;
+OrbitView1.ShowLabels = true;
+OrbitView1.ViewPointReference = Sun;
+OrbitView1.ViewPointVector = [ 0 0 149000000 ];
+OrbitView1.ViewDirection = Sun;
+OrbitView1.ViewScaleFactor = 2;
+OrbitView1.ViewUpCoordinateSystem = SunMJ2000Ec;
+OrbitView1.ViewUpAxis = Y;
+OrbitView1.EclipticPlane = Off;
+OrbitView1.XYPlane = On;
+OrbitView1.WireFrame = Off;
+OrbitView1.Axes = On;
+OrbitView1.Grid = Off;
+OrbitView1.SunLine = Off;
+OrbitView1.UseInitialView = On;
+OrbitView1.StarCount = 7000;
+OrbitView1.EnableStars = Off;
+OrbitView1.EnableConstellations = Off;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Create OpenFramesInterface OFI_OrbitView1;
+
+OFI_OrbitView1.SolverIterations = Current;
+OFI_OrbitView1.UpperLeft        = [ 0 0.6394736842105263 ];
+OFI_OrbitView1.Size             = [ 0.5705128205128205 0.3228070175438597 ];
+OFI_OrbitView1.RelativeZOrder   = 160;
+OFI_OrbitView1.Maximized        = false;
+
+OFI_OrbitView1.Add              = {emsat, Earth, Mars};;
+OFI_OrbitView1.View             = {Orbit_View};
+
+OFI_OrbitView1.CoordinateSystem = SunMJ2000Ec;
+OFI_OrbitView1.DrawObject       = [ true true true ];
+OFI_OrbitView1.DrawXYPlane      = [ false false false ];
+OFI_OrbitView1.DrawLabel        = [ true true true ];
+OFI_OrbitView1.DrawGrid         = [ false false false ];
+
+OFI_OrbitView1.Axes             = On;
+OFI_OrbitView1.XYPlane          = On;
+OFI_OrbitView1.EclipticPlane    = Off;
+OFI_OrbitView1.EnableStars      = On;
+OFI_OrbitView1.StarCount        = 40000;
+OFI_OrbitView1.ShowPlot         = true;
+
+
+Create OrbitView OrbitView2;
+OrbitView2.SolverIterations = Current;
+OrbitView2.UpperLeft = [ 0.02777777777777778 0.1859649122807017 ];
+OrbitView2.Size      = [ 0.5705128205128205 0.3228070175438597 ];
+OrbitView2.RelativeZOrder = 152;
+OrbitView2.Maximized = false;
+OrbitView2.Add = {emsat, Earth, Mars};
+OrbitView2.CoordinateSystem = MarsMJ2000Ec;
+OrbitView2.DrawObject = [ true true ];
+OrbitView2.DataCollectFrequency = 1;
+OrbitView2.UpdatePlotFrequency = 50;
+OrbitView2.NumPointsToRedraw = 0;
+OrbitView2.ShowPlot = true;
+OrbitView2.MaxPlotPoints = 200;
+OrbitView2.ShowLabels = true;
+OrbitView2.ViewPointReference = Mars;
+OrbitView2.ViewPointVector = [ 0 0 149000000 ];
+OrbitView2.ViewDirection = Sun;
+OrbitView2.ViewScaleFactor = 2;
+OrbitView2.ViewUpCoordinateSystem = MarsMJ2000Ec;
+OrbitView2.ViewUpAxis = Y;
+OrbitView2.EclipticPlane = Off;
+OrbitView2.XYPlane = On;
+OrbitView2.WireFrame = Off;
+OrbitView2.Axes = On;
+OrbitView2.Grid = Off;
+OrbitView2.SunLine = Off;
+OrbitView2.UseInitialView = On;
+OrbitView2.StarCount = 7000;
+OrbitView2.EnableStars = Off;
+OrbitView2.EnableConstellations = Off;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Create OpenFramesInterface OFI_OrbitView2;
+
+OFI_OrbitView2.SolverIterations = Current;
+OFI_OrbitView2.UpperLeft        = [ 0.02777777777777778 0.1859649122807017 ];
+OFI_OrbitView2.Size             = [ 0.5705128205128205 0.3228070175438597 ];
+OFI_OrbitView2.RelativeZOrder   = 152;
+OFI_OrbitView2.Maximized        = false;
+
+OFI_OrbitView2.Add              = {emsat, Earth, Mars};
+OFI_OrbitView2.View             = {Orbit_View};
+
+OFI_OrbitView2.CoordinateSystem = MarsMJ2000Ec;
+OFI_OrbitView2.DrawObject       = [ true true true ];
+OFI_OrbitView2.DrawXYPlane      = [ false false false ];
+OFI_OrbitView2.DrawLabel        = [ true true true ];
+OFI_OrbitView2.DrawGrid         = [ false false false ];
+
+OFI_OrbitView2.Axes             = On;
+OFI_OrbitView2.XYPlane          = On;
+OFI_OrbitView2.EclipticPlane    = Off;
+OFI_OrbitView2.EnableStars      = On;
+OFI_OrbitView2.StarCount        = 40000;
+OFI_OrbitView2.ShowPlot         = true;
+
+
+%---------------------------------------------
+%--- Object View
+%---------------------------------------------
+Create OpenFramesView Orbit_View;
+
+Orbit_View.ViewFrame           = CoordinateSystem;
+Orbit_View.SetDefaultLocation  = On;
+Orbit_View.SetCurrentLocation  = Off;
+
+Orbit_View.DefaultEye          = [ 0 0 298000000 ];
+Orbit_View.DefaultCenter       = [ 0 0 0 ];
+Orbit_View.DefaultUp           = [ 0 1 0];
+
+%----------------------------------------
+%---------- User Objects
+%----------------------------------------
+
+%----------------------------------------
+% Create an emtgThrustModel Resource
+%----------------------------------------
+Create EMTGSpacecraft emtgThrustModel;
+
+emtgThrustModel.SpacecraftFile  = 'FixedThrustAndIsp_Model1.emtg_spacecraftopt';
+emtgThrustModel.DutyCycle       = 1;
+emtgThrustModel.SpacecraftStage = [ 1 ];
+
+%----------------------------------------
+% Create a DynamicsConfiguration object and add spacecraft
+% ForceModel and Thrust model
+%----------------------------------------
+Create DynamicsConfiguration SunThrustDynConfig;
+
+SunThrustDynConfig.ForceModels    = {DeepSpaceForceModel};
+SunThrustDynConfig.Spacecraft     = {emsat};
+SunThrustDynConfig.FiniteBurns    = {emtgThrustModel};
+SunThrustDynConfig.EMTGTankConfig = {ChemicalTank1};
+
+Create OptimalControlGuess transferGuess;
+
+transferGuess.Type             = 'CollocationGuessFile';
+transferGuess.TimeSystem       = 'A1ModJulian';
+transferGuess.CoordinateSystem = EarthJ2000Eq;
+transferGuess.FileName         = '../data/misc/e2m_transfer_guessFile.och';
+
+%----------------------------------------
+% Create a Phase for the Patched Conic Launch Initial Condition, where the launch may be optimized
+% as a segment along the overall transfer trajectory
+%----------------------------------------
+Create Phase phase_LAUNCH;
+
+phase_LAUNCH.Type                      = 'RadauPseudospectral';
+phase_LAUNCH.ThrustMode                = 'Coast';
+phase_LAUNCH.SubPhaseBoundaries        = [ -1 0 1 ];
+phase_LAUNCH.PointsPerSubPhase         = [ 7 7 ];
+phase_LAUNCH.GuessSource               = transferGuess;
+phase_LAUNCH.EpochFormat               = 'A1ModJulian';
+phase_LAUNCH.StateLowerBound           = [ -1495980000 -1495980000 -1495980000 -100 -100 -100 1e-05 ];
+phase_LAUNCH.StateUpperBound           = [ 1495980000 1495980000 1495980000 100 100 100 5000 ];
+phase_LAUNCH.ControlLowerBound         = [ -2 -2 -2 ];
+phase_LAUNCH.ControlUpperBound         = [ 2 2 2 ];
+phase_LAUNCH.EpochLowerBound           = '29000'; %  Set bounds huge +/- your launch and make identical for all phases
+phase_LAUNCH.EpochUpperBound           = '29500';
+phase_LAUNCH.InitialEpoch              = '29075';
+phase_LAUNCH.FinalEpoch                = '29080';
+phase_LAUNCH.DynamicsConfiguration     = SunThrustDynConfig;
+phase_LAUNCH.BuiltInCost               = 'TotalMassFinal';
+phase_LAUNCH.MinControlMagnitude       = 0;
+phase_LAUNCH.MaxControlMagnitude       = 1;
+phase_LAUNCH.MaxRelativeErrorTolerance = 1e-05;
+phase_LAUNCH.OverrideColorInGraphics   = false;
+phase_LAUNCH.OrbitColor                = Red;
+
+%
+%  Create a phase and set transcription and parameter bounds
+%
+Create Phase thrustToArrival;
+
+thrustToArrival.Type                      = 'RadauPseudospectral';
+thrustToArrival.ThrustMode                = 'Thrust';
+thrustToArrival.SubPhaseBoundaries        = [ -1 -0.5 0 0.5 1 ];
+thrustToArrival.PointsPerSubPhase         = [ 3 3 3 3 ];
+thrustToArrival.GuessSource               = transferGuess;
+thrustToArrival.EpochFormat               = 'A1ModJulian';
+thrustToArrival.StateLowerBound           = [ -230000000 -230000000 -230000000 -100 -100 -100 1e-05 ];
+thrustToArrival.StateUpperBound           = [ 230000000 230000000 230000000 100 100 100 5000 ];
+thrustToArrival.ControlLowerBound         = [ -2 -2 -2 ];
+thrustToArrival.ControlUpperBound         = [ 2 2 2 ];
+thrustToArrival.EpochLowerBound           = '29000';
+thrustToArrival.EpochUpperBound           = '29500';
+thrustToArrival.InitialEpoch              = '29080';
+thrustToArrival.FinalEpoch                = '29380';
+thrustToArrival.DynamicsConfiguration     = SunThrustDynConfig;
+thrustToArrival.BuiltInCost               = 'TotalMassFinal';
+thrustToArrival.MinControlMagnitude       = 0;
+thrustToArrival.MaxControlMagnitude       = 1;
+thrustToArrival.MaxRelativeErrorTolerance = 1e-05;
+thrustToArrival.OverrideColorInGraphics   = false;
+thrustToArrival.OrbitColor                = Red;
+
+Create Phase coast;
+
+coast.Type                      = 'RadauPseudospectral';
+coast.ThrustMode                = 'Coast';
+coast.SubPhaseBoundaries        = [ -1 -0.5 0 0.5 1 ];
+coast.PointsPerSubPhase         = [ 3 3 3 3 ];
+coast.GuessSource               = transferGuess;
+coast.EpochFormat               = 'A1ModJulian';
+coast.StateLowerBound           = [ -230000000 -230000000 -230000000 -100 -100 -100 1e-05 ];
+coast.StateUpperBound           = [ 230000000 230000000 230000000 100 100 100 5000 ];
+coast.ControlLowerBound         = [ -2 -2 -2 ];
+coast.ControlUpperBound         = [ 2 2 2 ];
+coast.EpochLowerBound           = '29380';
+coast.EpochUpperBound           = '29420';
+coast.InitialEpoch              = '29380';
+coast.FinalEpoch                = '29420';
+coast.DynamicsConfiguration     = SunThrustDynConfig;
+coast.BuiltInCost               = 'TotalMassFinal';
+coast.MinControlMagnitude       = 0;
+coast.MaxControlMagnitude       = 1;
+coast.MaxRelativeErrorTolerance = 1e-05;
+coast.OverrideColorInGraphics   = false;
+coast.OrbitColor                = White;
+
+Create OptimalControlFunction MarsPre;
+
+MarsPre.Function = 'IntegratedFlyby';
+MarsPre.Type = 'AlgebraicConstraint';
+MarsPre.PhaseList = {'thrustToArrival.Final', 'coast.Initial'};
+MarsPre.SetModelParameter(CelestialBody, Mars);
+MarsPre.SetModelParameter(PeriapsisRadiusLowerBound, 6000);
+MarsPre.SetModelParameter(PeriapsisRadiusUpperBound, 6000);
+
+%----------------------------------------
+% CREATE CUSTOM LINKAGE CONSTRAINT ON LAUNCH PHASE: DURATION = 5 Days
+%----------------------------------------
+Create CustomLinkageConstraint duration_LAUNCH;
+
+duration_LAUNCH.ConstraintMode           = 'Difference';
+duration_LAUNCH.InitialPhase             = phase_LAUNCH;
+duration_LAUNCH.InitialPhaseBoundaryType = 'Start';
+duration_LAUNCH.FinalPhase               = phase_LAUNCH;
+duration_LAUNCH.FinalPhaseBoundaryType   = 'End';
+duration_LAUNCH.SetModelParameter('TimeLowerBound', 'ElapsedDays', 5);
+duration_LAUNCH.SetModelParameter('TimeUpperBound', 'ElapsedDays', 5);
+
+%----------------------------------------
+% Create a patched conic launch constraint
+%----------------------------------------
+Create OptimalControlFunction launchBound;
+
+launchBound.Function  = 'PatchedConicLaunch';
+launchBound.Type      = 'AlgebraicConstraint';
+launchBound.PhaseList = {'phase_LAUNCH.Initial'};
+launchBound.SetModelParameter(VehicleName, Atlas_V_401);
+launchBound.SetModelParameter(CentralBody, Earth);
+launchBound.SetModelParameter(EMTGLaunchVehicleOptionsFile, ../data/emtg/NLSII_August2018_Augmented.emtg_launchvehicleopt);
+
+
+%----------------------------------------
+% Create the trajectory and add constraints
+%----------------------------------------
+Create Trajectory traj;
+
+traj.GuessSource                  = transferGuess;
+traj.MaxMeshRefinementIterations  = 5;
+traj.PhaseList                    = {phase_LAUNCH, thrustToArrival, coast};
+traj.AddBoundaryFunction          = {launchBound, MarsPre};
+traj.SNOPTOutputFile              = 'SNOPTOutputFile.txt';
+traj.AddSimpleLinkageChain        = {phase_LAUNCH, thrustToArrival, coast};
+traj.SolutionFile                 = 'IntegratedFlyby_MarsFlyby.och';
+traj.StateScaleMode               = 'Canonical';
+traj.MassScaleFactor              = 1000;
+traj.OutputCoordinateSystem       = MarsMJ2000Ec;
+traj.FeasibilityTolerances        = [ 0.001 0.001 0.001 1e-05 ];
+traj.MajorOptimalityTolerances    = [ 1 ];
+
+traj.MajorIterationsLimits        = [ 500 ];
+traj.TotalIterationsLimits        = [ 20000 ];
+traj.OptimizationMode             = {'Maximize'};
+traj.AllowFailedMeshOptimizations = true;
+traj.MeshRefinementGuessMode      = 'BestSolutionMostRecentMesh';
+traj.PublishUpdateRate            = 10;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+%------------------
+% Run the mission
+%------------------
+BeginMissionSequence;
+
+Collocate traj

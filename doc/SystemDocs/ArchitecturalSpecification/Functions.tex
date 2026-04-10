@@ -1,0 +1,974 @@
+% $Id: Functions.tex,v 1.5 2008/10/09 16:16:11 dconway Exp $
+\chapter{\label{chapter:Functions}GMAT and MATLAB Functions}
+\chapauthor{Darrel J. Conway}{Thinking Systems, Inc.}
+
+Scripts written for GMAT can become complicated as the needs of the mission evolve.  Long missions
+can involve sets of commands that use the identical or nearly identical instructions in different
+portions of the mission.  Some missions may also need to use mathematical computations that are
+complicated enough to be implemented more easily in MATLAB\textregistered than in GMAT's inline
+mathematics. These two issues -- repetitive command subsequences and mathematics better implemented
+in MATLAB -- are addressed by the function classes implemented in GMAT.
+
+Repeated command subsequences can be stored in a separate file from the main Mission Control
+Sequence, and executed through either a CallFunction command or inline in mathematical expressions
+(see Chapter~\ref{chapter:InlineMath}).  The actual function code is encapsulated in an instance of
+the GmatFunction class.  GmatFunctions provide local resources created inside of the
+function, proxies used for objects and parameters passed into the function, and access to objects
+identified as available for use by all of the objects in the Sandbox, referred to as ``global''
+objects for the purposes of GMAT\footnote{Note that these objects are not truly global in scope. 
+Access is restricted for most of these objects to the resources in the Sandbox.  Subscribers also
+provide some restricted access outside of the Sandbox through the Publisher.  This slightly larger
+scoping rule for Subscribers will be defined more completely when multiple Sandbox capabilities are
+added to GMAT.}.
+
+MATLAB functions are also called using either a CallFunction command or through inline
+mathematics\footnote{The inline math application of MATLAB functions is part of the design
+presented in this document.  The current code has not yet been updated to support this usage.}. The
+function code is contained in a MATLAB compatible m-file.  The file identifier and related data
+structures needed for the function call are encapsulated in an instance of the MatlabFunction class.
+ GMAT can pass variables, arrays, and objects into MATLAB for use in these functions, and can
+receive Variables and Arrays back as return parameters.
+
+Scripting for the GmatFunction and MatlabFunction resources, and for the CallFunction and inline
+math commands that use these resources, is identical in GMAT's scripting language.
+Listing~\ref{listing:FunctionScript} shows the syntax used in the Mission Control Sequence for both
+types of functions.  Section~\ref{section:FunctionEndToEndExample} shows a more complete example of
+a GMAT function used in a script.
+
+\lstset{numbers=left}
+\lstinputlisting[caption={Function Usage in a GMAT Script},
+label=listing:FunctionScript,firstnumber=1]
+{script/FunctionSample.script}
+\lstset{numbers=none}
+
+\section{General Design Principles}
+
+Figure~\ref{figure:ClassesUsedInFunctions} shows the classes most directly used for the function
+implementation.  Other classes in GMAT also play a role in the function implementation, but these
+other classes act inside of functions in the same way that they behave in the rest of the system. 
+The classes shown in the figure have behaviors driven by the design of the Function subsystem.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/ClassesUsedinGMATandMATLABFunctions.eps}
+\caption{\label{figure:ClassesUsedInFunctions}Classes Used in the Function Implementations}
+\end{center}
+\end{figure}
+
+This figure brings out several high level features of GMAT's function design.  GMAT uses a set of
+classes derived from a Function base class to manage the function subsystem.  This base class
+defines a set of interfaces that are accessed using a class called the FunctionManager.  That
+class, shown in lavender in the figure, is the interface used by the CallFunction command to
+execute a function.  It is also used when evaluating inline mathematics, through a specialized
+MathFunction called a FunctionRunner designed specifically to evaluate members of the Function
+subsystem.  Since all MathFunctions are MathNodes, the FunctionRunner is a MathNode in a MathTree.
+
+GMAT includes three commands, and enhancements to a fourth, that were added to the system
+specifically to support functions.  The CallFunction command is used to execute a function on a
+single line; it is the entry point to function calls in GMAT's Control Sequences. Functions can be
+called on a single script line or GUI node using this command.  Sometimes a function will need some
+local resources that are not used anywhere else in the mission.  These resources can be constructed
+using the Create command.  Objects built with this command only exist during a mission run -- they
+are never registered in GMAT's configuration.  Some resources need to be shared between different
+portions of the GMAT control sequences.  These resources are identified using the third function
+specific command, the Global command.  The Global command is used to manage resources between
+different Control Sequences in a Sandbox.  This command lets a user set the scope for local
+resources so that they can be accessed in a separate Mission Control or Function Control Sequence.
+
+The Assignment command can be used to perform mathematical calculations inline, as described in
+Chapter~\ref{chapter:InlineMath}.  These calculations are performed using a recursive descent
+algorithm, breaking the inline mathematics into separate nodes of a tree structure called a
+MathTree.  Functions can be included in the MathTree through a node in the tree that instantiates
+a FunctionRunner object.  The FunctionRunner class is a specialized node in the MathTree, derived
+from the MathFunction base class, that executes a function and retrieves the resulting data.  It is
+designed to work with functions that return a single resultant -- either a Real number or an
+Rmatrix.  It throws an exception for any other function that a user attempts to use inside of
+inline mathematics.  The Assignment command is enhanced to allow the identification and execution
+of functions as part of the inline mathematics capabilities, by making calls to FunctionRunner
+nodes.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/FunctionClasses.eps}
+\caption{\label{figure:FunctionClassHierarchy}Class diagram for the Function Classes}
+\end{center}
+\end{figure}
+
+Figure~\ref{figure:FunctionClassHierarchy} shows some of the details of the classes used to connect
+the function subsystem into the rest of GMAT.  The two classes shown in detail here -- Function and
+FunctionManager -- define the interfaces used for function calls through either a CallFunction
+command or a FunctionRunner MathFunction.  These classes are described in the following paragraphs.
+
+\subsection{The Function class}
+
+The base class for the MATLAB, GMAT, and internal functions is the Function class.  This class
+defines the interfaces used by the function manager to execute the function.  The class includes
+the following attributes and methods:
+
+\paragraph{Function Class Attributes}
+
+The class attributes provide storage for the input and output parameters, and the path to the
+function file if applicable.
+
+\begin{itemize}
+\item \textbf{std::string functionPath}: Identifies the location of the function file for MATLAB or
+GMAT functions.
+\item \textbf{std::map<std::string, GmatBase*> inputs}: A mapping between input names and
+wrappers for the associated objects used in the function.  (For a discussion of GMAT's wrapper
+classes, see Section~\ref{section:DataWrappers}.)
+\item \textbf{std::map<std::string, GmatBase*> outputs}: A mapping between output names and wrappers
+for the associated objects used to return data from the function.
+\end{itemize}
+
+\paragraph{Function Class Methods}
+
+The FunctionManager uses a standard set of methods, defined here, to interface with the function
+classes.  These methods enable the setup and execution of the functions, and provide access to the
+results if needed for inline mathematics.
+
+\begin{itemize}
+\item \textbf{bool Initialize()}: Initializes the function.
+\item \textbf{bool Execute()}: Runs the function.
+\item \textbf{Real Evaluate()}: For functions that return a single Real value, this method
+retrieves that value.  The method throws an exception for all other functions.
+\item \textbf{Rmatrix MatrixEvaluate()}: For functions that return a single Rmatrix value, this
+method retrieves that Rmatrix.  The method throws an exception for all other functions.
+\end{itemize}
+
+\noindent These methods are overridden as needed for the derived Function classes.  In addition to
+the methods listed here, the Function base class provides access methods used to set the object
+stores and other object references needed to run the function.
+
+\subsection{The FunctionManager}
+
+The CallFunction and inline math routines in GMAT use a common interface, the FunctionManager, to
+use GMAT's function subsystem.  The FunctionManager is used to complete initialization of the
+function, run it, and when needed return the results of that run.  This functionality is provided
+through the following attributes and methods:
+
+\paragraph{FunctionManager Attributes}
+
+The function manager passes the Function Object Store and Global Object Store to the function if
+needed.  These stores are set during initialization on the FunctionManager, using the following
+attributes:
+
+\begin{itemize}
+\item \textbf{std::map<std::string, GmatBase*> functionStore}: The Function Object Store.
+\item \textbf{std::map<std::string, GmatBase*> *globalStore}: The Global Object Store, set from the
+Sandbox.
+\end{itemize}
+
+\paragraph{FunctionManager Methods}
+
+The interfaces accessed by the CallFunction and FunctionRunner classes are implemented using the
+following methods:
+
+\begin{itemize}
+\item \textbf{bool Execute()}: Initializes and runs the function.
+\item \textbf{Real Evaluate()}: For functions that return a single Real value, this method
+retrieves that value.  The method throws an exception for all other functions.
+\item \textbf{Rmatrix MatrixEvaluate()}: For functions that return a single Rmatrix value, this
+method retrieves that Rmatrix.  The method throws an exception for all other functions.
+\end{itemize}
+
+\section{\label{section:GmatFunctions}GMAT Functions}\index{GMAT Functions}
+
+The preceding sections of this chapter describe features of GMAT's function model that apply to
+all of the function classes in GMAT.  In this section, I'll describe the specific features of
+GMAT functions.  MATLAB Functions are described in Section~\ref{section:MatlabFunctions}, and
+internal functions in Section~\ref{section:InternalFunctions}.
+
+\subsection{GMAT Function Design Principles}
+
+GMAT functions are small sections of script that are initialized and used as part of the Mission
+Control Sequence.  Each function is contained in a separate file that defines the input and output
+parameters used in the function, the name of the function, and the sequence of steps executed when
+running the function.  The function file name is the name of the contained function, modified to add
+the extension ``.gmf'' to complete the file name.
+
+Objects and other variables used inside of GMAT functions are limited in scope to the function
+itself, except when the user explicitly modifies the scope of the underlying object by declaring it
+``Global.''  Objects created outside of the function can be accessed in the function if they are
+used as parameters in the function call or if they are set as global objects.  Propagators,
+GmatFunctions, and Coordinate Systems are automatically defined as global objects, so all objects of
+these types can be used in the Mission Control Sequence and in all included GMAT Functions.
+
+GMAT finds GMAT function files by searching in the folders identified by the GmatFunctionPath.
+That path is initialized in the startup file, and can be modified from the graphical user interface
+or from a script file to meet specific mission needs.  The system searches in the most recently
+added folders first, proceeding through the folders identified by the function path until the
+specified function has been located.
+
+\subsubsection{Anatomy of a Function File}
+
+GMAT functions provide users with the ability to break out sections of a mission -- usually
+portions of the Mission Control Sequence, though functions can be used to build objects used
+elsewhere as well -- into smaller chunks, and thus unclutter the main Mission Control Sequence. 
+GMAT functions are defined in separate files.  The function file has the same, case-sensitive,
+name as the function.  Function files follow the same basic syntax as GMAT script files.  The first
+uncommented line of each GMAT function defines the function using a function declaration in the
+form
+
+\begin{quote}
+\texttt{function [resultants] = MyFunction(inputs)}
+\end{quote}
+
+\noindent The file name is identical to the function name, and has the extension
+``.gmf''\index{.gmf Files}; thus for this example, the file containing the function would be named
+``MyFunction.gmf'' and would be located in a folder on GMAT's GmatFunction path.
+
+The remainder of the function file defines the Function Control Sequence (FCS).  The FCS defines
+local and global resources used in the function, and specifies the ordered sequence of actions
+executed when the function is called.
+
+A typical script showing GMAT function calls is shown in Listing~\ref{listing:BasicFunctionScript}.
+ This script calls a function named SatSep on lines~28 and~36.  That function is used to calculate
+the physical separation between two spacecraft as they are propagated.  
+
+\lstset{numbers=left}
+\lstinputlisting[caption={A script that uses a Function},
+label=listing:BasicFunctionScript,firstnumber=1]
+{script/BasicFunction.script}
+\lstset{numbers=none}
+
+\noindent The function calls shown here are made using a CallFunction command.  When a function is
+called with a CallFunction, the line of script making the call is responsible for running the
+function, and copying the output data returned from the function into the output parameters listed
+in the script line -- for these cases, that means setting the value of \texttt{dr} to the value
+returned from the function.
+
+Another interesting feature of this script is seen on line~24.  That line,
+
+\begin{quote}
+\texttt{Global dx dy dz;}
+\end{quote}
+
+\noindent identifies three variables created earlier in the script as variables that can be
+accessed anywhere in the run.  These variables are used in the SatSep function, shown in
+Listing~\ref{listing:SatelliteSeparationFunction}.
+
+\lstset{numbers=left}
+\lstinputlisting[caption={A Function that computes Satellite Separations},
+label=listing:SatelliteSeparationFunction,firstnumber=1]
+{script/SatSep.gmf}
+\lstset{numbers=none}
+
+The first executable line in this function file identifies the contained function, and specifies
+its return (output) data, the function name, and the function inputs:
+
+\begin{quote}
+\texttt{function [delta] = SatSep(Sat1, Sat2);}
+\end{quote}
+
+\noindent Note that the argument names used in the definition of the function, and later in the
+Function Control Sequence, do not necessarily match the names used in the function call made in the
+main script.  For example, the output variable in this function is named ``delta,'' but the function
+call uses the name ``dr'' in the script that calls this function.
+
+Line 5 in the function identifies the global variables that are expected to execute the function. 
+This line,
+
+\begin{quote}
+\texttt{Global dz dy dx;}
+\end{quote}
+
+\noindent matches the list globals defined in the calling script.  As can be seen here, the order of
+these global variables is not important.  The critical feature is that each variable identified as a
+global needs to be defined somewhere prior to its use in the script or function.
+
+This function builds two local objects that are used to execute the function.  These local objects
+are constructed through calls to the Create command on lines~6 and~7:
+
+\begin{quote}
+\texttt{Create Variable delta;\\
+Create Array  dr(3,1);}
+\end{quote}
+
+\noindent The objects created this way are limited in scope to this function unless they are later
+identified as global objects in the function.
+
+The global objects identified on line~5 are used on lines~9--11.  These objects can be used just as
+if they had been created locally, as is shown here.  Similarly, the local array, ``dr,'' is used on
+lines~13 through~15 to fill the array with data for a function call made from inside of this
+function.
+
+Line 17 makes a call to another function from inside of the SatSep function.  That call,
+
+\begin{quote}
+\texttt{delta = sqrt(dot(dr, dr));}
+\end{quote}
+
+\noindent is calling a function named dot, shown later in this chapter (see
+Listing~\ref{listing:Dot}).  This script line shows the use of a GMAT function inside of inline
+mathematics.  The function called this way is executed using a FunctionRunner MathNode object. 
+Functions that are called this way must return exactly one value, either a Real number or an
+Rmatrix.  This feature of the GMAT's function subsystem makes the use of user defined and
+internal functions natural for users of the system, because GMAT functions that return a single
+value can be used inline in the control sequences. Users do not need to call the functions
+separately before using the results in equations written in GMAT's scripting language.
+
+This concludes the basic sample of a GMAT function.  A more complete discussion and example of
+GMAT functions, along with a discussion of how the components of the function subsystem interact,
+can be found in Section~\ref{section:FunctionEndToEndExample}.  Before we can tackle that
+description, we'll examine the components that work together to build this functionality.
+
+\subsubsection{An End-to-end Example\label{section:FunctionEndToEndExample}}
+
+The GMAT releases at SourceForge include a script file named ``ExCart2KepMathTest.script'' that
+demonstrates inline mathematics in GMAT's scripting language.  The script includes a number of dot
+and cross product calculations, along with computations of vector magnitudes and manipulations of
+vector components.  This section contains a script and several function files built based on that
+sample mission, where the inline vector mathematics have been replaced by function calls.
+
+There are four GMAT function calls that will be used in this section.  These functions are
+described and listed here:
+
+\begin{itemize}
+ \item \textit{LoadCartState}  A utility function that retrieves the Cartesian state from a
+Spacecraft and returns the position and velocity vectors along with their magnitudes.
+\lstset{numbers=left}
+\lstinputlisting[caption={The LoadCartState Function},
+label=listing:LoadCartState,firstnumber=1]
+{script/LoadCartState.gmf}
+\lstset{numbers=none}
+
+\item \textit{magnitude}  A function used to find the magnitude of a three-vector, stored in a 3 by
+one GMAT array.
+\lstset{numbers=left}
+\lstinputlisting[caption={The magnitude Function},
+label=listing:Magnitude,firstnumber=1]
+{script/magnitude.gmf}
+\lstset{numbers=none}
+
+\item \textit{dot}  A function used to find the dot product of two three-vectors.
+\lstset{numbers=left}
+\lstinputlisting[caption={The dot Function},
+label=listing:Dot,firstnumber=1]
+{script/dot.gmf}
+\lstset{numbers=none}
+
+\item \textit{cross}  A function used to find the cross product of two three-vectors.
+\lstset{numbers=left}
+\lstinputlisting[caption={The cross Function},
+label=listing:Cross,firstnumber=1]
+{script/cross.gmf}
+\lstset{numbers=none}
+\end{itemize}
+
+These function files are pretty simple, but contain several interesting features worth mentioning
+before we see how they are used in the sample script.  The first line in each of these files follows
+the pattern described previously; they declare that the file contains a function, specify the output
+argument list, and then the function name and input argument list.
+
+The LoadCartState function in listing~\ref{listing:LoadCartState} shows a function call inside of
+the defined function (see lines~14 and~16).  This function uses the magnitude function to find the
+lengths of the position and velocity vectors.  Each of these nested function calls follows the usual
+CallFunction syntax, specifying the output parameter in square brackets on the left side of the
+equation, with the function call on the right including its input argument list in parentheses.
+
+The magnitude function, listing~\ref{listing:Magnitude}, shows an alternative for functions that
+return exactly one parameter on line~6.  Functions with that form can be used inline with other
+mathematics -- in this case, the interesting line is
+
+\begin{quote}
+\texttt{val = sqrt(dot(vec1, vec1));}
+\end{quote}
+
+\noindent The function is calling a second GMAT function, dot() -- defined in
+listing~\ref{listing:Dot} -- to build the dot product of the input vector with itself.  The
+returned value is a Variable, and is used directly in the equation, making a call through a
+FunctionRunner MathNode in the MathTree defined by this line of script.
+
+The nesting alluded to earlier allows further nesting with this design.  This feature is seen in
+these same functions: the LoadCartState function calls the magnitude function, which in turn calls
+the dot function.  GMAT functions can be nested as deeply as needed by mission analysts.
+
+These four functions are used in a script that is used to compare GMAT's internally calculated
+Keplerian element Parameters with calculations performed inline.  This script, shown in
+listing~\ref{listing:FunctionExample}, performs the element computations and reports GMAT's
+internal calculation, the inline calculation, and their difference to a file for review by the
+analyst.
+
+\lstset{numbers=left}
+\lstinputlisting[caption={A Script that Uses GMAT Functions},
+label=listing:FunctionExample,firstnumber=1]
+{script/FunctionExample.script}
+\lstset{numbers=none}
+
+The example functions and script shown here will be used in the following discussions to help
+clarify how the components of the Function subsystem design interact to build and run the functions.
+
+\input{GmatFunctionEndToEnd.tex}
+
+\subsubsection{Function Object Management}
+
+Each GMAT function can define input parameters and output parameters.  Neither set is required. 
+Functions that omit a set of parameters also omit the brackets for the parameter, as is shown here:
+
+\begin{quote}
+\texttt{function MyFunctionWithoutResultants(inputs)}
+\end{quote}
+\noindent here:
+\begin{quote}
+\texttt{function [resultants] = MyFunctionWithoutInputs}
+\end{quote}
+\noindent and here:
+\begin{quote}
+\texttt{function MyFunctionWithoutParameters}
+\end{quote}
+
+\noindent The input and output parameters, marked in the sample above with the names ``inputs'' and
+``resultants,'' respectively, consist of labels for data that is passed between the calling object
+and the function.  Each of the fields indicated that way in the examples above consist of one or
+more actual parameters.  When GMAT's Script Interpreter encounters a function call, it creates
+either a CallFunction command or a FunctionRunner object that encapsulates the function call.  This
+object analyzes the parameters for the function and stores them for use at runtime.  During
+execution of the Mission Control Sequence, the CallFunction or FunctionRunner passes an object
+associated with each parameter into a member FunctionManager object, which in turn places the
+associated objects into the Function Object Store and them passes this store into the GmatFunction
+object that manages the call.
+
+\begin{table}[htb]
+\begin{center}
+\caption{\label{table:ObjectMaps}Object Maps used to Set References in Control Sequences}
+\setlength\extrarowheight{2pt}
+%\begin{tabular*}{6in}{|l|l|l|l|}
+\begin{tabular}{|p{1.3in}|p{1.4in}|p{0.8in}|p{2in}|}
+\hline
+Object Map & Contents & Manager & Source \\
+\hline
+\hline
+Sandbox Object Map & Clones of Configured Objects & Sandbox & Objects built from the Create keyword,
+in object mode \\
+Global Object Store & Pointers to Global Objects & Sandbox & Objects identified as Globals \\
+Function Object Store & Input and Output parameters, and locally created
+objects & CallFunction or FunctionRunner & Clones of the parameters, or created using the
+Create command\\
+\hline
+%\end{tabular*}
+\end{tabular}
+\end{center}
+\end{table}
+
+Objects used inside of the GMAT function can be obtained from three sources, shown in
+Table~\ref{table:ObjectMaps}. The first source is the set of parameters defined in the function call
+-- that is, the input and output variables.  These clones are made by locating the objects named in
+the parameter lists (either the Sandbox Object Map or the Global Object Store), making copies, and
+placing these copies in the Function Object Store.  GMAT provides a command, the Create command,
+that can be used to create local variables in a control sequence.  Variables created this way are
+also stored in the Function Object Store of the function, providing a second supply of objects used
+in the function.
+
+The final source is the Global Object Store, managed by the Sandbox and supplied at initialization
+to the function.  The Global Object Store contains every object that has been identified as
+available for use in all functions and sequences in the Sandbox.  Objects are identified as members
+of the Global Object Store using the GMAT keyword ``Global'' in a script, or by checking the
+``global'' checkbox on the object's configuration panel on the GUI.  Coordinate Systems,
+Propagators, and Functions are automatically included in the Global Object Store.
+
+GmatFunctions can call other GmatFunctions, and can call themselves iteratively.  This feature of
+the class is implemented through a call stack incorporated into the GmatFunction class.  When a
+GmatFunction is executing, calls to a CallFunction or FunctionRunner in the Function Control
+Sequence are preceded by a push of the Function Object Store onto the call stack.  Once the
+called object completes execution, the call stack pops the Function Object Store off of the call
+stack and continues execution of the Function Control Sequence.
+
+\subsubsection{The Function Control Sequence}\index{Function Control
+Sequence}\index{FCS|see{Function Control Sequence}}
+
+Each GmatFunction object manages a list of commands called the Function Control Sequence.  The
+Function Control Sequence acts similarly to the Mission Control Sequence.  It is a linked list of
+commands that defines a sequential set of actions taken by GMAT to perform a user designed task. 
+The FCS differs from the Mission Control Sequence in several key ways: (1) it does not have direct
+access to the configuration or to the Sandbox's Object Map, (2) every object created for
+local use in the FCS is created at run time rather than when the Mission Control Sequence is opened,
+and (3) the corresponding object linkages and validation occur at build and run time.
+
+GMAT parses the FCS for each function used in a script when the CallFunction command or
+FunctionRunner MathNode that calls the function is initialized in the Sandbox prior to a run.  This
+function parsing is idempotent -- in other words, if a given function is parsed in a CallFunction
+command or in a FunctionRunner, subsequent CallFunctions and FunctionRunners that access the same
+function do not force a reparsing of the function file.
+
+The FCS is initialized when the CallFunction or FunctionRunner that calls the function is executed. 
+At that point, the Function Object Store for the FCS is constructed, passed to the commands in the
+FCS, and used to initialize the commands in the FCS\footnote{This late binding may prove to be
+prohibitively expensive for performance.  If that turns out to be the case, we'll need to move the
+command initialization from run time to build time.}.
+
+Functions are executed through a call to the Execute() method on the FunctionManager that runs
+the function for the calling control sequence.  This process mimics the execution of the Mission
+Control Sequence, as run by either the Sandbox or (for nested calls) an enclosing CallFunction or
+FunctionRunner.  The sequence controlled by this caller is:
+
+\begin{enumerate}
+\item The CallFunction or FunctionRunner is prepared for execution:
+\begin{itemize}
+\item The current command pointer is set to the first command in the FCS.
+\item The FCS Function Object Store is built and passed into the FCS.
+\item The FCS is initialized.
+\item The commandExecuting flag for the CallFunction or Assignment command containning the function
+call is set to true.
+\item The commandComplete flag is set to false.
+\end{itemize}
+\item The caller calls the Execute() method on the CallFunction or Assignment command.
+\item \label{item:FCSLooping}The CallFunction or FunctionRunner calls the Execute() method on the
+FunctionManager, which in turn calls the Execute() method on the FCS command pointed to by the
+current command pointer.
+\item Upon return, the FunctionManager advances the current command pointer by calling Next() on the
+command that was just executed.
+\item The FunctionManager returns control to the caller so that interrupt polling can occur.
+\item The caller calls the CallFunction::Next() or Assignment::Next() method.
+\begin{itemize}
+\item If the current command pointer is NULL, the function has completed execution, and the next
+pointer in the control sequence is returned.
+\item If the current command pointer is not NULL, the pointer to this command is returned.
+\end{itemize}
+\item The caller calls the Execute() method on the pointer returned from the call to Next().
+\begin{itemize}
+\item If that pointer is the pointer for this command, and execution through the function loop
+resumes at step~\ref{item:FCSLooping}.
+\item If that pointer is neither the current command nor a NULL pointer, the command has
+completed its work, and the calling control sequence proceeds to the next command in its list.
+\item If that pointer is NULL, the script has completed execution and control is returned to the
+user.
+\end{itemize}
+\end{enumerate}
+
+The interactions between the CallFunction and Assignment command and the GmatFunction object, as
+enumerated here, are the focus of the design features presented in the following sections.
+Section~\ref{section:GmatFunctionDesign} presents the class design for the GmatFunction class.
+
+The CallFunction command is described in Section~\ref{section:CallFunctionDesign}.
+
+Details of the interplay between these component and the rest of GMAT are presented in
+Section~\ref{section:GmatFunctionFlow}.  Global object management is presented in the discussion of
+the Create and Global commands, in Sections~\ref{section:CreateCommandDesign}
+and~\ref{section:GlobalCommandDesign}, respectively.
+
+\subsection{\label{section:GmatFunctionDesign}Design}
+
+Figure~\ref{figure:GmatFunctionClass} shows the Function class hierarchy, with the details relevant
+to the GmatFunction class explicitly displayed.  GmatFunction is derived from the Function base
+class, which, in turn, is a child of the GmatBase root class.  Using GmatBase as the root class for
+the function classes provides GMAT with all of the infrastructure needed to configure and manipulate
+the function classes, including type identifiers, names, and standardized interfaces.  More details
+about the GmatBase class can be found in Section~\ref{section:GmatBase}.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/TheGmatFunctionClass.eps}
+\caption{\label{figure:GmatFunctionClass}Class diagram for the GmatFunction Class}
+\end{center}
+\end{figure}
+
+\subsubsection{GmatFunction Attributes}
+
+The GmatFunction class is the most complicated of the function classes.  It provides mechanisms to
+manage objects used in the function, provide storage for nested calls (including iteration),
+receive input and output parameters and global objects, and manage the Function Control Sequence. 
+The data attributes used for these functions are itemized here:
+
+\begin{itemize}
+\item \textbf{std::map<std::string, GmatBase*> objectStore}:  The GmatFunction's local object store.
+\item \textbf{std::stack<std::map<std::string, GmatBase*>> objectStack}:  The function stack used
+to support recursion and function nesting.
+\item \textbf{std::map<std::string, GmatBase*> *globalStore}:  The global object store.
+\item \textbf{GmatCommand *sequence}: The Function Control Sequence (FCS).
+\item \textbf{SolarSystem *solar}:  The SolarSystem instance used in the Sandbox, passed to the
+GmatFunction for use in the FCS.
+\end{itemize}
+
+\subsubsection{GmatFunction Methods}
+
+GmatFunctions include methods specific to the needs of the GmatFunctions, listed here:
+
+\begin{itemize}
+\item \textbf{void SetSolarSystem(SolarSystem *ss)}: Sets the solar system used in the FCS.
+\item \textbf{void SetGlobalObjectStore(std::map<std::string, GmatBase*> gos)}: Sets the global
+object store pointer.
+\item \textbf{bool SetRefObject(GmatBase *obj, const Gmat::ObjectType type, const std::string \&name
+= "")}: Virtual method overridden from GmatBase.  The Sandbox and CallFunction use this method to
+set up the GmatFunction, passing in the input and output parameters and Function Control Sequence.
+\item \textbf{bool Initialize()}: Method used to set up all of the inter-object connections and
+verify that all required objects are available to run the FCS.
+\item \textbf{bool ExecuteFunction()}: Executes the FCS.  This method is called to run the Function
+Control Sequence.
+\item \textbf{bool ExecuteCallFunction()}:  This method is called when a CallFunction is found in
+the FCS to run the nested function.
+\end{itemize}
+
+The following paragraphs describe how these attributes and methods interact with the rest of GMAT
+to provide the function implementation.
+
+\subsection{\label{section:GmatFunctionFlow}GmatFunction Details: Construction, Initialization, and
+Execution}
+
+Before a GmatFunction can be used, it must be constructed through interactions between the
+FunctionManager, GmatFunction instance, and Sandbox. 
+Figure~\ref{figure:FunctionInitializationOverview} shows the Sandbox's role in these interactions. 
+The figure shows the process for a CallFunction; FunctionRunner initialization is similar.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/GMATFunctionInitializationSandboxTasks.eps}
+\caption[CallFunction Initialization
+Details]{\label{figure:FunctionInitializationOverview}CallFunction Initialization Details.  The blue
+boxes show the path followed for all function types.  The orange and yellow blocks are specific to
+GmatFunctions.  The yellow blocks are have additional diagrams explaining how they work.}
+\end{center}
+\end{figure}
+
+An overview of Sandbox initialization and execution is provided in
+Section~\ref{section:SandboxMCSExecution}, with additional details in the chapter describing the
+Sandbox (Chapter~\ref{chapter:Sandbox}).  The steps shown in
+Figure~\ref{figure:FunctionInitializationOverview} illustrate the steps taken to initialize a
+CallFunction command.  This command is used to execute any of the function types supported in GMAT
+-- GMAT functions, MATLAB functions, and internal functions -- on a single line.  Functions can
+also be run using the FunctionRunner MathNode when they are called to generate input for inline
+mathematics.  Of the three Function types described here, GMAT functions alone require extensive
+interactions with the other components of the GMAT engine and Interpreter subsystems.  The figure
+shows an overview of these interactions in the orange and yellow boxes of the activity diagram.
+
+The basic flow through CallFunction and FunctionRunner initialization can be described in the
+following~\ref{item:FunctionInitFinalStep} steps:
+
+\begin{enumerate}
+\item The Sandbox passes the Sandbox Object Map and the Global Object Store to the CallFunction
+or FunctionRunner.
+\item The CallFunction or FunctionRunner passes the Global Object Store to the Function Manager.
+\item The Sandbox calls the Initialize() method on the CallFunction or FunctionRunner.  It locates
+the Function and the input and output parameters in the Sandbox Object Map or the Global Object
+Store, and uses these objects to populate the Function Object Store in the FunctionManager.
+\item The Sandbox checks to see if the function is a GmatFunction.  If so, additional actions,
+described below, are taken.
+\item \label{item:FunctionInitFinalStep}The CallFunction or FunctionRunner sets its initialized flag
+to true, completing initialization.
+\end{enumerate}
+
+The initialization procedure for GMAT functions includes the construction of the Function Control
+Sequence for the GmatCommand.  Each FunctionManager begins the initialization process by checking to
+see if the contained function is a GmatFunction. If it is, the FunctionMagnager reports this
+information to the Sandbox through the containing CallFunction or FunctionRunner, which then
+retrieves the GmatFunction pointer from the FunctionManager and performs the following actions:
+
+\begin{enumerate}
+\item The input and output parameter objects are cloned into the FunctionManager.
+\item The FunctionManager passes the input and output parameters to the GmatFunction object.
+\item The FunctionManager passes the Global Object Store to the GmatFunction object.
+\item The Sandbox checks to see if the Function Control Sequence for the GmatFunction has been
+interpreted.  If not, it builds the Function Control Sequence using the
+Sandbox::InterpretSubsequence() method.  The steps taken to build the Function Control Sequence are
+shown in Figure~\ref{figure:FunctionInterpreterFlow} and explained below.
+\item If the GmatFunction is not in the Global Object Store, it is added to it.
+\item The FunctionManager initializes the Function Control Sequence, following the process shown in
+Figure~\ref{figure:GmatFunctionInitialization} and described below.
+\end{enumerate}
+
+\subsubsection{Interpreting the Function Control Sequence}
+
+GMAT's Interpreter subsystem, described in Chapter~\ref{chapter:ScriptRW}, is responsible for
+reading the text files containing GMAT scripting.  This responsibility includes the pieces
+necessary to interpret GMAT function files.  The Interpreter base class has a public method,
+
+\begin{quote}
+GmatCommand *InterpretGmatFunction(GmatFunction *function);\footnote{The current code has a
+function, GmatCommand* InterpretGmatFunction(const std::string \&pathAndName), which is mostly
+commented out but can be used as a starting point for the function described here.  The method
+described here replaces that method. See Chapter~\ref{chapter:ScriptRW} for more details.}
+\end{quote}
+
+\noindent designed to access the GmatFunction file and build the associated Function Control
+Sequence.  Each time the Sandbox encounters a CallFunction command during initialization that
+references a GmatFunction, the Sandbox checks to see if the Function Control Sequence has been
+built.  If the Function Control Sequence needs to be built, the Initialize method calls the
+Sandbox's InterpretSubsequence() method to build it.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/ProcessFlowforGMATFunctionConstruction.eps}
+\caption{\label{figure:FunctionInterpreterFlow}Message Flow for Interpreting the Function Control
+Sequence}
+\end{center}
+\end{figure}
+
+The Sandbox::InterpretSubsequence() method is shown in Figure~\ref{figure:FunctionInterpreterFlow}. 
+The method starts by building the list of commands comprising the Function Control Sequence.  
+This construnction is done by passing control to the Moderator, which, in turn, passes the build
+request to an interpreter for processing.  The interpreter locates the function file and parses its
+contents, setting global objects in the Global Object Store as needed and building up the Function
+Control Sequence.  Once the function file has been parsed, the interpreter sets the Function Control
+Sequence pointer on the GmatFunction and returns the head of the sequence, through the Moderator, to
+the Sandbox.
+
+Once the Function Control Sequence has been built, the InterpretSubsequence() method checks the
+returned sequence for CallFunction commands and FUnctionRunner nodes.  For each CallFunction or
+FunctionRunner encountered, it checks to see if the object uses a GmatFunction, and if so, if
+the Function Control Sequence for that GmatFunction has been built.  If not, the method sets the
+needed data structures on the nested object and GmatFunction, and then calls InterpretSubsequence()
+for the nested function.  This process continues until all of the GmatFunctions references in the
+Function Control Sequence have been built.
+
+These steps are performed to prepare the GmatFunctions for initialization.  The initialization
+steps are described in the next few paragraphs.
+
+\subsubsection{Initializing the FunctionManager}
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/InitializeSequence.eps}
+\caption{\label{figure:SequenceInitGmatFunctionRecap}Initialization of a Control Sequence in the
+Sandbox (Copied from Figure~\ref{figure:SequenceInit})}
+\end{center}
+\end{figure}
+
+Figure~\ref{figure:SequenceInitGmatFunctionRecap}, discussed in detail in
+Section~\ref{section:SandboxInitialization}, shows the process followed by the Sandbox to
+initialize a control sequence.  This method, Sandbox::InitializeSequence(), provides the core
+work performed when initializing any control sequence -- either a Mission Control Sequence or a
+Function Control Sequence.  As part of the initialization process, the Sandbox method checks each
+command as it initializes it and performs additional processing on the CallFunction commands and
+FunctionRunner nodes in the sequence.  Each of these objects acts as a container for a
+FunctionManager object, which performs the actual Function initialization.  These details are
+described here.
+
+FunctionManager objects are used to run the code contained in the classes derived from the Function
+base class.  There are three categories of Functions that the FunctionManager manages: internal
+functions, GMAT functions that run a Function Control Sequence, and functions executed using an
+external system like MATLAB.  The initialization procedure for the FunctionManager object, shown in
+Figure~\ref{figure:GmatFunctionInitialization}, contains branches specific to each of these
+function types.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.5]{Images/CallFunctionInitializeDetails.eps}
+\caption{\label{figure:GmatFunctionInitialization}Message Flow for Initializing in the
+FunctionManager}
+\end{center}
+\end{figure}
+
+The first branch tests to see if the FunctionManager references an internal function.  Internal
+functions are function objects instantiating classes derived from the InternalFunction class. 
+GMAT's internal functions take one or more input and output parameters.  The FunctionManager
+completes initialization of the InternalFunction objects by querying the function object for the
+name or names of these parameters and setting the references to the associated objects for the
+InternalFunction instance.
+
+Every function that is not an internal function is either a GMAT function or an external function.
+ The current build of GMAT has only one type of external function, the MatlabFunction.  Future
+builds may extend the external function hierarchy; when that happens, the same considerations as
+described here for MATLAB functions will apply to the other external function classes.  When the
+Sandbox determines that the function referenced by the FunctionManager is an external function, it
+immediately moves to the next command in the control sequence because external functions do not
+require any additional initialization.
+
+The final function type is the most complex of the three categories: the GMAT function.  The
+FunctionManagers that exercise GMAT functions need to build the local object stores for these
+functions, pass these stores into the functions, and then initialize the function objects, including
+the contained Function Control Sequences.  This process is discussed in the following paragraphs.
+
+Before a GMAT function can be executed, it must set all of the internal object pointers to access
+existing objects in the Global Object Store, as parameters in the function call, or locally
+created.  Some of this initialization cannot be performed until the Mission Control Sequence is
+executing.  For that reason, the object pointers used when running the mission are set in the
+FunctionManager::Execute() method during the run.
+
+During initialization, a preliminary pass is made through each Function Control Sequence to check
+that all of the objects referenced in the Function Control Sequence have been defined.  This ensures
+that the scripted functions can access objects that they need in order to execute their control
+sequences.  In other words, it checks the necessary condition that the objects must exist, but it
+does not guarantee that everything needed is of the correct type for successful execution.  In
+particular, objects created using the Create command have their names registered for use, but the
+objects themselves are not available for validation and use until the Create command is executed
+during the run.  Since these objects are not available, they cannot be validated during
+initialization.  However, since the names are available, GMAT can ensure that an object of the
+specified name is expected.  Initialization capitalizes on this state of the object lists to ensure
+that all of the needed objects are expected to exist, validating the Function Control Sequences
+based on these conditions.
+
+The FunctionManager builds the GmatFunction's Function Object Store by populating it with clones of
+the objects associated with its input and output parameters.  The resulting Function Object Store is
+a mapping between object names and the associated object clones, stored in the FunctionManager
+member
+
+\begin{quote}
+\texttt{std::map<std::string, GmatBase*> functionStore}
+\end{quote}
+
+\noindent The Function Object Store mapping is built during initialization and populated with the
+parameter names and NULL pointers.  Once the input and output parameters have filled the Local
+Object Store, the Sandbox Object Map and Global Object Store are checked for the associated
+objects, using the following procedure for each input and output parameter:
+
+\begin{itemize}
+\item The GmatCommand looks for the object in the Function Object Store.  If found, then:
+\begin{enumerate}
+\item The object is cloned.
+\item The pointer to the clone is set as the object reference in the Function Object Store.
+\end{enumerate}
+\item If a parameter is not found in the Function Object Store, the GmatCommand looks for
+the object in the Global Object Store.  If it is found there\footnote{The treatment of global
+objects when used as input or output parameters to GmatFunction objects may need to be modified
+once we have a working implementation.  The current design calls for all input and output
+parameters to be passed into the functions as clones.  That means that the global objects, when
+passed into a function as an input or output parameter, is not modified inside of that function.}:
+\begin{enumerate}
+\item If the Global Object Store reference is not NULL, the object is cloned and the pointer
+to the clone is set as the object reference in the Function Object Store.
+\item If the Global Object Store pointer is NULL, the Function Object Store pointer is left pointing
+to NULL as well.  The object clone will be made in the FunctionManager during execution.
+\end{enumerate}
+\item If the object is not in either the Function Object Store or the Global Object Store, the
+object has not been defined, and an exception is thrown identifying the missing object.
+\end{itemize}
+
+Once the Function Object Store is built, the FunctionManager sends all of the necessary object
+pointers to the GmatFunction.  This process starts by passing the internal coordinate system pointer
+to the function.  This is followed by pointers to the Publisher, Solar System, and Function Object
+Store.  The GmatFunction clears the object references in the Function Control Sequence, and then
+passes these object pointers to the control sequence.  Finally, the FunctionManager initializes the
+Function Control Sequence, completing the initialization process.
+
+One final note on initialization is needed.  The process performed here is iterative in nature. 
+That means that FunctionManager objects contained inside of a Function Control Sequence are
+initialized using these same steps, and Function calls inside of GmatFunctions in those calls also
+follow this process, and so on until all of the GmatFunctions used in the Mission Control Sequence
+have been initialized.  After a GmatFunction has been initialized once, it is not reinitialized by
+another FunctionManager.  The function initialization operates on the assumption that if the
+function has been initialized once, then it is ready for use during a mission run.  This
+initialization termination is necessary to prevent iterative calls of a function on itself from
+recursing forever.
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[scale=0.5]{Images/ExecutingaGMATFunction.eps}
+\caption{\label{figure:GmatFunctionExecution}The Sequence Followed to Run a GmatFunction
+Command}
+\end{center}
+\end{figure}
+
+\subsubsection{Executing a GMAT Function}
+
+At the end of initialization, all of the objects used in the function that can be preset are set and
+ready for use.  Pointers to objects that are obtained from the Global Object Store might not be set
+yet, depending on their status at initialization time.  Locally created objects are not yet set;
+they are set when the corresponding Create command is executed.  Details about setting these final
+pointers are provided in the discussions of the Create and Global commands,
+Sections~\ref{section:CreateCommandDesign} and~\ref{section:GlobalCommandDesign}, respectively.
+
+Execution for the Function Control Sequence, shown in Figure~\ref{figure:GmatFunctionExecution} is
+very similar to execution of the Mission Control Sequence in the Sandbox.  The process starts when
+the Mission Control Sequence prepares to execute a CallFunction or FunctionRunner that uses a
+GmatFunction. The Sandbox checks first to see if a user interrupt has occurred, following the
+process common to all commands as described in Section~\ref{section:SandboxInterruptPolling}. Once
+this initial check has been performed, GMAT is ready to prepare and execute the function.
+
+Execution of a Function Control Sequence can be broken into two distinct pieces: the final piece of
+initialization and the actual execution of the Function Control Sequence.  These processes are
+managed in the Sandbox through repeated calls to the CallFunction's Execute() method, or the the
+Assignment command's Execute() method for FunctionRunner nodes.  The process for the CallFunction
+calls differs in detail from that for a FunctionRunner, and will be described first here. 
+FunctionRunner details are similar, and will be summarized following this discussion.
+
+\paragraph{CallFunction Details} For a CallFunction, each call to Execute() causes the CallFunction
+to run a portion of the process needed to execute the function, as is described below, and then
+returns control to the Sandbox so that it can perform interrupt processing.  The Sandbox then calls
+the CallFunction's GetNext() method to determine the next command that needs to execute.  The
+CallFunction returns its pointer as long as the Function Control Sequence is initializing or
+executing.  Once the function has completed its task, the CallCunction clears its commandExecuting
+flag and returns the pointer to the next command in its control sequence, completing the function
+execution.
+
+When Execute() is called for a CallFunction that is not already running a Function Control Sequence,
+the CallFunction accesses the GmatFunction that contains the Function Control Sequence and
+retrieves the head of that control sequence.  That node is stored in the CallFunction's
+FunctionManager's internal data and used to set the pointer to the current command for the Function
+Control Sequence.  The CallFunction then finalizes initialization of the Function Object Store by
+setting the input and output parameter pointers for the current function call.  This object store is
+then sent to the commands in the Function Control Sequence, those commands finalize their
+initialization, and, if everything is constructed successfully, the function is ready for execution.
+ If an error is encountered during this process, an exception is thrown reporting the error and
+execution terminates.  The CallFunction handles the thrown exception, adds its own information to
+the error message so that the user can see information about both the error thrown in the function
+and information about the CallFunction that encountered the error, and then throws the resulting
+exception in turn for handling in the GMAT engine.
+
+Once these steps have been performed, the CallFunction is ready to run the Function Control
+Sequence.  All of the linkages and cloning necessary for execution have been performed.  Running
+the Function Control Sequence follows the same process as is followed when running a branch inside
+of a BranchCommand.  The Sandbox calls the Execute() method on the CallFunction, which calls
+Execute on the FunctionManager.  The FunctionManager calls the Execute() method on the current
+command in the Function Command Sequence.  That command runs, and returns control to the
+FunctionManager, which returns control to the CallFunction in turn.  The CallFunction then returns
+control to the Sandbox. The Sandbox then calls GetNext() on the CallFunction.  The CallFunction
+uses the FunctionManager to call GetNext() on the current command in the Function Control
+Sequence. That call returns with either a pointer to the next command in the Function Control
+Sequence, a pointer to itself, or a NULL pointer.  In either of the former two cases, the Function
+Control Sequence has not completed execution, so the FunctionManager reports a valid next pointer,
+and the CallFunction returns a pointer to itself to the Sandbox.  If the current Function Control
+Sequence command returns NULL, the FunctionManager reports this value to the CallFunction,
+informing it that the Function Control Sequence has completed execution.  The CallFunction has
+finished running the Function Control Sequence, so it clears its commandExecuting flag, and returns
+its next pointer to the Sandbox so that the Sandbox can run the next command in the Function Control
+Sequence.
+
+The process followed to execute nested GmatFunctions proceeds identically to that described above,
+except that the CallFunction containing the Function Control Sequence that has the nested
+CallFunction plays the role of the Sandbox in the description above.  The Execute() method on the
+outer CallFunction walks the inner CallFunction through the function initialization and execution
+following an identical procedure to that described above.
+
+\paragraph{FunctionRunner Differences}  The key difference in this process for a FunctionRunner
+node is in the handling of interrupt processing.  FunctionRunner nodes are part of a larger
+mathematical expression in a MathTree.  This makes interrupt processing impractical for functions
+called through a FunctionRunner.  Instead, the FunctionRunner runs the Function Control Sequence
+until it has completed execution, and then obtains the return value from the function using the
+Evaluate() or MatrixEvaluate() method on the FunctionManager to retrieve the results for the
+calculation.
+
+\subsection{Usage and Modification}
+
+GMAT Functions behave similarly to the Sandbox.  You are not likely to need to make changes to the
+implementation of the GmatFunction class structure unless you are making similar changes to the
+Sandbox itself.  Similarly, you are not likely to need to do anything special to use the
+GmatFunction class.  All of the interfaces from the class are provided through the CallFunction
+command.
+
+\section{\label{section:MatlabFunctions}MATLAB Functions}
+
+\subsection{Design}
+
+\subsection{\label{section:MatlabFunctionFlow}Usage and Modification}
+
+\section{\label{section:InternalFunctions}Internal Functions}
+
+The specifications for internal functions is TBD.
+
+\subsection{\label{section:InternalFunctionDesign}Design}
+
+\subsection{\label{section:InternalFunctionFlow}Usage and Modification}
+
+\section{Related Classes: Command Classes}
+
+\subsection{\label{section:CallFunctionDesign}Design for the CallFunction Command}
+
+
+
+\subsection{\label{section:CreateCommandDesign}Design for the Create Command}
+
+
+
+\subsection{\label{section:GlobalCommandDesign}Design for the Global Command}
+
+
+
+\section{Related Classes: Engine Components}
+
+The function classes interact with engine components in some very specific ways, as are described
+in Sections~\ref{section:GmatFunctionFlow}, \ref{section:InternalFunctionFlow},
+and~\ref{section:MatlabFunctionFlow}.  The Sandbox features specific to functions are described in
+Chapter~\ref{chapter:Sandbox}.  The features added to the Interpreters and the Moderator can be
+found in their Chapters~\ref{chapter:ScriptRW} and~\ref{chapter:Moderator}, respectively.
+
+<These chapters are yet to be filled in.  I'll post their updates when they are ready.>
+

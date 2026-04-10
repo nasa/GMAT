@@ -1,0 +1,582 @@
+stk.v.8.0
+
+BEGIN ReportStyle
+Name		Cartesian-Delaunay
+
+BEGIN ClassId
+	Class		Satellite
+END ClassId
+
+BEGIN Header
+	StyleType		0
+	Date		Yes
+	Name		Yes
+	DescShort		No
+	DescLong		No
+	YLog10		No
+	Y2Log10		No
+	VerticalGridLines		No
+	HorizontalGridLines		No
+	AnnotationType		Spaced
+	NumAnnotations		3
+	NumAngularAnnotations		5
+	AnnotationRotation		1
+	BackgroundColor		#ffffff
+	ViewableDuration		3600.000000
+	RealTimeMode		No
+	DayLinesStatus		1
+	LegendStatus		1
+
+BEGIN PostProcessor
+	Destination	0
+	Use	0
+	Destination	1
+	Use	0
+	Destination	2
+	Use	0
+	Destination	3
+	Use	0
+END PostProcessor
+	NumSections		2
+END Header
+
+BEGIN Section
+	Name		Section 1
+	ClassName		Satellite
+	NameInTitle		No
+	ExpandMethod		0
+	PropMask		2
+	ShowIntervals		No
+	NumIntervals		0
+	NumLines		1
+
+BEGIN Line
+	Name		Line 1
+	NumElements		6
+
+BEGIN Element
+	Name		Cartesian Position-J2000-x
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		x
+	NameInTitle		Yes
+	Service		CartPos
+	Type		J2000
+	Element		x
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		0
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+
+BEGIN Element
+	Name		Cartesian Position-J2000-y
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		y
+	NameInTitle		Yes
+	Service		CartPos
+	Type		J2000
+	Element		y
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		0
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+
+BEGIN Element
+	Name		Cartesian Position-J2000-z
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		z
+	NameInTitle		Yes
+	Service		CartPos
+	Type		J2000
+	Element		z
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		0
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+
+BEGIN Element
+	Name		Cartesian Velocity-J2000-x
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		vx
+	NameInTitle		Yes
+	Service		CartVel
+	Type		J2000
+	Element		x
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		4
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+
+BEGIN Element
+	Name		Cartesian Velocity-J2000-y
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		vy
+	NameInTitle		Yes
+	Service		CartVel
+	Type		J2000
+	Element		y
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		4
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+
+BEGIN Element
+	Name		Cartesian Velocity-J2000-z
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		vz
+	NameInTitle		Yes
+	Service		CartVel
+	Type		J2000
+	Element		z
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		4
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+END Line
+END Section
+
+BEGIN Section
+	Name		Section 2
+	ClassName		Satellite
+	NameInTitle		No
+	ExpandMethod		0
+	PropMask		2
+	ShowIntervals		No
+	NumIntervals		0
+	NumLines		1
+
+BEGIN Line
+	Name		Line 1
+	NumElements		6
+
+BEGIN Element
+	Name		Delaunay Elements-J2000-sqrt(mu * a)
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		sqrt(mu * a)
+	NameInTitle		Yes
+	Service		DelnyElem
+	Type		J2000
+	Element		sqrt(mu * a)
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		6
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+
+BEGIN Element
+	Name		Delaunay Elements-J2000-Ang Momentum
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		Ang Momentum
+	NameInTitle		Yes
+	Service		DelnyElem
+	Type		J2000
+	Element		Ang Momentum
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		6
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+
+BEGIN Element
+	Name		Delaunay Elements-J2000-Z Comp of Ang Mom
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		Z Comp of Ang Mom
+	NameInTitle		Yes
+	Service		DelnyElem
+	Type		J2000
+	Element		Z Comp of Ang Mom
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		6
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		Yes
+END Element
+
+BEGIN Element
+	Name		Delaunay Elements-J2000-Mean Anomaly
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		Mean Anomaly
+	NameInTitle		Yes
+	Service		DelnyElem
+	Type		J2000
+	Element		Mean Anomaly
+	Format		%.15e
+	SumAllowedMask		0
+	SummaryOnly		No
+	DataType		0
+	UnitType		3
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		No
+BEGIN Units
+		DistanceUnit		Meters
+		TimeUnit		Seconds
+		DateFormat		EpochSeconds
+		AngleUnit		Degrees
+		MassUnit		Kilograms
+		PowerUnit		dBW
+		FrequencyUnit		Hertz
+		SmallDistanceUnit		Meters
+		LatitudeUnit		Radians
+		LongitudeUnit		Radians
+		DurationUnit		Seconds
+		Temperature		Kelvin
+		SmallTimeUnit		Seconds
+		RatioUnit		Decibel
+		RcsUnit		Decibel
+		DopplerVelocityUnit		MetersperSecond
+		SARTimeResProdUnit		Meter-Second
+		ForceUnit		Newtons
+		PressureUnit		Pascals
+		SpecificImpulseUnit		Seconds
+		PRFUnit		Hertz
+		BandwidthUnit		Hertz
+		SmallVelocityUnit		MetersperSecond
+		DataRateUnit		BitsPerSecond
+		Percent		UnitValue
+		UnitTemperature		UnitKelvin
+		MissionModelerDistanceUnit		Meters
+		MissionModelerTimeUnit		Seconds
+		MissionModelerAltitudeUnit		Meters
+		MissionModelerFuelQuantityUnit		Kilograms
+		MissionModelerRunwayLengthUnit		Meters
+		MissionModelerBearingAngleUnit		Radians
+		MissionModelerAngleOfAttackUnit		Radians
+		MissionModelerAttitudeAngleUnit		Radians
+		MissionModelerGUnit		StandardSeaLevelG
+		SolidAngle		Steradians
+		RadiationDoseUnit		RadsSilicon
+		RadiationShieldThicknessUnit		MilsAluminum
+		MagneticFieldUnit		Tesla
+END Units
+END Element
+
+BEGIN Element
+	Name		Delaunay Elements-J2000-Arg of Perigee
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		Arg of Perigee
+	NameInTitle		Yes
+	Service		DelnyElem
+	Type		J2000
+	Element		Arg of Perigee
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		3
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		No
+BEGIN Units
+		DistanceUnit		Meters
+		TimeUnit		Seconds
+		DateFormat		EpochSeconds
+		AngleUnit		Degrees
+		MassUnit		Kilograms
+		PowerUnit		dBW
+		FrequencyUnit		Hertz
+		SmallDistanceUnit		Meters
+		LatitudeUnit		Radians
+		LongitudeUnit		Radians
+		DurationUnit		Seconds
+		Temperature		Kelvin
+		SmallTimeUnit		Seconds
+		RatioUnit		Decibel
+		RcsUnit		Decibel
+		DopplerVelocityUnit		MetersperSecond
+		SARTimeResProdUnit		Meter-Second
+		ForceUnit		Newtons
+		PressureUnit		Pascals
+		SpecificImpulseUnit		Seconds
+		PRFUnit		Hertz
+		BandwidthUnit		Hertz
+		SmallVelocityUnit		MetersperSecond
+		DataRateUnit		BitsPerSecond
+		Percent		UnitValue
+		UnitTemperature		UnitKelvin
+		MissionModelerDistanceUnit		Meters
+		MissionModelerTimeUnit		Seconds
+		MissionModelerAltitudeUnit		Meters
+		MissionModelerFuelQuantityUnit		Kilograms
+		MissionModelerRunwayLengthUnit		Meters
+		MissionModelerBearingAngleUnit		Radians
+		MissionModelerAngleOfAttackUnit		Radians
+		MissionModelerAttitudeAngleUnit		Radians
+		MissionModelerGUnit		StandardSeaLevelG
+		SolidAngle		Steradians
+		RadiationDoseUnit		RadsSilicon
+		RadiationShieldThicknessUnit		MilsAluminum
+		MagneticFieldUnit		Tesla
+END Units
+END Element
+
+BEGIN Element
+	Name		Delaunay Elements-J2000-RAAN
+	IsIndepVar		No
+	IndepVarName		Time
+	Title		RAAN
+	NameInTitle		Yes
+	Service		DelnyElem
+	Type		J2000
+	Element		RAAN
+	Format		%.15e
+	SumAllowedMask		7
+	SummaryOnly		No
+	DataType		0
+	UnitType		20
+	LineStyle		0
+	LineWidth		0
+	LineColor		#000000
+	PointStyle		0
+	PointSize		0
+	PointColor		#000000
+	FillPattern		0
+	FillColor		#000000
+	PropMask		0
+BEGIN Event
+	UseEvent		No
+	EventValue		0.000000
+	Direction		Both
+	CreateFile		No
+END Event
+	UseScenUnits		No
+BEGIN Units
+		DistanceUnit		Meters
+		TimeUnit		Seconds
+		DateFormat		EpochSeconds
+		AngleUnit		Radians
+		MassUnit		Kilograms
+		PowerUnit		dBW
+		FrequencyUnit		Hertz
+		SmallDistanceUnit		Meters
+		LatitudeUnit		Radians
+		LongitudeUnit		Degrees
+		DurationUnit		Seconds
+		Temperature		Kelvin
+		SmallTimeUnit		Seconds
+		RatioUnit		Decibel
+		RcsUnit		Decibel
+		DopplerVelocityUnit		MetersperSecond
+		SARTimeResProdUnit		Meter-Second
+		ForceUnit		Newtons
+		PressureUnit		Pascals
+		SpecificImpulseUnit		Seconds
+		PRFUnit		Hertz
+		BandwidthUnit		Hertz
+		SmallVelocityUnit		MetersperSecond
+		DataRateUnit		BitsPerSecond
+		Percent		UnitValue
+		UnitTemperature		UnitKelvin
+		MissionModelerDistanceUnit		Meters
+		MissionModelerTimeUnit		Seconds
+		MissionModelerAltitudeUnit		Meters
+		MissionModelerFuelQuantityUnit		Kilograms
+		MissionModelerRunwayLengthUnit		Meters
+		MissionModelerBearingAngleUnit		Radians
+		MissionModelerAngleOfAttackUnit		Radians
+		MissionModelerAttitudeAngleUnit		Radians
+		MissionModelerGUnit		StandardSeaLevelG
+		SolidAngle		Steradians
+		RadiationDoseUnit		RadsSilicon
+		RadiationShieldThicknessUnit		MilsAluminum
+		MagneticFieldUnit		Tesla
+END Units
+END Element
+END Line
+END Section
+END ReportStyle
+

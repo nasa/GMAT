@@ -1,0 +1,187 @@
+%
+%  Script: Tut_SimpleOrbitTransfer
+%
+%  Script for the "Simple Orbit Transfer" Users Guide tutorial.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+DefaultSC.DateFormat                   = TAIModJulian;
+DefaultSC.Epoch                        = '21545';
+DefaultSC.CoordinateSystem             = EarthMJ2000Eq;
+DefaultSC.DisplayStateType             = Cartesian;
+DefaultSC.X                            = 7100;
+DefaultSC.Y                            = 0;
+DefaultSC.Z                            = 1300;
+DefaultSC.VX                           = 0;
+DefaultSC.VY                           = 7.35;
+DefaultSC.VZ                           = 1;
+DefaultSC.DryMass                      = 850;
+DefaultSC.Cd                           = 2.2;
+DefaultSC.Cr                           = 1.8;
+DefaultSC.DragArea                     = 15;
+DefaultSC.SRPArea                      = 1;
+DefaultSC.NAIFId                       = -123456789;
+DefaultSC.NAIFIdReferenceFrame         = -123456789;
+DefaultSC.Id                           = 'SatId';
+DefaultSC.Attitude                     = CoordinateSystemFixed;
+DefaultSC.ModelFile                    = '../data/vehicle/models/aura.3ds';
+DefaultSC.ModelOffsetX                 = 0;
+DefaultSC.ModelOffsetY                 = 0;
+DefaultSC.ModelOffsetZ                 = 0;
+DefaultSC.ModelRotationX               = 0;
+DefaultSC.ModelRotationY               = 0;
+DefaultSC.ModelRotationZ               = 0;
+DefaultSC.ModelScale                   = 3;
+DefaultSC.AttitudeDisplayStateType     = 'Quaternion';
+DefaultSC.AttitudeRateDisplayStateType = 'AngularVelocity';
+DefaultSC.AttitudeCoordinateSystem     = 'EarthMJ2000Eq';
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp_ForceModel.CentralBody                      = Earth;
+DefaultProp_ForceModel.PrimaryBodies                    = {Earth};
+DefaultProp_ForceModel.Drag                             = None;
+DefaultProp_ForceModel.SRP                              = Off;
+DefaultProp_ForceModel.RelativisticCorrection           = Off;
+DefaultProp_ForceModel.ErrorControl                     = RSSStep;
+DefaultProp_ForceModel.GravityField.Earth.Degree        = 4;
+DefaultProp_ForceModel.GravityField.Earth.Order         = 4;
+DefaultProp_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+DefaultProp_ForceModel.GravityField.Earth.TideModel     = 'None';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM                       = DefaultProp_ForceModel;
+DefaultProp.Type                     = RungeKutta89;
+DefaultProp.InitialStepSize          = 60;
+DefaultProp.Accuracy                 = 9.999999999999999e-012;
+DefaultProp.MinStep                  = 0.001;
+DefaultProp.MaxStep                  = 2700;
+DefaultProp.MaxStepAttempts          = 50;
+DefaultProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TOI;
+
+TOI.CoordinateSystem   = Local;
+TOI.Origin             = Earth;
+TOI.Axes               = VNB;
+TOI.Element1           = 0;
+TOI.Element2           = 0;
+TOI.Element3           = 0;
+TOI.DecrementMass      = false;
+TOI.Isp                = 300;
+TOI.GravitationalAccel = 9.810000000000001;
+
+
+Create ImpulsiveBurn GOI;
+
+GOI.CoordinateSystem   = Local;
+GOI.Origin             = Earth;
+GOI.Axes               = VNB;
+GOI.Element1           = 0;
+GOI.Element2           = 0;
+GOI.Element3           = 0;
+GOI.DecrementMass      = false;
+GOI.Isp                = 300;
+GOI.GravitationalAccel = 9.810000000000001;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC1;
+
+DC1.ShowProgress      = true;
+DC1.ReportStyle       = Normal;
+DC1.ReportFile        = 'DifferentialCorrectorDC1.data';
+DC1.MaximumIterations = 25;
+DC1.DerivativeMethod  = ForwardDifference;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.SolverIterations = Current;
+OFI_DefaultOrbitView.UpperLeft        = [ 0.3660377358490566 0.006297229219143577 ];
+OFI_DefaultOrbitView.Size             = [ 0.5537735849056604 0.4534005037783375 ];
+OFI_DefaultOrbitView.RelativeZOrder   = 576;
+OFI_DefaultOrbitView.Maximized        = false;
+
+OFI_DefaultOrbitView.Add              = {DefaultSC, Earth};
+OFI_DefaultOrbitView.View             = {DefaultOrbit_View};
+
+OFI_DefaultOrbitView.CoordinateSystem = EarthMJ2000Eq;
+OFI_DefaultOrbitView.DrawObject       = [ true true ];
+OFI_DefaultOrbitView.DrawXYPlane      = [ false false ];
+OFI_DefaultOrbitView.DrawLabel        = [ true true ];
+OFI_DefaultOrbitView.DrawGrid         = [ false false ];
+
+OFI_DefaultOrbitView.Axes             = On;
+OFI_DefaultOrbitView.XYPlane          = On;
+OFI_DefaultOrbitView.EclipticPlane    = Off;
+OFI_DefaultOrbitView.EnableStars      = On;
+OFI_DefaultOrbitView.StarCount        = 40000;
+OFI_DefaultOrbitView.ShowPlot         = true;
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame           = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation  = On;
+DefaultOrbit_View.SetCurrentLocation  = Off;
+
+DefaultOrbit_View.DefaultEye          = [ 0 0 120001 ];
+DefaultOrbit_View.DefaultCenter       = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp           = [ 1 0 0 ];
+
+Create GroundTrackPlot DefaultGroundTrackPlot;
+
+DefaultGroundTrackPlot.SolverIterations     = Current;
+DefaultGroundTrackPlot.UpperLeft            = [ 0.3641509433962264 0.4672544080604534 ];
+DefaultGroundTrackPlot.Size                 = [ 0.560377358490566 0.4899244332493703 ];
+DefaultGroundTrackPlot.RelativeZOrder       = 578;
+DefaultGroundTrackPlot.Add                  = {DefaultSC, Earth};
+DefaultGroundTrackPlot.DataCollectFrequency = 1;
+DefaultGroundTrackPlot.UpdatePlotFrequency  = 50;
+DefaultGroundTrackPlot.NumPointsToRedraw    = 0;
+DefaultGroundTrackPlot.ShowPlot             = true;
+DefaultGroundTrackPlot.CentralBody          = Earth;
+DefaultGroundTrackPlot.TextureMap           = '../data/graphics/texture/ModifiedBlueMarble.jpg';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop To Periapsis' DefaultProp(DefaultSC) {DefaultSC.Earth.Periapsis};
+Target 'Hohmann Transfer' DC1 {SolveMode = Solve, ExitMode = SaveAndContinue};
+   Vary 'Vary TOI' DC1(TOI.Element1 = 1, {Perturbation = 0.0001, Lower = 0.0, Upper = 3.14159, MaxStep = 0.5});
+   Maneuver 'Perform TOI' TOI(DefaultSC);
+   Propagate 'Prop To Apoapsis' DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis};
+   Achieve 'Achieve RMAG = 42165' DC1(DefaultSC.Earth.RMAG = 42164.169, {Tolerance = 0.1});
+   Vary 'Vary GOI' DC1(GOI.Element1 = 1, {Perturbation = 0.0001, Lower = 0.0, Upper = 3.14159, MaxStep = 0.2});
+   Maneuver 'Perform GOI' GOI(DefaultSC);
+   Achieve 'Achieve ECC = 0.005' DC1(DefaultSC.Earth.ECC = 0.005, {Tolerance = 0.0001});
+EndTarget;  % For targeter DC1
+Propagate 'Prop One Day' DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 86400};

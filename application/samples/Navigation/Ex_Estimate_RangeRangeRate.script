@@ -1,0 +1,241 @@
+%
+%   Ex_Estimate_RangeRangeRate
+%
+%   Simulate and estimate two-way Range and one-way, two-way and three-way 
+%   RangeRate. This script also generates a JSON data file from the BLS 
+%   estimator run.
+%
+%   Released: R2025a
+%
+
+
+Earth.NutationUpdateInterval = 0
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat
+
+SimSat.DateFormat       = UTCGregorian
+SimSat.Epoch            = '10 Jun 2012 00:00:00.000'
+SimSat.CoordinateSystem = EarthMJ2000Eq
+SimSat.DisplayStateType = Cartesian
+SimSat.X                =   539184.9959
+SimSat.Y                = -1361475.623
+SimSat.Z                =  -680255.7870
+SimSat.VX               = 0.1301671856
+SimSat.VY               = 0.05229190133
+SimSat.VZ               = 0.05960606341
+SimSat.DryMass          = 850
+SimSat.Cd               = 2.2
+SimSat.Cr               = 1.8
+SimSat.DragArea         = 15
+SimSat.SRPArea          = 1
+SimSat.Id               = 'L1SAT'
+SimSat.AddHardware      = {Transponder1, SpacecraftTransmitter, SpacecraftAntenna}
+
+Create Spacecraft EstSat
+
+EstSat.DateFormat       = UTCGregorian
+EstSat.Epoch            = '10 Jun 2012 00:00:00.000'
+EstSat.CoordinateSystem = EarthMJ2000Eq
+EstSat.DisplayStateType = Cartesian
+EstSat.X                =   539185.0
+EstSat.Y                = -1361476.0
+EstSat.Z                =  -680256.0
+EstSat.VX               = 0.1302
+EstSat.VY               = 0.0523
+EstSat.VZ               = 0.0596
+EstSat.DryMass          = 850
+EstSat.Cd               = 2.2
+EstSat.Cr               = 1.8
+EstSat.DragArea         = 15
+EstSat.SRPArea          = 1
+EstSat.Id               = 'L1SAT'
+EstSat.AddHardware      = {Transponder1, SpacecraftTransmitter, SpacecraftAntenna}
+EstSat.SolveFors        = {CartesianState}     
+
+%----------------------------------------
+%---------- Spacecraft hardware
+%----------------------------------------
+
+Create Antenna SpacecraftAntenna
+Create Transponder Transponder1
+Create Transmitter SpacecraftTransmitter
+
+Transponder1.PrimaryAntenna  = SpacecraftAntenna
+Transponder1.HardwareDelay   = 0.00005
+Transponder1.TurnAroundRatio = '240/221' 
+
+SpacecraftTransmitter.PrimaryAntenna  = SpacecraftAntenna
+
+%----------------------------------------
+%---------- GroundStation hardware
+%----------------------------------------
+
+Create Transmitter Transmitter1
+Create Antenna GroundAntenna
+Create Receiver Receiver1
+
+Transmitter1.PrimaryAntenna = GroundAntenna
+Transmitter1.Frequency      = 2067.5
+Receiver1.PrimaryAntenna    = GroundAntenna
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel RangeRateModel
+
+RangeRateModel.Type       = 'RangeRate'
+RangeRateModel.NoiseSigma = 0.000001
+RangeRateModel.Bias       = 0.0
+RangeRateModel.SolveFors  = {}
+
+Create ErrorModel RangeModel
+
+RangeModel.Type           = 'Range'
+RangeModel.NoiseSigma     = 0.010
+RangeModel.Bias           = 0.0
+RangeModel.SolveFors      = {}
+
+%----------------------------------------
+%---------- Ground stations
+%----------------------------------------
+
+Create GroundStation GDS
+
+GDS.CentralBody           = Earth
+GDS.StateType             = Cartesian
+GDS.HorizonReference      = Ellipsoid
+GDS.Location1             = -2000.0
+GDS.Location2             = -4000.0
+GDS.Location3             =  3000.0
+GDS.Id                    = 'GDS'
+GDS.AddHardware           = {Transmitter1, Receiver1, GroundAntenna}
+GDS.MinimumElevationAngle = 0
+GDS.IonosphereModel       = 'None'
+GDS.TroposphereModel      = 'None'
+GDS.ErrorModels           = {RangeRateModel, RangeModel}
+
+Create GroundStation CAN
+
+CAN.CentralBody           = Earth
+CAN.StateType             = Cartesian
+CAN.HorizonReference      = Ellipsoid
+CAN.Location1             = -4000.0
+CAN.Location2             =  2000.0
+CAN.Location3             = -3000.0
+CAN.Id                    = 'CAN'
+CAN.AddHardware           = {Transmitter1, Receiver1, GroundAntenna}
+CAN.MinimumElevationAngle = 0
+CAN.IonosphereModel       = 'None'
+CAN.TroposphereModel      = 'None'
+CAN.ErrorModels           = {RangeRateModel, RangeModel}
+
+Create GroundStation MAD
+
+MAD.CentralBody           = Earth
+MAD.StateType             = Cartesian
+MAD.HorizonReference      = Ellipsoid
+MAD.Location1             =  4000.0
+MAD.Location2             =  -300.0
+MAD.Location3             =  4000.0
+MAD.Id                    = 'MAD'
+MAD.AddHardware           = {Transmitter1, Receiver1, GroundAntenna}
+MAD.MinimumElevationAngle = 0
+MAD.ErrorModels           = {RangeRateModel, RangeModel}
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet SimData
+
+SimData.AddTrackingConfig       = {{SimSat, MAD}, 'RangeRate'}               % One-way
+SimData.AddTrackingConfig       = {{GDS, SimSat, GDS}, 'Range', 'RangeRate'} % Two-way
+SimData.AddTrackingConfig       = {{GDS, SimSat, CAN}, 'RangeRate'}          % Three-way
+SimData.FileName                = {'Ex_Estimate_RangeRangeRate.gmd'}
+SimData.RampTable               = {}
+SimData.UseLightTime            = True
+SimData.UseRelativityCorrection = True
+SimData.UseETminusTAI           = True
+SimData.SimDopplerCountInterval = 10.  
+SimData.DataFilters             = {}
+
+Create TrackingFileSet EstData
+
+EstData.AddTrackingConfig       = {{EstSat, MAD}, 'RangeRate'}               % One-way
+EstData.AddTrackingConfig       = {{GDS, EstSat, GDS}, 'Range', 'RangeRate'} % Two-way
+EstData.AddTrackingConfig       = {{GDS, EstSat, CAN}, 'RangeRate'}          % Three-way
+EstData.FileName                = {'Ex_Estimate_RangeRangeRate.gmd'}
+EstData.RampTable               = {}
+EstData.UseLightTime            = True
+EstData.UseRelativityCorrection = True
+EstData.UseETminusTAI           = True
+EstData.DataFilters             = {}
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM
+
+FM.CentralBody       = Earth
+FM.PointMasses       = {Earth}
+FM.Drag              = None
+FM.SRP               = Off
+FM.ErrorControl      = None
+
+Create Propagator Prop
+
+Prop.FM              = FM
+Prop.Type            = 'RungeKutta89'
+Prop.InitialStepSize = 60
+Prop.Accuracy        = 1e-13
+Prop.MinStep         = 0
+Prop.MaxStep         = 60
+Prop.MaxStepAttempts = 50
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator Sim
+
+Sim.AddData                    = {SimData}
+Sim.EpochFormat                = 'UTCGregorian'
+Sim.InitialEpoch               = '10 Jun 2012 00:00:00.000'
+Sim.FinalEpoch                 = '24 Jun 2012 00:00:00.000'
+Sim.MeasurementTimeStep        = 300
+Sim.Propagator                 = Prop
+Sim.AddNoise                   = On
+
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create BatchEstimator BLS
+
+BLS.ShowProgress               = True
+BLS.Measurements               = {EstData} 
+BLS.AbsoluteTol                = 0.0001
+BLS.RelativeTol                = 0.001
+BLS.MaximumIterations          = 10
+BLS.MaxConsecutiveDivergences  = 3
+BLS.Propagator                 = Prop
+BLS.ShowAllResiduals           = On
+BLS.OLSEInitialRMSSigma        = 30000
+BLS.OLSEMultiplicativeConstant = 3
+BLS.OLSEAdditiveConstant       = 0
+BLS.ReportFile                 = 'Ex_Estimate_RangeRangeRate.txt'
+BLS.DataFile                   = 'Ex_Estimate_RangeRangeRate.json'
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+RunSimulator Sim
+RunEstimator BLS

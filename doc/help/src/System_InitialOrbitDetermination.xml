@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="InitialOrbitDetermination"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>InitialOrbitDetermination</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary>Orbit Determination</primary>
+
+    <secondary>Initial Orbit Determination</secondary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Initial Orbit Determination</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">System</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Initial Orbit Determination</refname>
+
+    <refpurpose>A set of python functions to support early orbit
+    operations</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>A collection of functions to allow the user to perform initial orbit
+    determination (IOD). This includes implementations of the Gibbs and the
+    Herrick-Gibbs methods, by which the user may determine the velocity of an
+    object from set of three sequential position vectors. Additionally, top
+    level functions are included which may determine which method to use based
+    on the inputs provided by the user.</para>
+
+    <para>The initial orbit determination functions are accessed through the
+    Python user interface using GMAT's CallPythonFunction command and require
+    the Numpy library to be installed to Python. For details on the Python
+    user interface, see the <xref linkend="PythonInterface"/> reference. For
+    details on calling a Python function and passing data, see the
+    <guilabel><xref linkend="CallPythonFunction"/></guilabel> reference.
+    Instructions for installing the Numpy package may be found at their
+    website, <link
+    xlink:href="https://numpy.org/">https://numpy.org/</link></para>
+  </refsection>
+
+  <refsection>
+    <title>Functions</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.0*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>CalculateIODGibbs</guilabel><indexterm>
+                <primary>CalculateIODGibbs</primary>
+              </indexterm></entry>
+
+            <entry><para>Implementation of the Gibbs method. Calculates the
+            velocity corresponding to the second position vector
+            input.</para><variablelist>
+                <varlistentry>
+                  <term>Inputs</term>
+
+                  <listitem>
+                    <para>r1 - [x,y,z] position vector at the first
+                    observation (km)</para>
+
+                    <para>r2 - [x,y,z] position vector at the second
+                    observation. This is the position for which the velocity
+                    will be solved. (km)</para>
+
+                    <para>r3 - [x,y,z] position vector at the third
+                    observation (km)</para>
+
+                    <para>mu - Gravitational parameter of the central body.
+                    Default to Earth (3.986004415e5 km^3/s^2)</para>
+
+                    <para>verbose - True or false flag if logging information.
+                    Default to false.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Outputs</term>
+
+                  <listitem>
+                    <variablelist>
+                      <varlistentry>
+                        <term>If Verbose == False</term>
+
+                        <listitem>
+                          <para>v2 - [vx,vy,vz] Velocity vector at the second
+                          observation. (km/s)</para>
+                        </listitem>
+                      </varlistentry>
+
+                      <varlistentry>
+                        <term>If Verbose == True</term>
+
+                        <listitem>
+                          <para>v2 - [vx,vy,vz] Velocity vector at the second
+                          observation. (km/s)</para>
+
+                          <para>log - String that contains any information
+                          logged as part of the calculation.</para>
+                        </listitem>
+                      </varlistentry>
+                    </variablelist>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>CalculateIODHerrickGibbs</guilabel><indexterm>
+                <primary>CalculateIODHerrickGibbs</primary>
+              </indexterm></entry>
+
+            <entry><para>Implementation of the Herrick-Gibbs method.
+            Calculates the velocity corresponding to the second position
+            vector input.</para><variablelist>
+                <varlistentry>
+                  <term>Inputs</term>
+
+                  <listitem>
+                    <para>r1 - [x,y,z] position vector at the first
+                    observation (km)</para>
+
+                    <para>r2 - [x,y,z] position vector at the second
+                    observation. This is the position for which the velocity
+                    will be solved. (km)</para>
+
+                    <para>r3 - [x,y,z] position vector at the third
+                    observation (km)</para>
+
+                    <para>t1 - Time of first measurement in Julian Date format
+                    (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>t2 - Time of second measurement in Julian Date
+                    format (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>t3 - Time of third measurement in Julian Date format
+                    (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>mu - Gravitational parameter of the central body.
+                    Default to Earth (3.986004415e5 km^3/s^2)</para>
+
+                    <para>verbose - True or false flag if logging information.
+                    Default to false.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Outputs</term>
+
+                  <listitem>
+                    <variablelist>
+                      <varlistentry>
+                        <term>If Verbose == False</term>
+
+                        <listitem>
+                          <para>v2 - [vx,vy,vz] Velocity vector at the second
+                          observation. (Units in km/s)</para>
+                        </listitem>
+                      </varlistentry>
+
+                      <varlistentry>
+                        <term>If Verbose == True</term>
+
+                        <listitem>
+                          <para>v2 - [vx,vy,vz] Velocity vector at the second
+                          observation. (Units in km/s)</para>
+
+                          <para>log - String that contains any information
+                          logged as part of the calculation.</para>
+                        </listitem>
+                      </varlistentry>
+                    </variablelist>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ThreePositionIOD</guilabel><indexterm>
+                <primary>ThreePositionIOD</primary>
+              </indexterm></entry>
+
+            <entry><para>Top level function to perform IOD, selecting Gibbs or
+            Herrick-Gibbs based on the separation angle between the
+            observations.</para><variablelist>
+                <varlistentry>
+                  <term>Inputs</term>
+
+                  <listitem>
+                    <para>r1 - [x,y,z] position vector at the first
+                    observation (km)</para>
+
+                    <para>r2 - [x,y,z] position vector at the second
+                    observation. This is the position for which the velocity
+                    will be solved. (km)</para>
+
+                    <para>r3 - [x,y,z] position vector at the third
+                    observation (km)</para>
+
+                    <para>t1 - Time of first measurement in Julian Date format
+                    (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>t2 - Time of second measurement in Julian Date
+                    format (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>t3 - Time of third measurement in Julian Date format
+                    (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>mu - Gravitational parameter of the central body.
+                    Default to Earth (3.986004415e5 km^3/s^2)</para>
+
+                    <para>IODType - Optional string that may set to "Gibbs" or
+                    "HerrickGibbs" to override the sorting logic and force the
+                    specified IOD method</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Outputs</term>
+
+                  <listitem>
+                    <para>v2 - [vx,vy,vz] Velocity vector at the second
+                    observation. (Units in km/s)</para>
+
+                    <para>log - String that contains any information logged as
+                    part of the calculation, as well as logging which method
+                    of IOD was performed.</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ThreePositionIODLean</guilabel><indexterm>
+                <primary>ThreePositionIODLean</primary>
+              </indexterm></entry>
+
+            <entry><para>Top level function to perform IOD, selecting Gibbs or
+            Herrick-Gibbs based on the separation angle between the
+            observations. Version does not return a log
+            parameter.</para><variablelist>
+                <varlistentry>
+                  <term>Inputs</term>
+
+                  <listitem>
+                    <para>r1 - [x,y,z] position vector at the first
+                    observation (km)</para>
+
+                    <para>r2 - [x,y,z] position vector at the second
+                    observation. This is the position for which the velocity
+                    will be solved. (km)</para>
+
+                    <para>r3 - [x,y,z] position vector at the third
+                    observation (km)</para>
+
+                    <para>t1 - Time of first measurement in Julian Date format
+                    (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>t2 - Time of second measurement in Julian Date
+                    format (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>t3 - Time of third measurement in Julian Date format
+                    (Can also be Modified Julian Date, or
+                    Seconds/86400)</para>
+
+                    <para>mu - Gravitational parameter of the central body.
+                    Default to Earth (3.986004415e5 km^3/s^2)</para>
+
+                    <para>IODType - Optional string that may set to "Gibbs" or
+                    "HerrickGibbs" to override the sorting logic and force the
+                    specified IOD method</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Outputs</term>
+
+                  <listitem>
+                    <para>v2 - [vx,vy,vz] Velocity vector at the second
+                    observation. (Units in km/s)</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <para>There are certain scenarios in which the user has limited
+    information on the body for which they wish to perform orbit
+    determination. In such a circumstance, the user would have only a number
+    of position measurements (or measurements from which position could be
+    derived, such as Azimuth, Elevation and Range) from which to predict the
+    future state of the spacecraft. For this particular problem, the Gibbs and
+    the Herrick-Gibbs methods are well suited. These methods each take in
+    three position vectors in an inertial frame from which they return the
+    velocity of the craft at the second position. Each approach has
+    circumstances for which they are better suited as a by-product of the
+    approach they take to solve the problem, and both share a common set of
+    assumptions. Both methods provide solutions for a two-body problem, so
+    scenarios in which there are significant outside perturbations are not
+    appropriate for this feature. Additionally, both methods assume that the
+    three position vectors are time-ordered sequentially and are coplanar. To
+    allow for variance in real data, some flexibility is allowed on the
+    coplanar requirement, such that the observations must be within 3 degrees
+    of being coplanar. Since the Gibbs method is finding a solution
+    geometrically, it is better suited for observations with large angles of
+    separation. In contrast, the Herrick-Gibbs approach, which essentially
+    performs a Taylor-Series expansion about the second observation, is
+    superior for closely packed measurements, but degrades as the separation
+    angles between observations grow. The exact cross-over point where one
+    algorithm is superior to the other is an area of active research, and can
+    vary from 6 degrees to 16 degrees depending on the properties of the
+    orbit. For the top level functions, GMAT uses the more conservative 6
+    degrees as the value for sorting, selecting Gibbs if either separation
+    angle exceeds this value and selecting Herrick-Gibbs if both are equal to
+    or fall under the value. For more information about the Gibbs and
+    Herrick-Gibbs methods as well as algorithms to implement them, please
+    consult the first reference. For more information on the separation angle
+    selection criteria, consult the second reference.</para>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Solve for the velocity from three closely-spaced observations and
+      write out the result and the log.</para>
+
+      <programlisting><code>Create Array R1[1,3] R2[1,3] R3[1,3] V2[1,3];
+Create Variable T1 T2 T3;
+Create String Log;
+
+BeginMissionSequence;
+%Observation 1
+T1 = 0.0;
+R1(1) = -6775.105759552147;
+R1(2) = -2396.512640028521;
+R1(3) = 3.17775066150299;
+
+%Observation 2
+T2 = 1.0/86400;
+R2(1) = -6775.468602539761;
+R2(2) = -2395.440370930451;
+R2(3) = 10.54007909680081;
+
+%Observation 3
+T3 = 2.0/86400;
+R3(1) = -6775.824159536231;
+R3(2) = -2394.365525912181;
+R3(3) = 17.90239606811341;
+
+[V2,Log] = Python.IODFunctions.ThreePositionIOD(R1,R2,R3,T1,T2,T3);
+Write V2
+Write Log
+</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Solve for the velocity from three widely-spaced observations and
+      write out the result and the log. These observations occur with 8
+      minutes between measurements.</para>
+
+      <programlisting><code>Create Array R1[1,3] R2[1,3] R3[1,3] V2[1,3];
+Create Variable T1 T2 T3;
+Create String Log;
+
+BeginMissionSequence;
+%Observation 1
+T1 = 0.0;
+R1(1) = -6775.105759552147;
+R1(2) = -2396.512640028521;
+R1(3) = 3.17775066150299;
+
+%Observation 2
+T2 = 480.0/86400;
+R2(1) = -6121.441100575906;        
+R2(2) = -1612.515594798989;
+R2(3) = 3392.148414170606;
+
+%Observation 3
+T3 = 960.0/86400;
+R3(1) = -3981.62429448081;
+R3(2) = -437.0235397882232;
+R3(3) =  5955.582570970698;
+
+[V2,Log] = Python.IODFunctions.ThreePositionIOD(R1,R2,R3,T1,T2,T3);
+Write V2
+Write Log
+</code></programlisting>
+    </informalexample>
+  </refsection>
+
+  <refsection>
+    <title>References</title>
+
+    <orderedlist>
+      <listitem>
+        <para>Vallado, David A., and Wayne D. McClain. Fundamentals of
+        Astrodynamics and Applications, Fourth Edition. Microcosm Press,
+        2013.</para>
+      </listitem>
+
+      <listitem>
+        <para>Kaushik, Arvind Shankar, <emphasis>A Statistical Comparison
+        Between Gibbs and Herrick-Gibbs Orbit Determination
+        Methods</emphasis>. Master's thesis, Texas A &amp; M University,
+        2016.</para>
+      </listitem>
+    </orderedlist>
+  </refsection>
+</refentry>

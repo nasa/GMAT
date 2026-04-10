@@ -1,0 +1,161 @@
+%
+%  Ex_Integrators
+%
+%  Script Mission - Integrator Examples  
+%
+%  This script demonstrates how to choose different numerical integrators
+%  in the propagator set up
+%
+
+
+%----------------------------------------
+%------ Spacecraft
+%----------------------------------------
+% Create Sat and define its orbit
+Create Spacecraft Sat;
+
+Sat.DateFormat         = UTCGregorian;
+Sat.Epoch              = '04 Jan 2003 00:00:00.000';
+Sat.DisplayStateType   = Cartesian;
+Sat.X                  = -6365.554;
+Sat.Y                  = 2087.458;
+Sat.Z                  = 878.918
+Sat.VX                 = -1.635;
+Sat.VY                 = -6.597762;
+Sat.VZ                 = 3.5058499;
+Sat.DryMass            = 100;
+Sat.Cd                 = 2.25;
+Sat.Cr                 = 1.21;
+Sat.DragArea           = 4;
+Sat.SRPArea            = 4;
+
+%----------------------------------------
+%---- Force model
+%----------------------------------------
+%  Define Force Model with point mass only
+Create ForceModel PointMass;
+
+PointMass.PointMasses          =  {Earth};
+
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+%--------Create Propagators--------------
+
+%Create a Runge Kutta Fehlburg (56) Propagator
+Create Propagator EarthPointMass_RK56;
+
+EarthPointMass_RK56.Type            = RungeKutta56;
+EarthPointMass_RK56.InitialStepSize = 30;;
+EarthPointMass_RK56.Accuracy        = 1e-12;
+EarthPointMass_RK56.MinStep         = 1e-5;
+EarthPointMass_RK56.MaxStep         = 1000;
+EarthPointMass_RK56.FM              =  PointMass;
+
+%Create a Runge Kutta Nystrom (68) Propagator
+Create Propagator EarthPointMass_RK68;
+
+EarthPointMass_RK68.Type            = RungeKutta68;
+EarthPointMass_RK68.InitialStepSize = 30;;
+EarthPointMass_RK68.Accuracy        = 1e-12;
+EarthPointMass_RK68.MinStep         = 1e-5;
+EarthPointMass_RK68.MaxStep         = 1000;
+EarthPointMass_RK68.FM              =  PointMass;
+
+% Create a Runge Kutta Verner (89) Propagator
+Create Propagator EarthPointMass_RKV89;
+
+EarthPointMass_RKV89.Type            = RungeKutta89;
+EarthPointMass_RKV89.InitialStepSize = 30;;
+EarthPointMass_RKV89.Accuracy        = 1e-12;
+EarthPointMass_RKV89.MinStep         = 1e-5;
+EarthPointMass_RKV89.MaxStep         = 1000;
+EarthPointMass_RKV89.FM              =  PointMass;
+
+% Create a Prince Dormand (45) Propagator
+Create Propagator EarthPointMass_PD45;
+
+EarthPointMass_PD45.Type            = PrinceDormand45;
+EarthPointMass_PD45.InitialStepSize = 30;;
+EarthPointMass_PD45.Accuracy        = 1e-12;
+EarthPointMass_PD45.MinStep         = 1e-5;
+EarthPointMass_PD45.MaxStep         = 1000;
+EarthPointMass_PD45.FM              =  PointMass;
+
+% Create a Prince Dormand (78) Propagator
+Create Propagator EarthPointMass_PD78;
+
+EarthPointMass_PD78.Type            = PrinceDormand78;
+EarthPointMass_PD78.InitialStepSize = 30;;
+EarthPointMass_PD78.Accuracy        = 1e-12;
+EarthPointMass_PD78.MinStep         = 1e-5;
+EarthPointMass_PD78.MaxStep         = 1000;
+EarthPointMass_PD78.FM              =  PointMass;
+
+% Create a Adams Bashforth Moulton Propagator
+Create Propagator EarthPointMass_ABM;
+
+EarthPointMass_ABM.Type            = AdamsBashforthMoulton;
+EarthPointMass_ABM.InitialStepSize = 30;;
+EarthPointMass_ABM.Accuracy        = 1e-8;
+EarthPointMass_ABM.MinStep         = 1e-5;
+EarthPointMass_ABM.MaxStep         = 1000;
+EarthPointMass_ABM.LowerError      = 1e-12;
+EarthPointMass_ABM.TargetError     = 1e-10;
+EarthPointMass_ABM.FM              =  PointMass;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View 
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.SolverIterations     = Current;
+OFI_EarthView.UpperLeft            = [ 0 0 ];
+OFI_EarthView.Size                 = [ 0.802 0.85 ];
+OFI_EarthView.Maximized            = false;
+
+OFI_EarthView.Add                  = {Sat, Earth};
+OFI_EarthView.View                 = {Earth_View};
+
+OFI_EarthView.CoordinateSystem     = EarthMJ2000Eq;
+OFI_EarthView.DrawObject           = [ true true];
+OFI_EarthView.DrawXYPlane          = [ false false ];
+OFI_EarthView.DrawLabel            = [ true true ];
+OFI_EarthView.DrawGrid             = [ false false ];
+
+OFI_EarthView.Axes                 = On;
+OFI_EarthView.XYPlane              = On;
+OFI_EarthView.EclipticPlane        = Off;
+OFI_EarthView.EnableStars          = On;
+OFI_EarthView.StarCount            = 40000;
+OFI_EarthView.ShowPlot             = true;
+
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame                = CoordinateSystem;
+Earth_View.SetDefaultLocation       = On;
+Earth_View.SetCurrentLocation       = Off;
+    
+Earth_View.DefaultEye               = [ -14000 -21000 4200 ];
+Earth_View.DefaultCenter            = [ 0 0 0 ];
+Earth_View.DefaultUp                = [ 0 0 1 ];
+
+
+%----------------------------
+%---- Mission Sequence
+%----------------------------
+%  Propagate using each of the propagators created above
+BeginMissionSequence
+
+Propagate  'Prop w/ RK56' EarthPointMass_RK56(Sat,   {Sat.ElapsedDays = 0.1});
+Propagate  'Prop w/ RK68' EarthPointMass_RK68(Sat,   {Sat.ElapsedDays = 0.1});
+Propagate  'Prop w/ RKV89' EarthPointMass_RKV89(Sat, {Sat.ElapsedDays = 0.1});
+Propagate  'Prop w/ PD45' EarthPointMass_PD45(Sat,   {Sat.ElapsedDays = 0.1});
+Propagate  'Prop w/ RK78' EarthPointMass_PD78(Sat,   {Sat.ElapsedDays = 0.1});
+Propagate  'Prop w/ ABM' EarthPointMass_ABM(Sat,     {Sat.ElapsedDays = 0.1});

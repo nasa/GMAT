@@ -1,0 +1,872 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="SimpleOrbitTransfer"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Simple Orbit Transfer</title>
+
+  <variablelist>
+    <varlistentry>
+      <term>Audience</term>
+
+      <listitem>
+        <para>Beginner</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Length</term>
+
+      <listitem>
+        <para>30 minutes</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Prerequisites</term>
+
+      <listitem>
+        <para>Complete <xref linkend="SimulatingAnOrbit"
+        xrefstyle="select:title" /></para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Script File</term>
+
+      <listitem>
+        <para><filename>Tut_SimpleOrbitTransfer.script</filename></para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <note>
+      <para>One of the most common problems in space mission design is to
+      design a transfer from one circular orbit to another circular orbit that
+      lie within the same orbital plane. Circular coplanar transfers are used
+      to raise low-Earth orbits that have degraded due to the effects of
+      atmospheric drag. They are also used to transfer from a low-Earth orbit
+      to a geosynchronous orbit and to send spacecraft to Mars. There is a
+      well known sequence of maneuvers, called the Hohmann transfer, that
+      performs a circular, coplanar transfer using the least possible amount
+      of fuel. A Hohmann transfer employs two maneuvers. The first maneuver
+      raises the orbital apoapsis (or lowers orbital periapsis) to the desired
+      altitude and places the spacecraft in an elliptical transfer orbit. At
+      the apoapsis (or periapsis) of the elliptical transfer orbit, a second
+      maneuver is applied to circularize the orbit at the final
+      altitude.</para>
+    </note>
+
+    <para>In this tutorial, we will use GMAT to perform a Hohmann transfer
+    from a low-Earth parking orbit to a geosynchronous mission orbit. This
+    requires a targeting sequence to determine the required maneuver
+    magnitudes to achieve the desired final orbit conditions. In order to
+    focus on the configuration of the targeter, we will make extensive use of
+    the default configurations for spacecraft, propagators, and
+    maneuvers.</para>
+
+    <para>The target sequence employs two velocity-direction maneuvers and two
+    propagation sequences. The purpose of the first maneuver is to raise orbit
+    apoapsis to 42,165 km, the geosynchronous radius. The purpose of the
+    second maneuver is to nearly circularize the orbit and yield a final
+    eccentricity of 0.005. The basic steps of this tutorial are:</para>
+
+    <procedure>
+      <step>
+        <para>Create and configure a
+        <classname>DifferentialCorrector</classname> resource.</para>
+      </step>
+
+      <step>
+        <para>Modify the <classname>DefaultOrbitView</classname> to visualize
+        the trajectory.</para>
+      </step>
+
+      <step>
+        <para>Create two <classname>ImpulsiveBurn</classname> resources with
+        default settings.</para>
+      </step>
+
+      <step>
+        <para>Create a <function>Target</function> sequence to (1) raise
+        apoapsis to geosynchronous altitude and (2) circularize the
+        orbit.</para>
+      </step>
+
+      <step>
+        <para>Run the mission and analyze the results.</para>
+      </step>
+    </procedure>
+  </section>
+
+  <section>
+    <title>Configure Maneuvers, Differential Corrector, and Graphics</title>
+
+    <para>For this tutorial, you’ll need GMAT open, with the default mission
+    loaded. To load the default mission, click <guiicon>New Mission</guiicon>
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/NewMission.png" width="1em"></imagedata>
+        </imageobject>
+      </inlinemediaobject>) or start a new GMAT session. We will
+    use the default configurations for the spacecraft
+    (<guilabel>DefaultSC</guilabel>), the propagator
+    (<guilabel>DefaultProp</guilabel>), and the two maneuvers.
+    <guilabel>DefaultSC</guilabel> is configured by default to a near-circular
+    orbit, and <guilabel>DefaultProp</guilabel> is configured to use Earth as
+    the central body with a nonspherical gravity model of degree and order 4.
+    You may want to open the dialog boxes for these objects and inspect them
+    more closely as we will leave them at their default settings.</para>
+
+    <section>
+      <title>Create the Differential Corrector</title>
+
+      <para>The <function>Target</function> sequence we will create later
+      needs a <classname>DifferentialCorrector</classname> resource to
+      operate, so let’s create one now. We'll leave the settings at their
+      defaults.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resource</guilabel> tree, expand the
+          <guilabel>Solvers</guilabel> folder if it isn’t already.</para>
+        </step>
+
+        <step>
+          <para>Right-click the<guilabel> Boundary Value Solvers</guilabel>
+          folder, point to <guilabel>Add</guilabel>, and click
+          <guilabel>DifferentialCorrector</guilabel>. A new resource called
+          <guilabel>DC1</guilabel> will be created.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Modify the Default Orbit View</title>
+
+      <para>We need to make minor modifications to
+      <guibutton>DefaultOrbitView</guibutton> so that the entire final orbit
+      will fit in the graphics window.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resource Tree</guilabel>,
+          double-click<guibutton> DefaultOrbitView</guibutton> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>DefaultOrbitView</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="1.5*" />
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>Solver Iterations</guilabel>, under
+                    <guilabel>Drawing Option</guilabel></entry>
+
+                    <entry><guilabel>Current</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Axis</guilabel>, under <guilabel>View Up
+                    Defintion</guilabel></entry>
+
+                    <entry><guilabel>X</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>View Point Vector</guilabel> boxes, under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><userinput>0</userinput>, <userinput>0</userinput>,
+                    and <userinput>120000</userinput> respectively</entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <!--Empty paragraph to help with spacing (shouldn't be necessary)-->
+
+          <para></para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Create the Maneuvers.</title>
+
+      <para>We’ll need two <classname>ImpulsiveBurn</classname> resources for
+      this tutorial, both using default values. Below, we’ll rename the
+      default <classname>ImpulsiveBurn</classname> and create a new
+      one.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, right-click
+          <guilabel>DefaultIB</guilabel> and click
+          <guilabel>Rename</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Rename</guilabel> box, type
+          <userinput>TOI</userinput>, an acronym for Transfer Orbit Insertion,
+          and click <guibutton>OK</guibutton>.</para>
+        </step>
+
+        <step>
+          <para>Right-click the <guilabel>Burns</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click
+          <guilabel>ImpulsiveBurn</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Rename the new <guilabel>ImpulsiveBurn1</guilabel> resource to
+          <userinput>GOI</userinput>, an acronym for Geosynchronous Orbit
+          Insertion.</para>
+        </step>
+      </procedure>
+    </section>
+  </section>
+
+  <section>
+    <title>Configure the Mission Sequence</title>
+
+    <para>Now we will configure a <function>Target</function> sequence to
+    solve for the maneuver values required to raise the orbit to
+    geosynchronous altitude and circularize the orbit. We’ll begin by creating
+    an initial <function>Propagate</function> command, then the
+    <function>Target</function> sequence itself, then the final
+    <function>Propagate</function> command. To allow us to focus on the
+    <classname>Target</classname> sequence, we’ll assume you have already
+    learned how to propagate an orbit to a desired condition by working
+    through the <xref linkend="SimulatingAnOrbit" /> tutorial.</para>
+
+    <section>
+      <title>Configure the Initial Propagate Command</title>
+
+      <procedure>
+        <step>
+          <para>Click on the <guilabel>Mission</guilabel> tab to show the
+          <guilabel>Mission</guilabel> tree.</para>
+        </step>
+
+        <step>
+          <para>Configure <guilabel>Propagate1</guilabel> to propagate to
+          <userinput>DefaultSC.Earth.Periapsis</userinput>.</para>
+        </step>
+
+        <step>
+          <para>Rename <guilabel>Propagate1</guilabel> to <userinput>Prop To
+          Periapsis</userinput>.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Create the Target Sequence</title>
+
+      <para>Now create the commands necessary to perform the
+      <function>Target</function> sequence. <xref
+      linkend="Tut_HohmannTransfer_TargetSequence" /> illustrates the
+      configuration of the <guilabel>Mission</guilabel> tree after you have
+      completed the steps in this section. We’ll discuss the
+      <function>Target</function> sequence after it has been created.</para>
+
+      <figure xml:id="Tut_HohmannTransfer_TargetSequence">
+        <title>Final Mission Sequence for the Hohmann Transfer</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_SimpleOrbitTransfer_MissionTree.png"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <para>To create the <function>Target</function> sequence:</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Mission</guilabel> tree, right-click
+          <guilabel>Prop To Periapsis</guilabel>, point to <guilabel>Insert
+          After</guilabel>, and click <guilabel>Target</guilabel>. This will
+          insert two separate commands: <guilabel>Target1</guilabel> and
+          <guilabel>EndTarget1</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>Target1</guilabel> and click
+          <guimenuitem>Rename</guimenuitem>.</para>
+        </step>
+
+        <step>
+          <para>Type <userinput>Hohmann Transfer</userinput> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>Hohmann Transfer</guilabel>, point to
+          <guilabel>Append</guilabel>, and click
+          <guilabel>Vary</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Rename <guilabel>Vary1</guilabel> to <userinput>Vary
+          TOI</userinput>.</para>
+        </step>
+
+        <step>
+          <para>Complete the <guilabel>Target</guilabel> sequence by appending
+          the commands in <xref
+          linkend="Tut_HohmannTransfer_CommandTable" />.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0"
+              xml:id="Tut_HohmannTransfer_CommandTable">
+              <title>Additional <guilabel>Target</guilabel> Sequence
+              Commands</title>
+
+              <tgroup cols="2">
+                <thead>
+                  <row rowsep="1">
+                    <entry>Command</entry>
+
+                    <entry>Name</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>Maneuver</guilabel></entry>
+
+                    <entry><userinput>Perform TOI</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Propagate</guilabel></entry>
+
+                    <entry><userinput>Prop To Apoapsis</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Achieve</guilabel></entry>
+
+                    <entry><userinput>Achieve RMAG = 42165</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Vary</guilabel></entry>
+
+                    <entry><userinput>Vary GOI</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Maneuver</guilabel></entry>
+
+                    <entry><userinput>Perform GOI</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Achieve</guilabel></entry>
+
+                    <entry><userinput>Achieve ECC = 0.005</userinput></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+        </step>
+      </procedure>
+
+      <note>
+        <para>Let’s discuss what the <function>Target</function> sequence
+        does. We know that two maneuvers are required to perform the Hohmann
+        transfer. We also know that for our current mission, the final orbit
+        radius must be 42,165 km and the final orbital eccentricity must be
+        0.005. However, we don’t know the size (or ΔV magnitudes) of the
+        maneuvers that precisely achieve the desired orbital conditions. You
+        use the <function>Target</function> sequence to solve for those
+        precise maneuver values. You must tell GMAT what controls are
+        available (in this case, two maneuvers) and what conditions must be
+        satisfied (in this case, a specific orbital radius and eccentricity).
+        You accomplish this using the <function>Vary</function> and
+        <function>Achieve</function> commands. Using the
+        <function>Vary</function> command, you tell GMAT what to solve for—in
+        this case, the ΔV values for <classname>TOI</classname> and
+        <classname>GOI</classname>. You use the <function>Achieve</function>
+        command to tell GMAT what conditions the solution must satisfy—in this
+        case, the final orbital conditions.</para>
+      </note>
+    </section>
+
+    <section>
+      <title>Create the Final Propagate Command</title>
+
+      <para>We need a <function>Propagate</function> command after the
+      <function>Target</function> sequence so that we can see our final
+      orbit.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Mission</guilabel> tree, right-click
+          <guilabel>End Hohmann Transfer</guilabel>, point to <guimenuitem>Insert
+          After</guimenuitem>, and click <guimenuitem>Propagate</guimenuitem>.
+          A new <guilabel>Propagate3</guilabel> command will appear.</para>
+        </step>
+
+        <step>
+          <para>Rename <guilabel>Propagate3</guilabel> to <userinput>Prop One
+          Day</userinput>.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>Prop One Day</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Condition</guilabel>, replace the value
+          <userinput>12000.0</userinput> with <userinput>86400</userinput>,
+          the number of seconds in one day.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Prop One Day</guilabel> Command Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_SimpleOrbitTransfer_PropOneDay.png"
+                         scalefit="1" width="100%"></imagedata>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Configure the Target Sequence</title>
+
+      <para>Now that the structure is created, we need to configure the
+      various parts of the <function>Target</function> sequence to do what we
+      want.</para>
+
+      <section>
+        <title>Configure the <guilabel>Vary TOI</guilabel> Command</title>
+
+        <procedure>
+          <step>
+            <para>Double-click <guilabel>Vary TOI</guilabel> to edit its
+            properties. Notice that the variable in the
+            <guilabel>Variable</guilabel> box is
+            <userinput>TOI.Element1</userinput>, which by default is the
+            velocity component of TOI in the local Velocity-Normal-Binormal
+            (VNB) coordinate system. That’s what we need, so we’ll keep
+            it.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Initial Value</guilabel> box, type
+            <userinput>1.0</userinput>.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Max Step</guilabel> box, type
+            <userinput>0.5</userinput>.</para>
+          </step>
+
+          <step>
+            <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+          </step>
+        </procedure>
+
+        <figure xml:id="Tut_HohmannTransfer_VaryTOI">
+          <title><guilabel>Vary TOI</guilabel> Command Configuration</title>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center"
+                           fileref="files/images/Tut_SimpleOrbitTransfer_VaryTOI.png"
+                           scale="75"></imagedata>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </figure>
+      </section>
+
+      <section>
+        <title>Configure the <guilabel>Perform TOI</guilabel> Command</title>
+
+        <procedure>
+          <step>
+            <para>Double-click <guilabel>Perform TOI</guilabel> to edit its
+            properties. Notice that the command is already set to apply the
+            <guilabel>TOI</guilabel> burn to the
+            <guilabel>DefaultSC</guilabel> spacecraft, so we don’t need to
+            change anything here.</para>
+          </step>
+
+          <step>
+            <para>Click <guibutton>OK</guibutton>.</para>
+          </step>
+        </procedure>
+
+        <figure>
+          <title><guilabel>Perform TOI</guilabel> Command
+          Configuration</title>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center"
+                           fileref="files/images/Tut_SimpleOrbitTransfer_PerformTOI.png"
+                           scale="75"></imagedata>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </figure>
+      </section>
+
+      <section>
+        <title>Configure the <guilabel>Prop to Apo</guilabel>apsis
+        Command</title>
+
+        <procedure>
+          <step>
+            <para>Double-click <guilabel>Prop to Apoapsis</guilabel> to edit
+            its properties.</para>
+          </step>
+
+          <step>
+            <para>Under <guilabel>Parameter</guilabel>, replace
+            <userinput>DefaultSC.ElapsedSecs</userinput> with
+            <userinput>DefaultSC.Earth.Apoapsis</userinput>.</para>
+          </step>
+
+          <step>
+            <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+          </step>
+        </procedure>
+
+        <figure>
+          <title><guilabel>Prop to Apoapsis</guilabel> Command
+          Configuration</title>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center" contentdepth="100%"
+                           fileref="files/images/Tut_SimpleOrbitTransfer_PropToApoapsis.png"
+                           scalefit="1" width="100%"></imagedata>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </figure>
+      </section>
+
+      <section>
+        <title>Configure the <guilabel>Achieve RMAG = 42165</guilabel>
+        Command</title>
+
+        <procedure>
+          <step>
+            <para>Double-click <guilabel>Achieve RMAG = 42165</guilabel> to
+            edit its properties.</para>
+          </step>
+
+          <step>
+            <para>Notice that <guilabel>Goal</guilabel> is set to
+            <guilabel>DefaultSC.Earth.RMAG</guilabel>. This is what we need,
+            so we make no changes here.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Value</guilabel> box, type
+            <guilabel>42164.169</guilabel>, a more precise number for the
+            radius of a geosynchronous orbit (in kilometers).</para>
+          </step>
+
+          <step>
+            <para>Click <guibutton>OK</guibutton> to save these
+            changes.</para>
+          </step>
+        </procedure>
+
+        <figure>
+          <title><guilabel>Achieve RMAG = 42165</guilabel> Command
+          Configuration</title>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center"
+                           fileref="files/images/Tut_SimpleOrbitTransfer_AchieveRMAG.png"
+                           scale="75"></imagedata>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </figure>
+      </section>
+
+      <section>
+        <title>Configure the <guilabel>Vary GOI Command</guilabel></title>
+
+        <procedure>
+          <step>
+            <para>Double-click <guilabel>Vary GOI</guilabel> to edit its
+            properties.</para>
+          </step>
+
+          <step>
+            <para>Next to <guilabel>Variable</guilabel>, click the
+            <guilabel>Edit</guilabel> button.</para>
+          </step>
+
+          <step>
+            <para>Under <guilabel>Object List</guilabel>, click
+            <guilabel>GOI</guilabel>.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Object Properties</guilabel> list,
+            double-click <guilabel>Element1</guilabel> to move it to the
+            <guilabel>Selected Value(s)</guilabel> list. See the image below
+            for results.</para>
+
+            <figure>
+              <title><guilabel>Vary GOI</guilabel> Parameter Selection</title>
+
+              <screenshot>
+                <mediaobject>
+                  <imageobject>
+                    <imagedata align="center"
+                               fileref="files/images/Tut_SimpleOrbitTransfer_VaryGOI_ParamSelect.png"
+                               scale="75"></imagedata>
+                  </imageobject>
+                </mediaobject>
+              </screenshot>
+            </figure>
+
+            <!--Empty paragraph to improve spacing (shouldn't be necessary)-->
+
+            <para></para>
+          </step>
+
+          <step>
+            <para>Click <guilabel>OK</guilabel> to close the
+            <guilabel>ParameterSelectDialog</guilabel> window.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Initial Value</guilabel> box, type
+            <userinput>1.0</userinput>.</para>
+          </step>
+
+          <step>
+            <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+          </step>
+        </procedure>
+
+        <figure>
+          <title><guilabel>Vary GOI</guilabel> Command Configuration</title>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center"
+                           fileref="files/images/Tut_SimpleOrbitTransfer_VaryGOI.png"
+                           scale="75"></imagedata>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </figure>
+      </section>
+
+      <section>
+        <title>Configure the <guilabel>Perform GOI Command</guilabel></title>
+
+        <procedure>
+          <step>
+            <para>Double-click <guilabel>Perform GOI</guilabel> to edit its
+            properties.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Burn</guilabel> list, click
+            <guilabel>GOI</guilabel>.</para>
+          </step>
+
+          <step>
+            <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+          </step>
+        </procedure>
+
+        <figure>
+          <title><guilabel>Perform GOI</guilabel> Command
+          Configuration</title>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center"
+                           fileref="files/images/Tut_SimpleOrbitTransfer_PerformGOI.png"
+                           scale="75"></imagedata>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </figure>
+      </section>
+
+      <section>
+        <title>Configure the <guilabel>Achieve ECC = 0.005</guilabel>
+        Command</title>
+
+        <procedure>
+          <step>
+            <para>Double-click <guilabel>Achieve ECC = 0.005</guilabel> to
+            edit its properties.</para>
+          </step>
+
+          <step>
+            <para>Next to <guilabel>Goal</guilabel>, click the
+            <guilabel>Edit</guilabel> button.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Object Properties</guilabel> list,
+            double-click<guilabel> ECC</guilabel>.</para>
+          </step>
+
+          <step>
+            <para>Click <guilabel>OK</guilabel> to close the
+            <guilabel>ParameterSelectDialog</guilabel> window.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Value </guilabel>box, type
+            <userinput>0.005</userinput>.</para>
+          </step>
+
+          <step>
+            <para>In the <guilabel>Tolerance </guilabel> box, type
+            <userinput>0.0001</userinput>.</para>
+          </step>
+
+          <step>
+            <para>Click <guibutton>OK</guibutton> to save these
+            changes.</para>
+          </step>
+        </procedure>
+
+        <figure>
+          <title><guilabel>Achieve ECC = 0.005</guilabel> Command
+          Configuration</title>
+
+          <screenshot>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center"
+                           fileref="files/images/Tut_SimpleOrbitTransfer_AchieveECC.png"
+                           scale="75"></imagedata>
+              </imageobject>
+            </mediaobject>
+          </screenshot>
+        </figure>
+      </section>
+    </section>
+  </section>
+
+  <section>
+    <title>Run the Mission</title>
+
+    <para>Before running the mission, click <guilabel>Save</guilabel>
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/SaveMission.png" width="1em"></imagedata>
+        </imageobject>
+      </inlinemediaobject>) and save the mission to a file of your
+    choice. Now click <guilabel>Run</guilabel> (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/RunMission.png" width="1em"></imagedata>
+        </imageobject>
+      </inlinemediaobject>). As the mission runs, you will see
+    GMAT solve the targeting problem. Each iteration and perturbation is shown
+    in <guilabel>DefaultOrbitView</guilabel> window in light blue, and the
+    final solution is shown in red. After the mission completes, the 3D view
+    should appear as in to the image shown below. You may want to run the
+    mission several times to see the targeting in progress.</para>
+
+    <figure>
+      <title>3D View of Hohmann Transfer</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_SimpleOrbitTransfer_OrbitView.png"
+                       scalefit="1" width="100%"></imagedata>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+
+    <para>If you were to continue developing this mission, you can store the
+    final solution of the <function>Target</function> sequence as the initial
+    conditions of the <guilabel>TOI</guilabel> and <guilabel>GOI</guilabel>
+    resources themselves, so that if you make small changes, the subsequent
+    runs will take less time. To do this, follow these steps:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Mission</guilabel> tree, double-click
+        <guilabel>Hohmann Transfer</guilabel> to edit its properties.</para>
+      </step>
+
+      <step>
+        <para>Click <guilabel>Apply Corrections</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Now re-run the mission. If you inspect the results in the
+        message window, you will see that the <function>Target</function>
+        sequence converges in one iteration because you stored the solution as
+        the initial condition.</para>
+      </step>
+    </procedure>
+  </section>
+</chapter>

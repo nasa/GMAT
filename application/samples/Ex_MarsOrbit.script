@@ -1,0 +1,305 @@
+%
+%  Ex_MarsOrbit
+%
+%  Propagate a constellation of satellites around Mars.
+%
+%  This script demonstrates how to set up a Mars centered mission with 
+%  propagation using a constellation.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft MPS1;
+
+MPS1.DateFormat       = TAIModJulian;
+MPS1.Epoch            = 21645;
+MPS1.CoordinateSystem = MarsMJ2000Eq;
+MPS1.DisplayStateType = Keplerian;
+MPS1.AnomalyType      = TA;
+MPS1.SMA              = 20000.9388176290122;
+MPS1.ECC              = 0.024549749005974779;
+MPS1.INC              = 60;
+MPS1.RAAN             = 0.0;
+MPS1.AOP              = 314.19055153599209;
+MPS1.TA               = 270;
+MPS1.DryMass          = 850;
+MPS1.Cd               = 2.2000000000000002;
+MPS1.Cr               = 1.8;
+MPS1.DragArea         = 15;
+MPS1.SRPArea          = 1;
+
+Create Spacecraft MPS2;
+
+MPS2.DateFormat       = TAIModJulian;
+MPS2.Epoch            = 21645;
+MPS2.CoordinateSystem = MarsMJ2000Eq;
+MPS2.DisplayStateType = Keplerian;
+MPS2.AnomalyType      = TA;
+MPS2.SMA              = 20000.9388176290122;
+MPS2.ECC              = 0.024549749005974779;
+MPS2.INC              = 60;
+MPS2.RAAN             = 90;
+MPS2.AOP              = 314.19055153599209;
+MPS2.TA               = 270;
+MPS2.DryMass          = 850;
+MPS2.Cd               = 2.2000000000000002;
+MPS2.Cr               = 1.8;
+MPS2.DragArea         = 15;
+MPS2.SRPArea          = 1;
+
+Create Spacecraft MPS3;
+
+MPS3.DateFormat       = TAIModJulian;
+MPS3.Epoch            = 21645;
+MPS3.CoordinateSystem = MarsMJ2000Eq;
+MPS3.DisplayStateType = Keplerian;
+MPS3.AnomalyType      = TA;
+MPS3.SMA              = 20000.9388176290122;
+MPS3.ECC              = 0.024549749005974779;
+MPS3.INC              = 60;
+MPS3.RAAN             = 180;
+MPS3.AOP              = 314.19055153599209;
+MPS3.TA               = 99.887749332048273;
+MPS3.DryMass          = 850;
+MPS3.Cd               = 2.2000000000000002;
+MPS3.Cr               = 1.8;
+MPS3.DragArea         = 15;
+MPS3.SRPArea          = 1;
+
+Create Spacecraft MPS4;
+
+MPS4.DateFormat       = TAIModJulian;
+MPS4.Epoch            = 21645;
+MPS4.CoordinateSystem = MarsMJ2000Eq;
+MPS4.DisplayStateType = Keplerian;
+MPS4.AnomalyType      = TA;
+MPS4.SMA              = 20000.9388176290122;
+MPS4.ECC              = 0.024549749005974779;
+MPS4.INC              = 60;
+MPS4.RAAN             = 270;
+MPS4.AOP              = 270;
+MPS4.TA               = 99.887749332048273;
+MPS4.DryMass          = 850;
+MPS4.Cd               = 2.2000000000000002;
+MPS4.Cr               = 1.8;
+MPS4.DragArea         = 15;
+MPS4.SRPArea          = 1;
+
+
+Create Spacecraft MarsOrbiter;
+
+MarsOrbiter.DateFormat       = TAIModJulian;
+MarsOrbiter.Epoch            = 21645;
+MarsOrbiter.CoordinateSystem = MarsMJ2000Eq;
+MarsOrbiter.DisplayStateType = Keplerian;
+MarsOrbiter.AnomalyType      = TA;
+MarsOrbiter.SMA              = 6000.9388176290122;
+MarsOrbiter.ECC              = 0.024549749005974779;
+MarsOrbiter.INC              = 0;
+MarsOrbiter.RAAN             = 0.0;
+MarsOrbiter.AOP              = 314.19055153599209;
+MarsOrbiter.TA               = 99.887749332048273;
+MarsOrbiter.DryMass          = 850;
+MarsOrbiter.Cd               = 2.2000000000000002;
+MarsOrbiter.Cr               = 1.8;
+MarsOrbiter.DragArea         = 15;
+MarsOrbiter.SRPArea          = 1;
+
+Create Spacecraft MarsSupply;
+
+MarsSupply.DateFormat       = TAIModJulian;
+MarsSupply.Epoch            = 21645;
+MarsSupply.CoordinateSystem = MarsMJ2000Eq;
+MarsSupply.DisplayStateType = Keplerian;
+MarsSupply.AnomalyType      = TA;
+MarsSupply.SMA              = -30000
+MarsSupply.ECC              = 1.3;
+MarsSupply.INC              = 10;
+MarsSupply.RAAN             = 332.5;
+MarsSupply.AOP              = 0;
+MarsSupply.TA               = 245;
+MarsSupply.DryMass          = 850;
+MarsSupply.Cd               = 2.2000000000000002;
+MarsSupply.Cr               = 1.8;
+MarsSupply.DragArea         = 15;
+MarsSupply.SRPArea          = 1;
+
+Create Formation MPS;
+MPS.Add = { MPS1, MPS2, MPS3, MPS4, MarsOrbiter, MarsSupply};
+
+%----------------------------------------
+%---------- ForceModels and Propagators
+%----------------------------------------
+
+Create ForceModel MarsProp_ForceModel;
+
+MarsProp_ForceModel.CentralBody  = Mars;
+MarsProp_ForceModel.PointMasses  = {Mars};
+MarsProp_ForceModel.Drag         = None;
+MarsProp_ForceModel.SRP          = Off;
+MarsProp_ForceModel.ErrorControl = RSSStep;
+
+Create Propagator MarsProp;
+
+MarsProp.FM              = MarsProp_ForceModel;
+MarsProp.Type            = RungeKutta89;
+MarsProp.InitialStepSize = 60;
+MarsProp.Accuracy        = 1e-012;
+MarsProp.MinStep         = 0.001;
+MarsProp.MaxStep         = 2700;
+MarsProp.MaxStepAttempts = 50;
+
+Create ForceModel EarthProp_ForceModel;
+
+EarthProp_ForceModel.CentralBody  = Earth
+EarthProp_ForceModel.PointMasses  = {Earth};
+EarthProp_ForceModel.Drag         = None;
+EarthProp_ForceModel.SRP          = Off;
+EarthProp_ForceModel.ErrorControl = RSSStep;
+
+Create Propagator EarthProp;
+
+EarthProp.FM              = EarthProp_ForceModel;
+EarthProp.Type            = RungeKutta89;
+EarthProp.InitialStepSize = 60;
+EarthProp.Accuracy        = 1e-012;
+EarthProp.MinStep         = 0.001;
+EarthProp.MaxStep         = 86400;
+
+Create ForceModel SunProp_ForceModel;
+
+SunProp_ForceModel.CentralBody  = Sun;
+SunProp_ForceModel.PointMasses  = {Sun, Earth, Luna};
+SunProp_ForceModel.Drag         = None;
+SunProp_ForceModel.SRP          = Off;
+SunProp_ForceModel.ErrorControl = RSSStep;
+
+Create Propagator SunProp;
+
+SunProp.FM              = SunProp_ForceModel;
+SunProp.Type            = RungeKutta89;
+SunProp.InitialStepSize = 60;
+SunProp.Accuracy        = 9.9999999999999994e-012;
+SunProp.MinStep         = 0.001;
+SunProp.MaxStep         = 160000;
+
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MarsMJ2000Eq;
+MarsMJ2000Eq.Origin = Mars;
+MarsMJ2000Eq.Axes   = MJ2000Eq;
+
+Create CoordinateSystem SunMJ2kEc;
+SunMJ2kEc.Origin = Sun;
+SunMJ2kEc.Axes   = MJ2000Ec;
+
+Create CoordinateSystem SunMJ2kEq;
+SunMJ2kEq.Origin = Sun;
+SunMJ2kEq.Axes   = MJ2000Eq;
+
+
+Create CoordinateSystem EarthSunRot;
+
+EarthSunRot.Origin    = Earth;
+EarthSunRot.Axes      = ObjectReferenced;
+EarthSunRot.XAxis     = R;
+EarthSunRot.ZAxis     = N;
+EarthSunRot.Primary   = Sun;
+EarthSunRot.Secondary = Earth;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View  
+
+Create OpenFramesInterface OFI_MarsMJ2KView
+
+OFI_MarsMJ2KView.SolverIterations     = Current;
+OFI_MarsMJ2KView.UpperLeft            = [ 0 0 ];
+OFI_MarsMJ2KView.Size                 = [ 0.802 0.85 ];
+OFI_MarsMJ2KView.Maximized            = false;
+
+OFI_MarsMJ2KView.Add                  = {Mars, MPS1, MPS2,  MPS3, MPS4, MarsOrbiter, MarsSupply};
+OFI_MarsMJ2KView.View                 = {MarsMJ2K_View};
+
+OFI_MarsMJ2KView.CoordinateSystem     = MarsMJ2000Eq;
+OFI_MarsMJ2KView.DrawObject           = [ true true true true true true true];
+OFI_MarsMJ2KView.DrawXYPlane          = [ false false false false false false false];
+OFI_MarsMJ2KView.DrawLabel            = [ true true true true true true true];
+OFI_MarsMJ2KView.DrawGrid             = [ false false false false false false false];
+
+OFI_MarsMJ2KView.Axes                 = On;
+OFI_MarsMJ2KView.XYPlane              = On;
+OFI_MarsMJ2KView.EclipticPlane        = Off;
+OFI_MarsMJ2KView.EnableStars          = On;
+OFI_MarsMJ2KView.StarCount            = 40000;
+OFI_MarsMJ2KView.ShowPlot             = true;
+
+
+Create OpenFramesView MarsMJ2K_View;
+
+MarsMJ2K_View.ViewFrame                = CoordinateSystem;
+MarsMJ2K_View.SetDefaultLocation       = On;
+MarsMJ2K_View.SetCurrentLocation       = Off;
+
+MarsMJ2K_View.DefaultEye               = [ 40000 40000 40000];
+MarsMJ2K_View.DefaultCenter            = [ 0 0 0 ];
+MarsMJ2K_View.DefaultUp                = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn TOI;
+
+TOI.Axes        = VNB;
+TOI.Origin      = Mars;
+TOI.Element1    = -1.15;
+TOI.Element2    = 0;
+TOI.Element3    = 0;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector MarsTOIDC;
+
+Create ImpulsiveBurn MarsTOI;
+
+MarsTOI.Axes     = VNB;
+MarsTOI.Origin   = Earth;
+MarsTOI.Element1 = 0;
+
+
+Create ImpulsiveBurn MarsMCC;
+
+MarsMCC.Axes     = VNB;
+MarsMCC.Origin   = Sun;
+MarsMCC.Element1 = 0;
+
+
+Create ImpulsiveBurn MarsBPlane;
+
+MarsBPlane.Axes           = VNB;
+MarsBPlane.Origin         = Sun;
+MarsBPlane.Element1       = 0;
+%GMAT MarsBPlane.Element3 = -0.214972341605;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Propagate 'Prop to Periapsis' MarsProp(MPS,   {MPS1.Mars.Periapsis});
+Maneuver 'Apply TOI' TOI(MarsSupply);
+Propagate 'Prop 1 Day' MarsProp(MPS,   {MPS1.ElapsedDays = 1});
+

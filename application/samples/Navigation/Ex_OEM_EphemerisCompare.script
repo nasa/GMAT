@@ -1,0 +1,497 @@
+%
+%  Ex_OEM_EphemerisCompare
+%
+%  GMAT Script used to compare two CCSDS OEM ephemeris files.
+%  To use this script, update the fields in the USER SETTINGS block below.
+%
+
+
+%------------------------------------------------------------------------------
+%---------- System Configuration: Do not change
+%------------------------------------------------------------------------------
+
+Create Propagator EphProp;
+
+EphProp.Type       = 'CCSDS-OEM';
+EphProp.StartEpoch = 'FromSpacecraft';
+
+Create ReportFile ricCompare;
+Create String compareStart compareEnd Sat1Id Sat2Id Ephemeris1 Ephemeris2
+Create Variable CompareStep
+
+%------------------------------------------------------------------------------
+%---------- USER SETTINGS
+%------------------------------------------------------------------------------
+
+% Enter your first and second ephemeris file names and locations here
+Ephemeris1 = '../../data/vehicle/ephem/ccsds/DemoLEO-1.oem';
+Ephemeris2 = '../../data/vehicle/ephem/ccsds/DemoLEO-2.oem';
+
+% Enter the spacecraft names, to be displayed in the report, here:
+Sat1Id     = 'DemoLEO'
+Sat2Id     = 'DemoLEO'
+
+% Enter the UTC Gregorian start and end epochs for the comparison 
+compareStart = '28 Apr 2015 00:00:00.000'
+compareEnd   = '30 Apr 2015 00:00:00.000'
+
+% Enter the step size for the comparisons, in seconds, here
+CompareStep      = 600; 
+EphProp.StepSize = 600;
+
+% Set the name (and path, if not the default output path) of the output file here
+ricCompare.Filename = 'Ex_OEM_EphemerisCompare.txt'
+
+%%% Optional Settings
+
+% If the comparison is not Earth centered, uncomment and edit the following:
+% GMAT RIC.Primary = Earth;
+
+
+%------------------------------------------------------------------------------
+%---------- DO NOT EDIT BELOW THIS LINE
+%----------
+%---------- Additional configuration
+%----------
+%---------- DO NOT EDIT BELOW THIS LINE
+%------------------------------------------------------------------------------
+Create Spacecraft Sat1;
+Sat1.DateFormat = UTCGregorian;
+
+Create Spacecraft Sat2;
+Sat2.DateFormat = UTCGregorian;
+
+EphProp.EpochFormat = 'UTCModJulian';
+
+Create CoordinateSystem RIC;
+
+RIC.Origin    = Sat1; % CS is relative to Sat1 
+RIC.Axes      = ObjectReferenced;
+RIC.XAxis     = R;  % X is radial outwards
+RIC.ZAxis     = N;  % Z is normal => cross track, perp to radial outwards
+RIC.Primary   = Earth;
+RIC.Secondary = Sat1;
+
+ricCompare.WriteHeaders = false;
+ricCompare.ZeroFill     = On;
+
+Create Variable dt start interval dx dy dz dvx dvy dvz dr ta a1 a2; 
+Create Variable Radial InTrack CrossTrack;
+Create Variable minRadial minInTrack minCrossTrack minDr;
+Create Variable maxRadial maxInTrack maxCrossTrack maxDr;
+Create Variable RadialV InTrackV CrossTrackV dv;
+Create Variable minRadialV minInTrackV minCrossTrackV minDv; 
+Create Variable maxRadialV maxInTrackV maxCrossTrackV maxDv;
+Create Variable rssR rssI rssC rssT rssRv rssIv rssCv rssTv count;
+
+Create String description blank objectField suffix temp;
+Create String minEpochR maxEpochR minEpochI maxEpochI;
+Create String minEpochC maxEpochC minEpochDr maxEpochDr;
+Create String minEpochRV maxEpochRV minEpochIV maxEpochIV;
+Create String minEpochCV maxEpochCV minEpochDv maxEpochDv;
+
+Create String initialEpoch finalEpoch
+Create Array initialState[6,1] finalState[6,1]
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Sat1.EphemerisName = Ephemeris1;
+Sat2.EphemerisName = Ephemeris2;
+blank              = '';
+
+%%%-----------------------------------------------------------
+%%% HEADER DATA
+%%%-----------------------------------------------------------
+
+description = '****************************************************************  EPHEMERIS COMPARISON REPORT  *****************************************************************';
+Report ricCompare description 
+Report ricCompare blank
+
+[initialEpoch, initialState, finalEpoch, finalState] = GetEphemStates('CCSDS-OEM', Sat1, 'UTCGregorian', EarthMJ2000Eq);
+Sat1.UTCGregorian = initialEpoch;
+Sat1.X            = initialState(1,1);
+Sat1.Y            = initialState(2,1);
+Sat1.Z            = initialState(3,1);
+Sat1.VX           = initialState(4,1);
+Sat1.VY           = initialState(5,1);
+Sat1.VZ           = initialState(6,1);
+
+description = ' Primary Ephemeris              : ';
+Report ricCompare description Ephemeris1
+
+description = ' Primary Object                 : ';
+Report ricCompare description Sat1Id
+
+description = ' Primary Ephemeris Start Time   : ';
+Report ricCompare description initialEpoch
+
+description = ' Primary Ephemeris End Time     : ';
+Report ricCompare description finalEpoch
+Report ricCompare blank
+
+[initialEpoch, initialState, finalEpoch, finalState] = GetEphemStates('CCSDS-OEM', Sat2, 'UTCGregorian', EarthMJ2000Eq);
+Sat2.UTCGregorian = initialEpoch;
+Sat2.X            = initialState(1,1);
+Sat2.Y            = initialState(2,1);
+Sat2.Z            = initialState(3,1);
+Sat2.VX           = initialState(4,1);
+Sat2.VY           = initialState(5,1);
+Sat2.VZ           = initialState(6,1);
+
+description = ' Secondary Ephemeris            : ';
+Report ricCompare description Ephemeris2
+
+description = ' Secondary Object               : ';
+Report ricCompare description Sat2Id
+
+description = ' Secondary Ephemeris Start Time : ';
+Report ricCompare description initialEpoch
+
+description = ' Secondary Ephemeris End Time   : ';
+Report ricCompare description finalEpoch
+Report ricCompare blank
+
+
+description = ' Comparison Start               : ';
+Report ricCompare description compareStart;
+
+description = ' Comparison End                 : ';
+suffix      = Sat1.UTCGregorian;
+
+Report ricCompare description compareEnd;
+description = ' Comparison Interval (sec)      : ';
+
+temp = sprintf('%.1f', CompareStep);
+
+Report ricCompare description temp;
+Report ricCompare blank
+Report ricCompare blank
+
+%%%-----------------------------------------------------------
+%%% DATA at the Ephem Points
+%%%-----------------------------------------------------------
+
+description = '                                   RANGE NO.1          RANGE NO.2              RADIAL         CROSS TRACK         ALONG TRACK             DELTA-R   TRUE ANOMALY';
+Report ricCompare description;
+description = ' DD MON YYYY HH:MM:SS.SSS                (km)                (km)                (km)                (km)                (km)                (km)          (deg)';
+Report ricCompare description;
+
+% Ability to specify start time of the compare
+% Procedure: Propagate each spacecraft to the start epoch
+dt                = Sat2.UTCModJulian;
+Sat2.UTCGregorian = compareStart;
+start             = Sat2.UTCModJulian;
+Sat2.UTCGregorian = compareEnd;
+interval          = Sat2.UTCModJulian - start;
+Sat2.UTCModJulian = dt;
+
+If Sat1.UTCModJulian ~= start
+   Propagate EphProp(Sat1) {Sat1.UTCModJulian = start};
+EndIf
+
+If Sat2.UTCModJulian ~= start
+   Propagate EphProp(Sat2) {Sat2.UTCModJulian = start};
+EndIf 
+
+% Prepare the statistics trackers
+Radial     = Sat2.RIC.X;
+InTrack    = Sat2.RIC.Y;
+CrossTrack = Sat2.RIC.Z;
+dx         = Sat2.X - Sat1.X;  
+dy         = Sat2.Y - Sat1.Y;
+dz         = Sat2.Z - Sat1.Z; 
+dvx        = Sat2.VX - Sat1.VX;
+dvy        = Sat2.VY - Sat1.VY;
+dvz        = Sat2.VZ - Sat1.VZ;
+dr         = Sqrt(dx*dx + dy*dy + dz*dz)
+dv         = Sqrt(dvx*dvx + dvy*dvy + dvz*dvz)
+
+RadialV     = Sat2.RIC.VX;
+InTrackV    = Sat2.RIC.VY;
+CrossTrackV = Sat2.RIC.VZ;
+
+rssR = Radial     * Radial;
+rssI = InTrack    * InTrack;
+rssC = CrossTrack * CrossTrack;
+rssT = rssR + rssI + rssC;
+
+rssRv = RadialV     * RadialV;
+rssIv = InTrackV    * InTrackV;
+rssCv = CrossTrackV * CrossTrackV;
+rssTv = rssRv + rssIv + rssCv;
+count = 1;
+
+minRadial     = Radial;
+minInTrack    = InTrack;
+minCrossTrack = CrossTrack;
+maxRadial     = Radial;
+maxInTrack 	  = InTrack;
+maxCrossTrack = CrossTrack;
+minDr         = dr;
+maxDr         = dr;
+
+minRadialV     = RadialV;
+minInTrackV    = InTrackV;
+minCrossTrackV = CrossTrackV;
+maxRadialV     = RadialV;
+maxInTrackV    = InTrackV;
+maxCrossTrackV = CrossTrackV;
+minDv          = dv;
+maxDv          = dv;
+
+minEpochR  = Sat1.UTCGregorian;
+maxEpochR  = Sat1.UTCGregorian; 
+minEpochI  = Sat1.UTCGregorian;
+maxEpochI  = Sat1.UTCGregorian;
+minEpochC  = Sat1.UTCGregorian;
+maxEpochC  = Sat1.UTCGregorian;
+minEpochDr = Sat1.UTCGregorian;
+maxEpochDr = Sat1.UTCGregorian;
+
+minEpochRV = Sat1.UTCGregorian;
+maxEpochRV = Sat1.UTCGregorian; 
+minEpochIV = Sat1.UTCGregorian;
+maxEpochIV = Sat1.UTCGregorian;
+minEpochCV = Sat1.UTCGregorian;
+maxEpochCV = Sat1.UTCGregorian;
+minEpochDv = Sat1.UTCGregorian;
+maxEpochDv = Sat1.UTCGregorian;
+
+ta = Sat1.TA;
+
+description = sprintf(' %s  %18.6f  %18.6f  %18.6f  %18.6f  %18.6f  %18.6f  %13.3f', ...
+    Sat1.UTCGregorian, Sat1.Earth.RMAG, Sat2.Earth.RMAG, Radial, CrossTrack, InTrack, dr, ta);
+    
+Report ricCompare description;
+
+%%%-----------------------------------------------------------
+%%% Loop until the requested span has been processed
+%%%-----------------------------------------------------------
+
+While Sat1.ElapsedDays < interval
+   Propagate EphProp(Sat1);
+   Propagate EphProp(Sat2);
+   
+   dt  = Sat2.A1ModJulian - Sat1.A1ModJulian;
+   dx  = Sat2.X - Sat1.X;  
+   dy  = Sat2.Y - Sat1.Y;
+   dz  = Sat2.Z - Sat1.Z; 
+   dvx = Sat2.VX - Sat1.VX;
+   dvy = Sat2.VY - Sat1.VY;
+   dvz = Sat2.VZ - Sat1.VZ;
+   
+   dr = Sqrt(dx*dx + dy*dy + dz*dz)
+   ta = Sat1.TA;
+   
+   % Report RIC data: Epoch, range to sat 1 (from Earth center), range to Sat2,
+   %                  Radial dist Sat 2 from Sat1, cross track, along track,
+   %                  RSS position, average TA 
+   Radial      = Sat2.RIC.X;
+   InTrack     = Sat2.RIC.Y;
+   CrossTrack  = Sat2.RIC.Z;
+   RadialV     = Sat2.RIC.VX;
+   InTrackV    = Sat2.RIC.VY;
+   CrossTrackV = Sat2.RIC.VZ;
+
+   dv = Sqrt(RadialV*RadialV + InTrackV*InTrackV + CrossTrackV*CrossTrackV)
+   
+   rssR = rssR + Radial     * Radial;
+   rssI = rssI + InTrack    * InTrack;
+   rssC = rssC + CrossTrack * CrossTrack;
+   rssT = rssR + rssI + rssC;
+   
+   rssRv = rssRv + RadialV     * RadialV;
+   rssIv = rssIv + InTrackV    * InTrackV;
+   rssCv = rssCv + CrossTrackV * CrossTrackV;
+   rssTv = rssRv + rssIv + rssCv;
+   
+   count = count + 1;
+
+   a1 = Abs(Radial);
+   a2 = Abs(maxRadial)
+   If a1 > a2
+      maxRadial = Radial;
+      maxEpochR = Sat1.UTCGregorian;
+   EndIf
+   
+   a2 = Abs(minRadial)
+   If a1 < a2
+      minRadial = Radial;
+      minEpochR = Sat1.UTCGregorian;
+   EndIf
+   
+   a1 = Abs(InTrack);
+   a2 = Abs(maxInTrack)
+   If a1 > a2
+      maxInTrack = InTrack;
+      maxEpochI = Sat1.UTCGregorian;
+   EndIf
+
+   a2 = Abs(minInTrack)
+   If a1 < a2
+      minInTrack = InTrack;
+      minEpochI = Sat1.UTCGregorian;
+   EndIf
+   
+   a1 = Abs(CrossTrack)
+   a2 = Abs(maxCrossTrack)
+   If a1 > a2
+      maxCrossTrack = CrossTrack;
+      maxEpochC = Sat1.UTCGregorian;
+   EndIf
+   
+   a2 = Abs(minCrossTrack)
+   If a1 < a2
+      minCrossTrack = CrossTrack;
+      minEpochC = Sat1.UTCGregorian;
+   EndIf
+  
+   a1 = Abs(dr)
+   a2 = Abs(maxDr)
+   If a1 > a2
+      maxDr = dr;
+      maxEpochDr = Sat1.UTCGregorian;
+   EndIf
+   
+   a2 = Abs(minDr)
+   If a1 < a2
+      minDr = dr;
+      minEpochDr = Sat1.UTCGregorian;
+   EndIf
+   
+   description = sprintf(' %s  %18.6f  %18.6f  %18.6f  %18.6f  %18.6f  %18.6f  %13.3f', ...
+       Sat1.UTCGregorian, Sat1.Earth.RMAG, Sat2.Earth.RMAG, Radial, CrossTrack, InTrack, dr, ta);
+       
+   Report ricCompare description;
+
+   % Track the velocity data   
+   a1 = Abs(RadialV);
+   a2 = Abs(maxRadialV)
+   If a1 > a2
+      maxRadialV = RadialV;
+      maxEpochRV = Sat1.UTCGregorian;
+   EndIf
+   
+   a2 = Abs(minRadialV)
+   If a1 < a2
+      minRadialV = RadialV;
+      minEpochRV = Sat1.UTCGregorian;
+   EndIf
+   
+   a1 = Abs(InTrackV);
+   a2 = Abs(maxInTrackV)
+   If a1 > a2
+      maxInTrackV = InTrackV;
+      maxEpochIV = Sat1.UTCGregorian;
+   EndIf
+
+   a2 = Abs(minInTrackV)
+   If a1 < a2
+      minInTrackV = InTrackV;
+      minEpochIV = Sat1.UTCGregorian;
+   EndIf
+   
+   a1 = Abs(CrossTrackV)
+   a2 = Abs(maxCrossTrackV)
+   If a1 > a2
+      maxCrossTrackV = CrossTrackV;
+      maxEpochCV = Sat1.UTCGregorian;
+   EndIf
+   
+   a2 = Abs(minCrossTrackV)
+   If a1 < a2
+      minCrossTrackV = CrossTrackV;
+      minEpochCV = Sat1.UTCGregorian;
+   EndIf
+  
+   a1 = Abs(dv)
+   a2 = Abs(maxDv)
+   If a1 > a2
+      maxDv = dv;
+      maxEpochDv = Sat1.UTCGregorian;
+   EndIf
+   
+   a2 = Abs(minDv)
+   If a1 < a2
+      minDv = dv;
+      minEpochDv = Sat1.UTCGregorian;
+   EndIf
+  
+   
+EndWhile
+
+
+%%%-----------------------------------------------------------
+%%% SUMMARY DATA
+%%%-----------------------------------------------------------
+
+Report ricCompare blank
+Report ricCompare blank
+Report ricCompare blank
+
+description = '                                                               EPHEMERIS COMPARISON SUMMARY REPORT';
+Report ricCompare description 
+Report ricCompare blank
+
+description = '                                                MINIMUM POSITION DIFFERENCE                           MAXIMUM POSITION DIFFERENCE';
+Report ricCompare description
+description = '                                      DD MON YYYY HH:MM:SS.SSS             (km)             DD MON YYYY HH:MM:SS.SSS            (km)';
+Report ricCompare description
+Report ricCompare blank
+description = sprintf('                      RADIAL          %24s  %21.6f       %24s  %21.6f', minEpochR, minRadial, maxEpochR, maxRadial);  
+Report ricCompare description;
+description = sprintf('                      CROSS TRACK     %24s  %21.6f       %24s  %21.6f',  minEpochC, minCrossTrack, maxEpochC, maxCrossTrack);  
+Report ricCompare description;
+description = sprintf('                      ALONG TRACK     %24s  %21.6f       %24s  %21.6f',  minEpochI, minInTrack, maxEpochI, maxInTrack);  
+Report ricCompare description;
+description = sprintf('                      DELTA-R         %24s  %21.6f       %24s  %21.6f', minEpochDr, minDr, maxEpochDr, maxDr);  
+Report ricCompare description;
+
+Report ricCompare blank
+Report ricCompare blank
+Report ricCompare blank
+
+description = '                                                MINIMUM VELOCITY DIFFERENCE                           MAXIMUM VELOCITY DIFFERENCE';
+Report ricCompare description
+description = '                                      DD MON YYYY HH:MM:SS.SSS           (km/sec)           DD MON YYYY HH:MM:SS.SSS           (km/sec)';
+Report ricCompare description
+Report ricCompare blank
+description = sprintf('                      RADIAL          %24s  %21.6e       %24s  %21.6e', minEpochRV, minRadialV, maxEpochRV, maxRadialV);  
+Report ricCompare description;
+description = sprintf('                      CROSS TRACK     %24s  %21.6e       %24s  %21.6e',  minEpochCV, minCrossTrackV, maxEpochCV, maxCrossTrackV);  
+Report ricCompare description;
+description = sprintf('                      ALONG TRACK     %24s  %21.6e       %24s  %21.6e',  minEpochIV, minInTrackV, maxEpochIV, maxInTrackV);  
+Report ricCompare description;
+description = sprintf('                      DELTA-V         %24s  %21.6e       %24s  %21.6e', minEpochDv, minDv, maxEpochDv, maxDv);  
+Report ricCompare description;
+
+Report ricCompare blank
+Report ricCompare blank
+Report ricCompare blank
+
+rssR = Sqrt(rssR / count);
+rssI = Sqrt(rssI / count);
+rssC = Sqrt(rssC / count);
+rssT = Sqrt(rssR^2 + rssI^2 + rssC^2);
+
+rssRv = Sqrt(rssRv / count);
+rssIv = Sqrt(rssIv / count);
+rssCv = Sqrt(rssCv / count);
+rssTv = Sqrt(rssRv^2 + rssIv^2 + rssCv^2);
+
+description = '                                                                      POSITION RMS               VELOCITY RMS';
+Report ricCompare description
+description = '                                                                         (km)                      (km/sec)';
+Report ricCompare description
+Report ricCompare blank
+description = sprintf('                                                 RADIAL       %22.6f     %22.6e', rssR, rssRv);  
+Report ricCompare description;
+description = sprintf('                                                 CROSS TRACK  %22.6f     %22.6e', rssC, rssCv);  
+Report ricCompare description;
+description = sprintf('                                                 ALONG TRACK  %22.6f     %22.6e', rssI, rssIv);  
+Report ricCompare description;
+description = sprintf('                                                 TOTAL        %22.6f     %22.6e', rssT, rssTv);  
+Report ricCompare description;

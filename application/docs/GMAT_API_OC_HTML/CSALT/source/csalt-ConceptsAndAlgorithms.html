@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Concepts and Algorithms &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="User Guide" href="csalt-UserGuide.html" />
+    <link rel="prev" title="Software Organization and Compilation" href="csalt-SoftwareOrganizationAndCompilation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="csalt-UserGuide.html" title="User Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="csalt-SoftwareOrganizationAndCompilation.html" title="Software Organization and Compilation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="csaltIndex.html" accesskey="U">GMAT Optimal Control</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Concepts and Algorithms</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="concepts-and-algorithms">
+<span id="sec-gmatoc-concepts"></span><h1>Concepts and Algorithms<a class="headerlink" href="#concepts-and-algorithms" title="Link to this heading">¶</a></h1>
+<p>This chapter presents the optimal control problem and concepts,.  It begins with a formal mathematical description of the problem and documents the notation selected for this work (based on Bett’s notation).  We provide practical discussion of the discretization of the optimal control problem using collocation, the concept of a “Trajectory”, and the concept of a “Phase”.  Trajectory and Phase are the two primary Resources that the user employs to solve problems using collocation in GMAT.</p>
+<section id="the-optimal-control-problem">
+<h2>The Optimal Control Problem<a class="headerlink" href="#the-optimal-control-problem" title="Link to this heading">¶</a></h2>
+<p>The optimal control problem, expressed in words, is the problem of finding a control and state history that minimizes a cost function (mass, time, money, etc.) subject to a set of dynamics and constraints.   In mathematical form, the problem can be written as: Minimize the following cost function (written in what is called the Bolza form):</p>
+<div class="math">
+<p><img src="../../_images/math/f7fa59d7971a8040513a0e7e4f6c9be21ab34f2a.png" alt="J = \sum_{k = 1}^{N} \left( \Phi \left[ y^{(k)} \left(t_0^{(k)} \right), t_0^{(k)}, y \left( t_f^{(k)} \right), t_f^{(k)} \right] + \int_{t_0}^{t_f} \lambda \left[ y^{(k)} (t), u^{(k)} (t), t^{(k)} \right] d t \right)"/></p>
+</div><p>subject to the dynamics constraints <img class="math" src="../../_images/math/5b7752c757e0b691a80ab8227eadb8a8389dc58a.png" alt="f"/></p>
+<div class="math">
+<p><img src="../../_images/math/a89971f596826d784304c94742657e4be0b21ff9.png" alt="\dot{y}^{(k)} (t) = f \left[ y^{(k)} (t), u^{(k)} (t), t^{(k)} \right]"/></p>
+</div><p>the algebraic path constraints <img class="math" src="../../_images/math/157ba5711de84b4c715a0478fd8ae440e596d96e.png" alt="g"/></p>
+<div class="math">
+<p><img src="../../_images/math/e6f5e20aabb7390f2e5c9c4b32bee2196c53db44.png" alt="g_{min}^{(k)} \leq g \left[ y^{(k)} (t), u^{(k)} (t), t^{(k)} \right] \leq g_{max}^{(k)}"/></p>
+</div><p>and the boundary conditions <img class="math" src="../../_images/math/fffd2357ee88a9c50ba9e831ed64c39c73d54a07.png" alt="\phi"/></p>
+<div class="math">
+<p><img src="../../_images/math/5620455a2821c539dd3c1156dc29a165fa722d7c.png" alt="\phi_{min}^{(k)} \leq \phi \left[ y^{(k)} \left(t_0 \right), t_0^{(k)}, y^{(k)} \left( t_f \right), t_f^{(k)} \right] \leq \phi_{max}^{(k)}"/></p>
+</div><p>In this work, we will employ notation based on the work of Betts, where the definitions in <a class="reference internal" href="#csalt-terminology"><span class="std std-numref">Table 8</span></a> apply :</p>
+<span id="csalt-terminology"></span><table class="docutils align-default" id="id1">
+<caption><span class="caption-number">Table 8 </span><span class="caption-text">CSALT terminology.</span><a class="headerlink" href="#id1" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Term</p></th>
+<th class="head"><p>Symbol</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Trajectory</p></td>
+<td><p>N/A</p></td>
+<td><p>Container of phases and how they are linked together</p></td>
+</tr>
+<tr class="row-odd"><td><p>Phase</p></td>
+<td><p>N/A</p></td>
+<td><p>A segment of a trajectory that is modeled with a single dynamics model. When dynamics models must change, multiple phases are required.</p></td>
+</tr>
+<tr class="row-even"><td><p>Phase index</p></td>
+<td><p>k</p></td>
+<td><p>Phase is a sub-segment of the problem governed by dynamics potentially different from other phases of the problem.  Not all problems require multiple phases, but many do.  For a Lunar transfer orbit problem, we may have three phases: the escape trajectory near Earth, the trajectory from the lunar Sphere of Influence (SOI) to periapsis, and the trajectory in lunar orbit.</p></td>
+</tr>
+<tr class="row-odd"><td><p>State vector</p></td>
+<td><p>y</p></td>
+<td><p>State component whose time evolutions is governed by ordinary differential equations.  For orbit problems, this may be x, y, z, vx, yv, vz, mass.</p></td>
+</tr>
+<tr class="row-even"><td><p>Control vector</p></td>
+<td><p>u</p></td>
+<td><p>Control vector.  For orbit problems, usually the thrust acceleration or <img class="math" src="../../_images/math/bee30f2cce9bda089aca48016006f43c7a1a00ab.png" alt="\Delta v"/>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Static parameter</p></td>
+<td><p>s</p></td>
+<td><p>Static optimization parameters that are NOT governed by differential equations.</p></td>
+</tr>
+<tr class="row-even"><td><p>Cost function</p></td>
+<td><p>J</p></td>
+<td><p>The function to be minimized or maximized.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Algebraic path constraints</p></td>
+<td><p>g</p></td>
+<td><p>A constraint that must be satisfied at all quadrature points. These constraints can be expressed as an algebraic function of the optimization parameters and constants.</p></td>
+</tr>
+<tr class="row-even"><td><p>Boundary constraint</p></td>
+<td><p><img class="math" src="../../_images/math/fffd2357ee88a9c50ba9e831ed64c39c73d54a07.png" alt="\phi"/></p></td>
+<td><p>A constraint that must be satisfied at a phase boundary.  These constraints can be expressed as an algebraic function of the optimization parameters and constants.  An example could be that at the end of phase 2, the spacecraft must be at a periapsis (one constraint), and that the radius must be greater than 10,000 km (a second constraint).</p></td>
+</tr>
+<tr class="row-odd"><td><p>Linkage constraint</p></td>
+<td><p><img class="math" src="../../_images/math/20582dab63cb7f6604f5bf70224030ad3411ae16.png" alt="\Psi"/></p></td>
+<td><p>A constraint that determines state continuity (or discontinuity) at the joint of two phases.</p></td>
+</tr>
+<tr class="row-even"><td><p>Decision vector</p></td>
+<td><p><img class="math" src="../../_images/math/69abb7c4c81274d1d404c2b0eaeb56326c905715.png" alt="\mathbf{Z}"/></p></td>
+<td><p>A vector containing all optimization parameters for a given optimal control problem discretization.  It is organized in subvectors for each phase. <img class="math" src="../../_images/math/1a006e1af9085ba6e25fb1c63b636b9b5af85d61.png" alt="\mathbf{Z} = \left[ z^1 \quad z^2 \ldots z^N \right]"/>, where <img class="math" src="../../_images/math/3bfb3a64189a14b2704f4610827762d5e3145114.png" alt="N"/> is the number of phases.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Decision vector sub-vector</p></td>
+<td><p><img class="math" src="../../_images/math/4b33995602199fd0545ac5e17a0f6f1d9c06fad6.png" alt="z^k"/></p></td>
+<td><p>The sub-vector of <img class="math" src="../../_images/math/69abb7c4c81274d1d404c2b0eaeb56326c905715.png" alt="\mathbf{Z}"/> of decision variables that are associated with the “kth” phase. <img class="math" src="../../_images/math/c69faab740a69d9a5b225b03dfeda871eb97a4db.png" alt="z^k = \left[ y^k \quad u^k \quad s^k \quad q^k \right]"/>.  Note that <img class="math" src="../../_images/math/1f4f85585a2cfa205a5cce41e33fe0a2a9da34b8.png" alt="y^k"/> is a vector containing states at all mesh/stage points in the phase. So, for example, <img class="math" src="../../_images/math/1f4f85585a2cfa205a5cce41e33fe0a2a9da34b8.png" alt="y^k"/> has length of approximately <img class="math" src="../../_images/math/41b0e1de697cfd9c09bb2803ae98af6c199035f3.png" alt="(\mathrm{numStates} * ( \mathrm{numMeshPoints} + \mathrm{numStages})"/>.  The lengths of each sub-vector in each phase are NOT necessarily the same.  The user selects the number of mesh points. The actual mesh point locations are then determined by the transcription.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="csalt-algorithms">
+<h2>CSALT Algorithms<a class="headerlink" href="#csalt-algorithms" title="Link to this heading">¶</a></h2>
+<p>CSALT employs collocation to solve the optimal control problem. Collocation converts an optimal control problem into a large, sparse Non-Linear Programming (NLP) [Nocedal, 2006] problem. The differential equations in the optimal control problem are converted to a set of differential algebraic equations whose solution approximates the solution to the differential equations. The approximation accuracy is governed by the transcription (how the differential equations are expressed as a system of algebraic equations) and how accurately those equations are solved. CSALT employs both low- and high-order transcriptions that are all implicit integration schemes. The transcriptions currently supported are Hermite-Simpson, Lobatto IIIa [Betts,2016]  methods of order 4, 6, and 8, and Radau orthogonal collocation of user-specified order [Patterson, 2014]. CSALT casts all transcriptions in the form proposed by Betts (Practical Methods for Optimal Control …, pg. 146):</p>
+<div class="math" id="equation-eq-csalt-oc">
+<p><span class="eqno">(1)<a class="headerlink" href="#equation-eq-csalt-oc" title="Link to this equation">¶</a></span><img src="../../_images/math/fcae463661d077ddbd51eee8a64b0350b9b6908c.png" alt="f = A z + B q"/></p>
+</div><p>where <img class="math" src="../../_images/math/211284f68205c3e66773eaf026f32a0acdd3dfb3.png" alt="A"/> and <img class="math" src="../../_images/math/4bc3e94a67870b41b7c20179693e889251e2c136.png" alt="B"/> are constant matrices dependent on the transcription, <img class="math" src="../../_images/math/8d051150f8669295ecdbe92367941012175a824d.png" alt="z"/> is the decision vector, <img class="math" src="../../_images/math/5b7752c757e0b691a80ab8227eadb8a8389dc58a.png" alt="f"/> is the vector of NLP functions, and <img class="math" src="../../_images/math/a5fa84b363f309ebc8fe7db38304541732c7de9a.png" alt="q"/> is the vector of optimal control functions evaluated at the discretization points. The system currently supports Mayer-, Lagrange-, or Bolza-form cost functions, algebraic path constraints, and algebraic point constraints. Optimization parameters include state, control, and time parameters.</p>
+</section>
+<section id="derivatives-and-sparsity-determination">
+<h2>Derivatives and Sparsity Determination<a class="headerlink" href="#derivatives-and-sparsity-determination" title="Link to this heading">¶</a></h2>
+<p>Sparse derivatives are supplied to the NLP solver by differentiating Eq. <a class="reference internal" href="#equation-eq-csalt-oc">(1)</a>, resulting in</p>
+<div class="math">
+<p><img src="../../_images/math/78f4f0fdfffb2085b47e74d2d14e10eb1c0c64fc.png" alt="\frac{\partial f}{\partial z} = A + B \frac{\partial q}{\partial z}"/></p>
+</div><p>The derivatives are computed using sparse matrix representations of the arrays, where the optimal control problem derivatives <img class="math" src="../../_images/math/a827461b3d88fa6cc536b044d2133ea9ec7d9085.png" alt="\partial q / \partial z"/> can optionally be provided by the user.  If some or all of the optimal control derivatives are not provided, CSALT performs finite differencing of the optimal control functions.</p>
+<p>NLP sparsity is determined using</p>
+<div class="math">
+<p><img src="../../_images/math/c94436920e6d9b2ebc5b3bf902c35e74df021371.png" alt="\mathrm{Sparsity} \left( \frac{\partial f}{\partial z} \right) = \mathrm{Sparsity} \left( A + B \frac{\partial q}{\partial z} \right)"/></p>
+</div><p>where the sparsity of the user’s optimal control functions are determined by randomly varying the decision variables within the user-defined bounds on those variables. In addition, GMAT Optimal Control implements analytical sparsity pattern determination for the partial derivatives of state variable derivatives with respect to state variables and control variables.</p>
+</section>
+<section id="mesh-refinement">
+<h2>Mesh Refinement<a class="headerlink" href="#mesh-refinement" title="Link to this heading">¶</a></h2>
+<p>Currently, CSALT supports mesh refinement for the Radau orthogonal collocation method. The role of the mesh-refinement algorithm is to apply proper changes to the discretization (i.e., the length of the mesh interval and the degree of the approximating polynomial) in order to satisfy the user-defined tolerance on the relative collocation error. The relative collocation error represents the quality of the collocated solution, and the mesh-refinement algorithm estimates the relative collocation error as the difference between the approximating polynomials and the quadrature integration results of the dynamics functions. The required polynomial degree of a mesh interval is obtained as follows:</p>
+<div class="math">
+<p><img src="../../_images/math/1440c4f7a6ba93e44793f356498739cb5e563e6d.png" alt="P^k = \log_{N^k} \left( \frac{e}{\epsilon} \right), \quad k = 0, 1, 2, \ldots, k_{max}"/></p>
+</div><p>where <img class="math" src="../../_images/math/7da1c9c1fc132e7149c5036c4f921b3c05a8d0ae.png" alt="N^k"/> is the current polynomial degree after the <img class="math" src="../../_images/math/9630132210b904754c9ab272b61cb527d12263ca.png" alt="k"/>-th mesh refinement, <img class="math" src="../../_images/math/15caf5e4514f66ba06ce1a122d63dc679007d23c.png" alt="P^k"/>  is the required polynomial degree change, <img class="math" src="../../_images/math/0ad7b30534898f253002222f998f38001e604648.png" alt="\epsilon"/> is the collocation error tolerance, <img class="math" src="../../_images/math/29e2a738c5d439cc3c58d1614081d76594359bb1.png" alt="k_{max}"/> is the maximum number of mesh refinement iterations, and <img class="math" src="../../_images/math/60f4822f02b44d931c5d0595da71dcf34e270437.png" alt="e"/> is the current estimate of relative collocation error. In addition, there are static tuning parameters  <img class="math" src="../../_images/math/9312d3b6c1cc5b2326126167a80113b626c49018.png" alt="N_{min}"/> and <img class="math" src="../../_images/math/7ea1c69fcb2870968738a1c74e0e2cb7929c3d86.png" alt="N_{max}"/> of the mesh refinement algorithm that define the boundaries of the polynomial degree such that:</p>
+<div class="math">
+<p><img src="../../_images/math/4757e1552616afd3233f17187c6ce009d9138191.png" alt="N_{min} \leq N \leq N_{max}, \quad \textrm{for any } k"/></p>
+</div><p>CSALT adopts <img class="math" src="../../_images/math/0634573ecabdb49796753bc8af0a418dd96fb23c.png" alt="N_{min}=3"/>, and <img class="math" src="../../_images/math/140b517d358fa877ab9e41a242c617bc57e96f59.png" alt="N_{max}=14"/>. If <img class="math" src="../../_images/math/307f4a74fb248380b097a3cda629929f1a78297c.png" alt="N^k+P^k \leq N_{max}"/>, the degree of the polynomial is updated using</p>
+<div class="math">
+<p><img src="../../_images/math/4a899e8802df323d74c03178d830799f46bba263.png" alt="N^{k+1} = N^k + P^k"/></p>
+</div><p>If <img class="math" src="../../_images/math/db613d26b2e44783a3dc1794412a10ebcf4a2d19.png" alt="N^k+P^k &gt; N_{max}"/>, the mesh refinement algorithm divides the mesh interval into subintervals having <img class="math" src="../../_images/math/c69176a6b01aa674f500e695db3068407813f4dd.png" alt="N^{k+1}=N_{min}"/>. The number of subintervals <img class="math" src="../../_images/math/4bc3e94a67870b41b7c20179693e889251e2c136.png" alt="B"/> is given as follows:</p>
+<div class="math">
+<p><img src="../../_images/math/184423a4defe50d857f2ff0dda2570ecf23faca3.png" alt="B = \mathrm{max} \left( \left[ \frac{N^k + P^k}{N_{min}} \right], 2 \right)"/></p>
+</div></section>
+<section id="a-note-on-optimization">
+<h2>A Note on Optimization<a class="headerlink" href="#a-note-on-optimization" title="Link to this heading">¶</a></h2>
+<p>The NLP solver used by CSALT does not enforce that all constraints be satisfied at every evaluation of the user path and point functions until convergence is achieved. This feature allows for the NLP solver to “explore” the solution space. However, this feature may cause problems if there exists the possibility for encountering numerical difficulties in user path/point functions for certain values of decision variables. For example, in GMAT, there are atmospheric models that can only be evaluated in certain altitude ranges (e.g., altitudes greater than 100 km). An exception will be thrown and optimization will cease if a user path/point function attempts to evaluate at an invalid altitude. Other similar cases may exist, and the user must select their problem setup carefully to avoid such issues.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Concepts and Algorithms</a><ul>
+<li><a class="reference internal" href="#the-optimal-control-problem">The Optimal Control Problem</a></li>
+<li><a class="reference internal" href="#csalt-algorithms">CSALT Algorithms</a></li>
+<li><a class="reference internal" href="#derivatives-and-sparsity-determination">Derivatives and Sparsity Determination</a></li>
+<li><a class="reference internal" href="#mesh-refinement">Mesh Refinement</a></li>
+<li><a class="reference internal" href="#a-note-on-optimization">A Note on Optimization</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="csalt-SoftwareOrganizationAndCompilation.html"
+                          title="previous chapter">Software Organization and Compilation</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="csalt-UserGuide.html"
+                          title="next chapter">User Guide</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/CSALT/source/csalt-ConceptsAndAlgorithms.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="csalt-UserGuide.html" title="User Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="csalt-SoftwareOrganizationAndCompilation.html" title="Software Organization and Compilation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="csaltIndex.html" >GMAT Optimal Control</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Concepts and Algorithms</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+
+%----------------------------------------
+%        PropagateQuaternion.gmf        |
+%----------------------------------------
+
+function [qNew] = PropagateQuaternion(q, w, dt)
+%
+% Author: Mike Stark, GSFC Code 583
+%
+% qNew is the quaternion computed by propagating the
+% original quaternion q at constant angular velocity w for
+% a period of dt seconds.
+%
+% This function implements  a closed form solution to
+% dq/dt = f(q) that works under the assumption of constant
+% angular velocity over the interval in question.
+%
+% This algorithm  is generally used when the angular
+% velocity is updated frequently, as is done when propagating
+% gyro measurements. This model is sufficient for low
+% fidelity attitude modeling.
+
+Create Array qNew[4] q[4] w[3]
+Create Array OmegaQ[4]
+
+Create Variable dt
+Create Variable Wmag, Phi
+
+
+BeginMissionSequence
+
+%convert rates to rad/s and compute half of rotation angle
+w(1) = DegToRad(w(1))
+w(2) = DegToRad(w(2))
+w(3) = DegToRad(w(3))
+Wmag      = norm(w)
+Phi = Wmag*dt/2;
+
+OmegaQ(1) =  w(3)*q(2) - w(2)*q(3) + w(1)*q(4);
+OmegaQ(2) = -w(3)*q(1) + w(1)*q(3) + w(2)*q(4);
+OmegaQ(3) =  w(2)*q(1) - w(1)*q(2) + w(3)*q(4);
+OmegaQ(4) = -w(1)*q(1) - w(2)*q(2) - w(3)*q(3);
+
+% Omega     = [ 0.0   w[3] -w[2] w[1]; ...
+%             -w[3]  0.0   w[1] w[2]; ...
+%              w[2] -w[1]  0.0  w[3]; ...
+%             -w[1] -w[2] -w[3] 0.0 ]
+
+% the result
+qNew = cos(Phi)*q +(1/Wmag)*sin(Phi)*OmegaQ;

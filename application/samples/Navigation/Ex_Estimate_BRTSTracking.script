@@ -1,0 +1,252 @@
+%
+%   Ex_Estimate_BRTSTracking
+%
+%   Batch least-squared OD using BRTS range and Doppler tracking.
+%
+%   In this script, we estimate the orbit of a TDRS satellite using tracking 
+%   from two Bilateration Ranging Transponder System (BRTS) stations.
+%
+%   Released: R2025a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimTDE
+
+SimTDE.DateFormat        = UTCGregorian
+SimTDE.Epoch             = '01 Mar 2005 00:00:00.000'
+SimTDE.CoordinateSystem  = EarthMJ2000Eq
+SimTDE.DisplayStateType  = Cartesian
+SimTDE.X                 = -16369.111
+SimTDE.Y                 =  38864.222
+SimTDE.Z                 =      6.333
+SimTDE.VX                = -2.795315
+SimTDE.VY                = -1.176335
+SimTDE.VZ                =  0.500216
+SimTDE.DryMass           = 1000.
+SimTDE.Cd                = 2.2
+SimTDE.Cr                = 1.2
+SimTDE.DragArea          = 20.0
+SimTDE.SRPArea           = 20.0
+SimTDE.Id                = 'TD4'
+SimTDE.AddHardware       = {TdrsSnTransponder, TdrsToSgltAntenna, TdrsToUserAntenna}
+SimTDE.SolveFors         = {}     
+
+Create Spacecraft EstTDE
+
+EstTDE.DateFormat        = UTCGregorian
+EstTDE.Epoch             = '01 Mar 2005 00:00:00.000'
+EstTDE.CoordinateSystem  = EarthMJ2000Eq
+EstTDE.DisplayStateType  = Cartesian
+EstTDE.X                 = -16369.0
+EstTDE.Y                 =  38863.0
+EstTDE.Z                 =      6.2
+EstTDE.VX                = -2.7953
+EstTDE.VY                = -1.1763
+EstTDE.VZ                =  0.5012
+EstTDE.DryMass           = 1000.
+EstTDE.Cd                = 2.2
+EstTDE.Cr                = 1.0
+EstTDE.DragArea          = 20.0
+EstTDE.SRPArea           = 20.0
+EstTDE.Id                = 'TD4'
+EstTDE.AddHardware       = {TdrsSnTransponder, TdrsToSgltAntenna, TdrsToUserAntenna}
+EstTDE.SolveFors         = {CartesianState, Cr}     
+
+
+%----------------------------------------
+%----- TDRS spacecraft electronics
+%----------------------------------------
+
+Create Antenna TdrsToSgltAntenna
+Create Antenna TdrsToUserAntenna
+Create Transponder TdrsSnTransponder
+
+TdrsSnTransponder.PrimaryAntenna  = TdrsToSgltAntenna
+TdrsSnTransponder.HardwareDelay   = 0
+TdrsSnTransponder.TurnAroundRatio = '1/1' 
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel BRTSDoppler
+
+BRTSDoppler.Type       = 'BRTS_Doppler'
+BRTSDoppler.NoiseSigma = 0.250
+BRTSDoppler.Bias       = 0.0
+BRTSDoppler.SolveFors  = {}
+
+Create ErrorModel BRTSRange
+
+BRTSRange.Type         = 'BRTS_Range'
+BRTSRange.NoiseSigma   = 0.010
+BRTSRange.Bias         = 0.0
+BRTSRange.SolveFors    = {}
+
+%
+%   
+%----------------------------------------
+%---- Space-to-Ground Link Antenna
+%----------------------------------------
+
+Create Antenna SgltAntenna
+Create Transmitter SgltTransmitter
+Create Receiver SgltReceiver
+
+SgltTransmitter.PrimaryAntenna = SgltAntenna
+SgltTransmitter.Frequency      = 2067.5
+SgltReceiver.PrimaryAntenna    = SgltAntenna
+
+Create GroundStation SGLT1
+
+SGLT1.CentralBody           = Earth
+SGLT1.StateType             = Spherical
+SGLT1.HorizonReference      = Ellipsoid
+SGLT1.Latitude              =  40.853
+SGLT1.Longitude             = -74.663
+SGLT1.Altitude              =  0.100
+SGLT1.Id                    = 'SGLT1'
+SGLT1.AddHardware           = {SgltTransmitter, SgltAntenna, SgltReceiver}
+SGLT1.MinimumElevationAngle = 7.0
+SGLT1.TroposphereModel      = 'None'
+SGLT1.IonosphereModel       = 'None'
+SGLT1.ErrorModels           = {BRTSRange, BRTSDoppler}
+
+  
+%----------------------------------------
+%---------- BRTS Antennas
+%----------------------------------------
+
+Create Antenna BRTSAntenna
+Create Transponder BRTSTransponder
+
+BRTSTransponder.PrimaryAntenna  = BRTSAntenna
+BRTSTransponder.HardwareDelay   = 1.0e-06
+BRTSTransponder.TurnAroundRatio = '240/221' 
+
+Create GroundStation BRTS1
+
+BRTS1.CentralBody           = Earth
+BRTS1.StateType             = Spherical
+BRTS1.HorizonReference      = Ellipsoid
+BRTS1.Latitude              =  46.624
+BRTS1.Longitude             = -68.862
+BRTS1.Altitude              =  0.100
+BRTS1.Id                    = 'BRTS1'
+BRTS1.AddHardware           = {BRTSTransponder, BRTSAntenna}
+BRTS1.MinimumElevationAngle = 7.0
+BRTS1.TroposphereModel      = 'None'
+BRTS1.IonosphereModel       = 'None'
+
+Create GroundStation BRTS2
+
+BRTS2.CentralBody           = Earth
+BRTS2.StateType             = Spherical
+BRTS2.HorizonReference      = Ellipsoid
+BRTS2.Latitude              =  7.718
+BRTS2.Longitude             = -12.173
+BRTS2.Altitude              =  0.100
+BRTS2.Id                    = 'BRTS2'
+BRTS2.AddHardware           = {BRTSTransponder, BRTSAntenna}
+BRTS2.MinimumElevationAngle = 7.0
+BRTS2.TroposphereModel      = 'None'
+BRTS2.IonosphereModel       = 'None'
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet SimData
+
+SimData.AddTrackingConfig        = {{SGLT1, SimTDE, BRTS1, SimTDE, SGLT1}, 'BRTS_Range', 'BRTS_Doppler'}
+SimData.AddTrackingConfig        = {{SGLT1, SimTDE, BRTS2, SimTDE, SGLT1}, 'BRTS_Range', 'BRTS_Doppler'}
+SimData.FileName                 = {'Ex_Estimate_BRTSTracking.gmd'}
+SimData.RampTable                = {}
+SimData.UseLightTime             = True
+SimData.UseRelativityCorrection  = False
+SimData.UseETminusTAI            = False
+SimData.SimDopplerCountInterval  = 10.  
+SimData.DataFilters              = {}
+SimData.SimTDRSServiceAccessList = {MA, SA1}
+
+Create TrackingFileSet EstData
+
+EstData.AddTrackingConfig        = {{SGLT1, EstTDE, BRTS1, EstTDE, SGLT1}, 'BRTS_Range', 'BRTS_Doppler'}
+EstData.AddTrackingConfig        = {{SGLT1, EstTDE, BRTS2, EstTDE, SGLT1}, 'BRTS_Range', 'BRTS_Doppler'}
+EstData.FileName                 = {'Ex_Estimate_BRTSTracking.gmd'}
+EstData.RampTable                = {}
+EstData.UseLightTime             = True
+EstData.UseRelativityCorrection  = False
+EstData.UseETminusTAI            = False
+EstData.DataFilters              = {}
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM
+
+FM.CentralBody                      = Earth
+FM.PrimaryBodies                    = {Earth}
+FM.GravityField.Earth.Degree        = 8
+FM.GravityField.Earth.Order         = 8
+FM.GravityField.Earth.PotentialFile = 'JGM2.cof'
+FM.SRP                              = On
+FM.Drag.AtmosphereModel             = None
+FM.ErrorControl                     = None
+
+Create Propagator Prop
+
+Prop.FM                              = FM
+Prop.Type                            = RungeKutta89
+Prop.InitialStepSize                 = 300
+Prop.Accuracy                        = 1e-13
+Prop.MinStep                         = 0
+Prop.MaxStep                         = 300
+Prop.MaxStepAttempts                 = 50
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator Sim
+
+Sim.AddData                    = {SimData}
+Sim.EpochFormat                = UTCGregorian
+Sim.InitialEpoch               = '01 Mar 2005 00:00:00.000'
+Sim.FinalEpoch                 = '02 Mar 2005 00:00:00.000'
+Sim.MeasurementTimeStep        = 300
+Sim.Propagator                 = Prop
+Sim.AddNoise                   = On
+
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create BatchEstimator BLS
+
+BLS.ShowProgress               = True
+BLS.Measurements               = {EstData} 
+BLS.AbsoluteTol                = 0.005
+BLS.RelativeTol                = 0.005
+BLS.MaximumIterations          = 10
+BLS.MaxConsecutiveDivergences  = 5
+BLS.Propagator                 = Prop
+BLS.ShowAllResiduals           = On
+BLS.OLSEInitialRMSSigma        = 3000
+BLS.OLSEMultiplicativeConstant = 3
+BLS.OLSEAdditiveConstant       = 0
+BLS.ReportFile                 = 'Ex_Estimate_BRTSTracking.txt'
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence
+
+RunSimulator Sim
+RunEstimator BLS

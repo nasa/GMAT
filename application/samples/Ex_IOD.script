@@ -1,0 +1,73 @@
+%
+%   Ex_IOD
+%
+%   Use the IOD python script to calculate the velocity from three initial positions. 
+%   Runs two scenarios: one with close separation between points that invokes the 
+%   Herrick-Gibbs Algorithm, the other with larger spaces that uses the Gibbs. 
+%
+%   Note: To run this script, you must have the Gmat PythonInterface properly set-up 
+%   with a compatible version of Python which has Numpy installed.
+%
+%   Released: R2022a
+%
+
+
+
+%----------------------------------------
+%---------- Data Objects
+%----------------------------------------
+
+Create Array R1[1,3] R2[1,3] R3[1,3] V2[1,3];
+Create Variable T1 T2 T3;
+Create String Log;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+%Create three closely spaced observations to invoke the Herrick-Gibss Algorithm
+%Observation 1
+T1    = 0.0;
+R1(1) = -6775.105759552147;
+R1(2) = -2396.512640028521;
+R1(3) = 3.17775066150299;
+
+%Observation 2 
+T2    = 1.0/86400;
+R2(1) = -6775.468602539761;
+R2(2) = -2395.440370930451;
+R2(3) = 10.54007909680081;
+
+%Observation 3 
+T3       = 2.0/86400;
+R3(1)    = -6775.824159536231;
+R3(2)    = -2394.365525912181;
+R3(3)    = 17.90239606811341;
+[V2,Log] = Python.IODFunctions.ThreePositionIOD(R1,R2,R3,T1,T2,T3);
+
+%Produces two outputs - velocity and log message
+Write V2
+Write Log
+
+%Create three widely spaced observations to invoke the Gibss Algorithm
+%Observation 1 
+T1    = 0.0;
+R1(1) = -6775.105759552147;
+R1(2) = -2396.512640028521;
+R1(3) = 3.17775066150299;
+
+%Observation 2
+T2    = 126/86400;
+R2(1) = -6763.393363887708;
+R2(2) = -2241.522283568392;
+R2(3) = 928.1599057092774;
+
+%Observation 3
+T3       = 300/86400;
+R3(1)    = -6557.983598564851;
+R3(2)    = -1965.310679355166;
+R3(3)    = 2176.166080059551;
+[V2,Log] = Python.IODFunctions.ThreePositionIOD(R1,R2,R3,T1,T2,T3);
+Write V2
+Write Log

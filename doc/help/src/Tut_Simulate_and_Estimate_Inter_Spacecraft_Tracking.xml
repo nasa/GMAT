@@ -1,0 +1,795 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0"
+         xml:id="Tut_Simulate_and_Estimate_Inter_Spacecraft_DSN_Range_and_Doppler_Data"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Simulate and Estimate Inter-Spacecraft Tracking</title>
+
+  <indexterm>
+    <primary>Orbit Determination</primary>
+  </indexterm>
+
+  <variablelist>
+    <varlistentry>
+      <term>Audience</term>
+
+      <listitem>
+        <para>Intermediate level</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Length</term>
+
+      <listitem>
+        <para>40 minutes</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Prerequisites</term>
+
+      <listitem>
+        <para>Basic Mission Design Tutorials</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Script Files</term>
+
+      <listitem>
+        <para><filename>Tut_Inter_Spacecraft_Tracking.script</filename></para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+
+  <section>
+    <title xml:id="Objective_and_overview_tut">Objective and overview</title>
+
+    <note>
+      <para>GMAT currently implements a number of different data types for
+      orbit determination. Please refer to <xref linkend="TrackingDataTypes"/>
+      for details on all the measurement types currently supported by GMAT.
+      The measurements being considered here are two way range and
+      range-rate.</para>
+    </note>
+
+    <para>In this tutorial, we will use GMAT to generate simulated range and
+    range-rate measurement data between two spacecraft. One spacecraft,
+    referred to as the tracking Spacecraft, is performing observations on the
+    other, referred to as the observed Spacecraft. The tracking spacecraft is
+    in geosynchronous orbit and the observed spacecraft is in low-earth orbit.
+    These simulated measurements will then be used to perform state estimation
+    on the observed Spacecraft.</para>
+
+    <para>The basic steps of this tutorial are:</para>
+
+    <procedure>
+      <step>
+        <para>Create and configure the spacecraft, spacecraft hardware, and
+        related parameters</para>
+      </step>
+
+      <step>
+        <para>Define the types of measurements to be simulated and the
+        associated error models</para>
+      </step>
+
+      <step>
+        <para>Create and configure the force model and propagator</para>
+      </step>
+
+      <step>
+        <para>Create and configure the simulator and batch estimator
+        objects</para>
+      </step>
+
+      <step>
+        <para>Run the mission and review the results</para>
+      </step>
+    </procedure>
+
+    <para>Note that this tutorial, unlike most of the mission design
+    tutorials, will be entirely script based. This is because most of the
+    resources and commands related to navigation are not implemented in the
+    GUI and are only available via the script interface.</para>
+
+    <para>As you go through the tutorial below, it is recommended that you
+    paste the script segments into GMAT as you go along. After each paste into
+    GMAT, you should perform a syntax check by hitting the Save, Sync button
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="11"
+                     fileref="files/images/icons/Save_Sync.png" scalefit="1"
+                     valign="bottom"/>
+        </imageobject>
+      </inlinemediaobject>). To avoid syntax errors, where needed, don’t
+    forget to add the following command to the last line of the script segment
+    you are checking.</para>
+
+    <programlisting>BeginMissionSequence</programlisting>
+
+    <para>We note that in addition to the material presented here, you should
+    also look at the individual help resources for all the objects and
+    commands we create and use here. For example,
+    <guilabel>Spacecraft</guilabel>, <guilabel>Transponder</guilabel>,
+    <guilabel>Transmitter</guilabel>, <guilabel>Receiver</guilabel>,
+    <guilabel>ErrorModel</guilabel>, <guilabel>TrackingFileSet</guilabel>,
+    <guilabel>RunSimulator</guilabel>, etc all have their own help
+    pages.</para>
+  </section>
+
+  <section xml:id="Create_and_configure_the_spacecraft_spacecraft_hardware_and_related_parameters">
+    <title>Create and configure the spacecraft, spacecraft hardware, and
+    related parameters</title>
+
+    <para>For this tutorial, you will need GMAT open, with a new empty script
+    open. To create a new script, click <guibutton>New Script</guibutton>,
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="11"
+                     fileref="files/images/icons/NewScript.png"
+                     valign="bottom" width="1em"/>
+        </imageobject>
+      </inlinemediaobject>)</para>
+
+    <section>
+      <title
+      xml:id="Create_the_simulation_satellites_set_their_epoch_and_Cartesian_coordinates">Create
+      the simulation satellites, set their epoch and Cartesian
+      coordinates</title>
+
+      <para>First, we create new spacecraft for simulation,
+      <guilabel>SimSat</guilabel> and <guilabel>SimTrackSat</guilabel>, and
+      set their epochs and Cartesian coordinates.</para>
+
+      <programlisting>%
+%   Simulated Spacecraft
+%
+
+Create Spacecraft SimSat
+
+SimSat.DateFormat            = UTCGregorian
+SimSat.Epoch                 = '10 Jun 2010 00:00:00.000'
+SimSat.CoordinateSystem      = EarthMJ2000Eq
+SimSat.DisplayStateType      = Cartesian
+SimSat.X                     =   576.86955
+SimSat.Y                     = -5701.14276
+SimSat.Z                     = -4170.59369
+SimSat.VX                    = -1.76450794
+SimSat.VY                    =  4.18128798
+SimSat.VZ                    = -5.96578986
+SimSat.Id                    = 'ObservedSat'
+
+Create Spacecraft SimTrackSat
+
+SimTrackSat.DateFormat       = UTCGregorian
+SimTrackSat.Epoch            = '10 Jun 2010 00:00:00.000'
+SimTrackSat.CoordinateSystem = EarthMJ2000Eq
+SimTrackSat.DisplayStateType = Cartesian
+SimTrackSat.X                = -36517.051189    
+SimTrackSat.Y                = -21083.129334       
+SimTrackSat.Z                = -0.000000      
+SimTrackSat.VX               = -0.005964       
+SimTrackSat.VY               = 0.010330       
+SimTrackSat.VZ               = 0.267968
+SimTrackSat.Id               = 'TrackSat'</programlisting>
+
+      <para>Note that, in addition to setting each spaceraft's coordinates, we
+      also assigned each an ID. This is the label that will be written to the
+      GMAT Measurement Data (GMD) file that we will discuss later.</para>
+    </section>
+
+    <section>
+      <title
+      xml:id="Create_the_estimation_satellites_set_their_epoch_and_Cartesian_coordinates">Create
+      the estimation satellites, set their epoch and Cartesian
+      coordinates</title>
+
+      <para>Next, we create new spacecraft for the estimation,
+      <guilabel>EstSat</guilabel> and <guilabel>EstTrackSat</guilabel>, and
+      set their epochs and Cartesian coordinates.</para>
+
+      <programlisting>%
+%   Estimator Spacecraft
+%
+
+Create Spacecraft EstSat
+
+EstSat.DateFormat            = UTCGregorian
+EstSat.Epoch                 = '10 Jun 2010 00:00:00.000'
+EstSat.CoordinateSystem      = EarthMJ2000Eq
+EstSat.DisplayStateType      = Cartesian
+EstSat.X                     = 576.87
+EstSat.Y                     = -5701.14
+EstSat.Z                     = -4170.59
+EstSat.VX                    = -1.764508
+EstSat.VY                    = 4.181288
+EstSat.VZ                    = -5.965790
+EstSat.Id                    = 'ObservedSat'
+EstSat.AddHardware           = {Transponder1, SpacecraftAntenna}
+EstSat.SolveFors             = {CartesianState}
+
+Create Spacecraft EstTrackSat
+
+EstTrackSat.DateFormat       = UTCGregorian
+EstTrackSat.Epoch            = '10 Jun 2010 00:00:00.000'
+EstTrackSat.CoordinateSystem = EarthMJ2000Eq
+EstTrackSat.DisplayStateType = Cartesian
+EstTrackSat.X                = -36517.051189    
+EstTrackSat.Y                = -21083.129334       
+EstTrackSat.Z                = -0.000000      
+EstTrackSat.VX               = -0.005964       
+EstTrackSat.VY               = 0.010330       
+EstTrackSat.VZ               = 0.267968
+EstTrackSat.Id               = 'TrackSat'</programlisting>
+
+      <para>Note that in this example we are assuming that the location of the
+      TrackSat has been determined already, either through estimation from
+      previous tracking or otherwise. As such the coordinates for<guilabel>
+      SimTrackSat </guilabel>and <guilabel>EstTrackSat</guilabel> are set to
+      the same values. We do however set the initial state of
+      <guilabel>EstSat</guilabel> to be different from that of
+      <guilabel>SimSat</guilabel>, since we will eventually try to estimate
+      the state of <guilabel>EstSat</guilabel> from the simulated tracking and
+      don't want to give it a perfect initial guess.</para>
+    </section>
+
+    <section>
+      <title
+      xml:id="Create_a_Transponder_object_and_attach_it_to_the_spacecraft">Create
+      a Transponder object and attach it to the spacecraft</title>
+
+      <para>To simulate navigation measurements for a given spacecraft, GMAT
+      requires that a <guilabel>Transponder</guilabel> object, which receives
+      the uplink signal and re-transmits it, be attached to the spacecraft.
+      Below, we create the <guilabel>Transponder</guilabel> object and attach
+      it to our spacecraft. After we create the
+      <guilabel>Transponder</guilabel> object, there are three fields,
+      <guilabel>PrimaryAntenna</guilabel>, <guilabel>HardwareDelay</guilabel>,
+      and <guilabel>TurnAroundRatio</guilabel> that must be set.</para>
+
+      <programlisting>%
+%   Spacecraft hardware
+%
+
+Create Antenna SpacecraftAntenna
+Create Transponder HGA
+
+HGA.PrimaryAntenna  = SpacecraftAntenna
+HGA.HardwareDelay   = 1e-06
+HGA.TurnAroundRatio = '880/749'
+
+SimSat.AddHardware = {HGA, SpacecraftAntenna}
+EstSat.AddHardware = {HGA, SpacecraftAntenna}</programlisting>
+
+      <para>The <guilabel>PrimaryAntenna</guilabel> is the antenna that the
+      spacecraft transponder, <guilabel>SatTransponder</guilabel>, uses to
+      receive and retransmit RF signals. In the example above, we set this
+      field to <guilabel>HGA</guilabel> which is an
+      <guilabel>Antenna</guilabel> object we have created. Currently the
+      <guilabel>Antenna</guilabel> resource has no function but is required
+      for measurement simulation and estimation.
+      <guilabel>HardwareDelay</guilabel>, the transponder signal delay in
+      seconds, is set to one micro-second. We set
+      <guilabel>TurnAroundRatio</guilabel>, which is the ratio of the
+      retransmitted to the input signal, to '880/749.' See the
+      <guilabel>FRC-21_RunSimulator </guilabel>help for a discussion on how
+      GMAT uses this input field. In the last script commands above, we attach
+      our newly created <guilabel>Transponder</guilabel> and its related
+      <guilabel>Antenna</guilabel> object to each of the observed
+      spacecraft.</para>
+    </section>
+
+    <section xml:id="Create_a_Receiver_object_and_attach_it_to_the_measurement_spacecraft">
+      <title>Create a Receiver object and attach it to the measurement
+      spacecraft</title>
+
+      <para>To perform measurements with a given spacecraft, GMAT requires
+      that a <guilabel>Transmitter</guilabel> and a
+      <guilabel>Receiver</guilabel> object, which send and receive the forward
+      and return tracking signals, be attached to the tracking spacecraft.
+      Below, we create the objects and attach them to our spacecraft.</para>
+
+      <programlisting><?db-font-size 65% ?>%
+%   Measurement Spacecraft hardware
+%
+
+Create Transmitter MeasurementTransmitter
+Create Receiver MeasurementReceiver
+
+MeasurementTransmitter.PrimaryAntenna = SpacecraftAntenna
+MeasurementTransmitter.Frequency      = 7200
+MeasurementReceiver.PrimaryAntenna    = SpacecraftAntenna
+
+SimTrackSat.AddHardware = {HGA, SpacecraftAntenna, MeasurementTransmitter, MeasurementReceiver}
+EstTrackSat.AddHardware = {HGA, SpacecraftAntenna, MeasurementTransmitter, MeasurementReceiver}</programlisting>
+
+      <para>We set <guilabel>Frequency</guilabel>, which is the frequency of
+      the forward/uplink tracking signal, to 7200 MHz. In the last script
+      commands above, we attach our newly created
+      <guilabel>Transmitter</guilabel> and <guilabel>Receiver</guilabel>
+      objects to the spacecraft performing measurements.</para>
+    </section>
+  </section>
+
+  <section xml:id="Define_the_types_of_measurements_to_be_simulated_and_their_associated_error_models">
+    <title>Define the types of measurements to be simulated and their
+    associated error models</title>
+
+    <section>
+      <title
+      xml:id="Define_the_TrackingFileSets_for_the_simulation_and_the_estimator">Define
+      the TrackingFileSets for the simulation and the estimator</title>
+
+      <para>Now we will create and configure a
+      <guilabel>TrackingFileSet</guilabel> resource. This resource defines the
+      type of data to be simulated, the ground stations that will be used, and
+      the file name of the output GMD file which will contain the simulated
+      data. In addition, the <guilabel>TrackingFileSet</guilabel> resource
+      will define needed simulation parameters for the various data types. A
+      similar <guilabel>TrackingFileSet</guilabel> is created for the
+      estimation, with inputs corresponding to the estimated
+      Spacecraft.</para>
+
+      <programlisting><?db-font-size 65% ?>%
+%   Tracking file sets
+%
+
+Create TrackingFileSet simData
+
+simData.AddTrackingConfig       = {{SimTrackSat, SimSat, SimTrackSat}, 'Range', 'RangeRate'}
+simData.FileName                = {'InterSpacecraft_Range_and_RangeRate.gmd'}
+simData.UseLightTime            = True
+simData.UseRelativityCorrection = True
+simData.UseETminusTAI           = True
+simData.SimDopplerCountInterval = 10.
+
+Create TrackingFileSet estData
+
+estData.AddTrackingConfig       = {{EstTrackSat, EstSat, EstTrackSat}, 'Range', 'RangeRate'}
+estData.FileName                = {'InterSpacecraft_Range_and_RangeRate.gmd'}
+estData.UseLightTime            = True
+estData.UseRelativityCorrection = True
+estData.UseETminusTAI           = True
+</programlisting>
+
+      <para>For each <guilabel>TrackingFileSet</guilabel>, the script lines
+      are broken into three sections. In the first section (the first two
+      lines of each <guilabel>TrackingFileSet</guilabel>), the resource name,
+      is declared, the data types are defined, and the output file name is
+      specified. <guilabel>AddTrackingConfig</guilabel> is the field that is
+      used to define the data types. The
+      <guilabel>AddTrackingConfig</guilabel> line tells GMAT to simulate Range
+      and RangeRate two-way measurements for the <guilabel>TrackSat</guilabel>
+      to <guilabel>Sat</guilabel> to <guilabel>TrackSat</guilabel> measurement
+      strand.</para>
+
+      <para>The second section (the next three lines) sets some simulation
+      parameters that apply to both the range and Doppler measurements. We set
+      <guilabel>UseLightTime</guilabel> to True in order to generate realistic
+      measurements where GMAT takes into account the finite speed of light.
+      The last two parameters in this section,
+      <guilabel>UseRelativityCorrection</guilabel> and
+      <guilabel>UseETminusTAI</guilabel>, are set to True so that general
+      relativistic corrections, as described in Moyer [2000], are applied to
+      the light time equations.</para>
+
+      <para>The third section (the last line of the
+      <guilabel>simData</guilabel> configuration) above sets simulation
+      parameters that apply to a specific measurement type.
+      <guilabel>SimDopplerCountInterval</guilabel> applies only to RangeRate
+      measurements. We note that the “Sim” in the field names is used to
+      indicate that these fields only are applicable when GMAT is in
+      simulation mode (i.e., when using the <guilabel>RunSimulator</guilabel>
+      command) and not when GMAT is in estimation mode (i.e., when using the
+      <guilabel>RunEstimator</guilabel> command).
+      <guilabel>SimDopplerCountInterval</guilabel>, the Doppler Count
+      Interval, is set to 10 seconds. This parameter is only applicable to the
+      tracking file set used by the simulator and is not set on the tracking
+      file set used by the estimator. See the
+      <guilabel>RunSimulator</guilabel> help for a description of how this
+      parameter is used to calculate the measurement values.</para>
+    </section>
+
+    <section xml:id="Create_measurement_error_models">
+      <title>Create the measurement error models</title>
+
+      <para>All measurement types have random noise and/or biases associated
+      with them. For inter-spacecraft measurements, these effects are modelled
+      using error models on the receiver of the tracking Spacecraft. Since we
+      have already created the <guilabel>Spacecraft</guilabel> object and its
+      related hardware, we now create the receiver error models. Since we wish
+      to simulate both Range and RangeRate data, we need to create two error
+      models as shown below, one for range measurements and one for range-rate
+      measurements.</para>
+
+      <programlisting>%
+%   Spacecraft error models
+%
+
+Create ErrorModel Range
+
+Range.Type           = 'Range'
+Range.NoiseSigma     = 0.010
+Range.Bias           = 0.0
+Range.SolveFors      = {}
+
+Create ErrorModel RangeRate
+
+RangeRate.Type       = 'RangeRate'
+RangeRate.NoiseSigma = 0.000001
+RangeRate.Bias       = 0.0
+RangeRate.SolveFors  = {}
+
+MeasurementReceiver.ErrorModels = {Range, RangeRate}</programlisting>
+
+      <para>The script segment above is broken into three sections. The first
+      section defines an <guilabel>ErrorModel</guilabel> named
+      <guilabel>Range</guilabel>. The error model Type is Range which
+      indicates that it is an error model for two-way range measurements. The
+      one-sigma standard deviation of the Gaussian white noise is set to 10
+      meters (0.010 km) and the measurement bias is set to 0 km.</para>
+
+      <para>The second section above defines an
+      <guilabel>ErrorModel</guilabel> named <guilabel>RangeRate</guilabel>.
+      The error model Type is RangeRate which indicates that it is an error
+      model for two-way averaged range-rate measurements. The one-sigma
+      standard deviation of the Gaussian white noise is set to 1 mm/sec and
+      the measurement bias is set to 0 km/sec.</para>
+
+      <para>The third section above attaches the two
+      <guilabel>ErrorModel</guilabel> resources we have just created to the
+      <guilabel>MeasurementReceiver</guilabel> <guilabel>Receiver</guilabel>.
+      For inter-spacecraft measurement, the measurement noise or bias is
+      defined on the Receiver hardware. Each measurement performed by a
+      Spacecraft containing that Receiver must have an associated ErrorModel.
+      Thus, any range measurement error involving a
+      <guilabel>Spacecraft</guilabel> with the
+      <guilabel>MeasurementReceiver</guilabel> <guilabel>Receiver</guilabel>
+      is defined by the <guilabel>Range</guilabel>
+      <guilabel>ErrorModel</guilabel> and any range-rate measurement error
+      involving a <guilabel>Spacecraft</guilabel> with the
+      <guilabel>MeasurementReceiver</guilabel> <guilabel>Receiver</guilabel>
+      is defined by the <guilabel>RangeRate</guilabel>
+      <guilabel>ErrorModel</guilabel>. Note that since GMAT currently only
+      models two way measurements where the transmitting and receiving
+      Spacecraft are the same, we do not have to consider the case where the
+      transmitting and receiving Spacecraft are different.</para>
+    </section>
+  </section>
+
+  <section xml:id="Create_and_configure_force_model_and_propagator">
+    <title>Create and configure force model and propagator</title>
+
+    <para>We now create and configure the force model and propagator that will
+    be used for the simulation. For this constellation, we are using
+    simplified force modeling, just accounting for the Earth's gravitational
+    effect, and disabling the modeling of solar radiation pressure and drag.
+    The script segment accomplishing this is shown below.</para>
+
+    <programlisting>%
+%   Propagator and force model
+%
+
+Create ForceModel FM
+
+FM.CentralBody  = Earth
+FM.PointMasses  = {Earth}
+FM.Drag         = None
+FM.SRP          = Off
+FM.ErrorControl = None
+
+Create Propagator Prop
+
+Prop.FM              = FM
+Prop.Type            = 'RungeKutta56'
+Prop.InitialStepSize = 60
+Prop.Accuracy        = 1e-13
+Prop.MinStep         = 0
+Prop.MaxStep         = 60
+Prop.MaxStepAttempts = 50</programlisting>
+  </section>
+
+  <section xml:id="Create_and_configure_simulator_and_batch_estimator_Objects">
+    <title>Create and configure the simulator and batch estimator
+    objects</title>
+
+    <section xml:id="Create_the_simulator_object">
+      <title>Create the simulator object</title>
+
+      <para>As shown below, we create and configure the
+      <guilabel>Simulator</guilabel> object used to define our
+      simulation.</para>
+
+      <programlisting>%
+%   Simulator
+%
+
+Create Simulator sim
+
+sim.AddData                    = {simData}
+sim.EpochFormat                = 'UTCGregorian'
+sim.InitialEpoch               = '10 Jun 2010 00:00:00.000'
+sim.FinalEpoch                 = '11 Jun 2010 00:00:00.000'
+sim.MeasurementTimeStep        = 60
+sim.Propagator                 = Prop
+sim.AddNoise                   = On</programlisting>
+
+      <para>In the first script line above, we create a
+      <guilabel>Simulator</guilabel> object, <guilabel>sim</guilabel>. The
+      next field set is <guilabel>AddData</guilabel> which is used to specify
+      which <guilabel>TrackingFileSet</guilabel> should be used. Recall that
+      the <guilabel>TrackingFileSet</guilabel> specifies the type of data to
+      be simulated and the file name specifying where to store the data. The
+      <guilabel>TrackingFileSet</guilabel>, <guilabel>simData</guilabel>, that
+      we created in the <xref
+      linkend="Define_the_types_of_measurements_to_be_simulated_and_their_associated_error_models"
+      xrefstyle="select:title"/> section, specified that we wanted to simulate
+      two-way range and range-rate data that involved the
+      <guilabel>SimMeasureSat</guilabel>
+      <guilabel>Spacecraft</guilabel>.</para>
+
+      <para>The next three script lines, which set the
+      <guilabel>EpochFormat</guilabel>, <guilabel>InitialEpoch</guilabel>, and
+      <guilabel>FinalEpoch</guilabel> fields, specify the time period of the
+      simulation. Here, we choose a two-day duration.</para>
+
+      <para>The next script line sets the
+      <guilabel>MeasurementTimeStep</guilabel> field which specifies the
+      requested time between measurements. We choose a value of 1
+      minute.</para>
+
+      <para>The next script line sets the <guilabel>Propagator</guilabel>
+      field which specifies which <guilabel>Propagator</guilabel> object
+      should be used. We set this field to the <guilabel>Prop</guilabel>
+      object which we created in the <xref
+      linkend="Create_and_configure_force_model_and_propagator"
+      xrefstyle="select:title"/> section.</para>
+
+      <para>Finally, in the last line of the script segment, we set the
+      <guilabel>AddNoise</guilabel> field which specifies whether or not we
+      want to add noise to our simulated measurements. The noise added is
+      defined by the <guilabel>ErrorModel</guilabel> objects that we created
+      in the <xref linkend="Create_measurement_error_models"
+      xrefstyle="select:title"/> section. As discussed in the <xref
+      linkend="Create_measurement_error_models" xrefstyle="select:title"/>
+      section, the noise added to the range measurements will be Gaussian with
+      a one-sigma value of 10 meters, and the noise added to the range-rate
+      measurements will be Gaussian with a one sigma value of 1 mm/sec.</para>
+    </section>
+
+    <section xml:id="Create_the_batch_estimator_object">
+      <title>Create the batch estimator object</title>
+
+      <para>In order to estimate the true initial state of the observed
+      spacecraft, we define the <guilabel>BatchEstimator bat</guilabel> in the
+      script below.</para>
+
+      <programlisting><?db-font-size 65% ?>%
+%   Estimator
+%
+
+Create BatchEstimator bat
+
+bat.ShowProgress               = True
+bat.Measurements               = {estData} 
+bat.AbsoluteTol                = 0.000001
+bat.RelativeTol                = 0.005
+bat.MaximumIterations          = 10
+bat.MaxConsecutiveDivergences  = 3
+bat.Propagator                 = Prop
+bat.ShowAllResiduals           = On
+bat.OLSEInitialRMSSigma        = 3000
+bat.OLSEMultiplicativeConstant = 3
+bat.OLSEAdditiveConstant       = 0
+bat.ReportFile                 = 'InterSpacecraft_Range_and_RangeRate.txt'</programlisting>
+
+      <para>For more information on the parameters involved in defining the
+      BatchEstimator object, see the documentation for the <link
+      linkend="BatchEstimator">BatchEstimator.</link></para>
+    </section>
+  </section>
+
+  <section xml:id="Run_the_mission_and_analyze_the_output">
+    <title>Run the mission and review the output</title>
+
+    <section>
+      <title xml:id="Analyze_the_simulated_measurements">Review the simulated
+      measurements</title>
+
+      <para>The script segment used to run the mission is shown below.</para>
+
+      <programlisting>BeginMissionSequence
+ 
+RunSimulator sim
+RunEstimator bat</programlisting>
+
+      <para>The first script line, <guilabel>BeginMissionSequence</guilabel>,
+      is a required command which indicates that the “command” section of the
+      GMAT script has begun. The second line of the script issues the
+      <guilabel>RunSimulator</guilabel> command with the
+      <guilabel>Sim</guilabel> Simulator resource, defined in the <xref
+      linkend="Create_the_simulator_object" xrefstyle="select:title"/>
+      section, as an argument. This tells GMAT to perform the simulation
+      specified by the <guilabel>sim</guilabel> resource. The third line of
+      the script issues the <guilabel>RunEstimator</guilabel> command with the
+      <guilabel>bat</guilabel> batch estimator resource, defined in the <xref
+      linkend="Create_the_batch_estimator_object" xrefstyle="select:title"/>
+      section, as an argument.</para>
+
+      <para>We have now completed all of our script segments. See the file,
+      <filename>Tut_Inter_Spacecraft_Tracking.script</filename>, in the GMAT
+      samples folder, for a listing of the entire script. We are now ready to
+      run the script. Hit the Save,Sync,Run button, (<inlinemediaobject>
+          <imageobject>
+            <imagedata contentdepth="10"
+                       fileref="files/images/icons/Save_Sync_Run.png"
+                       valign="bottom"/>
+          </imageobject>
+        </inlinemediaobject>). The script will take a few moments to run as
+      GMAT simulates the data and then attempts the estimation.</para>
+
+      <para>Let’s take a look at the output created. The file created,
+      <filename>InterSpacecraft_Range_and_RangeRate.gmd</filename>, was
+      specified in the <guilabel>TrackingFileSet</guilabel> resource,
+      <guilabel>DSNsimData</guilabel>, that we created in the <xref
+      linkend="Define_the_types_of_measurements_to_be_simulated_and_their_associated_error_models"
+      xrefstyle="select:title"/> section. The default directory, if none is
+      specified, is the GMAT installation ‘output’ directory. Let’s analyze
+      the contents of this “GMAT Measurement Data” or GMD file as shown
+      below.</para>
+
+      <programlisting width="100"><?db-font-size 65% ?>% GMAT Internal Measurement Data File
+
+25357.5003935185185185185190    Range    9029    TrackSat    ObservedSat    8.0745608409918510e+04
+25357.5003935185185185185190    RangeRate    9030    { TrackSat    ObservedSat    TrackSat }    2    10    1.2080451949525264e+00
+25357.5010879629629629629630    Range    9029    TrackSat    ObservedSat    8.0828956472718346e+04
+25357.5010879629629629629630    RangeRate    9030    { TrackSat    ObservedSat    TrackSat }    2    10    1.5166696445321948e+00
+</programlisting>
+
+      <para>The first line of the file is a comment line indicating that this
+      is a file containing measurement data stored in GMAT’s internal format.
+      There are four lines of data representing range data at two successive
+      times and range-rate data at two successive times. The first line of
+      data which represents a two-way range measurement at the start of the
+      simulation at '10 Jun 2010 00:00:00.000 UTCG’ which corresponds to the
+      output TAI modified Julian day of 25357.5003935185... TAIMJD. The second
+      and third fields, Range and 9029, are just internal GMAT codes
+      indicating the use of two-way range data. The fourth field, TrackSat, is
+      the tracking spacecraft ID. This is the ID we gave the
+      <guilabel>Spacecraft</guilabel> <guilabel>SimTrackSat</guilabel> object.
+      The fifth field, ObservedSat, is the tracked spacecraft ID,which is the
+      ID we gave the <guilabel>SimSat</guilabel>
+      <guilabel>Spacecraft</guilabel> object that we created. The 6th field,
+      8.0745614120287588e+04, is the actual inter-spacecraft range observation
+      value in km. Note that your value will be different, since we've added
+      random noise to the data.</para>
+
+      <para>The second line of data represents a two-way range-rate
+      measurement at the start of the simulation at '10 Jun 2010 00:00:00.000
+      UTCG’ which corresponds to the output TAI modified Julian Day of
+      25357.5003935185... TAIMJD. This range-rate measurement is simultaneous
+      with the simulated range measurement. The second and third fields,
+      RangeRate and 9030, are just internal GMAT codes indicating the use of
+      the RangeRate observation type. The fields enclosed in curly braces
+      represent the measurement path - from spacecraft TrackSat, to spacecraft
+      ObservedSat, back to spacecraft TrackSat. The fifth field, 2, is an
+      integer which represents the Uplink Band of the signal from the
+      <guilabel>Spacecraft</guilabel>, <guilabel>SimTrackSat</guilabel>. The
+      designation 2 represents X-band. The sixth field, 10, is the Doppler
+      Count Interval (DCI) used to help define the Doppler measurement. This
+      is the value that we set when we created and configured the
+      <guilabel>TrackingFileSet</guilabel> <guilabel>DSNsimData</guilabel>
+      object in the <xref
+      linkend="Define_the_types_of_measurements_to_be_simulated_and_their_associated_error_models"
+      xrefstyle="select:title"/> section. Recall the following script
+      command,</para>
+
+      <literallayout>                DSNsimData.SimDopplerCountInterval = 10.0</literallayout>
+
+      <para>The seventh field, 1.2080451949525264e+00, is the actual
+      range-rate observation value in km/sec. Again, your value will differ
+      from that appearing here.</para>
+
+      <para>The third line of data represents the second two-way range
+      measurement at '10 Jun 2010 00:01:00.000 UTCG’ which corresponds to the
+      output TAI modified Julian Day time of 25357.5010879629... TAIMJD. The
+      fourth line of data represents the second two-way range-rate measurement
+      at '10 Jun 2010 00:01:00.000 UTCG.’ All the following lines show the
+      simulated measurements at each minute during until the end of the
+      simulation, which was defined as '11 Jun 2010 00:00:00.000'. There will
+      be gaps in the simulated data corresponding to when the Earth blocks the
+      signal from the tracking spacecraft in geosynchronous orbit to the
+      target spacecraft in low-earth orbit.</para>
+    </section>
+
+    <section>
+      <title xml:id="Analyze_the_estimator_results">Review the estimator
+      results</title>
+
+      <para>Let’s take a look at the output created from the
+      <guilabel>BatchEstimator</guilabel>. The file created,
+      <filename>InterSpacecraft_Range_and_RangeRate.txt</filename>, was
+      specified in the <guilabel>TrackingFileSet</guilabel> resource,
+      <guilabel>simData</guilabel>, that we created in the <xref
+      linkend="Define_the_types_of_measurements_to_be_simulated_and_their_associated_error_models"
+      xrefstyle="select:title"/> section. The default directory, if none is
+      specified, is the GMAT ‘output’ directory. The contents of this file are
+      extensive, but can be summarized into three sections.</para>
+
+      <para>The first section is the header, which contains information about
+      the initial information that the estimator is provided, as well as
+      details about the objects involved in the estimation. A sample of this
+      is seen in the text below.</para>
+
+      <para><programlisting><?db-font-size 65% ?>********************  SPACECRAFT INITIAL CONDITIONS  *****************
+
+ Spacecraft State at Beginning of Estimation :
+
+ Spacecraft Name                            EstTrackSat                    EstSat 
+ ID                                            TrackSat               ObservedSat 
+                                                                                  
+ Epoch (UTC)                   10 Jun 2010 00:00:00.000  10 Jun 2010 00:00:00.000 
+ Coordinate System                        EarthMJ2000Eq             EarthMJ2000Eq 
+ X  (km)                                -36517.05118900              576.87000000 
+ Y  (km)                                -21083.12933400            -5701.14000000 
+ Z  (km)                                     0.00000000            -4170.59000000 
+ VX (km/s)                              -0.005964000000           -1.764508000000 
+ VY (km/s)                               0.010330000000            4.181288000000 
+ VZ (km/s)                               0.267968000000           -5.965790000000 
+ Cr                                            1.800000                  1.800000 
+ CrSigma                                  Not Estimated             Not Estimated 
+ Cd                                            2.200000                  2.200000 
+ CdSigma                                  Not Estimated             Not Estimated 
+ DryMass  (kg)                               850.000000                850.000000 
+ DragArea (m^2)                               15.000000                 15.000000 
+ SRPArea  (m^2)                                1.000000                  1.000000 </programlisting>The
+      second section is the iteration section, which contains a computed
+      estimation for each measurement and the resulting residual. At the end
+      of each iteration is information on the progress of the batch
+      estimation, detailing whether or not the solution is converging and how
+      the iteration compares to previous iterations.The final section contains
+      the estimated solution, with the estimated Cartesian coordinates and the
+      covariance matrix for the solution.</para>
+    </section>
+  </section>
+
+  <section>
+    <title>References</title>
+
+    <informaltable colsep="0" frame="none" rowsep="0">
+      <tgroup cols="2">
+        <colspec colwidth="182*"/>
+
+        <colspec colwidth="818*"/>
+
+        <tbody>
+          <row>
+            <entry>Moyer [2000]</entry>
+
+            <entry>Moyer, Theodore D., Formulation for Observed and Computed
+            Values of Deep Space Network Data Types for Navigation (JPL
+            Publication 00-7), Jet Propulsion Laboratory, California Institute
+            of Technology, October 2000.</entry>
+          </row>
+
+          <row>
+            <entry>Schanzle [1995]</entry>
+
+            <entry>Schanzle, A., Orbit Determination Error Analysis System
+            (ODEAS) Report on Error Sources and Nominal 3-Sigma Uncertainties
+            for Covariance Analysis Studies Using ODEAS (Update No. 2),
+            Computer Sciences Corporation (CSC) memo delivered as part of NASA
+            contract NAS-5-31500, May 31, 1995.</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
+</chapter>

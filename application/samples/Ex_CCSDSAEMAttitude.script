@@ -1,0 +1,51 @@
+%
+%  Ex_CCSDSAEMAttitude
+%
+%  Define a spacecraft attitude using a precomputed CCSDS AEM attitude file.
+%
+%  Released: R2014a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft aSat ;
+
+aSat.Attitude         = CCSDS-AEM;
+aSat.AttitudeFileName = '../data/vehicle/ephem/ccsds/CCSDS_BasicEulerFile.aem'
+
+
+%--------------------------------------------------------------------------
+%------------------------------ Propagators -------------------------------
+%--------------------------------------------------------------------------
+Create Propagator aProp;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_a3DView;
+
+OFI_a3DView.Add                 = {aSat, Earth};
+OFI_a3DView.View                = {a3D_View};
+
+OFI_a3DView.CoordinateSystem    = EarthMJ2000Eq;
+OFI_a3DView.ShowPlot            = true;
+
+Create OpenFramesView a3D_View;
+
+a3D_View.ViewFrame              = CoordinateSystem;
+a3D_View.SetDefaultLocation     = On;
+a3D_View.SetCurrentLocation     = Off;
+   
+a3D_View.DefaultEye             = [ 0 0 28000 ];
+a3D_View.DefaultCenter          = [ 0 0 0 ];
+a3D_View.DefaultUp              = [ 1 0 0 ];
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+Propagate aProp(aSat) {aSat.ElapsedSecs = 3600};

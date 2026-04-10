@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tutorial: Accessing GMAT Propagation and Navigation Features &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="API Access to GMAT Commands" href="../commands/TopLevelInterface.html" />
+    <link rel="prev" title="Script Usage" href="../ScriptUsage.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../commands/TopLevelInterface.html" title="API Access to GMAT Commands"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../ScriptUsage.html" title="Script Usage"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../apiIndex.html" accesskey="U">GMAT API Design and User’s Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial: Accessing GMAT Propagation and Navigation Features</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="tutorial-accessing-gmat-propagation-and-navigation-features">
+<span id="usecase1"></span><h1>Tutorial: Accessing GMAT Propagation and Navigation Features<a class="headerlink" href="#tutorial-accessing-gmat-propagation-and-navigation-features" title="Link to this heading">¶</a></h1>
+<p>The use case demonstration for the first GMAT API Beta build focuses on using
+the API for models that exercise core GMAT functions.  For the purposes of this
+release of the API, the target use case suite shows how to setup and use force
+models, propagators, and measurement models.  The implemented functionality in
+the Beta release includes the ability to drive GMAT scripts as well.  That
+capability is described separately in <a class="reference internal" href="../ScriptUsage.html#scriptusage"><span class="std std-ref">Script Usage</span></a>.</p>
+<p>The goal of the use cases described here is to build a GMAT measurement model
+from core components, using the API functions.  GMAT’s measurement models
+require a propagation component in order to solve the light transit time portion
+of the modeling.  Propagation requires configuration of both a numerical
+integrator and of a force model, along with a spacecraft that supplies model
+parameters.  This guide will walk Python and MATLAB users through the process of
+configuring these components in order to assemble a range measurement.</p>
+<p>The problem demonstrated in the example code here provides modeling for an Earth
+orbiting spacecraft, “EarthOrbiter.”  The spacecraft is an 80 kg vehicle modeled
+in a polar orbit with a 6600 km semimajor axis.  That ensures that we need to
+configure a fair number of system parameters in order to build the simulation.</p>
+<section id="verifying-setup">
+<h2>Verifying Setup<a class="headerlink" href="#verifying-setup" title="Link to this heading">¶</a></h2>
+<p>The GMAT API is included in releases of GMAT beginning with the R2020a release
+of the system. Once GMAT is installed, the API can be accessed from inside of
+the folder containing the GMAT application.</p>
+<ul>
+<li><p>For Python, change directories to the GMAT bin folder and access the API help
+system:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">Help</span><span class="p">()</span>
+
+<span class="go">---------------------------------------</span>
+<span class="go">GMAT Application Programmer&#39;s Interface</span>
+<span class="go">---------------------------------------</span>
+<span class="go">...</span>
+</pre></div>
+</div>
+</li>
+<li><p>For MATLAB users</p>
+<ul class="simple">
+<li><p>Start MATLAB</p></li>
+<li><p>Change directories to the installed GMAT bin directory</p></li>
+<li><p>Load the API and access the help system:</p></li>
+</ul>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">load_gmat</span><span class="p">()</span>
+<span class="n">No</span><span class="w"> </span><span class="s">script</span><span class="w"> </span><span class="s">provided</span><span class="w"> </span><span class="s">to</span><span class="w"> </span><span class="s">load.</span>
+
+<span class="nb">ans</span><span class="w"> </span><span class="p">=</span>
+
+<span class="n">Instance</span><span class="w"> </span><span class="s">of</span><span class="w"> </span><span class="s">GMAT</span><span class="w"> </span><span class="s">Moderator</span><span class="w"> </span><span class="s">is</span><span class="w"> </span><span class="s">initialized.</span><span class="w"> </span><span class="s">No</span><span class="w"> </span><span class="s">script</span><span class="w"> </span><span class="s">ready</span><span class="w"> </span><span class="s">to</span><span class="w"> </span><span class="s">run.</span>
+
+<span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Help</span><span class="p">()</span>
+
+<span class="nb">ans</span><span class="w"> </span><span class="p">=</span>
+
+
+<span class="o">---------------------------------------</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">Application</span><span class="w"> </span><span class="s">Programmer</span><span class="o">&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">Interface</span>
+<span class="o">---------------------------------------</span>
+<span class="k">...</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="getting-started-with-the-api">
+<h2>Getting Started with the API<a class="headerlink" href="#getting-started-with-the-api" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This section introduces several API functions and tools for users new to GMAT’s
+API by experimenting interactively with the system in Python.  This section
+introduces interaction with the GMAT API, but is not necessary for the
+force model, propagation, and measurement configuration described below.</p>
+</div>
+<p>The modeling for this use case uses an Earth centered coordinate system with
+axes oriented in the mean of J2000 Equatorial frame.  The coordinate system can
+be built using the Construct function of the API.  The Python code for this
+object creation is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="n">eartheq</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;EarthMJ2000Eq&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;MJ2000Eq&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Users can view the list of objects that have been built during a run using the
+ShowObjects() function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">ShowObjects</span><span class="p">()</span>
+<span class="go">Current GMAT Objects</span>
+
+<span class="go">   EarthMJ2000Eq</span>
+
+<span class="go">The SolarSystem contains the following bodies:</span>
+
+<span class="go">   [Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Luna]</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>The code above created a coordinate system object, an axis system object, and
+connected those objects together for later use.  The object cannot be fully
+exercised at this point because it is missing some key connections to the modeled
+space environment, consisting of a solar system model, member planets and the
+Sun and Moon, along with other internal objects used to tie a user’s components
+together.</p>
+<p>For this example, the solar system is not yet connected to the new coordinate
+system, and the bodies needed for use - the Earth, for example - are also not
+yet connected.  The coordinate system object’s state can be checked using its
+“IsInitialized()” method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">eartheq</span><span class="o">.</span><span class="n">IsInitialized</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Objects that are ready for use return True from this call.  The API prepares the
+objects for use with the Initialize() function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eartheq</span><span class="o">.</span><span class="n">IsInitialized</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The Initialize() function prepares all of the objects that the user has created
+for use, and reports any objects that could not be prepared because of missing
+settings.</p>
+<p>Objects can be removed individually from GMAT using the Clear(<em>ObjectName</em>)
+function, or all once using the Clear() function without specifying an object:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">ShowObjects</span><span class="p">()</span>
+<span class="go">Current GMAT Objects</span>
+
+<span class="go">   EarthMJ2000Eq</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">Clear</span><span class="p">(</span><span class="s2">&quot;EarthMJ2000Eq&quot;</span><span class="p">)</span>
+<span class="go">&#39;The object EarthMJ2000Eq has been removed from GMAT.&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">ShowObjects</span><span class="p">()</span>
+<span class="go">Current GMAT Objects</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eartheq</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;EMJ2k&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">,</span> <span class="s2">&quot;MJ2000Eq&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">ShowObjects</span><span class="p">()</span>
+<span class="go">Current GMAT Objects</span>
+
+<span class="go">   EMJ2k</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span>
+<span class="go">&#39;All configured objects have been removed from GMAT.&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gmat</span><span class="o">.</span><span class="n">ShowObjects</span><span class="p">()</span>
+<span class="go">Current GMAT Objects</span>
+
+
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>The full set of GMAT API commands are described in <a class="reference internal" href="../APIFunctions.html#apifunctions"><span class="std std-ref">Functions Used in the GMAT API</span></a>.</p>
+<p>The functions used above are presented working interactively in the GMAT API.
+In the remainder of this section, the configuration is built in a Python script
+included with the GMAT release in the API folder.  Matching MATLAB .m scripts
+are included in the API folder for users more comfortable working in that
+environment.</p>
+</section>
+<section id="spacecraft-configuration">
+<h2>Spacecraft Configuration<a class="headerlink" href="#spacecraft-configuration" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Spacecraft Configuration and Force Model Setup examples are located in
+the Ex_R2020a_BasicForceModel.py file.  An example of the full configuration, showing
+one configuration for the exercises, is in the Ex_R2020a_CompleteForceModel file.</p>
+<p>To use one of these files, copy the file you plan to use into GMAT’s bin
+folder.</p>
+</div>
+<p>Spacecraft configuration requires that we define the initial spacecraft state
+data for the orbiter, and then configure the spacecraft properties needed for
+the force modeling.</p>
+<section id="construction-and-the-initial-state">
+<h3>Construction and The Initial State<a class="headerlink" href="#construction-and-the-initial-state" title="Link to this heading">¶</a></h3>
+<p>Using this coordinate system, the spacecraft state can be configured.  For this
+example, the spacecraft is in a circular polar orbit at the moon on July 20,
+2020.  The orbital state is set using the scripting</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load GMAT into memory</span>
+<span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+
+<span class="c1"># Spacecraft configuration preliminaries</span>
+<span class="n">earthorb</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;EarthOrbiter&quot;</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DateFormat&quot;</span><span class="p">,</span> <span class="s2">&quot;UTCGregorian&quot;</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Epoch&quot;</span><span class="p">,</span> <span class="s2">&quot;20 Jul 2020 12:00:00.000&quot;</span><span class="p">)</span>
+
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;EarthMJ2000Eq&quot;</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DisplayStateType&quot;</span><span class="p">,</span> <span class="s2">&quot;Keplerian&quot;</span><span class="p">)</span>
+
+<span class="c1"># Orbital state</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SMA&quot;</span><span class="p">,</span> <span class="mi">6600</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;ECC&quot;</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;INC&quot;</span><span class="p">,</span> <span class="mi">78</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;RAAN&quot;</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;AOP&quot;</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;TA&quot;</span><span class="p">,</span> <span class="mi">180</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="additional-spacecraft-parameters">
+<h3>Additional Spacecraft Parameters<a class="headerlink" href="#additional-spacecraft-parameters" title="Link to this heading">¶</a></h3>
+<p>The force model used for this example may include full field Earth gravity, point
+mass effects from the Sun and Moon (“Luna” for GMAT), Jacchia-Roberts drag, and
+solar radiation pressure.  The latter forces require settings for the
+reflectivity and drag coefficients of the spacecraft, its surface
+areas for those forces, and the spacecraft mass.  These settings are made using
+the SetField method, and resemble the corresponding GMAT scripting:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Spacecraft ballistic properties for the SRP and Drag models</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SRPArea&quot;</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cr&quot;</span><span class="p">,</span> <span class="mf">1.75</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DragArea&quot;</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cd&quot;</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">)</span>
+<span class="n">earthorb</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DryMass&quot;</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For reference, the GMAT scripting for this configuration is</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">Create</span><span class="w"> </span><span class="s">Spacecraft</span><span class="w"> </span><span class="s">EarthOrbiter</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.DateFormat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">UTCGregorian</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.Epoch</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;20 Jul 2020 12:00:00.000&#39;</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.CoordinateSystem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">MoonEc</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.DisplayStateType</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Keplerian</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.SMA</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4000</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.ECC</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.05</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.INC</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">78</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.RAAN</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">45</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.AOP</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">90</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.TA</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">180</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.DryMass</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.Cd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">2.1</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.Cr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">1.75</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.DragArea</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">1.8</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">EarthOrbiter.SRPArea</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">2.5</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Differences between Python and MATLAB code</strong></p>
+<p>The code shown above and throughout this section is Python code.  In the
+MATLAB version of this example, there are several differences worth noting
+because of the platform differences:</p>
+<ol class="arabic">
+<li><p>GMAT is loaded using the MATLAB load_gmat.m script.  This script loads
+the GMAT libraries into MATLAB, initializes the GMAT system by reading a
+startup file and loading plugins and configuration data identified in that
+file, and optionally loads a GMAT script into memory.</p></li>
+<li><p>Access to the GMAT functions is made using a call into a nested “gmat”
+class built for the underlying Java code.  In general, where Python
+users type</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span><span class="s2">&quot;Sat&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>MATLAB users enter</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gmat</span><span class="p">.</span><span class="n">gmat</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&#39;Spacecraft&#39;</span><span class="p">,</span><span class="s">&#39;Sat&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+<li><p>Type identification requires a call that sets the object type.  In the
+Python implementation of the API, changes from the base GmatBase type to
+the derived type is automatic.  In MATLAB/Java, the user needs to perform
+the cast.  Where Python users type</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span><span class="s2">&quot;Sat&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>to work with a Spacecraft object, MATLAB users that need to interact with
+the object <strong>as a Spacecraft</strong> need to enter</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gmat</span><span class="p">.</span><span class="n">gmat</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&#39;Spacecraft&#39;</span><span class="p">,</span><span class="s">&#39;Sat&#39;</span><span class="p">);</span>
+<span class="n">sat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gmat</span><span class="p">.</span><span class="n">Spacecraft</span><span class="p">.</span><span class="n">SetClass</span><span class="p">(</span><span class="n">sat</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>A MATLAB class, GMATAPI, is provided in the bin folder which contains
+static functions that automatically handle the change from the base
+GmatBase type to the derived type just like in the Python API. MATLAB
+users can now type</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&#39;Spacecraft&#39;</span><span class="p">,</span><span class="s">&#39;Sat&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>This type setting becomes important when objects are passed to other
+objects using methods that require specific object type, as is the case
+when setting forces on a dynamics model or spacecraft on a propagation
+state manager (examples below).</p>
+</li>
+</ol>
+</div>
+</section>
+</section>
+<section id="force-model-setup">
+<h2>Force Model Setup<a class="headerlink" href="#force-model-setup" title="Link to this heading">¶</a></h2>
+<p>GMAT hides the complexity of force modeling in the internal ODEModel class,
+which is aliased to the label “ForceModel” in GMAT scripting.  The GMAT
+scripting for the force model used here is</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">Create</span><span class="w"> </span><span class="s">ForceModel</span><span class="w"> </span><span class="s">FM</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">FM.CentralBody</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Earth</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">FM.PrimaryBodies</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="n">Earth</span><span class="p">};</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">FM.GravityField.Earth.Degree</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">FM.GravityField.Earth.Order</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">FM.GravityField.Earth.PotentialFile</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;JGM3.cof&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<section id="basic-force-model-configuration">
+<h3>Basic Force Model Configuration<a class="headerlink" href="#basic-force-model-configuration" title="Link to this heading">¶</a></h3>
+<p>Using the API is similar for force configuration, but not identical.  The GMAT
+scripting hides the creation of individual forces and their collection into the
+ODEModel force container.  Settings on the forces in an ODEModel are made by
+passing those settings from the force container to the corresponding force.  API
+users access the forces directly, setting their parameters and force by force
+and passing the configured forces into the ODEModel container.  The model
+scripted above is configured using the scripting</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Force model settings</span>
+<span class="n">fm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ForceModel&quot;</span><span class="p">,</span> <span class="s2">&quot;FM&quot;</span><span class="p">)</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;CentralBody&quot;</span><span class="p">,</span> <span class="s2">&quot;Earth&quot;</span><span class="p">)</span>
+
+<span class="c1"># An 8x8 JGM-3 Gravity Model</span>
+<span class="n">earthgrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;GravityField&quot;</span><span class="p">)</span>
+<span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;BodyName&quot;</span><span class="p">,</span><span class="s2">&quot;Earth&quot;</span><span class="p">)</span>
+<span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;PotentialFile&quot;</span><span class="p">,</span><span class="s2">&quot;../data/gravity/earth/JGM3.cof&quot;</span><span class="p">)</span>
+<span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Degree&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Order&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># Add force to the dynamics model</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">earthgrav</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note the difference in the calls to Construct in this example.  The dynamics
+model is created using the line</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ForceModel&quot;</span><span class="p">,</span> <span class="s2">&quot;FM&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and the gravity model component, with the code</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">earthgrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;GravityField&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The dynamics model has a name, “FM.”  The gravity field does not have a name.
+Objects constructed with names are managed by the GMAT code running inside of
+the API library.  Objects that do not have names are not managed by the library.
+The object ownership for those objects is the responsibility of the code that
+creates the object.  For the dynamics model under construction here, the user
+has responsibility for the gravity field in this call:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Unnamed: The user is responsible for this object</span>
+<span class="n">earthgrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;GravityField&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and then passes that responsibility to the dynamics model with this call:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add force to the dynamics model, passing ownership to the dynamics</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">earthgrav</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="connecting-the-spacecraft">
+<h3>Connecting the Spacecraft<a class="headerlink" href="#connecting-the-spacecraft" title="Link to this heading">¶</a></h3>
+<p>Before the force model can be used, it needs to be connected to the spacecraft
+that provides state data and force model parameters.  GMAT does this using a
+component called a Propagation State Manager (PSM).  The PSM component is not
+exposed to script users.  It is built inside of the scripted Propagator object
+that connects together integrators and force models.</p>
+<p>Users that want to work directly with a force model can do so by creating a
+Propagation State Manager object and working directly with it.  The force model
+built above can be tested using this approach:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">psm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">PropagationStateManager</span><span class="p">()</span>
+<span class="n">psm</span><span class="o">.</span><span class="n">SetObject</span><span class="p">(</span><span class="n">earthorb</span><span class="p">)</span>
+<span class="n">psm</span><span class="o">.</span><span class="n">BuildState</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The last line here, “psm.BuildState()”, creates an internal state object that
+connects spacecraft properties to a vector of data used by the force model.  The
+propagation state manager is connected to the force model, and its state set as
+the force model’s state, using the scripting</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fm</span><span class="o">.</span><span class="n">SetPropStateManager</span><span class="p">(</span><span class="n">psm</span><span class="p">)</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">SetState</span><span class="p">(</span><span class="n">psm</span><span class="o">.</span><span class="n">GetState</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-the-model">
+<h3>Testing the Model<a class="headerlink" href="#testing-the-model" title="Link to this heading">¶</a></h3>
+<p>The steps above produce a GMAT force model configuration that can be used from
+the user’s application framework.  All that remains is initialization of the
+objects, post initialization preparation, and then calls that exercise the
+model.  Initialization connects the force model to GMAT’s underlying resources,
+including the solar system objects and core elements of the system
+infrastructure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Assemble all of the objects together</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>GMAT’s propagation subsystem, which includes the force model components,
+requires two additional steps before it can be used.  First the state vector
+needs to be set up for the force and propagation modeling.  This step determines
+and sets the size of the state and derivative vectors, and sets up mappings
+between the spacecraft that are modeled and that state vector.  The second
+step passes the parameters needed for modeling into the force model and
+propagator objects that are used.</p>
+<p>For direct access to the force modeling, the user needs to execute these steps
+directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Finish force model setup:</span>
+<span class="c1">##  Map spacecraft state into the model</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">BuildModelFromMap</span><span class="p">()</span>
+<span class="c1">##  Load physical parameters needed for the forces</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">UpdateInitialData</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Users can display the Cartesian form of the state vector used in the modeling by
+accessing the state vector from the spacecraft:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now access state and get derivative data</span>
+<span class="n">pstate</span> <span class="o">=</span> <span class="n">earthorb</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;State Vector: &quot;</span><span class="p">,</span> <span class="n">pstate</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, the force model can be exercised either in its raw form as used by the
+integrators by calling the GetDerivatives() method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fm</span><span class="o">.</span><span class="n">GetDerivatives</span><span class="p">(</span><span class="n">pstate</span><span class="p">)</span>
+<span class="n">dv</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">GetDerivativeArray</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Derivative:   &quot;</span><span class="p">,</span> <span class="n">dv</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or by calling it for a specific spacecraft object through the
+GetDerivativesForSpacecraft() method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vec</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">GetDerivativesForSpacecraft</span><span class="p">(</span><span class="n">earthorb</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SCDerivative: &quot;</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When these pieces are assembled together, a run of the Ex_R2020a_BasicForceModel script
+shows the input state and derivative outputs to the user:</p>
+<p><em>Note: numbers have been truncated for display purposes</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="n">python3</span><span class="w"> </span><span class="n">Ex_R2020a_BasicForceModel</span><span class="p">.</span><span class="n">py</span>
+<span class="n">State</span><span class="w"> </span><span class="s">Vector:</span><span class="w">  </span><span class="s">[1018.819261,</span><span class="w"> </span><span class="o">-</span><span class="mf">1018.819261</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">6778.562873</span><span class="p">,</span><span class="w"> </span><span class="mf">5.226958</span><span class="p">,</span><span class="w"> </span><span class="mf">5.226958</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1.374825e-15</span><span class="p">]</span>
+
+<span class="n">Derivative</span><span class="p">:</span><span class="w">    </span><span class="p">[</span><span class="mf">5.226958</span><span class="p">,</span><span class="w"> </span><span class="mf">5.226958</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1.374825e-15</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.00121383</span><span class="p">,</span><span class="w"> </span><span class="mf">0.00121392</span><span class="p">,</span><span class="w"> </span><span class="mf">0.00809840</span><span class="p">]</span>
+
+<span class="n">SCDerivative</span><span class="p">:</span><span class="w">  </span><span class="mf">5.226958</span><span class="w"> </span><span class="mf">5.226958</span><span class="w"> </span><span class="o">-</span><span class="mf">1.374825e-15</span><span class="w"> </span><span class="o">-</span><span class="mf">0.00121383</span><span class="w"> </span><span class="mf">0.00121392</span><span class="w"> </span><span class="mf">0.00809840</span>
+</pre></div>
+</div>
+</section>
+<section id="exercises">
+<h3>Exercises<a class="headerlink" href="#exercises" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Add point mass forces for the Sun and Moon to the force model.  The GMAT
+class for point mass forces is named “PointMassForce”.</p></li>
+<li><p>Use the propagation state manager to turn on the A-Matrix computation for the
+force model by passing the “AMatrix” setting to the propagation state manager
+using its SetProperty method.</p></li>
+<li><p>Add a Jacchia-Roberts drag model and a solar radiation pressure model to the
+force model.</p></li>
+</ol>
+</section>
+</section>
+<section id="propagator-setup">
+<h2>Propagator Setup<a class="headerlink" href="#propagator-setup" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Propagator Setup example shown here is located in Ex_R2020a_PropagationStep.m
+file.  It uses a basic force model by importing from the Ex_R2020a_BasicFM file, a
+stripped down version of the force model used in the previous section.  An
+example of the full configuration, showing one solution for the exercises, is
+in the PropagateLoop file.</p>
+<p>To use one of the propagation files, copy the file you plan to use into
+GMAT’s bin folder.  Also copy the Ex_R2020a_BasicFM file.</p>
+</div>
+<p>In GMAT scripting the lines of script for a propagator,</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">Create</span><span class="w"> </span><span class="s">Propagator</span><span class="w"> </span><span class="s">PDProp</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">PDProp.FM</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">FM</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">PDProp.Type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">PrinceDormand78</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">PDProp.InitialStepSize</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">60</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">PDProp.Accuracy</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">1.0e-12</span><span class="p">;</span>
+<span class="n">GMAT</span><span class="w"> </span><span class="s">PDProp.MinStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>create an object from the GMAT class PropSetup.  This object is a container for
+an object that performs propagation either numerically through an Integrator
+object or analytically through an object implementing an analytic algorithm.
+The latter objects are used, in GMAT, for ephemeris propagators.  The former are
+used for Runge-Kutta integrators, predictor-correctors, and other numerical
+integration algorithms that require associated dynamics models.  When the
+propagator requires a dynamics model, that model is also managed by a PropSetup
+object.  The key feature to know for propagator configuration in the GMAT API is
+that a “Propagator” is actually a PropSetup object that contains the propagation
+component and, for numerical integrators, a dynamics model.</p>
+<p>Working interactively, an API user can see this relationship in Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pdprop</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Propagator&quot;</span><span class="p">,</span><span class="s2">&quot;PDProp&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pdprop</span>
+<span class="go">&lt;gmatpy.gmat_py.PropSetup; proxy of &lt;Swig Object of type &#39;PropSetup *&#39; at 0x7f26b76a57e0&gt; &gt;</span>
+</pre></div>
+</div>
+<section id="propagator-component-setup">
+<h3>Propagator Component Setup<a class="headerlink" href="#propagator-component-setup" title="Link to this heading">¶</a></h3>
+<p>When a Propagator is scripted, a PropSetup is created that the user then
+configures for use.  Using the provided MATLAB example, the code that loads the
+force model and builds the PropSetup is</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Load GMAT into memory</span>
+<span class="p">[</span><span class="n">myMod</span><span class="p">,</span><span class="w"> </span><span class="n">gmatStartupPath</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">load_gmat</span><span class="p">();</span>
+
+<span class="n">Ex_R2020a_BasicFM</span><span class="p">;</span>
+
+<span class="c">% Build the propagation container class</span>
+<span class="n">pdprop</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;Propagator&quot;</span><span class="p">,</span><span class="s">&quot;PDProp&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The PropSetup constructed here is a container for the objects used in
+propagation.  The next step configuring this container is creation and
+assignment of an integrator, performed using the steps</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Create and assign a numerical integrator for use in the propagation</span>
+<span class="n">gator</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;PrinceDormand78&quot;</span><span class="p">);</span>
+<span class="n">pdprop</span><span class="p">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">gator</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The dynamics model also needs to be set on the PropSetup:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Assign the force model imported from Ex_R2020a_BasicFM</span>
+<span class="n">pdprop</span><span class="p">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">fm</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Once the local references are set, the integrator settings can be made similarly
+to the dynamics model setting in the previous section:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Set some of the fields for the integration</span>
+<span class="n">pdprop</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;InitialStepSize&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">60.0</span><span class="p">);</span>
+<span class="n">pdprop</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Accuracy&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0e-12</span><span class="p">);</span>
+<span class="n">pdprop</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;MinStep&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="spacecraft-and-final-initialization">
+<h3>Spacecraft and Final Initialization<a class="headerlink" href="#spacecraft-and-final-initialization" title="Link to this heading">¶</a></h3>
+<p>In the preceding section, the propagation state manager was built as a separate
+component and configured to connect the spacecraft to the dynamics model.  When
+working with a PropSetup component, the propagation state manager is integrated
+into the component. As an alternative to the manual steps to configure the
+propagation state manager, the PropSetup provides a function,
+PrepareInternals(), that handles this configuration for each propagated object
+added through the AddPropObject() function, and completes the initialization of
+the component and its integrator:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Setup the spacecraft that is propagated</span>
+<span class="n">pdprop</span><span class="p">.</span><span class="n">AddPropObject</span><span class="p">(</span><span class="n">earthorb</span><span class="p">);</span>
+<span class="n">pdprop</span><span class="p">.</span><span class="n">PrepareInternals</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>GMAT’s PropSetup component works by creating copies of the propagator and
+dynamics models.  Those copies need to be set for the application environment
+so that the user can use them after configuration.  The PropSetup provides a
+simple mechanism for accessing its copies.  The code that refreshes the local
+variables for them to be used, is</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Refresh the &#39;gator reference</span>
+<span class="n">gator</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">pdprop</span><span class="p">.</span><span class="n">GetPropagator</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+<section id="running-the-propagator">
+<h3>Running the Propagator<a class="headerlink" href="#running-the-propagator" title="Link to this heading">¶</a></h3>
+<p>The propagator can now be used.  A 60-second propagation is performed, showing
+the state data before and after the step, using the code</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Take a 60 second step, showing the state before and after</span>
+<span class="n">gator</span><span class="p">.</span><span class="n">GetState</span><span class="p">()</span>
+<span class="n">gator</span><span class="p">.</span><span class="n">Step</span><span class="p">(</span><span class="mi">60</span><span class="p">);</span>
+<span class="n">gator</span><span class="p">.</span><span class="n">GetState</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>These calls produce this output from Ex_R2020a_PropagationStep.m:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">Ex_R2020a_PropagationStep</span>
+<span class="n">Initialize</span><span class="w"> </span><span class="s">Moderator</span><span class="w"> </span><span class="s">Status:</span><span class="w"> </span><span class="s">1</span>
+<span class="n">No</span><span class="w"> </span><span class="s">script</span><span class="w"> </span><span class="s">provided</span><span class="w"> </span><span class="s">to</span><span class="w"> </span><span class="s">load.</span>
+
+<span class="nb">ans</span><span class="w"> </span><span class="p">=</span>
+
+<span class="w">   </span><span class="mf">1.0e+03</span><span class="w"> </span><span class="o">*</span>
+
+<span class="w">   </span><span class="mf">1.018819261603825</span>
+<span class="w">  </span><span class="o">-</span><span class="mf">1.018819261603827</span>
+<span class="w">  </span><span class="o">-</span><span class="mf">6.778562873085272</span>
+<span class="w">   </span><span class="mf">0.005226958779502</span>
+<span class="w">   </span><span class="mf">0.005226958779502</span>
+<span class="w">  </span><span class="o">-</span><span class="mf">0.000000000000000</span>
+
+
+<span class="nb">ans</span><span class="w"> </span><span class="p">=</span>
+
+<span class="w">   </span><span class="mf">1.0e+03</span><span class="w"> </span><span class="o">*</span>
+
+<span class="w">   </span><span class="mf">1.330028382856595</span>
+<span class="w">  </span><span class="o">-</span><span class="mf">0.703241487939055</span>
+<span class="w">  </span><span class="o">-</span><span class="mf">6.763990149325915</span>
+<span class="w">   </span><span class="mf">0.005142965479731</span>
+<span class="w">   </span><span class="mf">0.005288543267909</span>
+<span class="w">   </span><span class="mf">0.000485610549370</span>
+
+<span class="o">&gt;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h3>Exercises<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Modify the Ex_R2020a_PropagationStep example to use a force model that includes the
+point mass Sun and Moon forces and solar radiation pressure.</p></li>
+<li><p>Wrap the propagator in a loop so that propagation extends for a full day,
+displaying the epoch and position at each propagation step.</p></li>
+</ol>
+</section>
+</section>
+<section id="the-gmat-api-and-plug-in-modules">
+<h2>The GMAT API and Plug-in Modules<a class="headerlink" href="#the-gmat-api-and-plug-in-modules" title="Link to this heading">¶</a></h2>
+<p>GMAT plug-in modules package new functionality into shared libraries that GMAT
+loads when it starts up.  The API’s copy of GMAT loads these modules when they
+are identified in the GMAT startup file.  Standard GMAT functions work on
+components from plugins, but the API calls have several restrictions.</p>
+<section id="wrapped-plugins">
+<h3>Wrapped Plugins<a class="headerlink" href="#wrapped-plugins" title="Link to this heading">¶</a></h3>
+<p>The Station and Estimation plugin libraries in GMAT include SWIG wrapper code
+for the contained classes.  This reduces the restrictions on those components.</p>
+<p>As an example of the restrictions on wrapped plugin code, consider the Station
+plugin, which implements GMAT’s GroundStation class.  Users of GMAT’s GroundStation
+class can access the full feature set for the class.  The user is
+required in Python to cast constructed components to
+the derived class type by hand.  The Python auto-cast feature in the GMAT core
+code is not accessible from the plugin component as seen below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">station</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;GroundStation&quot;</span><span class="p">,</span><span class="s2">&quot;Station&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">station</span>
+<span class="go">&lt;gmatpy.gmat_py.GmatBase; proxy of &lt;Swig Object of type &#39;GmatBase *&#39; at 0x7fccdc983f60&gt; &gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">station</span><span class="o">=</span><span class="n">gmat</span><span class="o">.</span><span class="n">GroundStation</span><span class="o">.</span><span class="n">SetClass</span><span class="p">(</span><span class="n">station</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">station</span>
+<span class="go">&lt;gmatpy.station_py.GroundStation; proxy of &lt;Swig Object of type &#39;GroundStation *&#39; at 0x7fccdc983fc0&gt; &gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>Note that in this code, the station object returned from the call to the
+Construct() function is set as a GmatBase object.  In order to treat it as a
+GroundStation object, the user needed to call the GroundStation.SetClass()
+method on the object in order for Python to identify the object’s subclass
+correctly.</p>
+<p>MATLAB API users are not required to explicity cast the class, provided they
+use the GMATAPI MATLAB class, as shown below:</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">load_gmat</span><span class="p">();</span>
+<span class="n">No</span><span class="w"> </span><span class="s">script</span><span class="w"> </span><span class="s">provided</span><span class="w"> </span><span class="s">to</span><span class="w"> </span><span class="s">load.</span>
+<span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">station</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;GroundStation&quot;</span><span class="p">,</span><span class="s">&quot;Station&quot;</span><span class="p">)</span>
+
+<span class="n">station</span><span class="w"> </span><span class="p">=</span>
+
+<span class="n">Object</span><span class="w"> </span><span class="s">of</span><span class="w"> </span><span class="s">type</span><span class="w"> </span><span class="s">GroundStation</span><span class="w"> </span><span class="s">named</span><span class="w"> </span><span class="s">Station</span>
+
+<span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">station</span><span class="p">.</span><span class="n">getClass</span><span class="p">()</span>
+
+<span class="nb">ans</span><span class="w"> </span><span class="p">=</span>
+
+<span class="nb">class</span><span class="w"> </span><span class="n">gmat</span><span class="p">.</span><span class="n">GroundStation</span>
+
+<span class="o">&gt;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="unwrapped-plugins">
+<h3>Unwrapped Plugins<a class="headerlink" href="#unwrapped-plugins" title="Link to this heading">¶</a></h3>
+<p>Plugin code that is not wrapped in SWIG can be accessed using the API, but only
+in a more restricted manner.  As an example, at this writing the VF13ad
+optimizer is available as a GMAT component for users inside of Goddard Space
+Flight Center.  The associated plugin builds a component with class name “VF13ad”
+that provides the optimization functionality.  The VF13ad optimizer is derived
+from an Optimizer base class in the GMAT core code.  API users can access that
+component as a GmatBase object, or as an Optimizer object, but not as a VF13ad
+object, as can be seen here:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">gmatpy</span> <span class="k">as</span> <span class="nn">gmat</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vf13</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;VF13ad&quot;</span><span class="p">,</span><span class="s2">&quot;VF13&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vf13</span>
+<span class="go">&lt;gmatpy.gmat_py.GmatBase; proxy of &lt;Swig Object of type &#39;GmatBase *&#39; at 0x7f615f50c2a0&gt; &gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vf13</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">VF13ad</span><span class="o">.</span><span class="n">SetClass</span><span class="p">(</span><span class="n">vf13</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">AttributeError</span>: <span class="n">module &#39;gmatpy&#39; has no attribute &#39;VF13ad&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vf13</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Optimizer</span><span class="o">.</span><span class="n">SetClass</span><span class="p">(</span><span class="n">vf13</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vf13</span>
+<span class="go">&lt;gmatpy.gmat_py.Optimizer; proxy of &lt;Swig Object of type &#39;Optimizer *&#39; at 0x7f614d9cff90&gt; &gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">exit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The underlying object remains a VF13ad component:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">vf13</span><span class="o">.</span><span class="n">Help</span><span class="p">()</span>
+
+<span class="go">VF13ad  VF13</span>
+
+<span class="go">   Field                                   Type   Value</span>
+<span class="go">   --------------------------------------------------------</span>
+
+<span class="go">   ShowProgress                         Boolean   true</span>
+<span class="go">   ReportStyle                             List   Normal</span>
+<span class="go">   ReportFile                          Filename   &lt;not set&gt;</span>
+<span class="go">   MaximumIterations                    Integer   200</span>
+<span class="go">   Tolerance                               Real   1e-05</span>
+<span class="go">   UseCentralDifferences                Boolean   false</span>
+<span class="go">   FeasibilityTolerance                    Real   0.001</span>
+</pre></div>
+</div>
+<p>but, from the perspective of an API user, is manipulated as an Optimizer or
+GmatBase object.</p>
+</section>
+</section>
+<section id="measurement-modeling">
+<h2>Measurement Modeling<a class="headerlink" href="#measurement-modeling" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Measurement Modeling example shown here is located in Ex_R2020a_RangeMeasurement.m
+file (or the Ex_R2020a_RangeMeasurement.py file for Python users).</p>
+</div>
+<p>GMAT’s Measurement Models are driven through the TrackingFileSet class.  A
+TrackingFileSet defines a measurement as a tracking configuration consisting of
+a signal path and measurement type.  The signal path is defined by the nodes
+that a measurement signal traverses to create the measurement. For example,
+the path may be ground station -&gt; spacecraft -&gt; ground station for a range
+measurement.</p>
+<p>The user configures the hardware for each node, assigning antennae, transmitters,
+receivers, and transponders as needed to the stations and spacecraft used in the
+measurement.  Error models are configured and assigned to each measurement, media
+corrections are toggled, and ancillary components configured - like propagators
+when light time correction is applied - to complete the configuration the user
+needs.  The system is complex because the processes involved have many options.
+This guide, and the sample script, step through the process element by element
+to build the model.</p>
+<section id="spacecraft-ground-stations-and-propagators">
+<h3>Spacecraft, Ground Stations, and Propagators<a class="headerlink" href="#spacecraft-ground-stations-and-propagators" title="Link to this heading">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Construct the PropSetup to control propagation (for light time)</span>
+<span class="n">prop</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;PropSetup&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;prop&quot;</span><span class="p">);</span>
+<span class="n">prop</span><span class="p">.</span><span class="n">GetODEModel</span><span class="p">().</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;ErrorControl&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;None&quot;</span><span class="p">);</span>
+<span class="n">prop</span><span class="p">.</span><span class="n">GetPropagator</span><span class="p">().</span><span class="n">SetNumber</span><span class="p">(</span><span class="s">&quot;MinStep&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="c">% Create objects for generating measurement</span>
+<span class="n">simsat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;Spacecraft&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;SimSat&quot;</span><span class="p">);</span>
+<span class="n">gds</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;GroundStation&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;GDS&quot;</span><span class="p">);</span>
+
+<span class="c">% Configure Spacecraft initial conditions</span>
+<span class="n">simsat</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;DateFormat&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;A1ModJulian&quot;</span><span class="p">);</span>
+<span class="n">simsat</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Epoch&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;21550&quot;</span><span class="p">);</span>
+
+<span class="c">% Configure GroundStation</span>
+<span class="n">gds</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;StateType&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Spherical&quot;</span><span class="p">);</span>
+<span class="n">gds</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;HorizonReference&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Ellipsoid&quot;</span><span class="p">);</span>
+<span class="n">gds</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Location1&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="n">gds</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Location2&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">90.0</span><span class="p">);</span>
+<span class="n">gds</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Location3&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="hardware-components">
+<h3>Hardware Components<a class="headerlink" href="#hardware-components" title="Link to this heading">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Create communication hardware</span>
+<span class="c">% Hardware for ground station</span>
+<span class="n">ant1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;Antenna&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Antenna1&quot;</span><span class="p">);</span>
+<span class="n">tmit</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;Transmitter&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Transmitter1&quot;</span><span class="p">);</span>
+<span class="n">tmit</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Frequency&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">2067.5</span><span class="p">);</span>
+<span class="n">rec</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;Receiver&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Receiver1&quot;</span><span class="p">);</span>
+
+<span class="c">% Hardware for spacecraft</span>
+<span class="n">ant2</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;Antenna&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Antenna2&quot;</span><span class="p">);</span>
+<span class="n">tpond</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;Transponder&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Transponder1&quot;</span><span class="p">);</span>
+<span class="n">tpond</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;TurnAroundRatio&quot;</span><span class="p">,</span><span class="s">&quot;240/221&quot;</span><span class="p">);</span>
+
+<span class="c">% Set fields</span>
+<span class="c">% Use Antenna1 for Transmitter1 and Receiver1</span>
+<span class="n">tmit</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;PrimaryAntenna&quot;</span><span class="p">,</span><span class="s">&quot;Antenna1&quot;</span><span class="p">);</span>
+<span class="n">rec</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;PrimaryAntenna&quot;</span><span class="p">,</span><span class="s">&quot;Antenna1&quot;</span><span class="p">);</span>
+
+<span class="c">% Use Antenna2 for Transponder1</span>
+<span class="n">tpond</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;PrimaryAntenna&quot;</span><span class="p">,</span><span class="s">&quot;Antenna2&quot;</span><span class="p">);</span>
+
+<span class="c">% Add Antenna2 and Transponder1 to spacecraft</span>
+<span class="n">simsat</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;AddHardware&quot;</span><span class="p">,</span><span class="s">&quot;{Antenna2, Transponder1}&quot;</span><span class="p">);</span>
+
+<span class="c">% Add Antenna1, Transmitter1, and Receiver1 to station</span>
+<span class="n">gds</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;AddHardware&quot;</span><span class="p">,</span><span class="s">&quot;{Antenna1, Transmitter1, Receiver1}&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="error-models">
+<h3>Error Models<a class="headerlink" href="#error-models" title="Link to this heading">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Define range measurements and error model</span>
+<span class="n">tem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;ErrorModel&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;TheErrorModel&quot;</span><span class="p">);</span>
+<span class="c">% Specify these measurements are range measurements in km</span>
+<span class="n">tem</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Type&quot;</span><span class="p">,</span><span class="s">&quot;Range&quot;</span><span class="p">);</span>
+<span class="n">tem</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;NoiseSigma&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">0.050</span><span class="p">);</span><span class="w"> </span><span class="c">% Standard deviation of noise</span>
+<span class="n">tem</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Bias&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span><span class="w"> </span><span class="c">% Bias in measurement</span>
+
+<span class="c">% Define doppler range rate measurements and error model</span>
+<span class="n">tem2</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;ErrorModel&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;TheErrorModel2&quot;</span><span class="p">);</span>
+<span class="c">% Specify these measurements are doppler range rate measurements</span>
+<span class="n">tem2</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Type&quot;</span><span class="p">,</span><span class="s">&quot;RangeRate&quot;</span><span class="p">);</span>
+<span class="n">tem2</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;NoiseSigma&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">5e-5</span><span class="p">);</span><span class="w"> </span><span class="c">% Standard deviation of noise</span>
+<span class="n">tem2</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;Bias&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span><span class="w"> </span><span class="c">% Bias in measurement</span>
+
+<span class="c">% Add ErrorModels to the ground station</span>
+<span class="n">gds</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;ErrorModels&quot;</span><span class="p">,</span><span class="s">&quot;{TheErrorModel, TheErrorModel2}&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="the-measurement">
+<h3>The Measurement<a class="headerlink" href="#the-measurement" title="Link to this heading">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Create a TrackingFileSet to manage the observations</span>
+<span class="n">tfs</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">GMATAPI</span><span class="p">.</span><span class="n">Construct</span><span class="p">(</span><span class="s">&quot;TrackingFileSet&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;SimData&quot;</span><span class="p">);</span>
+<span class="n">tfs</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;FileName&quot;</span><span class="p">,</span><span class="s">&quot;TrkFile_API_GN.gmd&quot;</span><span class="p">);</span><span class="w"> </span><span class="c">% Still needed even though it&#39;s&#39; not written to</span>
+<span class="n">tfs</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;UseLightTime&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span>
+<span class="n">tfs</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;UseRelativityCorrection&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span>
+<span class="n">tfs</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;UseETminusTAI&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span>
+
+<span class="c">% Define signal paths and measurement type(s)</span>
+<span class="c">% 2-way measurements are used here along the path GDS -&gt; SimSat -&gt; GDS</span>
+<span class="c">% Add range measurements to TrackingFileSet</span>
+<span class="n">tfs</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;AddTrackingConfig&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;{{GDS,SimSat,GDS}, Range}&quot;</span><span class="p">);</span>
+<span class="c">% Add doppler range rate measurements to TrackingFileSet</span>
+<span class="n">tfs</span><span class="p">.</span><span class="n">SetField</span><span class="p">(</span><span class="s">&quot;AddTrackingConfig&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;{{GDS,SimSat,GDS}, RangeRate}&quot;</span><span class="p">);</span>
+<span class="n">tfs</span><span class="p">.</span><span class="n">SetPropagator</span><span class="p">(</span><span class="n">prop</span><span class="p">);</span><span class="w"> </span><span class="c">% Tell TrackingFileSet the propagator to use</span>
+</pre></div>
+</div>
+</section>
+<section id="exercising-the-model">
+<h3>Exercising the Model<a class="headerlink" href="#exercising-the-model" title="Link to this heading">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Initialize the GMAT objects</span>
+<span class="n">gmat</span><span class="p">.</span><span class="n">gmat</span><span class="p">.</span><span class="n">Initialize</span><span class="p">()</span>
+
+<span class="c">% Calculate the measurement</span>
+<span class="n">tdas</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tfs</span><span class="p">.</span><span class="n">GetAdapters</span><span class="p">();</span>
+<span class="n">numMeas</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tdas</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
+
+<span class="n">tda</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tdas</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="n">md0</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tda</span><span class="p">.</span><span class="n">CalculateMeasurement</span><span class="p">();</span>
+<span class="nb">disp</span><span class="p">(</span><span class="s">&quot;GMAT Range Measurement Value:&quot;</span><span class="p">)</span>
+<span class="nb">disp</span><span class="p">(</span><span class="n">md0</span><span class="p">.</span><span class="n">getValue</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+
+<span class="c">% Make sure this is correct</span>
+<span class="n">satState</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">simsat</span><span class="p">.</span><span class="n">GetState</span><span class="p">();</span>
+<span class="n">gsPos</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gds</span><span class="p">.</span><span class="n">GetMJ2000Position</span><span class="p">(</span><span class="n">satState</span><span class="p">.</span><span class="n">GetEpochGT</span><span class="p">()).</span><span class="n">GetDataVector</span><span class="p">();</span>
+<span class="n">satPos</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">satState</span><span class="p">.</span><span class="n">GetState</span><span class="p">();</span>
+<span class="n">r</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gsPos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">satPos</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">);</span>
+<span class="n">rNorm</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">norm</span><span class="p">(</span><span class="n">r</span><span class="p">);</span>
+<span class="nb">disp</span><span class="p">(</span><span class="s">&quot;Numerical Range Measurement Value (no lighttime):&quot;</span><span class="p">)</span>
+<span class="nb">disp</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">rNorm</span><span class="p">)</span>
+
+<span class="nb">disp</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+
+<span class="n">xid</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">simsat</span><span class="p">.</span><span class="n">GetParameterID</span><span class="p">(</span><span class="s">&quot;CartesianX&quot;</span><span class="p">);</span>
+<span class="n">tda</span><span class="p">.</span><span class="n">CalculateMeasurementDerivatives</span><span class="p">(</span><span class="n">simsat</span><span class="p">,</span><span class="n">xid</span><span class="p">);</span>
+<span class="k">for</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span>
+<span class="w">    </span><span class="n">deriv</span><span class="p">(</span><span class="n">ii</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tda</span><span class="p">.</span><span class="n">ApiGetDerivativeValue</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">ii</span><span class="p">);</span>
+<span class="k">end</span>
+<span class="nb">disp</span><span class="p">(</span><span class="s">&quot;GMAT Range Measurement Derivatives:&quot;</span><span class="p">)</span>
+<span class="nb">disp</span><span class="p">(</span><span class="n">deriv</span><span class="p">)</span>
+
+<span class="nb">disp</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+
+<span class="n">tda</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tdas</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="n">md1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tda</span><span class="p">.</span><span class="n">CalculateMeasurement</span><span class="p">();</span>
+<span class="nb">disp</span><span class="p">(</span><span class="s">&quot;GMAT RangeRate Measurement Value:&quot;</span><span class="p">)</span>
+<span class="nb">disp</span><span class="p">(</span><span class="n">md1</span><span class="p">.</span><span class="n">getValue</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h3>Exercises<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Modify the one day propagation script to report the range measurement at each
+step where a valid measurement can be computed.</p></li>
+<li><p>Add a second ground station the Ex_R2020a_RangeMeasurement example and report its
+measurement data.</p></li>
+</ol>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Tutorial: Accessing GMAT Propagation and Navigation Features</a><ul>
+<li><a class="reference internal" href="#verifying-setup">Verifying Setup</a></li>
+<li><a class="reference internal" href="#getting-started-with-the-api">Getting Started with the API</a></li>
+<li><a class="reference internal" href="#spacecraft-configuration">Spacecraft Configuration</a><ul>
+<li><a class="reference internal" href="#construction-and-the-initial-state">Construction and The Initial State</a></li>
+<li><a class="reference internal" href="#additional-spacecraft-parameters">Additional Spacecraft Parameters</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#force-model-setup">Force Model Setup</a><ul>
+<li><a class="reference internal" href="#basic-force-model-configuration">Basic Force Model Configuration</a></li>
+<li><a class="reference internal" href="#connecting-the-spacecraft">Connecting the Spacecraft</a></li>
+<li><a class="reference internal" href="#testing-the-model">Testing the Model</a></li>
+<li><a class="reference internal" href="#exercises">Exercises</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#propagator-setup">Propagator Setup</a><ul>
+<li><a class="reference internal" href="#propagator-component-setup">Propagator Component Setup</a></li>
+<li><a class="reference internal" href="#spacecraft-and-final-initialization">Spacecraft and Final Initialization</a></li>
+<li><a class="reference internal" href="#running-the-propagator">Running the Propagator</a></li>
+<li><a class="reference internal" href="#id1">Exercises</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-gmat-api-and-plug-in-modules">The GMAT API and Plug-in Modules</a><ul>
+<li><a class="reference internal" href="#wrapped-plugins">Wrapped Plugins</a></li>
+<li><a class="reference internal" href="#unwrapped-plugins">Unwrapped Plugins</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#measurement-modeling">Measurement Modeling</a><ul>
+<li><a class="reference internal" href="#spacecraft-ground-stations-and-propagators">Spacecraft, Ground Stations, and Propagators</a></li>
+<li><a class="reference internal" href="#hardware-components">Hardware Components</a></li>
+<li><a class="reference internal" href="#error-models">Error Models</a></li>
+<li><a class="reference internal" href="#the-measurement">The Measurement</a></li>
+<li><a class="reference internal" href="#exercising-the-model">Exercising the Model</a></li>
+<li><a class="reference internal" href="#id2">Exercises</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../ScriptUsage.html"
+                          title="previous chapter">Script Usage</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../commands/TopLevelInterface.html"
+                          title="next chapter">API Access to GMAT Commands</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../../_sources/API/source/userguide/usage/UseCase1.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../commands/TopLevelInterface.html" title="API Access to GMAT Commands"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../ScriptUsage.html" title="Script Usage"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial: Accessing GMAT Propagation and Navigation Features</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

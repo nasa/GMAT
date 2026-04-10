@@ -1,0 +1,67 @@
+%
+%  Ex_CSSISpaceWeatherFile
+%
+%  Use of the CSSISpaceWeather file with the Jacchia-Roberts atmospheric density
+%  model.
+%
+%  Released: R2015a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft ISS;
+
+ISS.DateFormat       = UTCGregorian;
+ISS.Epoch            = '01 Jun 2004 12:00:00.000';
+ISS.CoordinateSystem = EarthMJ2000Eq;
+ISS.DisplayStateType = Cartesian;
+ISS.X                = -4453.783586;
+ISS.Y                = -5038.203756;
+ISS.Z                = -426.384456;
+ISS.VX               = 3.831888;
+ISS.VY               = -2.887221;
+ISS.VZ               = -6.018232;
+ISS.DryMass          = 1000;
+ISS.Cd               = 2.2;
+ISS.Cr               = 1.2;
+ISS.DragArea         = 20;
+ISS.SRPArea          = 20;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel FM;
+
+FM.CentralBody                 = Earth;
+FM.PrimaryBodies               = {Earth};
+FM.Drag.AtmosphereModel        = JacchiaRoberts;
+FM.Drag.HistoricWeatherSource  = 'CSSISpaceWeatherFile';
+FM.Drag.PredictedWeatherSource = 'CSSISpaceWeatherFile';
+FM.Drag.CSSISpaceWeatherFile   = '../samples/SupportFiles/CSSI_2004To2026.txt';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator RKV89;
+RKV89.FM = FM;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+Create ReportFile ISS_Report;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Report ISS_Report ISS.A1ModJulian ISS.X ISS.Y ISS.Z ISS.VX ISS.VY ISS.VZ;
+Propagate RKV89(ISS) {ISS.ElapsedDays = 1};
+Report ISS_Report ISS.A1ModJulian ISS.X ISS.Y ISS.Z ISS.VX ISS.VY ISS.VZ;
+

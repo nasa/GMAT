@@ -1,0 +1,16 @@
+function TargetLEOStationKeeping(desiredRMAG,desiredECC)
+  
+  
+BeginMissionSequence
+
+Global LEOsat DC TCM1 TCM2 DefaultOrbitView XYPlot1 rf rf2 EphemerisFile1 GroundTrackPlot1 LEOprop_ForceModel
+  
+Target 'Raise Orbit' DC {SolveMode = Solve, ExitMode = DiscardAndContinue};
+	Vary 'Vary TCM1.V' DC(TCM1.Element1 = 0.002, {Perturbation = 0.0001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = 0.05});
+	Maneuver 'Apply TCM1' TCM1(LEOsat);
+	Propagate 'Prop to Apoapsis' LEOprop(LEOsat) {LEOsat.Apoapsis};
+	Achieve 'Achieve RMAG' DC(LEOsat.RMAG = desiredRMAG, {Tolerance = 0.1});
+	Vary 'Vary TCM2.V' DC(TCM2.Element1 = 1e-005, {Perturbation = 0.00005, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = 0.05});
+	Maneuver 'Apply TCM2' TCM2(LEOsat);
+	Achieve 'Achieve ECC' DC(LEOsat.Earth.ECC = desiredECC, {Tolerance = 0.0001});
+EndTarget;  % For targeter DC

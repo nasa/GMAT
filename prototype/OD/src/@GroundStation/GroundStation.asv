@@ -1,0 +1,80 @@
+classdef GroundStation < handle
+
+    % Set the public properties
+    properties  (SetAccess = 'public')
+        
+        %----- Properties
+        Id  = 21;
+        CentralBody      = 'Earth';
+        CentralBodyShape = 'OblateSphere';
+        StateType        = 'Cartesian';
+        Sensors          = {}
+        
+        %----- Define the location
+        X                = -4460.9879936
+        Y                =  2682.3627968
+        Z                = -3674.6265773
+
+    end
+    
+    % Set the private properties
+    properties  (SetAccess = 'public')
+        
+        cbPointer
+
+    end
+
+    % Set the methods
+    methods
+
+        %-----  Initialize
+        function obj = Initialize(obj,Sandbox)
+            % KLUDGE FOR NOW
+            obj.cbPointer = Sandbox.SolarSystem.Earth;
+        end
+
+        %----- GetParamId
+        function Id = GetParamId(Sat,name);
+
+            switch name
+
+                case 'Location'
+
+                    Id = 1;
+
+                otherwise
+
+                    Id = '';
+
+            end
+            
+        end % GetParamId
+        
+                %----- GetParamId
+        function x = GetState(Station,Id);
+
+            switch name
+
+                case 'Location'
+
+                    x = [Statio;
+
+                otherwise
+
+                    x = [];
+
+            end
+            
+        end % GetParamId
+        
+        %----- InertialState
+        function [rv] = InertialState(Station,jd)
+            
+            [R,Rdot] = Station.cbPointer.Fixed2Inert(jd);
+            
+            rv = R*[Station.X Station.Y Station.Z]';
+
+        end
+
+    end
+end

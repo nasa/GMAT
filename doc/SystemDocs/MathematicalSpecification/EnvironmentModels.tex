@@ -1,0 +1,387 @@
+\section{Environment Models}
+
+
+\subsection{Ephemerides}
+
+\subsubsection{Analytic Ephemeris Model}
+
+\begin{itemize}
+     \item For a new body, the user must input the central body by
+     choosing from the 9 Planets or the sun.
+     %
+     \item The user must provide the epoch.
+     %
+     \item  The user must provide the keplerian elements, in the
+     central body centered, MJ2000Eq axis system.
+     %
+     \item  The user can provide a $\mu$ value for use in the
+     solution of the equations of motion.
+     %
+\end{itemize}
+
+The body should store the users original input for the state and
+epoch, and the state and epoch calculated at the last request for
+state information. Then, when the next request is made for state
+information, the epoch and state from the last request are used as
+the input state for next calculation.
+
+\subsubsection{Generation of Ephemeris from Minor Planet Center
+ Data}
+
+GMAT allows the user to import initial state data for minor planets
+from the Minor Planet Center's (MPC) orbit database.  The MPC
+datafile is a flat file available at here:
+http://www.cfa.harvard.edu/iau/MPCORB.html.
+
+GMAT reads state information from the MPCORB file, and converts the
+data to the format used internally by GMAT's two-body ephemeris
+propagator.  The two-body propagator is based on universal variables
+appraoch using $f$ and $g$ functions and requires an initial
+cartesian state with respect to the planet's cental body (in this
+case the sun), the central body $\mu$ value.
+
+The file format for the MPCORB file is described on the MPC web site
+(http://www.cfa.harvard.edu/iau/info/MPOrbitFormat.html), and is
+shown below:
+
+\begin{verbatim}
+
+    Columns   F77    Use
+
+        1 -   7  a7     Number or provisional designation
+                          (in packed form)
+        9 -  13  f5.2   Absolute magnitude, H
+       15 -  19  f5.2   Slope parameter, G
+
+       21 -  25  a5     Epoch (in packed form, .0 TT)
+       27 -  35  f9.5   Mean anomaly at the epoch, in degrees
+
+       38 -  46  f9.5   Argument of perihelion, J2000.0 (degrees)
+       49 -  57  f9.5   Longitude of the ascending node, J2000.0
+                          (degrees)
+       60 -  68  f9.5   Inclination to the ecliptic, J2000.0 (degrees)
+
+       71 -  79  f9.7   Orbital eccentricity
+       81 -  91  f11.8  Mean daily motion (degrees per day)
+       93 - 103  f11.7  Semimajor axis (AU)
+
+      106        i1     Uncertainty parameter, U
+                        If this column contains `E' it indicates
+                        that the orbital eccentricity was assumed.
+                        For one-opposition orbits this column can
+                        also contain `D' if a double (or multiple)
+                        designation is involved or `F' if an e-assumed
+                        double (or multiple) designation is involved.
+
+      108 - 116  a10    Reference
+      118 - 122  i5     Number of observations
+      124 - 126  i3     Number of oppositions
+
+         For multiple-opposition orbits:
+         128 - 131  i4     Year of first observation
+         132        a1     '-'
+         133 - 136  i4     Year of last observation
+
+         For single-opposition orbits:
+         128 - 131  i4     Arc length (days)
+         133 - 136  a4     'days'
+
+      138 - 141  f4.2   r.m.s residual (")
+      143 - 145  a3     Coarse indicator of perturbers
+                        (blank if unperturbed one-opposition object)
+      147 - 149  a3     Precise indicator of perturbers
+                        (blank if unperturbed one-opposition object)
+      151 - 160  a10    Computer name
+
+    There may sometimes be additional information beyond column 160
+    as follows:
+
+      162 - 165  z4.4   4-hexdigit flags
+                        The bottom 6 bits are used to encode a
+                        value representing the orbit type (other
+                        values are undefined):
+
+                          Value
+                            2  Aten
+                            3  Apollo
+                            4  Amor
+                            5  Object with q < 1.381 AU
+                            6  Object with q < 1.523 AU
+                            7  Object with q < 1.665 AU
+                            8  Hilda
+                            9  Jupiter Trojan
+                           10  Centaur
+                           14  Plutino
+                           15  Other resonant TNO
+                           16  Cubewano
+                           17  Scattered disk
+
+                        Additional information is conveyed by
+                        adding in the following bit values:
+
+                           64  Unused
+                          128  Unused
+                          256  Unused
+                          512  Unused
+                         1024  Unused
+                         2048  Unused
+                         4096  Unused
+                         8192  1-opposition object seen at
+                               earlier opposition
+                        16384  Critical list numbered object
+                        32768  Object is PHA
+
+      167 - 194  a      Readable designation
+
+      195 - 202  i8     Date of last observation included in
+                          orbit solution (YYYYMMDD format)
+
+\end{verbatim}
+
+ 1.  Read in the string in columns 21-25 and decompose into the epoch using the instructions here:  http://www.cfa.harvard.edu/iau/info/PackedDates.html
+ 2.  Read in the mean anomaly from columns 27-35  Convert to radians.
+ 3.  Read in the argument of periapsis from lines 38-46.  Convert to radians.
+ 4.  Read in the longitude of the ascending node from lines 49-57.  Convert to radians.
+ 5.  Read in the inclination from columns 60-68.  Convert to radians.
+ 6.  Read in the eccentricity from lines 71-79.
+ 7.  Read in the mean motion from lines 81-91.
+ 8.  Use the algorithm in section 4.3.1 of the math spec to convert from mean anomaly to true anomaly.
+ 9.  Get mu value for central body and convert mean motion to semi-major axis. (I'll provide math for this soon)
+ 10. Use the algorithm in section 4.1.3 to covert from Keplerian elements to cartesian elements.
+
+\subsection{Atmospheric Density}
+
+\begin{equation}
+28K_p + 0.03e^{K_p} = A_p + 100\left(1 - e^{(-0.08A_p)}\right)
+\end{equation}
+
+\subsubsection{Jacchia Roberts}
+
+\subsubsection{MSISE-90}
+
+A. E. Hedin, Extension of the MSIS Thermospheric Model into the
+Middle and Lower Atmosphere, J. Geophys. Res. 96, 1159, 1991.
+
+Discuss observed vs. adjusted for F10.7 values, also URSI Series D
+
+For testing http://nssdc.gsfc.nasa.gov/space/model/models/msis.html
+
+http://www.agu.org/journals/ja/ja0212/2002JA009430/ \\
+go to auxillary material on the left side menu and open the
+tables-datasets.doc
+
+Other useful models http://nssdc.gsfc.nasa.gov/space/model/
+
+\subsubsection{Exponential Atmosphere}
+
+\section{Flux and Geomagnetic Index}
+
+The density models discussed above require as inputs  solar flux values and geomagnetic data.  Those data are provided by several organizations and include historic observations, near term predictions (45 days), and long term predictions (1 value per month for 10+ years).   Vallado and Kelso\cite{Vallado:Kelso:05} give a good overview of the available data and how it can be conveniently combined from multiple sources into a single coherent Space Weather File (SWF).  The SWF file that GMAT reads is identical to Vallado's format for historic data and for the daily predictions.  However, for the long-term  monthly predictions, the GMAT SWF contains predictions created by Schatten (NEED REFERENCE).
+
+\subsection{File Overview}
+
+
+The density models in GMAT require as inputs solar flux values and geomagnetic data.  Those data are provided by several organizations and include historic observations, near term predictions (45 days), and long term predictions (1 value per month for 30 years).   Vallado and Kelso\cite{Vallado:Kelso:05} give a good overview of the available data and how it can be conveniently combined from multiple sources into a single coherent Space Weather File (SWF).  The SWF file that GMAT reads is identical to Vallado's suggested format for historic data and for the near-term daily predictions.  However, for the long-term monthly predictions, the GMAT SWF contains predictions created by Schatten (NEED REFERENCE).
+
+The SWF is broken down into three sections according to the type of data; historical, daily predicts, and monthly predicts.   The first section contains historical data observed by NOAA and the U.S. Air Force.  The historical data contains the following values for each day:  year, month, day of month, the solar cycle number, 3-hour Kp and Ap values, daily and 81 day averages of both observed and adjusted F10.7 values.  The data is provided from Oct. 1 1957 to the current day with the column format described below.
+
+The daily prediction section of the SWF is constructed from data provided by the U.S. Air Force and distributed by NOAA.  The predictions contain daily Ap and F10.7 values for 45 days from the present day.  3 Hour values for Ap are not provided and the file assumes the 3 hour values are the same as the daily values for both Ap and Kp.
+
+The long-term monthly section of the file is Schatten's 30 year predict containing Ap and F10.7 predictions for Early, Nominal, and Late cycles, as well as Nominal, +2 Sigma, and -2 Sigma values.
+\subsection{Historical (Observed) data}
+Vallado\cite{Vallado:Kelso:05} identifies four files provide by NOAA that can used to assemble historic flux and geomagnetic data:
+\begin{small}
+\begin{verbatim}
+1) ftp://ftp.ngdc.noaa.gov/STP/GEOMAGNETIC_DATA/INDICES/KP_AP/yyyy.vm
+2) ftp://fdf.gsfc.nasa.gov/generalProducts/database/
+3) ftp://ftp.ngdc.noaa.gov/STP/SOLAR_DATA/SOLAR_RADIO/FLUX/DAILYPLT.OBS
+4) http://www.swpc.noaa.gov/ftpdir/indices/quar_DSD.txt
+\end{verbatim}
+\end{small}
+%
+The data in the raw files is used to create a single coherent file containing flux and geomagnetic data from Oct. 1 1957 to the present day.  Each row of the file corresponds to a unique day. For each unique row the data is organized into colums as follows.
+
+
+When converting between observed and adjusted F10.7 values, the following relation is used.
+%
+\begin{equation}
+F_{10.7}(Obs) = \frac{F_{10.7}(Adj)AU^2}{r_{E/S}^2}
+\end{equation}
+%
+where
+%
+\begin{tabbing}
+123456781234 \= Reynolds number based on length $s$ \kill\\
+$F_{10.7}(Obs)$  \>   Observed F10.7 value at station on Earth. \\
+$F_{10.7}(Adj)$  \>   Adjusted value F10.7 to 1 AU\\
+$AU$  \>   Astonomical unit.\\
+$r_{E/S}$  \>   Distance from Earth to Sun.\\
+\end{tabbing}
+
+\subsection{Near Term Daily Predictions}
+The
+
+Near term predictions are updated daily and provided at the following location.  The file contains a 45 day prediction
+of Ap and F10.7 values.
+\begin{small}
+\begin{verbatim}
+1) http://www.swpc.noaa.gov/ftpdir/latest/45DF.txt
+\end{verbatim}
+\end{small}
+
+\subsection{Long Term Monthly Predictions}
+
+\begin{landscape}
+\begin{small}
+\begin{verbatim}
+DATATYPE Space Weather File
+VERSION 1.0
+UPDATED 2010 Sep 21 15:35:06 UTC
+#
+#  This file contains three sections: historic data, daily predictions for 45 days, and monthly predictions for 30 years.
+#  The historic and daily sections are identical in format to that proposed in Ref (1) and made publicly available
+#  here:  http://celestrak.com/SpaceData/.  The monthly predictions contained in the file are described in Ref (2).
+#
+#  REFERENCES:
+#
+#     (1) Vallado, D., and Kelso, T. S., "Using EOP and Solar Weather Data for Satellite Operations", AIAA/AAS Astrodynamics
+#          Specialist Conference, Lake Tahoe, CA, Aug. 7-11, 2005.
+#     (2) Vallado, D., and Kelso, T.S.,  Space Weather File, http://celestrak.com/SpaceData/sw20060101.txt.
+#     (2) Schatten, K.  NEED REFERENCE
+#
+# FORMAT(I4,I3,I3,I5,I3,8I3,I4,8I4,I4,F4.1,I2,I4,F6.1,I2,5F6.1)
+# --------------------------------------------------------------------------------------------------------------------------------
+#                                                                                             Adj     Adj   Adj   Obs   Obs   Obs
+# yy mm dd BSRN ND Kp Kp Kp Kp Kp Kp Kp Kp Sum Ap  Ap  Ap  Ap  Ap  Ap  Ap  Ap  Avg Cp C9 ISN F10.7 Q Ctr81 Lst81 F10.7 Ctr81 Lst81
+# --------------------------------------------------------------------------------------------------------------------------------
+#
+NUM_OBSERVED_POINTS 10
+BEGIN OBSERVED
+2011 05 17 2426  3 20 20 30 30 20 30 30 30 210   7   7  15  15   7  15  15  15  12        57  92.0 0  96.2 110.1  90.0  94.3 110.0
+2011 05 18 2426  4 20 20 10 10 10 20 10 20 120   7   7   4   4   4   7   4   7   5        65  91.0 0  95.8 110.1  88.9  93.9 109.9
+2011 05 19 2426  5 10  0 10 10 10 10  0 10  60   4   0   4   4   4   4   0   4   3        36  84.0 0  95.5 110.1  82.1  93.6 109.8
+2011 05 20 2426  6 10 10  0  0  0 10 10 10  50   4   4   0   0   0   4   4   4   2        33  84.0 0  95.3 109.9  82.0  93.4 109.7
+2011 05 21 2426  7  0 10 10  0 10 10 10 30  80   0   4   4   0   4   4   4  15   4        44  84.0 0  95.1 109.6  82.0  93.1 109.3
+2011 05 22 2426  8 20 20  0  0 10 10 10 10  80   7   7   0   0   4   4   4   4   3        47  85.0 0  94.9 109.3  82.9  92.9 108.9
+2011 05 23 2426  9 10  0  0 10 20 10 10 20  80   4   0   0   4   7   4   4   7   3        37  84.0 0  94.6 108.9  81.9  92.6 108.5
+2011 05 24 2426 10 20 10 10 10 20 20 10 20 120   7   4   4   4   7   7   4   7   5        23  82.0 0  94.2 108.4  80.0  92.1 107.9
+2011 05 25 2426 11 10 10 10  0 10 10 10 20  80   4   4   4   0   4   4   4   7   3        23  80.0 0  93.8 107.7  78.0  91.7 107.2
+2011 05 26 2426 12 20 20 10  0 20 22 22 22 136   7   7   4   0   7   8   8   8   6            80.0 0  93.3 107.0  77.9  91.2 106.4
+END OBSERVED
+
+NUM_DAILY_PREDICTED_POINTS 44
+BEGIN DAILY_PREDICTED
+2011 05 27 2426 13 27 27 27 27 27 27 27 27 216  12  12  12  12  12  12  12  12  12            80.0    92.9 106.1  77.9  90.8 105.5
+2011 05 28 2426 14 30 30 30 30 30 30 30 30 240  15  15  15  15  15  15  15  15  15            80.0    92.6 105.1  77.9  90.4 104.4
+2011 05 29 2426 15 27 27 27 27 27 27 27 27 216  12  12  12  12  12  12  12  12  12            80.0    92.3 104.3  77.9  90.1 103.6
+2011 05 30 2426 16 24 24 24 24 24 24 24 24 192  10  10  10  10  10  10  10  10  10            80.0    92.0 103.7  77.8  89.8 102.9
+2011 05 31 2426 17 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            80.0    92.1 103.2  77.8  89.8 102.4
+2011 06 01 2426 18 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            80.0    92.1 102.7  77.8  89.8 101.8
+2011 06 02 2426 19 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            80.0    92.2 102.3  77.8  89.9 101.4
+2011 06 03 2426 20 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0    92.1 102.1  87.5  89.8 101.1
+2011 06 04 2426 21 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0    92.1 102.0  87.4  89.8 101.0
+2011 06 05 2426 22 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            85.0    92.2 101.8  82.6  89.8 100.7
+2011 06 06 2426 23 22 22 22 22 22 22 22 22 176   8   8   8   8   8   8   8   8   8            85.0    92.3 101.7  82.5  89.9 100.6
+2011 06 07 2426 24 22 22 22 22 22 22 22 22 176   8   8   8   8   8   8   8   8   8            85.0    92.4 101.7  82.5  90.0 100.5
+2011 06 08 2426 25 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0    92.5 101.7  87.4  90.1 100.5
+2011 06 09 2426 26 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0    92.6 101.7  87.3  90.1 100.5
+2011 06 10 2426 27 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0    92.7 101.6  87.3  90.2 100.3
+2011 06 11 2427  1 27 27 27 27 27 27 27 27 216  12  12  12  12  12  12  12  12  12            90.0    92.9 101.5  87.3  90.4 100.1
+2011 06 12 2427  2 27 27 27 27 27 27 27 27 216  12  12  12  12  12  12  12  12  12            95.0    93.0 101.3  92.1  90.5 100.0
+2011 06 13 2427  3 22 22 22 22 22 22 22 22 176   8   8   8   8   8   8   8   8   8            90.0    93.1 101.1  87.3  90.6  99.7
+2011 06 14 2427  4 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            85.0    93.3 100.8  82.4  90.7  99.4
+2011 06 15 2427  5 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            85.0    93.4 100.4  82.4  90.9  99.0
+2011 06 16 2427  6 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            85.0    93.6 100.1  82.4  91.1  98.6
+2011 06 17 2427  7 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            85.0    93.9  99.7  82.4  91.3  98.1
+2011 06 18 2427  8 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            80.0    94.1  99.2  77.5  91.5  97.6
+2011 06 19 2427  9 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            80.0    94.2  98.8  77.5  91.6  97.1
+2011 06 20 2427 10 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            80.0    94.5  98.4  77.5  91.9  96.7
+2011 06 21 2427 11 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            85.0    94.8  98.1  82.3  92.2  96.4
+2011 06 22 2427 12 27 27 27 27 27 27 27 27 216  12  12  12  12  12  12  12  12  12            85.0    95.1  97.8  82.3  92.5  96.1
+2011 06 23 2427 13 37 37 37 37 37 37 37 37 296  22  22  22  22  22  22  22  22  22            85.0    95.5  97.4  82.3  92.8  95.7
+2011 06 24 2427 14 33 33 33 33 33 33 33 33 264  18  18  18  18  18  18  18  18  18            80.0    95.8  97.0  77.4  93.2  95.2
+2011 06 25 2427 15 33 33 33 33 33 33 33 33 264  18  18  18  18  18  18  18  18  18            80.0    96.1  96.7  77.4  93.4  94.8
+2011 06 26 2427 16 30 30 30 30 30 30 30 30 240  15  15  15  15  15  15  15  15  15            80.0    96.4  96.2  77.4  93.8  94.3
+2011 06 27 2427 17 22 22 22 22 22 22 22 22 176   8   8   8   8   8   8   8   8   8            80.0    96.8  95.8  77.4  94.1  93.9
+2011 06 28 2427 18 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            85.0    97.1  95.5  82.2  94.4  93.6
+2011 06 29 2427 19 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0    97.5  95.3  87.1  94.9  93.4
+2011 06 30 2427 20 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0    98.0  95.1  87.1  95.3  93.1
+2011 07 01 2427 21 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0    98.4  94.9  87.1  95.7  92.9
+2011 07 02 2427 22 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            85.0    98.9  94.6  82.2  96.2  92.6
+2011 07 03 2427 23 22 22 22 22 22 22 22 22 176   8   8   8   8   8   8   8   8   8            85.0    99.3  94.2  82.2  96.6  92.1
+2011 07 04 2427 24 22 22 22 22 22 22 22 22 176   8   8   8   8   8   8   8   8   8            85.0    99.8  93.8  82.2  97.1  91.7
+2011 07 05 2427 25 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0   100.3  93.3  87.1  97.6  91.2
+2011 07 06 2427 26 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0   100.8  92.9  87.1  98.1  90.8
+2011 07 07 2427 27 13 13 13 13 13 13 13 13 104   5   5   5   5   5   5   5   5   5            90.0   101.3  92.6  87.1  98.7  90.4
+2011 07 08 2428  1 27 27 27 27 27 27 27 27 216  12  12  12  12  12  12  12  12  12            90.0   101.8  92.3  87.1  99.2  90.1
+2011 07 09 2428  2 27 27 27 27 27 27 27 27 216  12  12  12  12  12  12  12  12  12            90.0   102.4  92.0  87.1  99.7  89.8
+END DAILY_PREDICTED
+
+#          NOMINAL TIMING      EARLY TIMING        LATE TIMING
+#mo. yr.  mean +2sig -2sig ap mean +2sig -2sig ap mean +2sig -2sig ap
+NUM_MONTHLY_PREDICTED_POINTS 10
+BEGIN MONTHLY_PREDICTED
+8 2011   101  121   82   10  112  135   90   11   87  101   73    9
+9 2011   103  123   83   10  113  136   90   11   89  104   74    9
+10 2011   104  125   84   10  114  138   91   11   91  106   75    9
+11 2011   106  127   85   10  115  139   91   11   92  108   76    9
+12 2011   107  129   86   10  115  140   92   11   94  110   77    9
+1 2012   108  131   87   10  116  141   93   11   96  113   79    9
+2 2012   110  132   88   10  117  142   93   11   98  115   80    9
+3 2012   111  134   89   10  117  143   94   11   99  117   81    9
+4 2012   112  136   90   10  118  144   94   11  101  120   82   10
+5 2012   113  137   91   11  119  145   94   11  102  122   83   10
+END MONTHLY_PREDICTED
+\end{verbatim}
+\end{small}
+\end{landscape}
+
+\begin{landscape}
+\begin{small}
+\begin{verbatim}----------------------------------------------------------------------------------------------------------------------------------
+FORMAT(I4,I3,I3,I5,I3,8I3,I4,8I4,I4,F4.1,I2,I4,F6.1,I2,5F6.1)
+----------------------------------------------------------------------------------------------------------------------------------
+Columns	Description
+001-004	Year
+006-007	Month (01-12)
+009-010	Day
+012-015	Bartels Solar Rotation Number. A sequence of 27-day intervals counted continuously from 1832 Feb 8.
+017-018	Number of Day within the Bartels 27-day cycle (01-27).
+020-021	Planetary 3-hour Range Index (Kp) for 0000-0300 UT.
+023-024	Planetary 3-hour Range Index (Kp) for 0300-0600 UT.
+026-027	Planetary 3-hour Range Index (Kp) for 0600-0900 UT.
+029-030	Planetary 3-hour Range Index (Kp) for 0900-1200 UT.
+032-033	Planetary 3-hour Range Index (Kp) for 1200-1500 UT.
+035-036	Planetary 3-hour Range Index (Kp) for 1500-1800 UT.
+038-039	Planetary 3-hour Range Index (Kp) for 1800-2100 UT.
+041-042	Planetary 3-hour Range Index (Kp) for 2100-0000 UT.
+044-046	Sum of the 8 Kp indices for the day expressed to the nearest third of a unit.
+048-050	Planetary Equivalent Amplitude (Ap) for 0000-0300 UT.
+052-054	Planetary Equivalent Amplitude (Ap) for 0300-0600 UT.
+056-058	Planetary Equivalent Amplitude (Ap) for 0600-0900 UT.
+060-062	Planetary Equivalent Amplitude (Ap) for 0900-1200 UT.
+064-066	Planetary Equivalent Amplitude (Ap) for 1200-1500 UT.
+068-070	Planetary Equivalent Amplitude (Ap) for 1500-1800 UT.
+072-074	Planetary Equivalent Amplitude (Ap) for 1800-2100 UT.
+076-078	Planetary Equivalent Amplitude (Ap) for 2100-0000 UT.
+080-082	Arithmetic average of the 8 Ap indices for the day.
+084-086	Cp or Planetary Daily Character Figure. A qualitative estimate of overall level of magnetic activity for the day
+determined from the sum of the 8 Ap indices. Cp ranges, in steps of one-tenth, from 0 (quiet) to 2.5 (highly disturbed).
+088-088	C9. A conversion of the 0-to-2.5 range of the Cp index to one digit between 0 and 9.
+090-092	International Sunspot Number. Records contain the Zurich number through 1980 Dec 31 and the International Brussels
+number thereafter.  094-098	10.7-cm Solar Radio Flux (F10.7) Adjusted to 1 AU. Measured at Ottawa at 1700 UT daily from 1947
+Feb 14 until 1991 May 31 and measured at Penticton at 2000 UT from 1991 Jun 01 on. Expressed in units of 10-22 W/m2/Hz.
+100-100	Flux Qualifier.
+0 indicates flux required no adjustment;
+1 indicates flux required adjustment for burst in progress at time of measurement;
+2 indicates a flux approximated by either interpolation or extrapolation;
+3 indicates no observation; and
+4 indicates CSSI interpolation of missing data.
+102-106	Centered 81-day arithmetic average of F10.7 (adjusted).
+108-112	Last 81-day arithmetic average of F10.7 (adjusted).
+114-118	Observed (unadjusted) value of F10.7.
+120-124	Centered 81-day arithmetic average of F10.7 (observed).
+126-130	Last 81-day arithmetic average of F10.7 (observed).
+\end{verbatim}
+\end{small}
+\end{landscape}

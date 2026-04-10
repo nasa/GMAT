@@ -1,0 +1,160 @@
+%
+%   Ex_Simulate_and_Process_GpsPosVec_data
+%
+%   SpacecraftNavigation_SolveFors_CartesianState_GpsPosVec
+%
+%   Solve for the Spacecraft Cartesian state using GPS_PosVec data.
+%
+%   Released R2017a
+%
+
+
+%----------------------------------------
+%---------- Antenna
+%----------------------------------------
+
+Create Antenna GpsAntenna;
+Create Receiver GpsReceiver;
+
+GpsReceiver.PrimaryAntenna = GpsAntenna;
+GpsReceiver.Id             = 800;
+GpsReceiver.ErrorModels    = {PosVecModel}
+
+Create ErrorModel PosVecModel;
+ 
+PosVecModel.Type           = 'GPS_PosVec'
+PosVecModel.NoiseSigma     = 0.010;
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat         = UTCGregorian;
+SimSat.Epoch              = '3 Aug 2010 00:00:00.000';
+SimSat.CoordinateSystem   = EarthMJ2000Eq;
+SimSat.DisplayStateType   = Cartesian;
+SimSat.X                  = -6429.439955; 
+SimSat.Y                  =  2874.907490;
+SimSat.Z                  = -762.976473;
+SimSat.VX                 = -0.280992;
+SimSat.VY                 =  1.308479;
+SimSat.VZ                 =  7.382127;
+SimSat.DryMass            = 2937;
+SimSat.Cd                 = 2.2;
+SimSat.Cr                 = 1.5;
+SimSat.DragArea           = 47.95;
+SimSat.SRPArea            = 4700.95;
+SimSat.Id                 = 1874;
+SimSat.AddHardware        = {GpsReceiver, GpsAntenna};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat         = UTCGregorian;
+EstSat.Epoch              = '3 Aug 2010 00:00:00.000';
+EstSat.CoordinateSystem   = EarthMJ2000Eq;
+EstSat.DisplayStateType   = Cartesian;
+EstSat.X                  = -6429.440;
+EstSat.Y                  =  2874.907;
+EstSat.Z                  = -762.976;
+EstSat.VX                 = -0.280992;
+EstSat.VY                 =  1.308479;
+EstSat.VZ                 =  7.382127;
+EstSat.DryMass            = 2937;
+EstSat.Cd                 = 2.2;
+EstSat.Cr                 = 1.5;
+EstSat.DragArea           = 47.95;
+EstSat.SRPArea            = 4700.95;
+EstSat.Id                 = 1874;
+EstSat.AddHardware        = {GpsReceiver, GpsAntenna};
+EstSat.SolveFors          = {CartesianState};     
+
+
+%----------------------------------------
+%----- Force model and propagator
+%----------------------------------------
+
+Create ForceModel Fm;
+Create Propagator Prop;
+
+Fm.CentralBody                       = Earth;
+Fm.PrimaryBodies                     = {Earth};
+Fm.SRP                               = Off;
+Fm.Drag.AtmosphereModel              = None;
+Fm.ErrorControl                      = None;
+
+Prop.FM                              = Fm;
+Prop.Type                            = RungeKutta89;
+Prop.InitialStepSize                 = 60;
+Prop.Accuracy                        = 1e-13;
+Prop.MinStep                         = 0;
+Prop.MaxStep                         = 60;
+Prop.MaxStepAttempts                 = 50;
+
+%----------------------------------------
+%----- Tracking data selection
+%----------------------------------------
+
+Create TrackingFileSet SimMeas;
+
+SimMeas.FileName                  = {'SpacecraftNavigation_SolveFors_CartesianState_GpsPosVec.gmd'};
+SimMeas.AddTrackingConfig         = {{SimSat.GpsReceiver}, 'GPS_PosVec'};
+SimMeas.RampTable                 = {};
+SimMeas.UseLightTime              = True;
+SimMeas.UseRelativityCorrection   = False;
+SimMeas.UseETminusTAI             = True;
+SimMeas.DataFilters               = {};
+
+Create TrackingFileSet EstMeas;
+
+EstMeas.FileName                  = {'SpacecraftNavigation_SolveFors_CartesianState_GpsPosVec.gmd'};
+EstMeas.AddTrackingConfig         = {{EstSat.GpsReceiver}, 'GPS_PosVec'};
+EstMeas.RampTable                 = {};
+EstMeas.UseLightTime              = True;
+EstMeas.UseRelativityCorrection   = False;
+EstMeas.UseETminusTAI             = True;
+EstMeas.DataFilters               = {};
+
+%----------------------------------------
+%------ Configure BLS
+%----------------------------------------
+
+Create BatchEstimator Bls;
+
+Bls.ShowProgress                = True;
+Bls.Measurements                = {EstMeas};
+Bls.AbsoluteTol                 = 0.0001;
+Bls.RelativeTol                 = 0.0005;
+Bls.MaximumIterations           = 10;
+Bls.MaxConsecutiveDivergences   = 4;
+Bls.Propagator                  = Prop;
+Bls.ShowAllResiduals            = On;
+Bls.OLSEInitialRMSSigma         = 3000;
+Bls.OLSEMultiplicativeConstant  = 3;
+Bls.OLSEAdditiveConstant        = 0;
+Bls.InversionAlgorithm          = 'Internal';
+Bls.ReportStyle                 = 'Normal';
+Bls.ReportFile                  = 'SpacecraftNavigation_SolveFors_CartesianState_GpsPosVec.txt';
+
+%----------------------------------------
+%----- Simulator
+%----------------------------------------
+
+Create Simulator Sim;
+
+Sim.AddData                     = {SimMeas};
+Sim.EpochFormat                 = 'UTCGregorian';
+Sim.InitialEpoch                = '03 Aug 2010 00:00:00.000';
+Sim.FinalEpoch                  = '04 Aug 2010 12:00:00.000';
+Sim.MeasurementTimeStep         = 60;
+Sim.Propagator                  = Prop;
+Sim.AddNoise                    = On;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+RunSimulator Sim;
+RunEstimator Bls;

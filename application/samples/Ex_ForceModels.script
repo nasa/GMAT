@@ -1,0 +1,368 @@
+%
+%  Ex_ForceModels.script
+%
+%  Use multiple high-fidelity force models.
+%
+%   Released: R2007a
+%   Updated:  R2026a
+%
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+% Create Sat and define its orbit
+Create Spacecraft Sat;
+
+Sat.DateFormat       = UTCGregorian;
+Sat.Epoch            = '04 Jan 2003 00:00:00.000';
+Sat.CoordinateSystem = EarthMJ2000Eq;
+Sat.DisplayStateType = Cartesian;
+Sat.X                = -6365.554;
+Sat.Y                = 2087.458;
+Sat.Z                = 878.918;
+Sat.VX               = -1.635;
+Sat.VY               = -6.597762;
+Sat.VZ               = 3.5058499;
+Sat.DryMass          = 100;
+Sat.Cd               = 2.25;
+Sat.Cr               = 1.21;
+Sat.DragArea         = 4;
+Sat.SRPArea          = 4;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+%  Define Force Model with point mass only
+Create ForceModel PointMass;
+
+PointMass.CentralBody                      = Earth;
+PointMass.PrimaryBodies                    = {Earth};
+PointMass.Drag                             = None;
+PointMass.SRP                              = Off;
+PointMass.RelativisticCorrection           = Off;
+PointMass.ErrorControl                     = RSSStep;
+PointMass.GravityField.Earth.Degree        = 0;
+PointMass.GravityField.Earth.Order         = 0;
+PointMass.GravityField.Earth.PotentialFile = 'JGM2.cof';
+PointMass.GravityField.Earth.TideModel     = 'None';
+
+
+%  Define Force Model with third bodies 
+Create ForceModel ThirdBodies;
+
+ThirdBodies.CentralBody                      = Earth;
+ThirdBodies.PrimaryBodies                    = {Earth};
+ThirdBodies.PointMasses                      = {Sun, Luna, Venus, Mars, Jupiter, Saturn, Uranus, Neptune};
+ThirdBodies.Drag                             = None;
+ThirdBodies.SRP                              = Off;
+ThirdBodies.RelativisticCorrection           = Off;
+ThirdBodies.ErrorControl                     = RSSStep;
+ThirdBodies.GravityField.Earth.Degree        = 0;
+ThirdBodies.GravityField.Earth.Order         = 0;
+ThirdBodies.GravityField.Earth.PotentialFile = 'JGM2.cof';
+ThirdBodies.GravityField.Earth.TideModel     = 'None';
+
+
+%  Define Force Model with 12x12 gravity
+Create ForceModel NonSpherical12;
+
+NonSpherical12.CentralBody                      = Earth;
+NonSpherical12.PrimaryBodies                    = {Earth};
+NonSpherical12.Drag                             = None;
+NonSpherical12.SRP                              = Off;
+NonSpherical12.RelativisticCorrection           = Off;
+NonSpherical12.ErrorControl                     = RSSStep;
+NonSpherical12.GravityField.Earth.Degree        = 12;
+NonSpherical12.GravityField.Earth.Order         = 12;
+NonSpherical12.GravityField.Earth.PotentialFile = 'JGM2.cof';
+NonSpherical12.GravityField.Earth.TideModel     = 'None';
+
+
+%  Define Force Model with MSISE90 Drag 
+Create ForceModel MSISE90Drag;
+
+MSISE90Drag.CentralBody                      = Earth;
+MSISE90Drag.PrimaryBodies                    = {Earth};
+MSISE90Drag.SRP                              = Off;
+MSISE90Drag.RelativisticCorrection           = Off;
+MSISE90Drag.ErrorControl                     = RSSStep;
+MSISE90Drag.GravityField.Earth.Degree        = 0;
+MSISE90Drag.GravityField.Earth.Order         = 0;
+MSISE90Drag.GravityField.Earth.PotentialFile = 'JGM2.cof';
+MSISE90Drag.GravityField.Earth.TideModel     = 'None';
+MSISE90Drag.Drag.AtmosphereModel             = MSISE90;
+MSISE90Drag.Drag.HistoricWeatherSource       = 'CSSISpaceWeatherFile';
+MSISE90Drag.Drag.PredictedWeatherSource      = 'CSSISpaceWeatherFile';
+MSISE90Drag.Drag.CSSISpaceWeatherFile        = 'SpaceWeather-All-v1.2.txt';
+
+
+%  Define Force Model with Jacchia Roberts Drag 
+Create ForceModel JRDrag;
+
+JRDrag.CentralBody                      = Earth;
+JRDrag.PrimaryBodies                    = {Earth};
+JRDrag.SRP                              = Off;
+JRDrag.RelativisticCorrection           = Off;
+JRDrag.ErrorControl                     = RSSStep;
+JRDrag.GravityField.Earth.Degree        = 0;
+JRDrag.GravityField.Earth.Order         = 0;
+JRDrag.GravityField.Earth.PotentialFile = 'JGM2.cof';
+JRDrag.GravityField.Earth.TideModel     = 'None';
+JRDrag.Drag.AtmosphereModel             = JacchiaRoberts;
+JRDrag.Drag.HistoricWeatherSource       = 'CSSISpaceWeatherFile';
+JRDrag.Drag.PredictedWeatherSource      = 'CSSISpaceWeatherFile';
+JRDrag.Drag.CSSISpaceWeatherFile        = 'SpaceWeather-All-v1.2.txt';
+
+
+%  Define Force Model with MSISE 2000 Drag 
+Create ForceModel MSISE2000Drag;
+
+MSISE2000Drag.CentralBody                      = Earth;
+MSISE2000Drag.PrimaryBodies                    = {Earth};
+MSISE2000Drag.SRP                              = Off;
+MSISE2000Drag.RelativisticCorrection           = Off;
+MSISE2000Drag.ErrorControl                     = RSSStep;
+MSISE2000Drag.GravityField.Earth.Degree        = 0;
+MSISE2000Drag.GravityField.Earth.Order         = 0;
+MSISE2000Drag.GravityField.Earth.PotentialFile = 'JGM2.cof';
+MSISE2000Drag.GravityField.Earth.TideModel     = 'None';
+MSISE2000Drag.Drag.AtmosphereModel             = NRLMSISE00;
+MSISE2000Drag.Drag.HistoricWeatherSource       = 'CSSISpaceWeatherFile';
+MSISE2000Drag.Drag.PredictedWeatherSource      = 'CSSISpaceWeatherFile';
+MSISE2000Drag.Drag.CSSISpaceWeatherFile        = 'SpaceWeather-All-v1.2.txt';
+
+
+%  Define Force Model with Exponential Drag 
+Create ForceModel EarthExpDrag;
+
+EarthExpDrag.CentralBody                      = Earth;
+EarthExpDrag.PrimaryBodies                    = {Earth};
+EarthExpDrag.SRP                              = Off;
+EarthExpDrag.RelativisticCorrection           = Off;
+EarthExpDrag.ErrorControl                     = RSSStep;
+EarthExpDrag.GravityField.Earth.Degree        = 0;
+EarthExpDrag.GravityField.Earth.Order         = 0;
+EarthExpDrag.GravityField.Earth.PotentialFile = 'JGM2.cof';
+EarthExpDrag.GravityField.Earth.TideModel     = 'None';
+EarthExpDrag.Drag.AtmosphereModel             = Exponential;
+EarthExpDrag.Drag.InputFile                   = '../data/atmosphere/earth/EarthExponentialAtmosphereData.txt'
+
+
+%  Define Force Model with SRP
+Create ForceModel SRP;
+
+SRP.CentralBody                      = Earth;
+SRP.PrimaryBodies                    = {Earth};
+SRP.Drag                             = None;
+SRP.SRP                              = On;
+SRP.RelativisticCorrection           = Off;
+SRP.ErrorControl                     = RSSStep;
+SRP.GravityField.Earth.Degree        = 0;
+SRP.GravityField.Earth.Order         = 0;
+SRP.GravityField.Earth.PotentialFile = 'JGM2.cof';
+SRP.GravityField.Earth.TideModel     = 'None';
+SRP.SRP.Flux                         = 1367;
+SRP.SRP.SRPModel                     = Spherical;
+SRP.SRP.Nominal_Sun                  = 149597870.691;
+
+
+%  Define Force Model with all forces
+Create ForceModel AllForces;
+
+AllForces.CentralBody                      = Earth;
+AllForces.PrimaryBodies                    = {Earth};
+AllForces.SRP                              = On;
+AllForces.RelativisticCorrection           = Off;
+AllForces.ErrorControl                     = RSSStep;
+AllForces.GravityField.Earth.Degree        = 20;
+AllForces.GravityField.Earth.Order         = 20;
+AllForces.GravityField.Earth.PotentialFile = 'JGM2.cof';
+AllForces.GravityField.Earth.TideModel     = 'None';
+AllForces.SRP.Flux                         = 1367;
+AllForces.SRP.SRPModel                     = Spherical;
+AllForces.SRP.Nominal_Sun                  = 149597870.691;
+AllForces.Drag.AtmosphereModel             = MSISE90;
+AllForces.Drag.HistoricWeatherSource       = 'CSSISpaceWeatherFile';
+AllForces.Drag.PredictedWeatherSource      = 'CSSISpaceWeatherFile';
+AllForces.Drag.CSSISpaceWeatherFile        = 'SpaceWeather-All-v1.2.txt';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+% Create propgator with point mass only
+Create Propagator EarthPointMass;
+
+EarthPointMass.FM                       = PointMass;
+EarthPointMass.Type                     = PrinceDormand78;
+EarthPointMass.InitialStepSize          = 30;
+EarthPointMass.Accuracy                 = 1e-012;
+EarthPointMass.MinStep                  = 0;
+EarthPointMass.MaxStep                  = 86400;
+EarthPointMass.MaxStepAttempts          = 50;
+EarthPointMass.StopIfAccuracyIsViolated = false;
+
+% Create propgator with third bodies only
+Create Propagator EarthThirdBodies;
+
+EarthThirdBodies.FM                       = ThirdBodies;
+EarthThirdBodies.Type                     = PrinceDormand78;
+EarthThirdBodies.InitialStepSize          = 30;
+EarthThirdBodies.Accuracy                 = 1e-012;
+EarthThirdBodies.MinStep                  = 0;
+EarthThirdBodies.MaxStep                  = 86400;
+EarthThirdBodies.MaxStepAttempts          = 50;
+EarthThirdBodies.StopIfAccuracyIsViolated = false;
+
+% Create propgator with 12x12 gravity only
+Create Propagator EarthAspherical12x12;
+
+EarthAspherical12x12.FM                       = NonSpherical12;
+EarthAspherical12x12.Type                     = PrinceDormand78;
+EarthAspherical12x12.InitialStepSize          = 30;
+EarthAspherical12x12.Accuracy                 = 1e-012;
+EarthAspherical12x12.MinStep                  = 0;
+EarthAspherical12x12.MaxStep                  = 86400;
+EarthAspherical12x12.MaxStepAttempts          = 50;
+EarthAspherical12x12.StopIfAccuracyIsViolated = false;
+
+% Create propgator with MSISE-90 drag only
+Create Propagator EarthMSISE90;
+
+EarthMSISE90.FM                       = MSISE90Drag;
+EarthMSISE90.Type                     = PrinceDormand78;
+EarthMSISE90.InitialStepSize          = 60;
+EarthMSISE90.Accuracy                 = 1e-012;
+EarthMSISE90.MinStep                  = 0;
+EarthMSISE90.MaxStep                  = 86400;
+EarthMSISE90.MaxStepAttempts          = 50;
+EarthMSISE90.StopIfAccuracyIsViolated = false;
+
+% Create propgator with Jacchia-Roberts drag only
+Create Propagator EarthJacchiaRoberts;
+
+EarthJacchiaRoberts.FM                       = JRDrag;
+EarthJacchiaRoberts.Type                     = PrinceDormand78;
+EarthJacchiaRoberts.InitialStepSize          = 30;
+EarthJacchiaRoberts.Accuracy                 = 1e-012;
+EarthJacchiaRoberts.MinStep                  = 0;
+EarthJacchiaRoberts.MaxStep                  = 86400;
+EarthJacchiaRoberts.MaxStepAttempts          = 50;
+EarthJacchiaRoberts.StopIfAccuracyIsViolated = false;
+
+% Create propgator with MSISE-00 drag only
+Create Propagator EarthMSISE00;
+
+EarthMSISE00.FM                       = MSISE2000Drag;
+EarthMSISE00.Type                     = PrinceDormand78;
+EarthMSISE00.InitialStepSize          = 60;
+EarthMSISE00.Accuracy                 = 1e-012;
+EarthMSISE00.MinStep                  = 0;
+EarthMSISE00.MaxStep                  = 86400;
+EarthMSISE00.MaxStepAttempts          = 50;
+EarthMSISE00.StopIfAccuracyIsViolated = false;
+
+% Create propgator with Earth exponential drag only
+Create Propagator EarthExponential;
+
+EarthExponential.FM                       = EarthExpDrag;
+EarthExponential.Type                     = PrinceDormand78;
+EarthExponential.InitialStepSize          = 30;
+EarthExponential.Accuracy                 = 1e-012;
+EarthExponential.MinStep                  = 0;
+EarthExponential.MaxStep                  = 86400;
+EarthExponential.MaxStepAttempts          = 50;
+EarthExponential.StopIfAccuracyIsViolated = false;
+
+% Create propgator with SRP only
+Create Propagator EarthSRP;
+
+EarthSRP.FM                       = SRP;
+EarthSRP.Type                     = PrinceDormand78;
+EarthSRP.InitialStepSize          = 30;
+EarthSRP.Accuracy                 = 1e-012;
+EarthSRP.MinStep                  = 0;
+EarthSRP.MaxStep                  = 86400;
+EarthSRP.MaxStepAttempts          = 50;
+EarthSRP.StopIfAccuracyIsViolated = false;
+
+Create Propagator EarthFull;
+
+EarthFull.FM                       = AllForces;
+EarthFull.Type                     = PrinceDormand78;
+EarthFull.InitialStepSize          = 30;
+EarthFull.Accuracy                 = 1e-012;
+EarthFull.MinStep                  = 0;
+EarthFull.MaxStep                  = 86400;
+EarthFull.MaxStepAttempts          = 50;
+EarthFull.StopIfAccuracyIsViolated = false;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_GLPlot;
+
+OFI_GLPlot.SolverIterations    = Current;
+OFI_GLPlot.UpperLeft           = [ 0.00411764705882353 0 ];
+OFI_GLPlot.Size                = [ 0.7994117647058824 0.850132625994695 ];
+OFI_GLPlot.RelativeZOrder      = 290;
+OFI_GLPlot.Maximized           = false;
+
+OFI_GLPlot.Add                 = {Sat, Earth};
+OFI_GLPlot.View                = {GLPlot_View};
+
+OFI_GLPlot.CoordinateSystem    = EarthMJ2000Eq;
+OFI_GLPlot.DrawObject          = [ true true ];
+OFI_GLPlot.DrawXYPlane         = [ false false ];
+OFI_GLPlot.DrawLabel           = [ true true ];
+OFI_GLPlot.DrawGrid            = [ false false ];
+
+OFI_GLPlot.Axes                = On;
+OFI_GLPlot.XYPlane             = On;
+OFI_GLPlot.EclipticPlane       = Off;
+OFI_GLPlot.EnableStars         = On;
+OFI_GLPlot.StarCount           = 40000;
+OFI_GLPlot.ShowPlot            = true;
+
+Create OpenFramesView GLPlot_View;
+
+GLPlot_View.ViewFrame          = CoordinateSystem;
+GLPlot_View.SetDefaultLocation = On;
+GLPlot_View.SetCurrentLocation = Off;
+
+GLPlot_View.DefaultEye         = [ -14000 -21000 4200 ]; 
+GLPlot_View.DefaultCenter      = [ 0 0 0 ];
+GLPlot_View.DefaultUp          = [ 0 0 1 ];
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+%Propagate using point mass propagator
+Propagate 'Prop Two Body' EarthPointMass(Sat) {Sat.ElapsedDays = 0.1};
+
+%Propagate using third bodies propagator
+Propagate 'Prop Point Mass Perts' EarthThirdBodies(Sat) {Sat.ElapsedDays = 0.1};
+
+%Propagate using 12x12 gravity model propgator
+Propagate 'Prop Harmonic Gravity' EarthAspherical12x12(Sat) {Sat.ElapsedDays = 0.1};
+
+%Propagate using Jacchia-Roberts propagator
+Propagate 'Prop JR Drag' EarthJacchiaRoberts(Sat) {Sat.ElapsedDays = 0.1};
+
+%Propagate using MSISE-90 propagator
+Propagate 'Prop MSISE-90 Drag' EarthMSISE90(Sat) {Sat.ElapsedDays = 0.1};
+
+%Propagate using MSISE 2000 propagator
+Propagate 'Prop MSISE00 Drag' EarthMSISE00(Sat) {Sat.ElapsedDays = 0.1};
+
+%Propagate using exponential drag propagator
+Propagate 'Prop Earth Exponential Drag' EarthExponential(Sat) {Sat.ElapsedDays = 0.1};
+
+%Propagate using SRP propagator
+Propagate 'Prop SRP' EarthSRP(Sat) {Sat.ElapsedDays = 0.1};
+
+%Propagate using using complex force model
+Propagate 'Prop Earth Full' EarthFull(Sat) {Sat.ElapsedDays = 0.1};

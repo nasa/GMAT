@@ -1,0 +1,74 @@
+%
+%  Ex_AlgebraicOptimization
+%
+%  Use the VF13ad optimizer to minimize an algebraic cost function.
+%
+
+
+%-----------------------------------------------------------------
+%-----------------Create and Setup the Optimizer------------------
+%-----------------------------------------------------------------
+
+Create VF13ad SQPfmincon;
+
+SQPfmincon.ShowProgress          = true;
+SQPfmincon.ReportStyle           = Normal;
+SQPfmincon.ReportFile            = 'VF13adSQPfmincon.data';
+SQPfmincon.MaximumIterations     = 200;
+SQPfmincon.Tolerance             = 1e-005;
+SQPfmincon.UseCentralDifferences = false;
+SQPfmincon.FeasibilityTolerance  = .0001;
+
+%-----------------------------------------------------------------
+%------------------------------OutPut-----------------------------
+%-----------------------------------------------------------------
+
+Create ReportFile Data;
+
+Data.SolverIterations = Current;
+Data.UpperLeft        = [ 0 0 ];
+Data.Size             = [ 0 0 ];
+Data.RelativeZOrder   = 0;
+Data.Maximized        = false;
+Data.Filename         = 'Ex_AlgebraicOptimization.report';
+Data.Precision        = 16;
+Data.WriteHeaders     = false;
+Data.LeftJustify      = On;
+Data.ZeroFill         = Off;
+Data.ColumnWidth      = 20;
+Data.WriteReport      = true;
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable X1 X2 J G;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Optimize SQPfmincon {SolveMode = Solve, ExitMode = DiscardAndContinue};
+   
+   %  Vary the independent variables
+   Vary 'Vary X1' SQPfmincon(X1 = 0, {Perturbation = 0.0000001, MaxStep = 9.999999e300, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   Vary 'Vary X2' SQPfmincon(X2 = 0, {Perturbation = 0.0000001, MaxStep = 9.999999e300, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   
+   %  The cost function and Minimize command
+   'Compute Cost (J)' J = ( X1 - 2 )^2 + ( X2 - 2 )^2;
+   Minimize 'Minimize Cost (J)' SQPfmincon(J);
+   
+   %  Calculate constraint and use NonLinearConstraint command
+   %   ( yes, the equation below is actually a linear constraint, were 
+   %     testing functionality with this test)
+   %  The constraint is to require the solution to lie above the line defined by X2 = -X1 + 6
+   %  or X2 >= -X1 + 6;
+   'Compute Constraint (G)' G = X2 + X1;
+   NonlinearConstraint 'G = 8' SQPfmincon(G<=8);
+
+EndOptimize;  % For optimizer SQPfmincon
+
+Report 'Report Solution' Data X1 X2 J G;
+
+
+

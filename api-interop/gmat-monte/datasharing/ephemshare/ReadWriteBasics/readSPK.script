@@ -1,0 +1,38 @@
+%General Mission Analysis Tool(GMAT) Script
+%Created: 2020-04-16
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+GMAT DefaultSC.NAIFId = -42;
+GMAT DefaultSC.NAIFIdReferenceFrame = -9000001;
+GMAT DefaultSC.OrbitSpiceKernelName = {'traj.bsp'};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+GMAT DefaultProp.Type = SPK;
+GMAT DefaultProp.StepSize = 300;
+GMAT DefaultProp.CentralBody = Earth;
+GMAT DefaultProp.EpochFormat = 'TDBGregorian';
+GMAT DefaultProp.StartEpoch = '01 Jan 2000 00:00:00.000';
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OrbitView DefaultOrbitView;
+GMAT DefaultOrbitView.Add = {DefaultSC, Earth};
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = 8};

@@ -1,0 +1,132 @@
+%
+%  Ex_Attitude_NadirPointing
+% 
+%  Use an attitude coordinate system defining a nadir-pointing attitude model.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DMSP;
+
+DMSP.DateFormat                   = UTCGregorian;
+DMSP.Epoch                        = '01 Jul 2000 11:59:28.000';
+DMSP.CoordinateSystem             = EarthMJ2000Eq;
+DMSP.DisplayStateType             = Keplerian;
+DMSP.SMA                          = 9000.938817629016;
+DMSP.ECC                          = 0.02454974900598064;
+DMSP.INC                          = 100.850080056581;
+DMSP.RAAN                         = 306.6148021947984;
+DMSP.AOP                          = 314.1905515359929;
+DMSP.TA                           = 99.88774933204795;
+DMSP.Attitude                     = CoordinateSystemFixed;
+DMSP.AttitudeDisplayStateType     = 'EulerAngles';
+DMSP.AttitudeRateDisplayStateType = 'AngularVelocity';
+DMSP.AttitudeCoordinateSystem     = LVLH;
+DMSP.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM  = DefaultProp_ForceModel;
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp.MaxStep = 0.123;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem LVLH;
+
+LVLH.Origin    = DMSP;
+LVLH.Axes      = ObjectReferenced;
+LVLH.YAxis     = -N;
+LVLH.ZAxis     = -R;
+LVLH.Primary   = Earth;
+LVLH.Secondary = DMSP;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View 
+
+Create OpenFramesInterface OFI_Earth3DView;
+
+OFI_Earth3DView.SolverIterations = Current;
+OFI_Earth3DView.UpperLeft        = [ 0.1 0.05 ];
+OFI_Earth3DView.Size             = [ 0.8 0.9 ];
+OFI_Earth3DView.Maximized        = true;
+
+OFI_Earth3DView.Add              = {DMSP, Earth};
+OFI_Earth3DView.View             = {Cdn_System_View, Nadir_View, Earth_View, DMSP_View};
+OFI_Earth3DView.CoordinateSystem = EarthMJ2000Eq;
+
+OFI_Earth3DView.DrawObject       = [ true true];
+OFI_Earth3DView.DrawXYPlane      = [ false false];
+OFI_Earth3DView.DrawLabel        = [ true true];
+OFI_Earth3DView.DrawGrid         = [ false false];
+
+OFI_Earth3DView.Axes             = On;
+OFI_Earth3DView.XYPlane          = On;
+OFI_Earth3DView.EclipticPlane    = Off;
+OFI_Earth3DView.EnableStars      = On;
+OFI_Earth3DView.StarCount        = 40000;
+OFI_Earth3DView.ShowPlot         = true;
+
+Create OpenFramesView Cdn_System_View;
+
+Cdn_System_View.ViewFrame          = CoordinateSystem;
+Cdn_System_View.SetDefaultLocation = On;
+Cdn_System_View.SetCurrentLocation = Off;
+
+Cdn_System_View.DefaultEye         = [ 20000 20000 20000]; 
+Cdn_System_View.DefaultCenter      = [ 0 0 0 ];
+Cdn_System_View.DefaultUp          = [ 0 0 1 ];
+
+Create OpenFramesView Nadir_View;
+
+Nadir_View.ViewFrame               = DMSP;
+Nadir_View.ViewTrajectory          = Off;
+Nadir_View.InertialFrame           = Off;
+Nadir_View.LookAtFrame             = Earth;
+Nadir_View.ShortestAngle           = Off;
+Nadir_View.SetDefaultLocation      = On;
+Nadir_View.DefaultEye              = [ 0 -1000 0 ];
+Nadir_View.DefaultCenter           = [ 0 0 0 ];
+Nadir_View.DefaultUp               = [ 0 0 1 ];
+Nadir_View.SetCurrentLocation      = Off;
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame               = Earth;
+Earth_View.ViewTrajectory          = Off;
+Earth_View.InertialFrame           = Off;
+Earth_View.SetDefaultLocation      = Off;
+Earth_View.SetCurrentLocation      = Off;
+
+
+Create OpenFramesView DMSP_View;
+
+DMSP_View.ViewFrame                = DMSP;
+DMSP_View.ViewTrajectory           = Off;
+DMSP_View.InertialFrame            = Off;
+DMSP_View.SetDefaultLocation       = Off;
+DMSP_View.SetCurrentLocation       = On;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop 10000 s' DefaultProp(DMSP) {DMSP.ElapsedSecs = 1000.0};
+
+
+

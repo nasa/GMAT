@@ -1,0 +1,529 @@
+\section{Measurement Error Modeling}
+
+The general model of a measurement error is as follows:
+\begin{equation}
+	e = b + v
+\end{equation}
+where $b$ models the systematic errors, and $v$ models the measurement noise.  We assume that the measurement noise is a discrete sequence of uncorrelated random numbers.  Variables such as $v$ are known as random variables, and the next subsection describes how to model them.  Subsequent subsections describe models for the systematic errors.
+
+The discussion of systematic errors treats such errors as scalar quantities to simplify the exposition; generalization to the vector case is straightforward.  Note that if the measurement is non-scalar, but the errors in the component measurements are independent of one another, then we can model each measurement independently, so modeling the biases as vector is not required.  If the measurement errors are not independent, then many estimators require that we apply a transformation to the data prior to processing so that the data input to the estimator have independent measurement errors; the next subsection describes some ways to accomplish this transformation.
+
+\subsection{Models and Realizations of Random Variables}
+
+A continuous random variable is a function that maps the outcomes of random events to the real line.  Realizations of random variables are thus real numbers.  A vector of $n$ random variables maps outcomes of random events to $\mathcal{R}^n$.  For our purposes, random variables will always be associated with a probability density function that indicates the likelihood that a realization occurs within a particular interval of the real line, or within a particular subspace of $\mathcal{R}^n$ for the vector case.  Currently, all of our models assume that this density is the normal or Gaussian density.  For the vector case, the normal probability density function is
+\begin{equation}
+	f(x) = \frac{1}{2\pi|P|}\text{e}^{-\frac{1}{2}(x-\mu)'P^{-1}(x-\mu)}
+\end{equation}
+where $\mu$ is a vector of mean values for each component of $x$, and $P$ is a matrix that contains the variances of each component of $x$ along its diagonal, and the covariances between each component as its off-diagonal components.  The covariances indicate the degree of correlation between the random variables composing $x$.  The matrix $P$ is thus called the variance-covariance matrix, which we will hereafter abbreviate to just ``covariance matrix,'' or ``covariance.''  Since the normal density is completely characterized by its mean and covariance, we will use the following notation as a shorthand to describe normally-distributed random vectors:
+\begin{equation}
+	x \sim N(\mu, P)
+\end{equation}
+Thus, the model for the measurement noise is
+\begin{equation}
+	v \sim N(0, R)
+\end{equation}
+
+For the scalar case, or for the vector case when the covariance is diagonal, we may directly generate realizations of a normally-distributed random vector from normal random number generators available in most software libraries.  If $P$ has non-zero off-diagonal elements, we must model the specified correlations when we generate realizations.  If $P$ is strictly positive definite, we can factor it as follows:
+\begin{equation}
+	P = SS'
+\end{equation}
+where $S$ is a triangular matrix known as a Cholesky factor; this can be viewed as a ``matrix square root.''  The Cholesky factorization is available in many linear algebra libraries.  We can then use $S$ to generate correlated realizations of $x$ as follows.  Let $z$ be a normally-distributed random vector of the same dimension as $x$, with zero mean and unit variance, that is
+\begin{equation}
+	z \sim N(0,I)
+\end{equation}
+Then, with
+\begin{equation}
+	x = S z
+\end{equation}
+we can generate properly correlated realizations of $x$.  We can also use a Cholesky factorization of the measurement noise covariance $R$, if $R$ is non-diagonal, to transform correlated measurements into uncorrelated auxiliary measurements for cases in which the estimator cannot handle correlated measurement data.
+
+If $P$ is only non-negative definite, i.e.\@ $P \geq 0$ rather than $P > 0$ as above, the Cholesky factorization does not exist.  In this case, since $P$'s eigenvalues are real and distinct, it has a diagonal factorization:
+\begin{equation}
+	P = V D V'
+\end{equation}
+where $V$ is a matrix of eigenvectors and $D$ is a diagonal matrix of eigenvalues.
+Then, with $z$ as above,
+\begin{equation}
+	x = V \sqrt{D} z
+\end{equation}
+where $\sqrt{D}$ implies taking the square roots of each diagonal element.
+
+\subsection{Zero-Input Bias State Models}
+
+The simplest non-zero measurement error consists only of measurement noise.  The next simplest class of measurement errors consists of biases which are either themselves constant, or are the integrals of constants.  We can view such biases as the output of a system which has zero inputs, and which may have internal states.  In the sequel, we will consider cases where there are random inputs to the system.
+
+In cases were the bias is the output of a system with internal states, the estimator may treat the internal states as solve-for or consider parameters.  In such cases, the estimator requires a measurement partials matrix.  Otherwise, the ``measurement partial'' is just $H = \partial b / \partial b = 1$.
+
+\subsubsection{Random Constant}
+
+The simplest type of systematic error is a constant bias on the measurement.  There are two types of such biases: deterministic constants, which are truly constant for all time, and random constants, which are constant or very nearly so over a particular time of interest.  For example, each time a sensor is power-cycled, a bias associated with it may change in value, but so long as the sensor remains powered on, the bias will not change.
+
+In some cases, we may have reason to believe that a particular systematic error source truly is a deterministic bias, but due to limited observability, we do not have knowledge of its true value.  In such cases, we may view our estimate of the bias as a random constant, and its variance as a measure of the imprecision of our knowledge.
+
+Thus, we may view all constants that could be solve-for or consider parameters in orbit determination as random constants.  Our model for a random constant is
+\begin{equation}
+	\dot{b}(t) = 0, \, b(t_o) \sim N(0, p_{bo}).
+\end{equation}
+Since $b(t)$ is a zero-mean constant, its mean is zero for all time, and its covariance is constant for all time as well.  Thus, to simulate a realization of the random constant, we need only generate a random number according to $N(0, p_{bo})$, as the previous subsection described.
+
+\subsubsection{Random Ramp}
+
+The random ramp model assumes that the rate of change of the bias is itself a random constant; thus the random ramp model is
+\begin{equation}
+	\ddot{b}(t) = 0, \, \dot{b}(t_o) \sim N(0, p_{\dot{b}o}).
+\end{equation}
+Thus, the initial condition $\dot{b}(t_o)$ is a random constant.  For a pure random ramp, the initial condition on $b(t_o)$ and its covariance are taken to be zero, but an obvious and common generalization is to allow $b(t_o)$ to also be a random constant.
+
+It is convenient to write this model as a first-order vector system as follows:
+\begin{eqnarray}
+	\begin{bmatrix} \dot{b}(t) \\ \ddot{b}(t) \end{bmatrix} =
+	\begin{bmatrix} \dot{b}(t) \\ \dot{d}(t) \end{bmatrix} &=&
+	\begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}
+	\begin{bmatrix} b(t) \\ d(t) \end{bmatrix} \\
+	\dot{x}(t) &=& A(t) x(t)
+\end{eqnarray}
+The resulting output equation is
+\begin{eqnarray}
+	e & = &  \begin{bmatrix} 1 & 0 \end{bmatrix} x + v \\
+	& = & H x + v
+\end{eqnarray}
+Note that the ensemble of realizations of $x(t)$ has zero-mean for all time.  The covariance evolves in time according to
+\begin{equation}
+	P_x(t) = \Phi(t-t_o)P_{xo}\Phi'(t-t_o)
+\end{equation}
+where
+\begin{equation}
+	\Phi(t) = \begin{bmatrix} 1 & t \\ 0 & 1 \end{bmatrix} \, \text{and} \;
+	P_{xo} = \begin{bmatrix} p_{bo} & 0 \\ 0 & p_{\dot{b}o} \end{bmatrix}
+\end{equation}
+which we can also write in recursive form as
+\begin{equation}
+	P_x(t+\Delta t) = \Phi(\Delta t)P_x(t)\Phi'(\Delta t)
+\end{equation}
+Thus, we can generate realizations of the random ramp with either $x(t) \sim N(0, P_x(t))$ or recursively from
+\begin{equation}
+	x(t+\Delta t) = \Phi(\Delta t) x(t)
+\end{equation}
+
+Note that $\|P_x\|$ becomes infinite as $t^2$ becomes infinite.  This could lead to an overflow of the representation of $P_x$ in a computer program if the propagation time is large, and could also lead to the representation of $P_x$ losing either its symmetry and/or its positive definiteness due to roundoff and/or truncation.
+
+\subsubsection{Higher-Order Derivatives of Random Constants}
+
+In principle, a random constant may be associated with any derivative of the bias in a straightforward extension of the models above.  In practice, it is rare to need more than two derivatives.  Conventional terminology does not appear in the literature for derivatives of higher order than the random ramp.  The slope of the bias is most commonly described as the ``bias drift,'' so that a ``drift random ramp'' would be one way to describe a bias whose second derivative is a random constant.  The measurement partials matrix needs to be accordingly padded with trailing zeros for the derivatives of the bias in such cases.
+
+\subsection{Single-Input Bias State Models}
+
+The simplest non-constant systematic errors are systems with a single input that is a random process.  We can think of a random process as the result of some kind of limit in which the intervals between an uncorrelated sequence of random variables get infinitesimally small.  In this limit, each random increment instantaneously perturbs the sequence, so that the resulting process is continuous but non-differentiable.  We call this kind of a random input ``process noise.''
+
+Although such random processes are non-differentiable, there are various techniques for generalizing the concept of integration so that something like integrals of the process noise exist, and hence so do the differentials that appear under the integral signs.  It turns out that so long as any coefficients of the process noise are non-random, these differentials behave for all practical purposes as if they were differentiable.
+
+\subsubsection{Random Walk}
+
+The random walk is the simplest random process of the type described above.  In terms of the ``formal derivatives'' mentioned above, the random walk model for a measurement bias is
+\begin{equation}
+	\dot{b}(t) = w(t), \, w(t) \sim N(0, q\delta(t-s))
+\end{equation}
+The input noise process on the right hand side is known as ``white noise,'' and the Dirac delta function that appears in the expression for its variance indicates that the white noise process consists of something like an infinitely-tightly spaced set of impulses.  The term $q$ that appears along with the delta function is the intensity of each impulse\footnote{Another way to imagine the input sequence, in terms of a frequency domain interpretation, is that it is a noise process whose power spectral density, $q$, is non-zero at all frequencies, which implies infinite bandwidth.}.  The initial condition $b(t_o)$ is an unbiased random constant.  Since $b(t_o)$ and $w(t)$ are zero-mean, then $b(t)$ is also zero-mean for all time.  The variance of $b$ evolves in time according to
+\begin{equation}
+	p_b(t) = p_{bo} + q (t-t_o)
+\end{equation}
+which we can also write in recursive form as
+\begin{equation}
+	p_b(t+\Delta t) = p_b(t) + q\Delta t
+\end{equation}
+Thus, to generate a realization of the random walk at time $t$, we need only generate a random number according to $N(0, p_b(t))$.  Equivalently, we could also generate realizations of $w_\Delta(t) \sim N(0, q\Delta t)$, and recursively add these discrete noise increments to the bias as follows:
+\begin{equation}
+	 b(t+\Delta t) = b(t) + w_\Delta(t)
+\end{equation}
+
+Note that $p_b$ becomes infinite as $t$ becomes infinite.  This could lead to an overflow of the representation of $p_b$ in a computer program if both the propagation time and $q$ are large.
+
+\subsubsection{Random Run}
+
+The random run model assumes that the rate of change of the bias is itself a random walk; thus the random run model is
+\begin{equation}
+	\ddot{b}(t) = w(t), \, w(t) \sim N(0, q\delta(t-s))
+\end{equation}
+The initial condition $\dot{b}(t_o)$ is a random constant.  For a pure random run, the initial condition on $b(t_o)$ and its covariance are taken to be zero, but an obvious and common generalization is to allow $b(t_o)$ to also be a random constant.
+
+It is convenient to write this model as a first-order vector system as follows:
+\begin{eqnarray}
+	\begin{bmatrix} \dot{b}(t) \\ \ddot{b}(t) \end{bmatrix} =
+	\begin{bmatrix} \dot{b}(t) \\ \dot{d}(t) \end{bmatrix} &=&
+	\begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}
+	\begin{bmatrix} b(t) \\ d(t) \end{bmatrix} +
+	\begin{bmatrix} 0 \\ 1 \end{bmatrix} w(t) \\
+	\dot{x}(t) &=& A(t) x(t) + b(t) w(t)
+\end{eqnarray}
+The measurement partial is the same as for the random ramp.  The initial condition $x(t_o)$ is an unbiased random constant.  Since $x(t_o)$ and $w(t)$ are zero-mean, then $x(t)$ is also zero-mean for all time.  The covariance evolves in time according to
+\begin{equation}
+	P_x(t) = \Phi(t-t_o)P_{xo}\Phi'(t-t_o) + Q_\Delta(t-t_o)
+\end{equation}
+where
+\begin{equation}
+	\Phi(t) = \begin{bmatrix} 1 & t \\ 0 & 1 \end{bmatrix} \, \text{and} \;
+	P_{xo} = \begin{bmatrix} p_{bo} & 0 \\ 0 & p_{\dot{b}o} \end{bmatrix}
+\end{equation}
+and
+\begin{equation}
+	Q_\Delta(t) = q\begin{bmatrix} t^3/3 & t^2/2 \\ t^2/2 & t \end{bmatrix}
+\end{equation}
+which we can also write in recursive form as
+\begin{equation}
+	P_x(t+\Delta t) = \Phi(\Delta t)P_x(t)\Phi'(\Delta t) + Q_\Delta(\Delta t)
+\end{equation}
+Thus, we can generate realizations of the random run with either $x(t) \sim N(0, P_x(t))$ or recursively from
+\begin{equation}
+	x(t+\Delta t) = \Phi(\Delta t) x(t) + w_\Delta(t)
+\end{equation}
+where $w_\Delta(t) \sim N(0, Q_\Delta(\Delta t))$.  Note that a Cholesky decomposition of $Q_\Delta(t)$ is
+\begin{equation}
+	\sqrt[C]{Q_\Delta(t)} = \begin{bmatrix} \sqrt{3t^3}/3 & 0 \\ \sqrt{3t}/2 & \sqrt{t}/2 \end{bmatrix}
+\end{equation}
+
+Note that $\|P_x\|$ becomes infinite as $t^3$ becomes infinite.  This could lead to an overflow of the representation of $P_x$ in a computer program if both the propagation time and $q$ are large, and could also lead to the representation of $P_x$ losing either its symmetry and/or its positive definiteness due to roundoff and/or truncation.
+
+\subsubsection{Higher-Order Derivatives of Random Walks}
+
+In principle, a random walk may be associated with any derivative of the bias in a straightforward extension of the models above.  In practice, it is rare to need more than two derivatives.  Conventional terminology does not appear in the literature for derivatives of higher order than the random run.  A ``drift random run'' would be one way to describe a bias whose second derivative is a random walk.  Below, we will refer to such a model as a ``random zoom.''
+
+\subsubsection{First-Order Gauss-Markov}
+
+The first-order Gauss-Markov (FOGM) process is one of the simplest random processes that introduces time correlation between samples.  In terms of a frequency domain interpretation, we can view it as white noise passed through a low-pass filter.  Since such noise, often called ``colored noise,'' has finite bandwidth, it is physically realizable, unlike white noise.  In the notation of formal derivatives, the FOGM model is
+\begin{equation}
+	\dot{b}(t) = -\frac{1}{\tau} b(t) + w(t),
+\end{equation}
+where, as with the random walk, $b(t_o) \sim N(0, P_{bo})$, and $w(t) \sim N(0, q\delta(t-s))$.  The time constant, $\tau$, also known as the ``half-life,'' gives the correlation time, or the time over which the intensity of the time correlation will fade to half its value.
+
+Since $x(t_o)$ and $w(t)$ are zero-mean, then $x(t)$ is also zero-mean for all time.  The covariance evolves in time according to
+\begin{equation}
+	p_b(t) = \text{e}^{-\frac{2}{\tau}(t-t_o)}p_{bo} + q_\Delta(t-t_o)
+\end{equation}
+where
+\begin{equation}
+	q_\Delta(t-t_o) = \frac{q\tau}{2}\left(1-\text{e}^{-\frac{2}{\tau}(t-t_o)}\right)
+\end{equation}
+which we can also write in recursive form as
+\begin{equation}
+	p_b(t+\Delta t) = \text{e}^{-\frac{2\Delta t}{\tau}}p_b(t) + q_\Delta(\Delta t)
+\end{equation}
+Thus, to generate a realization of the random walk at time $t$, we need only generate a random number according to $N(0, p_b(t))$.  Equivalently, we could also generate realizations of $w_\Delta(t) \sim N(0, q_\Delta(\Delta t))$, and recursively add these discrete noise increments to the bias as follows:
+\begin{equation}
+	 b(t+\Delta t) = \text{e}^{-\frac{\Delta t}{\tau}}b(t) + w_\Delta(t)
+\end{equation}
+
+Note that $p_b$ approaches a finite steady-state value of $q\tau/2$ as $t$ becomes infinite.  We can choose the parameters of the FOGM so that this steady-state value avoids any overflow of the representation of $p_b$ in a computer program.
+
+\subsubsection{Integrated First-Order Gauss-Markov Model}
+
+As with the random walk and random constant models, any number of derivatives of the bias may be associated with a FOGM process.  However, integation of the FOGM destroys its stability.  For example, the singly integrated first-order Gauss-Markov model is given by
+\begin{equation}
+	\left[\begin{array}{c}
+		\dot{b}(t) \\
+		\dot{d}(t)
+	\end{array}\right] =
+	\left[\begin{array}{cc}
+		0 & 1 \\
+		0 & -1/\tau
+	\end{array}\right]
+	\left[\begin{array}{c}
+		b(t) \\
+		d(t)
+	\end{array}\right]
+	+ \left[\begin{array}{c}
+		0 \\
+		w(t)
+	\end{array}\right],
+\end{equation}
+which leads to the following state transition matrix,
+\begin{equation}
+	\Phi(t) = \left[\begin{array}{cc}
+		1 & \tau \left( 1-e^{-t/\tau} \right) \\
+		0 & e^{-t/\tau}
+	\end{array}\right],
+\end{equation}
+and process noise covariance,
+\begin{equation}
+	Q_\Delta(t) = \frac{q\tau}{2} \left[\begin{array}{cc}
+		\tau^2 \left\{ \left( 1-e^{-2t/\tau} \right)^2  +2t/\tau
+		+ 4 \left( 1-e^{-t/\tau} \right) \right\}
+		& \tau \left( 1-e^{-t/\tau} \right)^2 \\
+		\tau \left( 1-e^{-t/\tau} \right)^2 & \left( 1-e^{-2t/\tau} \right)
+	\end{array}\right].
+\end{equation}
+Clearly, this is an unstable model, as the bias variance increases linearly with elapsed time.  If a Gauss-Markov model is desired because of its stability properties, the following second-order model is available.
+
+\subsubsection{Second-Order Gauss-Markov}
+
+The model for a second-order Gauss-Markov random process is
+\begin{equation}
+	\ddot{b}(t) = -2\zeta\omega_n \dot{b}(t) -\omega_n^2 b(t) + w(t), \, w(t) \sim N(0, q\delta(t-s))
+\end{equation}
+The initial conditions $b(t_o)$ and $\dot{b}(t_o)$ are random constants.  It is convenient to write this model as a first-order vector system as follows:
+\begin{eqnarray}
+	\begin{bmatrix} \dot{b}(t) \\ \ddot{b}(t) \end{bmatrix} =
+	\begin{bmatrix} \dot{b}(t) \\ \dot{d}(t) \end{bmatrix} &=&
+	\begin{bmatrix} 0 & 1 \\ -\omega_n^2 & -2\zeta\omega_n \end{bmatrix}
+	\begin{bmatrix} b(t) \\ d(t) \end{bmatrix} +
+	\begin{bmatrix} 0 \\ 1 \end{bmatrix} w(t) \\
+	\dot{x}(t) &=& A(t) x(t) + b(t) w(t)
+\end{eqnarray}
+The measurement partial is the same as for the random ramp.  The initial condition $x(t_o)$ is an unbiased random constant.  Since $x(t_o)$ and $w(t)$ are zero-mean, then $x(t)$ is also zero-mean for all time.
+
+The covariance evolves in time according to according to
+\begin{equation}
+	P_x(t) = \Phi(t-t_o)P_{xo}\Phi'(t-t_o) + Q_\Delta(t-t_o)
+\end{equation}
+which we can also write in recursive form as
+\begin{equation}
+	P_x(t+\Delta t) = \Phi(\Delta t)P_x(t)\Phi'(\Delta t) + Q_\Delta(\Delta t)
+\end{equation}
+Thus, we can generate realizations of the random run with either $x(t) \sim N(0, P_x(t))$ or recursively from
+\begin{equation}
+	x(t+\Delta t) = \Phi(\Delta t) x(t) + w_\Delta(t)
+\end{equation}
+where $w_\Delta(t) \sim N(0, Q_\Delta(\Delta t))$.
+
+For the underdamped case ($\zeta < 1$), the state transition matrix and discrete process noise covariance are given by\footnote{M.~C. Wang and G.~E. Uhlenbeck. On the theory of brownian motion ii. In N.~Wax, editor, {\em Selected Papers on Noise and Stochastic Processes}, pages 113--132. Dover, 1954.}:
+\begin{equation}
+	\Phi(t) = \frac{\text{e}^{-\zeta\omega_{n}t}}{w_{d}}
+	\begin{bmatrix}
+		(\omega_{d}\cos\omega_{d}t + \zeta\omega_{n}\sin\omega_{d}t) &
+		\sin\omega_{d}t  \\
+		-\omega_{n}^{2}\sin\omega_{d}t &
+		(\omega_{d}\cos\omega_{d}t - \zeta\omega_{n}\sin\omega_{d}t)
+	\end{bmatrix}
+\end{equation}
+and
+\begin{eqnarray}
+	Q^{(1,1)}_\Delta(t) &=&  \frac{q}{4\zeta\omega_{n}^{3}}\left[ 1
+	- \frac{\text{e}^{-2\zeta\omega_{n}t}}{w_{d}^{2}}(\omega_{d}^{2}
+	+ 2\zeta\omega_{n}\omega_{d}\cos\omega_{d}t\sin\omega_{d}t
+	+ 2\zeta^{2}\omega_{n}^{2}\sin^{2}\omega_{d}t)\right] \\
+	Q^{(2,2)}_\Delta(t) &=&  \frac{q}{4\zeta\omega_{n}}\left[ 1
+	- \frac{\text{e}^{-2\zeta\omega_{n}t}}{w_{d}^{2}}(\omega_{d}^{2}
+	- 2\zeta\omega_{n}\omega_{d}\cos\omega_{d}t\sin\omega_{d}t
+	+ 2\zeta^{2}\omega_{n}^{2}\sin^{2}\omega_{d}t)\right] \\
+	Q^{(2,1)}_\Delta(t) = Q^{(1,2)}_\Delta(t) &=& \frac{q}{2\omega_{d}^{2}}
+	\text{e}^{-2\zeta\omega_{n}t}\sin^{2}\omega_{d}t
+\end{eqnarray}
+where $\omega_d = \omega_n\sqrt{1-\zeta^2}$. In the over-damped case ($\zeta > 1$), replace $\sin$ and $\cos$ with $\sinh$ and $\cosh$, respectively.  In the critically-damped case,
+\begin{equation}
+	\Phi(t) =
+	\begin{bmatrix}
+		\text{e}^{-\omega_{n}t}(1 + \omega_{n}t) &
+		t\text{e}^{-\omega_{n}t}  \\
+		-\omega_{n}^{2}t\text{e}^{-\omega_{n}t} &
+		 \text{e}^{-\omega_{n}t}(1 - \omega_{n}t)
+	\end{bmatrix}
+\end{equation}
+and
+\begin{eqnarray}
+	Q^{(1,1)}_\Delta(t) &=& \frac{q}{4\omega_{n}^{3}}\left[ 1
+	- \text{e}^{-2\omega_{n}t}(1
+	+ 2\omega_{n}t
+	+ 2\omega_{n}^{2}t^2)\right]  \\
+	Q^{(2,2)}_\Delta(t) &=& \frac{q}{4\omega_{n}}\left[ 1
+	- \text{e}^{-2\omega_{n}t}(1
+	- 2\omega_{n}t
+	+ 2\omega_{n}^{2}t^2)\right]  \\
+	Q^{(2,1)}_\Delta(t) = Q^{(1,2)}_\Delta(t) &=& \frac{q t^2}{2}
+	\text{e}^{-2\omega_{n}t}
+\end{eqnarray}
+
+Note that for any damping ratio, $\|P_x\|$ remains finite, since as $t\rightarrow\infty$,
+\begin{equation}
+	P_x(t\rightarrow\infty) = \frac{q}{4\zeta\omega_{n}}\left[
+	\begin{array}{cc}
+		1/\omega_{n}^{2} & 0  \\
+		0 & 1
+	\end{array}\right].
+\end{equation}
+Thus, the ratio of the steady-state standard deviations of $x$ and $\dot{x}$ will be
+\begin{equation}
+	\frac{\sigma_{d}}{\sigma_{b}} = \omega_{n},
+\end{equation}
+and these are related to the power spectral density by
+\begin{equation}
+	q = 4\zeta\frac{\sigma_{d}^{3}}{\sigma_{b}}.
+\end{equation}
+Hence, we can choose the parameters of the SOGM so that we avoid any overflow, loss of symmetry and/or positive definiteness of $P_x$ due to roundoff and/or truncation.
+
+\subsection{Multi-Input Bias State Models}
+
+We may combine any of the above models to create multi-input bias models; for example the bias could be a second-order Gauss-Markov, and the bias rate could be a first-order Gauss-Markov.  In practice, the most useful have been found to be the following.
+
+\subsubsection{Bias and Drift Random Walks (Random Walk + Random Run)}
+
+A common model for biases in clocks, gyros, and accelerometers is that the bias is driven by both its own white noise input, and also by the integral of the white noise of its drift.  Such models derive from observations that the error magnitudes of these devices depend on the time scale over which the device is observed.  They are often characterized by Allan deviation specifications, which may be heuristically associated with the white noise power spectral densities.  The model is as follows:
+\begin{eqnarray}
+	\begin{bmatrix} \dot{b}(t) \\ \dot{d}(t) \end{bmatrix} &=&
+	\begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}
+	\begin{bmatrix} b(t) \\ d(t) \end{bmatrix} +
+	\begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}
+	\begin{bmatrix} w_b(t) \\ w_d(t) \end{bmatrix} \\
+	\dot{x}(t) &=& A(t) x(t) + B(t) w(t)
+\end{eqnarray}
+The measurement partial is the same as for the random ramp.  The initial condition $x(t_o)$ is an unbiased random constant.  Since $x(t_o)$ and $w(t)$ are zero-mean, then $x(t)$ is also zero-mean for all time.  The covariance evolves in time according to
+\begin{equation}
+	P_x(t) = \Phi(t-t_o)P_{xo}\Phi'(t-t_o) + Q_\Delta(t-t_o)
+\end{equation}
+where
+\begin{equation}
+	\Phi(t) = \begin{bmatrix} 1 & t \\ 0 & 1 \end{bmatrix} \, \text{and} \;
+	P_{xo} = \begin{bmatrix} p_{bo} & 0 \\ 0 & p_{\dot{b}o} \end{bmatrix}
+\end{equation}
+and
+\begin{equation}
+	Q_\Delta(t) = \begin{bmatrix} q_b t + q_d t^3/3 & q_d t^2/2 \\ q_d t^2/2 & q_d t \end{bmatrix}
+\end{equation}
+which we can also write in recursive form as
+\begin{equation}
+	P_x(t+\Delta t) = \Phi(\Delta t)P_x(t)\Phi'(\Delta t) + Q_\Delta(\Delta t)
+\end{equation}
+Thus, we can generate realizations of the random run with either $x(t) \sim N(0, P_x(t))$ or recursively from
+\begin{equation}
+	x(t+\Delta t) = \Phi(\Delta t) x(t) + w_\Delta(t)
+\end{equation}
+where $w_\Delta(t) \sim N(0, Q_\Delta(\Delta t))$.  Note that a Cholesky decomposition of $Q_\Delta(t)$ is
+\begin{equation}
+	\sqrt[C]{Q_\Delta(t)} = \begin{bmatrix} \sqrt{q_b t + q_d t^3/12} & 0 \\ \sqrt{q_d t^3}/2 & \sqrt{q_d t} \end{bmatrix}
+\end{equation}
+
+Note that $\|P_x\|$ becomes infinite as $t^3$ becomes infinite.  This could lead to an overflow of the representation of $P_x$ in a computer program if both the propagation time and $q$ are large, and could also lead to the representation of $P_x$ losing either its symmetry and/or its positive definiteness due to roundoff and/or truncation.
+
+\subsubsection{Bias, Drift, and Drift Rate Random Walks (Random Walk + Random Run + Random Zoom)}
+
+Another model for biases in very-high precision clocks, gyros, and accelerometers is that the bias is driven by two integrals of white noise in addition to its own white noise input.  Such models are often characterized by Hadamard deviation specifications, which may be heuristically associated with the white noise power spectral densities.  The model is as follows:
+\begin{eqnarray}
+	\begin{bmatrix} \dot{b}(t) \\ \dot{d}(t) \\ \ddot{d}(t) \end{bmatrix} &=&
+	\begin{bmatrix} 0 & 1 & 0 \\ 0 & 0 & 1 \\ 0 & 0 & 0 \end{bmatrix}
+	\begin{bmatrix} b(t) \\ d(t) \\ \dot{d}(t) \end{bmatrix} +
+	\begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{bmatrix}
+	\begin{bmatrix} w_b(t) \\ w_d(t) \\ w_{\dot{d}}(t) \end{bmatrix} \\
+	\dot{x}(t) &=& A(t) x(t) + B(t) w(t)
+\end{eqnarray}
+The resulting output equation is
+\begin{eqnarray}
+	e & = &  \begin{bmatrix} 1 & 0 & 0 \end{bmatrix} x + v \\
+	& = & H x + v
+\end{eqnarray}
+The initial condition $x(t_o)$ is an unbiased random constant.  Since $x(t_o)$ and $w(t)$ are zero-mean, then $x(t)$ is also zero-mean for all time.  The covariance evolves in time according to
+\begin{equation}
+	P_x(t) = \Phi(t-t_o)P_{xo}\Phi'(t-t_o) + Q_\Delta(t-t_o)
+\end{equation}
+where
+\begin{equation}
+	\Phi(t) = \begin{bmatrix} 1 & t & t^2/2 \\ 0 & 1 & t \\ 0 & 0 & 1 \end{bmatrix} \, \text{and} \;
+	P_{xo} = \begin{bmatrix} p_{bo} & 0 & 0 \\ 0 & p_{do} & 0 \\ 0 & 0 & p_{\dot{d}o} \end{bmatrix}
+\end{equation}
+and
+\begin{equation}
+	Q_\Delta(t) = \begin{bmatrix}
+	q_b t + q_d t^3/3 + q_{\dot{d}} t^5/5 &
+	q_d t^2/2 + q_{\dot{d}} t^4/8 &
+	q_{\dot{d}}t^3/6 \\
+	q_d t^2/2 + q_{\dot{d}} t^4/8 &
+	q_d t + q_{\dot{d}} t^3/3 &
+	q_{\dot{d}}t^2/2 \\
+	q_{\dot{d}}t^3/6 & q_{\dot{d}}t^2/2 &  q_{\dot{d}} t
+	\end{bmatrix}
+\end{equation}
+which we can also write in recursive form as
+\begin{equation}
+	P_x(t+\Delta t) = \Phi(\Delta t)P_x(t)\Phi'(\Delta t) + Q_\Delta(\Delta t)
+\end{equation}
+Thus, we can generate realizations of the random run with either $x(t) \sim N(0, P_x(t))$ or recursively from
+\begin{equation}
+	x(t+\Delta t) = \Phi(\Delta t) x(t) + w_\Delta(t)
+\end{equation}
+where $w_\Delta(t) \sim N(0, Q_\Delta(\Delta t))$.  Note that a Cholesky decomposition of $Q_\Delta(t)$ is
+\begin{equation}
+	\sqrt[C]{Q_\Delta(t)} = \begin{bmatrix}
+	\sqrt{q_b t + q_d t^3/12 + q_{\dot{d}}t^5/720} & 0 & 0 \\
+	t/2\sqrt{q_d t + q_{\dot{d}}t^3/12} & \sqrt{q_d t + q_{\dot{d}}t^3/12} & 0 \\
+	t^2/6\sqrt{q_{\dot{d}}t} & t/2\sqrt{q_{\dot{d}}t} &
+	\sqrt{q_{\dot{d}} t}
+	\end{bmatrix}
+\end{equation}
+
+Note that $\|P_x\|$ becomes infinite as $t^3$ becomes infinite.  This could lead to an overflow of the representation of $P_x$ in a computer program if both the propagation time and $q$ are large, and could also lead to the representation of $P_x$ losing either its symmetry and/or its positive definiteness due to roundoff and/or truncation.
+
+\subsubsection{Bias and Drift Coupled First- and Second-Order Gauss-Markov}
+
+The following model provides a stable alternative to the ``Random Walk + Random Run'' model\footnote{R.~Carpenter and T.~Lee. A stable clock error model using coupled first- and second-order gauss-markov processes. In {\em Astrodynamics 2008}, Advances in the Astronautical Sciences. Univelt, 2008.}.  Its transient response can be tuned to approximate the Random Walk + Random Run model, and its stable steady-state response can be used to avoid computational issues with long propagation times.  The model is as follows.
+\begin{eqnarray}
+	\begin{bmatrix} \dot{b}(t) \\ \dot{d}(t) \end{bmatrix} &=&
+	\begin{bmatrix} -1/\tau & 1 \\ -\omega_n^2 & -2\zeta\omega_n \end{bmatrix}
+	\begin{bmatrix} b(t) \\ d(t) \end{bmatrix} +
+	\begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}
+	\begin{bmatrix} w_b(t) \\ w_d(t) \end{bmatrix} \\
+	\dot{x}(t) &=& A(t) x(t) + B(t) w(t)
+\end{eqnarray}
+The measurement partial is the same as for the random ramp.  The initial condition $x(t_o)$ is an unbiased random constant.  Since $x(t_o)$ and $w(t)$ are zero-mean, then $x(t)$ is also zero-mean for all time.  The covariance evolves in time according to
+\begin{equation}
+	P_x(t) = \Phi(t-t_o)P_{xo}\Phi'(t-t_o) + Q_\Delta(t-t_o)
+\end{equation}
+where
+\begin{equation}
+	\Phi(t) = \frac{e^{at}}{b}\left[\begin{array}{cc}
+		b\cos bt + \left(a + 2\zeta\omega_n\right)\sin bt & \sin bt \\
+		-\omega_n^2\sin bt & b\cos bt + \left(a + \beta\right)\sin bt
+	\end{array}\right]
+\end{equation}
+where
+\begin{align}
+	\beta &= 1/\tau, \\
+	a &= -\frac{1}{2}\left(\beta + 2\zeta\omega_n\right), \\
+	b &= \sqrt{\omega_d^2 + \beta\zeta\omega_n - \frac{1}{4}\beta^2}, \\
+	\omega_d &= \omega_n\sqrt{1 - \zeta^2},
+\end{align}
+and we assume that $b^2 > 0$.
+Let $$c = -\frac{\beta}{2} + \zeta\omega_n;$$ then, the process noise covariance is given by the following:
+\begin{align}\begin{split}
+	Q_\Delta^{(1,1)}(t) =\; & q_b \left[ \frac{e^{2at}-1}{4a}
+	\left( 1+\frac{c^2}{b^2} \right) + \frac{e^{2at}\sin2bt}{4(a^2+b^2)}
+	\left( \frac{b^2-c^2+2ac}{b} \right) \right. \\
+	&\left. + \frac{e^{2at}\cos2bt-1}{4(a^2+b^2)}
+	\left( \frac{ab^2-ac^2+2b^2c}{b^2} \right) \right] \\
+	& + \frac{q_d}{b^2} \left( \frac{e^{2at}-1}{4a} -
+	\frac{e^{2at}(b\sin2bt + a\cos2bt) - a}{4(a^2+b^2)} \right)
+\end{split} \\
+\begin{split}
+	Q_\Delta^{(2,2)}(t) =\; & q_d \left[ \frac{e^{2at}-1}{4a}
+	\left( 1+\frac{c^2}{b^2} \right) + \frac{e^{2at}\sin2bt}{4(a^2+b^2)}
+	\left( \frac{b^2-c^2+2ac}{b} \right) \right. \\
+	&\left. + \frac{e^{2at}\cos2bt-1}{4(a^2+b^2)}
+	\left( \frac{ab^2-ac^2+2b^2c}{b^2} \right) \right] \\
+	& + \frac{q_b \omega_n^4}{b^2} \left( \frac{e^{2at}-1}{4a} -
+	\frac{e^{2at}(b\sin2bt + a\cos2bt) - a}{4(a^2+b^2)} \right)
+\end{split} \\
+\begin{split}
+	Q_\Delta^{(1,2)}(t) =\; & \frac{q_b \omega_n^2}{b^2} \left[ \frac{c}{4a}
+	\left( 1 - e^{2at} \right)
+	+ \frac{e^{2at} \left[ (bc-ab)\sin2bt + (ac-b^2)\cos2bt \right]
+	-(ac-b^2)}{4(a^2+b^2)} \right] \\
+	& + \frac{q_d}{b^2} \left[ \frac{c}{4a} \left( 1 - e^{2at} \right)
+	+ \frac{e^{2at} \left[ (ab+bc)\sin2bt + (ac-b^2)\cos2bt \right]
+	-(ac-b^2)}{4(a^2+b^2)} \right].
+\end{split}\end{align}
+
+Examining the solution given above, we see that the parameter $a$ governs the rate of decay of all of the exponential terms.  Therefore, we define the ``rise time'' as that interval within which the transient response of the covariance will reach a close approximation to the above steady-state value; thus, we define the rise time as follows:
+\begin{equation}
+	t_r = -\frac{3}{a}.
+\end{equation}
+
+Next, we note that all of the trigonometric terms are modulated by $2b$; thus we may view this value as a characteristic damped frequency of the coupled system.  The period of the oscillation, $\Pi$, is then
+\begin{equation}
+	\Pi = \pi/b
+\end{equation}
+
+In the limit as $t\rightarrow\infty$, all the exponential terms in the analytical solution die out, so that the steady-state value of the covariance simplifies to:
+\begin{equation}
+	P(\infty) = -\frac{1}{4a(a^2+b^2)}
+	\left[\begin{array}{cc}
+		q_d + (2a^2 + b^2 + c^2 - 2ac) q_b & \beta (q_d + q_b \omega_n^2) \\
+		\beta (q_d + q_b \omega_n^2) & (2a^2 + b^2 + c^2 + 2ac) q_d
+		+ q_b \omega_n^4
+	\end{array}\right]
+\end{equation} 

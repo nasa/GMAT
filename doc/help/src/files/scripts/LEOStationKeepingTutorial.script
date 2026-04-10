@@ -1,0 +1,169 @@
+%General Mission Analysis Tool(GMAT) Script
+%Created: 2011-06-13 02:33:42
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft LEOsat;
+GMAT LEOsat.DateFormat = UTCGregorian;
+GMAT LEOsat.Epoch = '01 Jan 2000 11:59:28.000';
+GMAT LEOsat.CoordinateSystem = EarthMJ2000Eq;
+GMAT LEOsat.DisplayStateType = Cartesian;
+GMAT LEOsat.X = -4083.9;
+GMAT LEOsat.Y = 4691.8;
+GMAT LEOsat.Z = -2576.7;
+GMAT LEOsat.VX = -4.252;
+GMAT LEOsat.VY = -5.509;
+GMAT LEOsat.VZ = -3.284;
+GMAT LEOsat.DryMass = 850;
+GMAT LEOsat.Cd = 2.2;
+GMAT LEOsat.Cr = 1.8;
+GMAT LEOsat.DragArea = 15;
+GMAT LEOsat.SRPArea = 1;
+GMAT LEOsat.NAIFId = -123456789;
+GMAT LEOsat.NAIFIdReferenceFrame = -123456789;
+GMAT LEOsat.Id = 'SatId';
+GMAT LEOsat.Attitude = CoordinateSystemFixed;
+GMAT LEOsat.ModelFile = '../data/vehicle/models/aura.3ds';
+GMAT LEOsat.ModelOffsetX = 0;
+GMAT LEOsat.ModelOffsetY = 0;
+GMAT LEOsat.ModelOffsetZ = 0;
+GMAT LEOsat.ModelRotationX = 0;
+GMAT LEOsat.ModelRotationY = 0;
+GMAT LEOsat.ModelRotationZ = 0;
+GMAT LEOsat.ModelScale = 3;
+GMAT LEOsat.AttitudeDisplayStateType = 'Quaternion';
+GMAT LEOsat.AttitudeRateDisplayStateType = 'AngularVelocity';
+GMAT LEOsat.AttitudeCoordinateSystem = 'EarthMJ2000Eq';
+GMAT LEOsat.Q1 = 0;
+GMAT LEOsat.Q2 = 0;
+GMAT LEOsat.Q3 = 0;
+GMAT LEOsat.Q4 = 1;
+GMAT LEOsat.EulerAngleSequence = '321';
+GMAT LEOsat.AngularVelocityX = 0;
+GMAT LEOsat.AngularVelocityY = 0;
+GMAT LEOsat.AngularVelocityZ = 0;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel LEOprop_ForceModel;
+GMAT LEOprop_ForceModel.CentralBody = Earth;
+GMAT LEOprop_ForceModel.PrimaryBodies = {Earth};
+GMAT LEOprop_ForceModel.PointMasses = {Luna, Sun};
+GMAT LEOprop_ForceModel.Drag = JacchiaRoberts;
+GMAT LEOprop_ForceModel.SRP = On;
+GMAT LEOprop_ForceModel.ErrorControl = RSSStep;
+GMAT LEOprop_ForceModel.GravityField.Earth.Degree = 4;
+GMAT LEOprop_ForceModel.GravityField.Earth.Order = 4;
+GMAT LEOprop_ForceModel.GravityField.Earth.PotentialFile = 'JGM2.cof';
+GMAT LEOprop_ForceModel.Drag.AtmosphereModel = 'JacchiaRoberts';
+GMAT LEOprop_ForceModel.Drag.F107 = 150;
+GMAT LEOprop_ForceModel.Drag.F107A = 150;
+GMAT LEOprop_ForceModel.Drag.MagneticIndex = 3;
+GMAT LEOprop_ForceModel.SRP.Flux = 1367;
+GMAT LEOprop_ForceModel.SRP.Nominal_Sun = 149597870.691;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator LEOprop;
+GMAT LEOprop.FM = LEOprop_ForceModel;
+GMAT LEOprop.Type = RungeKutta89;
+GMAT LEOprop.InitialStepSize = 60;
+GMAT LEOprop.Accuracy = 9.999999999999999e-012;
+GMAT LEOprop.MinStep = 0.001;
+GMAT LEOprop.MaxStep = 2700;
+GMAT LEOprop.MaxStepAttempts = 50;
+GMAT LEOprop.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn DeltaV;
+GMAT DeltaV.CoordinateSystem = Local;
+GMAT DeltaV.Origin = Earth;
+GMAT DeltaV.Axes = VNB;
+GMAT DeltaV.Element1 = 0;
+GMAT DeltaV.Element2 = 0;
+GMAT DeltaV.Element3 = 0;
+GMAT DeltaV.DecrementMass = false;
+GMAT DeltaV.Isp = 300;
+GMAT DeltaV.GravitationalAccel = 9.81;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC;
+GMAT DC.ShowProgress = true;
+GMAT DC.ReportStyle = Normal;
+GMAT DC.ReportFile = 'DifferentialCorrectorDC1.data';
+GMAT DC.MaximumIterations = 25;
+GMAT DC.DerivativeMethod = ForwardDifference;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OrbitView DefaultOrbitView;
+GMAT DefaultOrbitView.SolverIterations = Current;
+GMAT DefaultOrbitView.Add = {LEOsat, Earth};
+GMAT DefaultOrbitView.DrawObject = [ true true ];
+GMAT DefaultOrbitView.OrbitColor = [ 255 32768 ];
+GMAT DefaultOrbitView.TargetColor = [ 8421440 0 ];
+GMAT DefaultOrbitView.CoordinateSystem = EarthMJ2000Eq;
+GMAT DefaultOrbitView.ViewPointReference = Earth;
+GMAT DefaultOrbitView.ViewPointVector = [ 30000 0 0 ];
+GMAT DefaultOrbitView.ViewDirection = Earth;
+GMAT DefaultOrbitView.ViewScaleFactor = 1;
+GMAT DefaultOrbitView.ViewUpCoordinateSystem = EarthMJ2000Eq;
+GMAT DefaultOrbitView.ViewUpAxis = Z;
+GMAT DefaultOrbitView.CelestialPlane = Off;
+GMAT DefaultOrbitView.XYPlane = On;
+GMAT DefaultOrbitView.WireFrame = Off;
+GMAT DefaultOrbitView.Axes = On;
+GMAT DefaultOrbitView.Grid = Off;
+GMAT DefaultOrbitView.SunLine = Off;
+GMAT DefaultOrbitView.UseInitialView = On;
+GMAT DefaultOrbitView.DataCollectFrequency = 1;
+GMAT DefaultOrbitView.UpdatePlotFrequency = 50;
+GMAT DefaultOrbitView.NumPointsToRedraw = 0;
+GMAT DefaultOrbitView.StarCount = 7000;
+GMAT DefaultOrbitView.EnableStars = On;
+GMAT DefaultOrbitView.EnableConstellations = On;
+GMAT DefaultOrbitView.ShowPlot = true;
+
+Create XYPlot XYPlot1;
+GMAT XYPlot1.SolverIterations = Current;
+GMAT XYPlot1.XVariable = LEOsat.A1ModJulian;
+GMAT XYPlot1.YVariables = {LEOsat.Earth.Altitude};
+GMAT XYPlot1.ShowGrid = true;
+GMAT XYPlot1.ShowPlot = true;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+Propagate LEOprop(LEOsat);
+While LEOsat.ElapsedDays < 10.0
+   Propagate LEOprop(LEOsat) {LEOsat.ElapsedSecs = 12000.0};
+   If LEOsat.Earth.Altitude < 342
+      Target DC {SolveMode = Solve, ExitMode = DiscardAndContinue};
+         Vary DC(DeltaV.Element1 = 0.002, {Perturbation = 0.0001, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = 0.0001});
+         Maneuver DeltaV(LEOsat);
+         Achieve DC(LEOsat.Earth.SMA = 6734, {Tolerance = 0.1});
+         Propagate LEOprop(LEOsat) {LEOsat.Earth.Apoapsis};
+         Vary DC(DeltaV.Element1 = 0.001, {Perturbation = 0.00005, Lower = -9.999999e300, Upper = 9.999999e300, MaxStep = 0.001});
+         Maneuver DeltaV(LEOsat);
+         Achieve DC(LEOsat.Earth.ECC = 0.0005, {Tolerance = 0.0001});
+      EndTarget;  % For targeter DC
+   EndIf;
+EndWhile;

@@ -1,0 +1,56 @@
+function [Q, S1, S2, S3, S4, S5, S6] = MMSQfac(MMS1,MMS2,MMS3,MMS3)
+ 
+%  This GMATfunction takes four spacecraft and calculates
+%  a quality factor similar to that of the MMS mission
+ 
+Create Variable S1 S2 S3 S4 S5 S6  V_a L V_d  Q d2r;
+Create Array s2crosss3[3,1] rv1[3, 1]  rv2[3, 1] rv3[3, 1] rv4[3, 1];
+Create Array prod[1,1] vv1[3, 1]  vv2[3, 1] vv3[3, 1] vv4[3, 1];
+Create Array sv1[3,1] sv2[3,1] sv3[3,1] sv4[3,1] sv5[3,1] sv6[3,1];
+ 
+%  Break out position vectors
+rv1(1, 1) = MMS1.X;
+rv1(2, 1) = MMS1.Y;
+rv1(3, 1) = MMS1.Z;
+rv2(1, 1) = MMS2.X;
+rv2(2, 1) = MMS2.Y;
+rv2(3, 1) = MMS2.Z;
+rv3(1, 1) = MMS3.X;
+rv3(2, 1) = MMS3.Y;
+rv3(3, 1) = MMS3.Z;
+rv4(1, 1) = MMS4.X;
+rv4(2, 1) = MMS4.Y;
+rv4(3, 1) = MMS4.Z;
+ 
+%  Calculate relative position data
+sv1 = rv1 - rv2;
+sv2 = rv1 - rv3;
+sv3 = rv1 - rv4;
+sv4 = rv2 - rv3;
+sv5 = rv2 - rv4;
+sv6 = rv3 - rv4;
+ 
+%  Calculate the side lengths
+S1 = norm(sv1);
+S2 = norm(sv2);
+S3 = norm(sv3);
+S4 = norm(sv4);
+S5 = norm(sv5);
+S6 = norm(sv6);
+ 
+%  Calculate actual volume
+s2crosss3(1,1) = sv2(2,1)*sv3(3,1)-sv2(3,1)*sv3(2,1);
+s2crosss3(2,1) = sv2(3,1)*sv3(1,1)-sv2(1,1)*sv3(3,1);
+s2crosss3(3,1) = sv2(1,1)*sv3(2,1)-sv2(2,1)*sv3(1,1);
+prod(1,1) = sv1(1,1)*s2crosss3(1,1) + sv1(2,1)*s2crosss3(2,1) + sv1(3,1)*s2crosss3(3,1);
+V_a = norm(prod)/6 ;
+ 
+%  Calculate average side length
+L = (S1 + S2 + S3 + S4 + S5 + S6) / 6;
+ 
+%  Calculate the ideal volume
+V_d = sqrt(2)/12*L^3;
+ 
+%  Caclulate the quality factor
+Q = V_a/V_d;
+

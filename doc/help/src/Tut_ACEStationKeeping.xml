@@ -1,0 +1,980 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="ACEStationKeeping"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>ACE Station Keeping</title>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <para>ACE, or Advanced Composition Explorer, studies the Sun and is one of
+    only a few spacecraft that resides at the Sun-Earth
+    L<subscript>1</subscript> Libration Point in a Lissajous Orbit that is
+    quasi-periodic. This tutorial will show the method in which a spacecraft
+    may be station kept at this point in space. Put simply, a number of orbits
+    about the Libration point will be simulated, with each being corrected
+    slightly by small maneuvers due to the unstable nature of Sun-Earth
+    L<subscript>1</subscript>.</para>
+
+    <para>Download the script file: <link
+    xlink:href="scripts/ACEStationKeepingTutorial.script">ACEStationKeepingTutorial.script</link></para>
+
+    <section>
+      <title>Prerequisites</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Basic Understanding of Libration Point Station Keeping</para>
+        </listitem>
+
+        <listitem>
+          <para>Tutorials:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><link linkend="CreatingandPropagatingaSpacecraft">Creating
+              and Propagating a Spacecraft</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="DesigningaHohmannTransfer">Designing a
+              Hohman Transfer</link></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Objects:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><link linkend="Spacecraft">Spacecraft
+              Object</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="ImpulsiveBurn">Impulsive Burn
+              Object</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Propagator">Propagator Object</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Barycenter">Barycenter Object</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="LibrationPoint">Libration Point
+              Object</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="DifferentialCorrector">Differential
+              Corrector Object</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="OpenGLPlot">OpenGL Plot
+              Object</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="ReportFile">ReportFile</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Variable">Variable Object</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="CoordinateSystem">Coordinate System
+              Objects</link></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Commands:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><link linkend="Report">Report Command</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Equation">Equation Command</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="For">For Command</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Target">Target Command</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Vary">Vary Command</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Maneuver">Maneuver Command</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Propagate">Propagate Command</link></para>
+            </listitem>
+
+            <listitem>
+              <para><link linkend="Achieve">Achieve Command</link></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Mission Description</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Objective: Maintain an orbit about the Sun-Earth
+          L<subscript>1</subscript> Libration point by performing a burn
+          perpendicular to the direction of travel so that as the spacecraft
+          passes through the ecliptic, its velocity relative to the Sun and
+          Earth is zero.</para>
+        </listitem>
+
+        <listitem>
+          <para>Assume:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>A preexisting orbit with given initial conditions</para>
+            </listitem>
+
+            <listitem>
+              <para>A UTCGregorian Epoch of 09 Dec 2005 12:59:60.000</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Find: The deltaV required perpendicular to the direction of
+          travel at each pass of the ecliptic to meet the above
+          objective</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Resource, Mission, and Output Trees</title>
+
+      <informaltable colsep="0" frame="none">
+        <tgroup cols="3">
+          <colspec colname="c1" />
+
+          <colspec colname="c2" />
+
+          <colspec colname="c3" />
+
+          <tbody>
+            <row>
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: ACE Resource, Mission, and Output
+                    Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_ACE_ACEResourceMissionandOutputTrees1.jpeg"></imagedata>
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></entry>
+
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: ACE Resource, Mission, and Output
+                    Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_ACE_ACEResourceMissionandOutputTrees2.jpeg"></imagedata>
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></entry>
+
+              <entry><screenshot>
+                  <info>
+                    <title>Figure: ACE Resource, Mission, and Output
+                    Trees</title>
+                  </info>
+
+                  <mediaobject>
+                    <imageobject>
+                      <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                                 fileref="files/images/Tut_ACE_ACEResourceMissionandOutputTrees3.jpeg"></imagedata>
+                    </imageobject>
+                  </mediaobject>
+                </screenshot></entry>
+            </row>
+
+            <row>
+              <entry align="center" nameend="c3" namest="c1">Figure: ACE
+              Resource, Mission, and Output Trees</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Resource Tree</title>
+
+    <para>This section will outline exactly what resources are required to
+    complete the mission outlined within this tutorial. One spacecraft, a
+    single burn to control that spacecraft, and a simple propagator, will be
+    needed. To better see and analyze the spacecraft's motions, we will also
+    need several Plots/Reports, <link linkend="Variable">Variable
+    Object</link>, and Coordinate Systems.</para>
+
+    <section>
+      <title>Objects Required</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft: ACE</para>
+        </listitem>
+
+        <listitem>
+          <para>Burns: dV</para>
+        </listitem>
+
+        <listitem>
+          <para>Propagators: defaultProp (modified)</para>
+        </listitem>
+
+        <listitem>
+          <para>Solar System: DefaultBC, ESL1</para>
+        </listitem>
+
+        <listitem>
+          <para>Solvers: DefaultDC</para>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports: L1View, EarthSunRotView, ESL1Ephem</para>
+        </listitem>
+
+        <listitem>
+          <para>Variables: TotaldV, VX, VY, VZ, dVX, dVY, dVZ, I</para>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems: EarthSunL1CS, EarthSunRotCS</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Creating and Modifying Objects</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>Spacecraft</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Rename DefaultSC to ACE</para>
+            </listitem>
+
+            <listitem>
+              <para>Change the Epoch Format to UTCGregorian</para>
+            </listitem>
+
+            <listitem>
+              <para>Set the Epoch to 09 Dec 2005 12:59:60.000</para>
+            </listitem>
+
+            <listitem>
+              <para>Set X = -528665.5773210001, Y = -1325445.164527, Z =
+              -525969.843578, VX = 0.240435056, VY = -0.068342458, and VZ =
+              0.0315715361</para>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: ACE Spacecraft Object Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_ACE_ACESpacecraftObjectObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: ACE Spacecraft Object Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Propagators</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Change the Min Step Size to 9.999999999999999e-022</para>
+            </listitem>
+
+            <listitem>
+              <para>Change the Max Step Size to 86400</para>
+            </listitem>
+
+            <listitem>
+              <para>Change the Max Step Attempts to 100</para>
+            </listitem>
+
+            <listitem>
+              <para>Remove any Primary Bodies</para>
+            </listitem>
+
+            <listitem>
+              <para>Add Sun, Earth, and Luna as Point Masses</para>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: DefaultProp Propagator Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_ACE_DefaultPropPropagatorObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: DefaultProp Propagator Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Solar System</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Add a Barycenter under Special Points and rename it
+              DefaultBC</para>
+            </listitem>
+
+            <listitem>
+              <para>Add a Libration Point under Special Points and rename it
+              ESL1</para>
+            </listitem>
+          </itemizedlist>
+         <screenshot>
+            <info>
+              <title>Figure: ESL1 Special Point Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_ACE_ESL1SpecialPointObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: ESL1 Special Point Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Burns</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Rename DefaultIB to dV</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Variables/Arrays/Strings</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>To create the necessary variables, insert the line of code
+              below into the script just after the setup of the <link
+              linkend="CoordinateSystem">Coordinate System
+              Objects</link></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Coordinate Systems</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>EarthSunL1CS</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a new Coordinate System and name it
+                  EarthSunL1CS</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the Origin to ESL1</para>
+                </listitem>
+
+                <listitem>
+                  <para>Change the Axes type to Object Referenced</para>
+                </listitem>
+
+                <listitem>
+                  <para>Change the Primary and Secondary Values to Sun and
+                  Earth, respectively</para>
+                </listitem>
+              </itemizedlist>
+
+
+              <screenshot>
+                <info>
+                  <title>Figure: EarthSunL1CS Coordinate System Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_ACE_EarthSunL1CSCoordinateSystemObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: EarthSunL1CS Coordinate System Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>EarthSunRotCS</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add a new Coordinate System and name it
+                  EarthSunRotCS</para>
+                </listitem>
+
+                <listitem>
+                  <para>Change the Axes type to Object Referenced</para>
+                </listitem>
+
+                <listitem>
+                  <para>Change the Primary and Secondary Values to Sun and
+                  Earth, respectively</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Solvers</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Create a <link
+              linkend="DifferentialCorrector">Differential Corrector
+              Object</link> under Solvers &gt; Boundary Value Solvers and name
+              it DefaultDC</para>
+            </listitem>
+
+            <listitem>
+              <para>Add the code lines below to the script under the DefaultDC
+              section</para>
+            </listitem>
+          </itemizedlist>
+
+          <screenshot>
+            <info>
+              <title>Figure: DefaultDC Boundary Value Solver Object</title>
+            </info>
+
+            <mediaobject>
+              <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                           fileref="files/images/Tut_ACE_DefaultDCBoundaryValueSolverObject.jpeg"></imagedata>
+              </imageobject>
+
+              <caption>
+                <para>Figure: DefaultDC Boundary Value Solver Object</para>
+              </caption>
+            </mediaobject>
+          </screenshot>
+        </listitem>
+
+        <listitem>
+          <para>Plots/Reports</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Rename DefaultOpenGL to L1View</para>
+            </listitem>
+
+            <listitem>
+              <para>Create an OpenGL Plot Named EarthSunRotView</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Set EarthSunL1CS as the both the View Direction and
+                  View Up Definition Coordinate System (Note: you will have to
+                  create the coordinate system outlined below before taking
+                  this step)</para>
+                </listitem>
+
+                <listitem>
+                  <para>Change both the View Point Reference and View
+                  Direction to ESL1 (Note: again, this will need to be created
+                  first)</para>
+                </listitem>
+
+                <listitem>
+                  <para>Change the View Scale Factor to 12</para>
+                </listitem>
+
+                <listitem>
+                  <para>Uncheck DrawXY Plane and set Solver Iterations to
+                  None</para>
+                </listitem>
+              </itemizedlist>
+
+              <screenshot>
+                <info>
+                  <title>Figure: L1View OpenGL Plot Object</title>
+                </info>
+
+                <mediaobject>
+                  <imageobject>
+                    <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                               fileref="files/images/Tut_ACE_L1ViewOpenGLPlotObject.jpeg"></imagedata>
+                  </imageobject>
+
+                  <caption>
+                    <para>Figure: L1View OpenGL Plot Object</para>
+                  </caption>
+                </mediaobject>
+              </screenshot>
+            </listitem>
+
+            <listitem>
+              <para>Create an OpenGL Plot Named EarthSunRotView</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Add Luna as a Celestial Object and Change its orbit
+                  color to Grey</para>
+                </listitem>
+
+                <listitem>
+                  <para>Switch both the View Definition and the View Up
+                  Direction <link linkend="CoordinateSystem">Coordinate
+                  System Objects</link> to EarthSunRotCS (Note: Don't forget
+                  to create this System first as well)</para>
+                </listitem>
+
+                <listitem>
+                  <para>Set the View Scale Factor to 100</para>
+                </listitem>
+
+                <listitem>
+                  <para>Switch the View Up Definition Axis to Y</para>
+                </listitem>
+
+                <listitem>
+                  <para>Uncheck DrawXY Plane and set Solver Iterations to
+                  None</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+
+            <listitem>
+              <para>Create a Report Named ESL1Ephem</para>
+
+              <itemizedlist>
+                <listitem>
+                  <para>Remove all Parameters from the Parameter List</para>
+                </listitem>
+
+                <listitem>
+                  <para>Select the File as being
+                  ./output/SampleMissions/Ex_ACEStationKeeping.report</para>
+                </listitem>
+              </itemizedlist>
+
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Creating and Configuring the Mission Sequence</title>
+
+    <para>Now that we have all the resources at out disposal to complete this
+    mission, we will go ahead and start building the mission tree. ACE's
+    mission if fairly straight forward at the level we will be dealing with.
+    As stated before, the primary goal here is to allow the spacecraft seven
+    iterations, or half orbits, and at the beginning of each one, calculate
+    the deltaV required in the perpendicular-to-travel direction required at
+    the ecliptic to ensure no velocity towards or away from the Sun or Earth.
+    Basically, the spacecraft must not have any movement between these two
+    bodies as it passes through the plane on which the Sun and Earth both lie.
+    The entire Mission Sequence is relatively short and is given below in its
+    entirety.</para>
+
+    <para>This particular mission tree may be a bit more complex then those
+    you have previously dealt with but it is only due to the several equations
+    and reports that it looks more complicated than it actually is. This part
+    of the tutorial will go through the mission sequence step by step and at
+    the end you will have a functional setup.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>Delete the initial Propagate</para>
+      </listitem>
+
+      <listitem>
+        <para>Report1:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Append this to the Mission Sequence Folder</para>
+          </listitem>
+
+          <listitem>
+            <para>Remove ACE.A1ModJulian from the parameters list</para>
+          </listitem>
+
+          <listitem>
+            <para>Add ACE.EarthSunL1CS.X, Y, Z, VZ, VY, and VZ to the
+            parameters list</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>Equation1: Set to TotaldV = 0</para>
+      </listitem>
+
+      <listitem>
+        <para>For1: Change the End parameter to 7</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Target1: (Note: In the 6-16-2008 build of GMAT, and for
+            several builds thereafter, the targeter requires an extra
+            parameter. If you are working with a version soon after 6-09-2008,
+            use the line "<link linkend="Target">Target Command</link>
+            DefaultDC {ExitMode = SaveAndContinue};" instead of the normal
+            target line in the script)</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Vary1</para>
+
+                <itemizedlist>
+                  <listitem>
+                    <para>Set the variable to dV.B</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the initial value to 0</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the perturbation to 1e-5</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Lower to -0.1</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Upper to 0.1</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Set the Max Step to 0.01</para>
+                  </listitem>
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>Equation2: Set as VX = ACE.VX</para>
+              </listitem>
+
+              <listitem>
+                <para>Equation3: Set as VY = ACE.VY</para>
+              </listitem>
+
+              <listitem>
+                <para>Equation4: Set as VZ = ACE.VZ</para>
+              </listitem>
+
+              <listitem>
+                <para>Maneuver1</para>
+              </listitem>
+
+              <listitem>
+                <para>Equation5: Set as ACE.VX - VX</para>
+              </listitem>
+
+              <listitem>
+                <para>Equation6: Set as ACE.VY - VY</para>
+              </listitem>
+
+              <listitem>
+                <para>Equation7: Set as ACE.VZ - VZ</para>
+              </listitem>
+
+              <listitem>
+                <para>Equation8: Set as TotaldV = TotaldV + sqrt( dVZ^2 +
+                dVY^2 + dVZ^2 )</para>
+              </listitem>
+
+              <listitem>
+                <para>Propagate1: Set stopping condition as ACE.EarthSunL1CS.Y
+                = 0</para>
+              </listitem>
+
+              <listitem>
+                <para>Achieve1: Set the goal as ACE.EarthSunL1CS.VX = 0 with a
+                tolerance of 1e-005</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>Propagate2</para>
+          </listitem>
+
+          <listitem>
+            <para>Report2</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>Remove ACE.A1ModJulian and put in
+                ACE.UTCGregorian</para>
+              </listitem>
+
+              <listitem>
+                <para>Add ACE.EarthSunL1CS.X, Y, Z, VZ, VY, and VZ to the
+                parameters list</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+    </itemizedlist>
+
+    <screenshot>
+      <info>
+        <title>Figure: Equation1 Equation Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ACE_Equation1EquationCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Equation1 Equation Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: Report1 Report Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ACE_Report1ReportCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Report1 Report Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: For1 For Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ACE_For1ForCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: For1 For Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: Target1 Target Command Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ACE_Target1TargetCommandCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Target1 Target Command Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: Vary1 Vary Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ACE_Vary1VaryCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Vary1 Vary Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: Maneuver1 Maneuver Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ACE_Maneuver1ManeuverCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Maneuver1 Maneuver Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: Propagate1 Propagate Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ACE_Propagate1PropagateCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Propagate1 Propagate Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+
+    <screenshot>
+      <info>
+        <title>Figure: Achieve1 Achieve Command Command</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center"
+                     fileref="files/images/Tut_ACE_Achieve1AchieveCommandCommand.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Achieve1 Achieve Command Command</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+
+  <section>
+    <title>Running the Mission</title>
+
+    <para>While running this setup, you should see the spacecraft ACE make
+    seven half-loops around the Sun-Earth L<subscript>1</subscript> Libration
+    Point. Just before each run you will see a slight pause in drawing of the
+    model as GMAT computes the needed change in velocity. As you may be able
+    to see in the reports, the changes in velocity here are quite small due to
+    this Libration Point's unstable nature.</para>
+
+    <para>If you look into the reports stored in the directory specified then
+    you will find the various parameters that were saved. This information
+    provides insight as to the movement of the ACE spacecraft over time,
+    especially if you take to a more text based presentation of information,
+    rather than a visual one.</para>
+
+    <para>By now you should understand not only how to setup the required
+    objects for this mission such as the Barycenter, Libration Point, <link
+    linkend="CoordinateSystem">Coordinate System Objects</link>, Reports,
+    <link linkend="Variable">Variable Object</link>, and different views for
+    the <link linkend="OpenGLPlot">OpenGL Plot Object</link>, but also how to
+    apply these to create an effective and well documented mission. Below are
+    the screen captures of both the output tree (where you can view the report
+    output information) and the output window itself.</para>
+
+    <screenshot>
+      <info>
+        <title>Figure: Output</title>
+      </info>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata scalefit="1" width="100%" contentdepth="100%" align="center" fileref="files/images/Tut_ACE_Output.jpeg"></imagedata>
+        </imageobject>
+
+        <caption>
+          <para>Figure: Output</para>
+        </caption>
+      </mediaobject>
+    </screenshot>
+  </section>
+</section>

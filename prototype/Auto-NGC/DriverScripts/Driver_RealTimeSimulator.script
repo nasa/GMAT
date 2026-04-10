@@ -1,0 +1,69 @@
+
+%
+%  Real Time Truth/Estimate Simulator for Auto-GNC IRAD
+%
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+#Include ../ConfigurationFiles/GMAT_Objects_Spacecraft.script
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+#Include ../ConfigurationFiles/GMAT_Objects_Propagators.script
+
+%----------------------------------------
+%---------- 3D Views 
+%----------------------------------------
+#Include ../ConfigurationFiles/GMAT_Objects_3DViews.script
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+#Include ../ConfigurationFiles/GMAT_Objects_ReportFiles.script
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable pauseDuration propEpoch;
+Create Variable xWithNoise yWithNoise zWithNoise
+Create Variable vxWithNoise vyWithNoise vzWithNoise
+Create String systemTimeString;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+pauseDuration = 0.01;
+
+% Set epoch of spacecraft to current wall-clock time
+[systemTimeString] = SystemTime('UTCGregorian');
+dummySat.Epoch.UTCGregorian = systemTimeString;  % NOTE: we should be able to use str2num but there is a blocker bug.
+truthSat.TAIModJulian = dummySat.TAIModJulian;
+
+While truthSat.ElapsedDays <= .5
+
+   % Pause for requested duration
+   Pause(pauseDuration);
+   
+   % Get the current system time
+   [systemTimeString] = SystemTime('UTCGregorian');
+   utilSat.Epoch.UTCGregorian = systemTimeString;  % NOTE: we should be able to use str2num but there is a blocker bug.
+
+   % Propagate to the current system time
+   Propagate propLEOHiFi1(truthSat) {truthSat.TAIModJulian = utilSat.TAIModJulian};
+   
+   % Add noise
+   xWithNoise = truthSat.X + randn(1)/1000
+   yWithNoise = truthSat.Y + randn(1)/1000
+   zWithNoise = truthSat.Z + randn(1)/1000
+	vxWithNoise = truthSat.VX + randn(1)/10000
+   vyWithNoise = truthSat.VY + randn(1)/10000
+   vzWithNoise = truthSat.VZ + randn(1)/10000
+   Report reportTruthStateData truthSat.TAIModJulian truthSat.X truthSat.Y truthSat.Z truthSat.VX truthSat.VY truthSat.VZ
+   Report reportEstimatedStateData truthSat.TAIModJulian xWithNoise yWithNoise zWithNoise vxWithNoise vyWithNoise vzWithNoise
+	
+EndWhile;

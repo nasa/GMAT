@@ -1,0 +1,2267 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="Tut_UsingGMATFunctions"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>Mars B-Plane Targeting Using GMAT Functions</title>
+
+  <variablelist>
+    <varlistentry>
+      <term>Audience</term>
+
+      <listitem>
+        <para>Advanced</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Length</term>
+
+      <listitem>
+        <para>75 minutes</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Prerequisites</term>
+
+      <listitem>
+        <para>Complete <xref linkend="SimulatingAnOrbit"
+        xrefstyle="select:title"/>, <xref linkend="SimpleOrbitTransfer"
+        xrefstyle="select:title"/>, <xref linkend="Mars_B_Plane_Targeting"
+        xrefstyle="select:title"/> and a basic understanding of B-Planes and
+        their usage in targeting is required.</para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term>Script and function Files</term>
+
+      <listitem>
+        <para><filename>Tut_UsingGMATFunctions.script, TargeterInsideFunction.gmf</filename></para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+
+  <section>
+    <title>Objective and Overview</title>
+
+    <note>
+      <para>One of the most challenging problems in space mission design is to
+      design an interplanetary transfer trajectory that takes the spacecraft
+      within a very close vicinity of the target planet. One possible approach
+      that puts the spacecraft close to a target planet is by targeting the
+      B-Plane of that planet. The B-Plane is a planar coordinate system that
+      allows targeting during a gravity assist. It can be thought of as a
+      target attached to the assisting body. In addition, it must be
+      perpendicular to the incoming asymptote of the approach hyperbola. <xref
+      linkend="Tut_UsingGMATFunctions_ID_1"/> and <xref
+      linkend="Tut_UsingGMATFunctions_ID_2"/> show the geometry of
+      the B-Plane and B-vector as seen from a viewpoint perpendicular to orbit
+      plane. To read more on B-Planes, please consult the GMATMathSpec
+      document. A good example involving the use of B-Plane targeting is a
+      mission to Mars. Sending a spacecraft to Mars can be achieved by
+      performing a Trajectory Correction Maneuver (TCM) that targets Mars
+      B-Plane. Once the spacecraft gets close to Mars, then an orbit insertion
+      maneuver can be performed to capture into Mars orbit.</para>
+    </note>
+
+    <figure xml:id="Tut_UsingGMATFunctions_ID_1">
+      <title><guilabel>Geometry of the B-Plane</guilabel> as seen from a
+      viewpoint perpendicular to the B-Plane</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center"
+                       fileref="files/images/Tut_Mars_B_Plane_Targeting_B_Plane_1A.png"
+                       scale="85"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+
+    <figure xml:id="Tut_UsingGMATFunctions_ID_2">
+      <title><guilabel>The B-vector</guilabel> as seen from a viewpoint
+      perpendicular to orbit plane</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center"
+                       fileref="files/images/Tut_Mars_B_Plane_Targeting_B_Plane_2.png"
+                       scale="75"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+
+    <para>In this tutorial, we will use GMAT to model a mission to Mars with
+    the emphasis of how to use GMAT functions. Starting from an out-going
+    hyperbolic trajectory around Earth, we will perform a TCM to target Mars
+    B-Plane. Once we are close to Mars, we will adjust the size of the
+    maneuver to perform a Mars Orbit Insertion (MOI) to achieve a final
+    elliptical orbit with an inclination of 90 degrees. Meeting these mission
+    objectives requires us to create two separate targeting sequences. In
+    order to focus on the configuration of the two targeters, we will make
+    extensive use of the default configurations for spacecraft, propagators,
+    and maneuvers.</para>
+
+    <para>The first target sequence employs maneuvers in the Earth-based
+    Velocity (V), Normal (N) and Bi-normal (B) directions and includes four
+    propagation sequences. The purpose of the maneuvers in VNB directions is
+    to target BdotT and BdotR components of the B-vector. BdotT is targeted to
+    0 km and BdotR is targeted to a non-zero value to generate a polar orbit
+    that has inclination of 90 degrees. BdotR is targeted to -7000 km to avoid
+    having the orbit intersect Mars, which has a radius of approximately 3396
+    km. The entire first target sequence will be created inside a GMAT
+    function. In the <guilabel>Mission</guilabel> tree, this function will be called through GMAT's
+    <guilabel>CallGmatFunction</guilabel> command. Additionally, we'll go ahead and declare
+    pertinent objects (e.g. spacecraft, force models, subscribers, impulsive burns etc.) as global in both the main script and inside the
+    function through GMAT's <guilabel>Global</guilabel> command. </para>
+
+    <para>The second target sequence employs a single, Mars-based
+    anti-velocity direction (-V) maneuver and includes one propagation
+    sequence. This single anti-velocity direction maneuver will occur at
+    periapsis. The purpose of the maneuver is to achieve MOI by targeting
+    position vector magnitude of 12,000 km at apoapsis. Unlike the first target sequence, the second target sequence will not be created inside a function.</para>
+	
+	<para>The purpose behind this tutorial is to demonstrate how GMAT functions are created, populated, called-upon and used as part of practical mission design. 
+	In this tutorial, we'll deliberately put the entire first target sequence inside a GMAT function. Next in the Mission tree, we'll call and execute the function,
+	then continue with the design of the second target sequence outside of the function. Key objects such as the spacecraft, force models, subscribers etc. will be 
+	declared global in order to assure continuous flow of data is plotted and reported to all the subscribers.
+	The basic steps of this tutorial are: </para>
+	
+
+    <procedure>
+      <step>
+        <para>Modify the <classname>DefaultSC</classname> to define
+        spacecraft’s initial state. The initial state is an out-going
+        hyperbolic trajectory that is with respect to Earth.</para>
+      </step>
+
+      <step>
+        <para>Create and configure a <classname>Fuel Tank</classname>
+        resource.</para>
+      </step>
+
+      <step>
+        <para>Create two <classname>ImpulsiveBurn</classname> resources with
+        default settings.</para>
+      </step>
+
+      <step>
+        <para>Create and configure three <classname>Propagators:</classname>
+        NearEarth, DeepSpace and NearMars</para>
+      </step>
+
+      <step>
+        <para>Create and configure
+        <classname>DifferentialCorrector</classname> resource.</para>
+      </step>
+
+      <step>
+        <para>Create and configure three
+        <classname>DefaultOrbitView</classname> resources to visualize Earth,
+        Sun and Mars centered trajectories.</para>
+      </step>
+	  
+	   <step>
+        <para>Create and configure single
+        <classname>ReportFile</classname> resource that will be used in reporting data.</para>
+      </step>
+
+      <step>
+        <para>Create and configure three
+        <classname>CoordinateSystems:</classname> Earth, Sun and Mars
+        centered.</para>
+      </step>
+	  
+	   <step>
+        <para>Create and configure single
+        <classname>GmatFunction</classname> resource that will be called and executed in the <guilabel>Mission</guilabel> tree.
+        </para>
+      </step>
+
+      <step>
+        <para>Create first <classname>Target</classname> sequence inside the GMAT function. This sequence will be used to target
+        BdotT and BdotR components of the B-vector.</para>
+      </step>
+
+      <step>
+        <para>Create second <classname>Target</classname> sequence to
+        implement MOI by targeting position magnitude at apoapsis.</para>
+      </step>
+
+      <step>
+        <para>Run the mission and analyze the results.</para>
+      </step>
+    </procedure>
+  </section>
+
+  <section>
+    <title>Configure Fuel Tank, Spacecraft properties, Maneuvers, Propagators,
+    Differential Corrector, Coordinate Systems and Graphics</title>
+
+    <para>For this tutorial, you’ll need GMAT open, with the default mission
+    loaded. To load the default mission, click <guiicon>New Mission</guiicon>
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/NewMission.png" width="1em"/>
+        </imageobject>
+      </inlinemediaobject>) or start a new GMAT session.
+    <guilabel>DefaultSC</guilabel> will be modified to set spacecraft’s
+    initial state as an out-going hyperbolic trajectory.</para>
+
+    <section>
+      <title>Create Fuel Tank</title>
+
+      <para>We need to create a fuel tank in order to see how much fuel is
+      expended after each impulsive burn. We will modify
+      <guilabel>DefaultSC</guilabel> resource later and attach the fuel tank
+      to the spacecraft.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, right-click the
+          <guilabel>Hardware</guilabel> folder, point to
+          <guilabel>Add</guilabel> and click
+          <guilabel>ChemicalTank</guilabel>. A new resource called
+          <guilabel>ChemicalTank1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para>Right-click<guilabel>ChemicalTank1</guilabel> and click
+          <guilabel>Rename</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the<guilabel>Rename</guilabel> box, type
+          <guilabel>MainTank</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double click on<guilabel>MainTank</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>MainTank</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="1.0*"/>
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>Fuel Mass</guilabel></entry>
+
+                    <entry><userinput>1718</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Fuel Density</guilabel></entry>
+
+                    <entry><userinput>1000</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Pressure</guilabel></entry>
+
+                    <entry><userinput>5000</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Volume</guilabel></entry>
+
+                    <entry><userinput>2</userinput></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <para/>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Modify the DefaultSC Resource</title>
+
+      <para>We need to make minor modifications to
+      <guilabel>DefaultSC</guilabel> in order to define spacecraft’s initial
+      state and attach the fuel tank to the spacecraft.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, under
+          <guilabel>Spacecraft</guilabel> folder, right-click
+          <guilabel>DefaultSC</guilabel> and click
+          <guilabel>Rename</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Rename</guilabel> box, type
+          <guilabel>MAVEN</guilabel> and click <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click on <guilabel>MAVEN</guilabel> to edit its
+          properties. Make sure <guilabel>Orbit</guilabel> tab is
+          selected.</para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>MAVEN</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="1.0*"/>
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>Epoch Format</guilabel></entry>
+
+                    <entry><guilabel>UTCGregorian</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Epoch</guilabel></entry>
+
+                    <entry><userinput>18 Nov 2013
+                    20:26:24.315</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Coordinate System</guilabel></entry>
+
+                    <entry><guilabel>EarthMJ2000Eq</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>State Type</guilabel></entry>
+
+                    <entry><guilabel>Keplerian</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>SMA</guilabel> under
+                    <guilabel>Elements</guilabel></entry>
+
+                    <entry><userinput>-32593.21599272796</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>ECC</guilabel> under
+                    <guilabel>Elements</guilabel></entry>
+
+                    <entry><userinput>1.202872548116185</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>INC</guilabel> under
+                    <guilabel>Elements</guilabel></entry>
+
+                    <entry><userinput>28.80241266404142</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>RAAN</guilabel> under
+                    <guilabel>Elements</guilabel></entry>
+
+                    <entry><userinput>173.9693759331483</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>AOP</guilabel> under
+                    <guilabel>Elements</guilabel></entry>
+
+                    <entry><userinput>240.9696529532764</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>TA</guilabel> under
+                    <guilabel>Elements</guilabel></entry>
+
+                    <entry><userinput>359.9465533778069</userinput></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <para/>
+        </step>
+
+        <step>
+          <para>Click on <guilabel>Tanks</guilabel> tab now.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Available Tanks</guilabel>, you'll see
+          <guilabel>MainTank</guilabel>. This is the fuel tank that we created
+          earlier.</para>
+        </step>
+
+        <step>
+          <para>We attach <guilabel>MainTank</guilabel> to the spacecraft
+          <guilabel>MAVEN</guilabel> by bringing it under <guilabel>Selected
+          Tanks</guilabel> box. Select <guilabel>MainTank</guilabel> under
+          <guilabel>Available Tanks</guilabel> and bring it over to the
+          right-hand side under the <guilabel>Selected
+          Tanks</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Create the Maneuvers</title>
+
+      <para>We’ll need two <guilabel>ImpulsiveBurn</guilabel> resources for
+      this tutorial. Below, we’ll rename the default ImpulsiveBurn and create
+      a new one. We’ll also select the fuel tank that was created earlier in
+      order to access fuel for the burns.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, under the
+          <guilabel>Burns</guilabel> folder, right-click
+          <guilabel>DefaultIB</guilabel> and click
+          <guilabel>Rename</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Rename</guilabel> box, type
+          <guilabel>TCM</guilabel>, an acronym for Trajectory Correction
+          Maneuver and click <guilabel>OK</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Double-Click <guilabel>TCM</guilabel> to edit its properties.</para>
+        </step>
+
+        <step>
+          <para>Check <guilabel>Decrement Mass</guilabel> under <guilabel>Mass
+          Change</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>For <guilabel>Tank</guilabel> field under <guilabel>Mass
+          Change</guilabel>, select <guilabel>MainTank</guilabel> from drop
+          down menu.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+
+        <step>
+          <para>Right-click the<guilabel>Burns</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click
+          <guilabel>ImpulsiveBurn</guilabel>. A new resource called
+          <guilabel>ImpulsiveBurn1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para><guilabel>Rename</guilabel> the new
+          <guilabel>ImpulsiveBurn1</guilabel> resource to
+          <guilabel>MOI</guilabel>, an acronym for Mars Orbit Insertion and
+          click <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>MOI</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>For <guilabel>Origin</guilabel> field under
+          <guilabel>Coordinate System</guilabel>, select
+          <guilabel>Mars</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Check <guilabel>Decrement Mass</guilabel> under <guilabel>Mass
+          Change</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>For <guilabel>Tank</guilabel> field under <guilabel>Mass
+          Change</guilabel>, select <guilabel>MainTank</guilabel> from the
+          drop down menu.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Create the Propagators</title>
+
+      <para>We’ll need to add three propagators for this tutorial. Below,
+      we’ll rename the default <guilabel>DefaultProp</guilabel> and create two
+      more propagators.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, under the
+          <guilabel>Propagators</guilabel> folder, right-click
+          <guilabel>DefaultProp</guilabel> and click Rename.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Rename</guilabel> box, type
+          <guilabel>NearEarth</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click on <guilabel>NearEarth</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>NearEarth</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="2.0*"/>
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>Initial Step Size</guilabel> under
+                    <guilabel>Integrator </guilabel></entry>
+
+                    <entry><userinput>600</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Accuracy</guilabel> under <guilabel>
+                    Integrator</guilabel></entry>
+
+                    <entry><userinput>1e-013</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Min Step Size</guilabel> under
+                    <guilabel>Integrator</guilabel></entry>
+
+                    <entry><userinput>0</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Max Step Size</guilabel> under
+                    <guilabel>Integrator</guilabel></entry>
+
+                    <entry><userinput>600</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Model</guilabel> under <guilabel>Gravity
+                    </guilabel></entry>
+
+                    <entry><guilabel>JGM-2</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Degree</guilabel> under
+                    <guilabel>Gravity</guilabel></entry>
+
+                    <entry><userinput>8</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Order</guilabel> under
+                    <guilabel>Gravity</guilabel></entry>
+
+                    <entry><userinput>8</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Atmosphere Model</guilabel> under
+                    <guilabel>Drag</guilabel></entry>
+
+                    <entry><guilabel>None</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Point Masses</guilabel> under
+                    <guilabel>Force Model</guilabel></entry>
+
+                    <entry>Add <guilabel>Luna</guilabel> and
+                    <guilabel>Sun</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Use Solar Radiation Pressure</guilabel>
+                    under <guilabel>Force Model</guilabel></entry>
+
+                    <entry><guilabel>Check this field</guilabel></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <para/>
+        </step>
+
+        <step>
+          <para>Click on <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+
+        <step>
+          <para>Right-click the <guilabel>Propagators</guilabel> folder and
+          click <guilabel>Add Propagator</guilabel>. A new resource called
+          <guilabel>Propagator1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para><guilabel>Rename</guilabel> the new
+          <guilabel>Propagator1</guilabel> resource to
+          <guilabel>DeepSpace</guilabel> and click
+          <guilabel>OK</guilabel>.<guilabel/></para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>DeepSpace</guilabel> to edit its
+          properties<guilabel>.</guilabel></para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>DeepSpace</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="2.0*"/>
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>Type</guilabel> under
+                    <guilabel>Integrator </guilabel></entry>
+
+                    <entry><guilabel>PrinceDormand78</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Initial Step Size</guilabel> under
+                    <guilabel>Integrator </guilabel></entry>
+
+                    <entry><userinput>600</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Accuracy</guilabel> under <guilabel>
+                    Integrator</guilabel></entry>
+
+                    <entry><userinput>1e-012</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Min Step Size</guilabel> under
+                    <guilabel>Integrator</guilabel></entry>
+
+                    <entry><userinput>0</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Max Step Size</guilabel> under
+                    <guilabel>Integrator</guilabel></entry>
+
+                    <entry><userinput>864000</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Central Body</guilabel> under
+                    <guilabel>Force Model </guilabel></entry>
+
+                    <entry><guilabel>Sun</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Primary Body</guilabel> under
+                    <guilabel>Force Model</guilabel></entry>
+
+                    <entry><guilabel>None</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Point Masses</guilabel> under
+                    <guilabel>Force Model</guilabel></entry>
+
+                    <entry>Add <guilabel>Earth, Luna, Sun, Mars, Jupiter,
+                    Neptune, Saturn, Uranus, Venus</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Use Solar Radiation Pressure</guilabel>
+                    under <guilabel>Force Model</guilabel></entry>
+
+                    <entry><guilabel>Check this field</guilabel></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <para/>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+
+        <step>
+          <para>Right-click the <guilabel>Propagators</guilabel> folder and
+          click <guilabel>Add Propagator</guilabel>. A new resource called
+          <guilabel>Propagator1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para>Rename the new <guilabel>Propagator1</guilabel> resource to
+          <guilabel>NearMars</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click on <guilabel>NearMars</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>NearMars</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="2.0*"/>
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>Type</guilabel> under
+                    <guilabel>Integrator </guilabel></entry>
+
+                    <entry><guilabel>PrinceDormand78</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Initial Step Size</guilabel> under
+                    <guilabel>Integrator </guilabel></entry>
+
+                    <entry><userinput>600</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Accuracy</guilabel> under <guilabel>
+                    Integrator</guilabel></entry>
+
+                    <entry><userinput>1e-012</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Min Step Size</guilabel> under
+                    <guilabel>Integrator</guilabel></entry>
+
+                    <entry><userinput>0</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Max Step Size</guilabel> under
+                    <guilabel>Integrator</guilabel></entry>
+
+                    <entry><userinput>86400</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Central Body</guilabel> under
+                    <guilabel>Force Model </guilabel></entry>
+
+                    <entry><guilabel>Mars</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Primary Body</guilabel> under
+                    <guilabel>Force Model</guilabel></entry>
+
+                    <entry><guilabel>Mars</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Model</guilabel> under
+                    <guilabel>Gravity</guilabel></entry>
+
+                    <entry><guilabel>Mars-50C</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Degree</guilabel> under
+                    <guilabel>Gravity</guilabel></entry>
+
+                    <entry><userinput>8</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Order</guilabel> under
+                    <guilabel>Gravity</guilabel></entry>
+
+                    <entry><userinput>8</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Atmosphere Model</guilabel> under
+                    <guilabel>Drag</guilabel></entry>
+
+                    <entry><guilabel>None</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Point Masses</guilabel> under
+                    <guilabel>Force Model</guilabel></entry>
+
+                    <entry>Add <guilabel>Sun</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Use Solar Radiation Pressure</guilabel>
+                    under <guilabel>Force Model</guilabel></entry>
+
+                    <entry><guilabel>Check this field</guilabel></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <para/>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save the changes.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Create the Differential Corrector</title>
+
+      <para>Two <function>Target</function> sequences that we will create
+      later need a <classname>DifferentialCorrector</classname> resource to
+      operate, so let’s create one now. We'll leave the settings at their
+      defaults.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, expand the
+          <guilabel>Solvers</guilabel> folder if it isn’t already.</para>
+        </step>
+
+        <step>
+          <para>Right-click the<guilabel> Boundary Value Solvers</guilabel>
+          folder, point to <guilabel>Add</guilabel>, and click
+          <guilabel>DifferentialCorrector</guilabel>. A new resource called
+          <guilabel>DC1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para><guilabel>Rename</guilabel> the new <guilabel>DC1</guilabel>
+          resource to <guilabel>DefaultDC</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Create the Coordinate Systems</title>
+
+      <para>The BdotT and BdotR constraints that we will define later under
+      the first <guilabel>Target</guilabel> sequence require us to create a
+      coordinate system. Orbit View resources that we will create later also
+      need coordinate system resources to operate. We will create Sun and Mars
+      centered coordinate systems. So let’s create them now.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, right-click the
+          <guilabel>Coordinate Systems</guilabel> folder and click
+          <guilabel>Add Coordinate System</guilabel>. A new Dialog box is
+          created with a title <guilabel>New Coordinate
+          System.</guilabel></para>
+        </step>
+
+        <step>
+          <para>Type <guilabel>SunEcliptic</guilabel> under
+          <guilabel>Coordinate System </guilabel><guilabel>Name</guilabel>
+          box.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Origin</guilabel> field, select
+          <guilabel>Sun</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>For <guilabel>Type</guilabel> under <guilabel>Axes</guilabel>,
+          select <guilabel>MJ2000Ec.</guilabel></para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes. You’ll
+          see that a new coordinate system <guilabel>SunEcliptic</guilabel> is
+          created under <guilabel>Coordinate Systems</guilabel> folder.</para>
+        </step>
+
+        <step>
+          <para>Right-click the <guilabel>Coordinate Systems</guilabel> folder
+          and click <guilabel>Add Coordinate System</guilabel>. A new Dialog
+          Box is created with a title <guilabel>New Coordinate
+          System</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Type <guilabel>MarsInertial</guilabel> under
+          <guilabel>Coordinate System Name</guilabel> box.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Origin</guilabel> field, select
+          <guilabel>Mars</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>For <guilabel>Type</guilabel> under <guilabel>Axes</guilabel>,
+          select <guilabel>BodyInertial</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes. You’ll
+          see that a new coordinate system <guilabel>MarsInertial
+          </guilabel>is created under <guilabel>Coordinate Systems</guilabel>
+          folder.</para>
+        </step>
+      </procedure>
+    </section>
+
+    <section>
+      <title>Create the Orbit Views</title>
+
+      <para>We’ll need three <guilabel>DefaultOrbitView</guilabel> resources
+      for this tutorial. Below, we’ll rename the default
+      <guilabel>DefaultOrbitView</guilabel> and create two new ones. We need
+      three graphics windows in order to visualize spacecraft’s trajectory
+      centered around Earth, Sun and then Mars</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Resources</guilabel> tree, under
+          <guilabel>Output</guilabel> folder, right-click
+          <guilabel>DefaultOrbitView</guilabel> and click
+          <guilabel>Rename</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Rename</guilabel> box, type
+          <guilabel>EarthView</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Output</guilabel> folder, delete
+          <guilabel>DefaultGroundTrack</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>EarthView</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>EarthView</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="2.0*"/>
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>View Scale Factor</guilabel> under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><userinput>4</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>View Point Vector</guilabel> boxes, under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><userinput>0, 0, 30000</userinput></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <para/>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+
+        <step>
+          <para>Right-click the <guilabel>Output</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click <guilabel>OrbitView</guilabel>.
+          A new resource called <guilabel>OrbitView1</guilabel> will be
+          created.</para>
+        </step>
+
+        <step>
+          <para><guilabel>Rename</guilabel> the new <guilabel>OrbitView1
+          </guilabel>resource to <guilabel>SolarSystemView </guilabel>and
+          click <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>SolarSystemView</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>SolarSystemView</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="2.0*"/>
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry>From <guilabel>Celestial Object</guilabel> under
+                    <guilabel>View Object</guilabel>, add following objects to
+                    <guilabel>Selected Celestial Object </guilabel>box</entry>
+
+                    <entry><guilabel>Mars, Sun</guilabel> (Do not remove
+                    <guilabel>Earth</guilabel>)</entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Coordinate System</guilabel> under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><guilabel>SunEcliptic</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>View Point Reference</guilabel> under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><guilabel>Sun</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>View Point Vector</guilabel> boxes, under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><userinput>0, 0, 5e8</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>View Direction</guilabel> under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><guilabel>Sun</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Coordinate System</guilabel> under
+                    <guilabel>View Up Definition</guilabel></entry>
+
+                    <entry><guilabel>SunEcliptic</guilabel></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <para/>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+
+        <step>
+          <para>Right-click the <guilabel>Output </guilabel>folder, point to
+          <guilabel>Add</guilabel>, and click <guilabel>OrbitView</guilabel>.
+          A new resource called <guilabel>OrbitView1</guilabel> will be
+          created.</para>
+        </step>
+
+        <step>
+          <para><guilabel>Rename</guilabel> the new
+          <guilabel>OrbitView1</guilabel> resource to
+          <guilabel>MarsView</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>MarsView</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Set the values shown in the table below.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0">
+              <title><guilabel>MarsView</guilabel> settings</title>
+
+              <tgroup cols="2">
+                <colspec colnum="1" colwidth="2.0*"/>
+
+                <thead>
+                  <row rowsep="1">
+                    <entry>Field</entry>
+
+                    <entry>Value</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry>From <guilabel>Celestial Object</guilabel> under
+                    <guilabel>View Object</guilabel>, add following object to
+                    <guilabel>Selected Celestial Object</guilabel> box</entry>
+
+                    <entry><guilabel>Mars</guilabel> (You don’t have to remove
+                    <guilabel>Earth</guilabel>)</entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Coordinate System</guilabel> under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><guilabel>MarsInertial</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>View Point Reference</guilabel> under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><guilabel>Mars</guilabel></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>View Point Vector</guilabel> boxes, under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><userinput>22000, 22000, 0</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>View Direction</guilabel> under
+                    <guilabel>View Definition</guilabel></entry>
+
+                    <entry><userinput>Mars</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Coordinate System </guilabel>under
+                    <guilabel>View Up Definition</guilabel></entry>
+
+                    <entry><guilabel>MarsInertial</guilabel></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+
+          <para/>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save the changes.</para>
+        </step>
+      </procedure>
+    </section>
+	
+	    <section>
+      <title>Create single Report File</title>
+
+      <para>We’ll need a single <guilabel>ReportFile</guilabel> resource for
+      this tutorial that we'll use to report data to.</para>
+
+      <procedure>
+        <step>
+          <para>Right-click the <guilabel>Output</guilabel> folder, point to
+          <guilabel>Add</guilabel>, and click <guilabel>ReportFile</guilabel>.
+          A new resource called <guilabel>ReportFile1</guilabel> will be
+          created.</para>
+        </step>
+
+        <step>
+          <para><guilabel>Rename</guilabel> the new <guilabel>ReportFile1
+          </guilabel>resource to <guilabel>rf </guilabel>and
+          click <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-Click <guilabel>rf</guilabel> to edit its properties.</para>
+        </step>
+
+        <step>
+          <para>Empty the <guilabel>Parameter List</guilabel> by clicking on the <guilabel>Edit
+          </guilabel> button.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+
+       </procedure>
+    </section>
+	
+	
+ <section>
+      <title>Create a GMAT Function</title>
+
+      <para>We’ll need a single <guilabel>GMATFunction</guilabel> resource for
+      this tutorial. The first target sequence will be implemented inside this function.</para>
+
+      <procedure>
+        <step>
+          <para>Right-click the <guilabel>Functions</guilabel> folder, point to
+          <guilabel>Add</guilabel>, point to <guilabel>GMAT Function</guilabel> and click <guilabel>New</guilabel>.
+          </para>
+        </step>
+
+        <step>
+          <para>A new GMAT function panel will open. Type the following name for the function <guilabel>TargeterInsideFunction</guilabel>
+          and click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+		
+		
+		<step>
+          <para>Now open <guilabel>TargeterInsideFunction</guilabel> resource and paste the below shown first targeter sequence snippet into this function.</para>
+        </step>
+
+	    <step>
+          <para>After pasting of the below snippet is done, click on <guilabel>Save As </guilabel> button and save your function.
+		  After saving your function, close <guilabel>TargeterInsideFunction</guilabel> resource by clicking on the <guilabel>Close </guilabel> button.</para>
+        </step>
+	   
+	   </procedure>
+
+	   
+	   <programlisting><code>% Target Desired B-Plane Coordinates in this function:
+
+function TargeterInsideFunction()
+
+BeginMissionSequence
+
+Global 'Make Objects Global' MAVEN DeepSpace_ForceModel DefaultDC ...
+EarthView MainTank MarsView MOI NearEarth_ForceModel ...
+NearMars_ForceModel rf SolarSystemView TCM
+
+
+Target 'Target B-plane coordinates' DefaultDC {SolveMode = Solve, ...
+	ExitMode = SaveAndContinue}
+   Propagate 'Prop 3 days' NearEarth(MAVEN) {MAVEN.ElapsedDays = 3}
+   Propagate 'Prop 12 Days to TCM' DeepSpace(MAVEN) {MAVEN.ElapsedDays = 12}
+   Vary 'Vary TCM.V' DefaultDC(TCM.Element1 = 0.001, ...
+	{Perturbation = 0.00001, MaxStep = 0.002})
+   Vary 'Vary TCM.N' DefaultDC(TCM.Element2 = 0.001, ...
+	{Perturbation = 0.00001, MaxStep = 0.002})
+   Vary 'Vary TCM.B' DefaultDC(TCM.Element3 = 0.001, ...
+	{Perturbation = 0.00001, MaxStep = 0.002})
+   Maneuver 'Apply TCM' TCM(MAVEN)
+   Propagate 'Prop 280 Days' DeepSpace(MAVEN) {MAVEN.ElapsedDays = 280}
+   Propagate 'Prop to Mars Periapsis' NearMars(MAVEN) {MAVEN.Mars.Periapsis}
+   Achieve 'Achieve BdotT' DefaultDC(MAVEN.MarsInertial.BdotT = 0, ...
+	{Tolerance = 0.00001})
+   Achieve 'Achieve BdotR' DefaultDC(MAVEN.MarsInertial.BdotR = -7000, ...
+	{Tolerance = 0.00001})
+EndTarget; 
+
+% Report MAVEN parameters to global 'rf' :
+Report 'Report Parameters' rf MAVEN.UTCGregorian TCM.Element1 ...
+TCM.Element2 TCM.Element3 MAVEN.MarsInertial.BdotT ...
+MAVEN.MarsInertial.BdotR MAVEN.MarsInertial.INC</code></programlisting>
+	   
+<para>Reminder that the first target sequence will target desired B-Plane coordinates which will get the spacecraft <guilabel>MAVEN</guilabel> close to Mars.
+Note that we have declared all the pertinent objects as global at the beginning of the function. These same objects will also be declared global in the <guilabel>Mission Sequence</guilabel> as well.
+Notice that in this first target sequence, spacecraft <guilabel>MAVEN</guilabel> props for 3 days using <guilabel>NearEarth</guilabel> propagator. Next using the <guilabel>DeepSpace</guilabel> propagator, we propagate for 12 days
+and execute <guilabel>TCM</guilabel> impulsive maneuver. Again using the <guilabel>DeepSpace</guilabel> propagator, we propagate for another 280 days and finally propagate to Mars Periapsis.
+ The desired constraints of the B-Plane coordinates are to be met at the Mars periapsis. The three components of the <guilabel>TCM</guilabel> impulsive burn are the controls that will
+help us achieve these two constraints. Note that the tolerances on the two B-Plane constraints are relatively tight.</para>
+	   
+    </section>
+	
+
+  </section>
+
+  <section>
+    <title>Configure the Mission Sequence</title>
+
+    <para>Now we are ready to configure the <guilabel>Mission Sequence</guilabel>. We will first insert a <guilabel>Global</guilabel> command 
+    and declare the same objects as global that were declared global inside the <guilabel>TargeterInsideFunction</guilabel> function.
+	Next we'll insert <guilabel>CallGmatFunction</guilabel> command which will call and initiate our <guilabel>TargeterInsideFunction</guilabel> function that contains our first target sequence.
+	The first target sequence will solve for the <guilabel>TCM</guilabel> maneuver values required to achieve BdotT and BdotR
+    components of the B-vector. BdotT will be targeted to 0 km and BdotR is
+    targeted to a non-zero value in order to generate a polar orbit that will
+    have an inclination of 90 degrees.</para>
+	
+	<para>The second target sequence employs a single, Mars-based
+    anti-velocity direction (-V) maneuver and includes one propagation
+    sequence. This single anti-velocity direction maneuver will occur at
+    periapsis. The purpose of the maneuver is to achieve MOI by targeting
+    position vector magnitude of 12,000 km at apoapsis. The basic steps of
+    this tutorial are:</para>
+
+    <section>
+      <title>Create Commands to Initiate the First Target Sequence</title>
+
+      <para>Now create the commands necessary to perform the first
+      <guilabel>Target</guilabel> sequence. <xref
+      linkend="Tut_UsingGMATFunctions_1"/> illustrates the
+      configuration of the <guilabel>Mission</guilabel> tree after you have
+      completed the steps in this section. </para>
+
+      <figure xml:id="Tut_UsingGMATFunctions_1">
+        <title>Mission Sequence for the First Target sequence</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_UsingGMATFunctions_1.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <para>Do following steps to set-up for the first <function>Target</function> sequence:</para>
+
+      <procedure>
+        <step>
+          <para>Click on the <guilabel>Mission</guilabel> tab to show the
+          <guilabel>Mission</guilabel> tree.</para>
+        </step>
+
+        <step>
+          <para>You’ll see that there already exists a
+          <guilabel>Propagate1</guilabel> command. We need to delete this
+          command</para>
+        </step>
+
+        <step>
+          <para>Right-click on <guilabel>Propagate1</guilabel> command and
+          click <guilabel>Delete</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Right-click on <guilabel>Mission Sequence</guilabel> folder,
+          point to <guilabel>Append</guilabel>, and click
+          <guilabel>Global</guilabel>. A new command called
+          <guilabel>Global1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>Global1</guilabel> and click
+          <guilabel>Rename</guilabel>. In the <guilabel>Rename</guilabel> box, type <guilabel>Make Objects Global</guilabel> and click <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Right-click on <guilabel>Mission Sequence</guilabel> folder,
+          point to <guilabel>Append</guilabel>, and click
+          <guilabel>CallGmatFunction</guilabel>. A new command called
+          <guilabel>CallGmatFunction1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>CallGmatFunction1</guilabel> and click
+          <guilabel>Rename</guilabel>. In the <guilabel>Rename</guilabel> box, type <guilabel>Target Desired B-Plane Coord. From Inside Function</guilabel> and click <guilabel>OK</guilabel>.</para>
+        </step>
+		
+		<step>
+          <para>Right-click on <guilabel>Mission Sequence</guilabel> folder,
+          point to <guilabel>Append</guilabel>, and click
+          <guilabel>Report</guilabel>. A new command called
+          <guilabel>Report1</guilabel> will be created.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>Report1</guilabel> and click
+          <guilabel>Rename</guilabel>. In the <guilabel>Rename</guilabel> box, type <guilabel>Report Parameters</guilabel> and click <guilabel>OK</guilabel>.</para>
+        </step>
+
+		</procedure>
+
+    </section>
+
+    <section>
+      <title>Configure the Mission Tree to Run the First Target Sequence</title>
+
+      <para>Now that the structure is created, we need to configure various
+      parts of the first <guilabel>Target</guilabel> sequence to do what we
+      want.</para>
+    </section>
+
+    <section>
+      <title>Configure the Make Objects Global Command</title>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>Make Objects Global</guilabel> to edit its properties.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Please Select Objects to Make Global</guilabel> check all the available object and make all available objects as global.
+          Recall that same objects were declared as global inside <guilabel>TargeterInsideFunction</guilabel> function as well.
+          </para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Make Objects Global</guilabel> Command
+        Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_UsingGMATFunctions_2.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Configure the Target Desired B-Plane Coord. From Inside Function Command</title>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>Target Desired B-Plane Coord. From Inside Function</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Function</guilabel>, select <guilabel>TargeterInsideFunction</guilabel> from drop down menu. In this particular example, since we're not passing any
+		  input(s) or receiving any output(s) to and from the function, hence we won't be editing Input/Output menu.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Target Desired B-Plane Coord. From Inside Function</guilabel> Command Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_UsingGMATFunctions_3.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+	
+	    <section>
+      <title>Configure the Report Parameters Command</title>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>Report Parameters</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>ReportFile</guilabel>, make sure <guilabel>rf</guilabel> is selected from the from drop down menu.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Parameter List</guilabel> click on <guilabel>View</guilabel>. This opens up a new <guilabel>ParameterSelectDialog</guilabel> panel. Make sure to
+		  select the parameters that are shown in the below <guilabel>Report Parameters</guilabel> screenshot image.</para>
+        </step>
+		
+		<step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+				
+      </procedure>
+
+      <figure>
+        <title><guilabel>Report Parameters</guilabel> Command Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_UsingGMATFunctions_4.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+	
+  </section>
+
+  <section>
+    <title>Run the Mission with first Target Sequence</title>
+
+    <para>Before running the mission, click <guilabel>Save</guilabel>
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/SaveMission.png" width="1em"/>
+        </imageobject>
+      </inlinemediaobject>) and save the mission to a file of your choice. Now
+    click <guilabel>Run</guilabel> (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/RunMission.png" width="1em"/>
+        </imageobject>
+      </inlinemediaobject>). As the mission runs, you will see GMAT solve the
+    targeting problem. Each iteration and perturbation is shown in
+    <guilabel>EarthView</guilabel>, <guilabel>SolarSystemView</guilabel> and
+    <guilabel>MarsView</guilabel> windows in light blue, and the final
+    solution is shown in red. After the mission completes, the 3D views should
+    appear as in the images shown below. You may want to run the mission
+    several times to see the targeting in progress.</para>
+
+    <figure>
+      <title>3D View of departure hyperbolic trajectory (EarthView)</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_UsingGMATFunctions_5.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+
+    <figure>
+      <title>3D View of heliocentric transfer trajectory
+      (SolarSystemView)</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_UsingGMATFunctions_6.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+
+    <figure>
+      <title>3D View of approach hyperbolic trajectory. MAVEN stopped at
+      periapsis (MarsView)</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_UsingGMATFunctions_7.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+
+
+    <para>Now go to the <guilabel>Output</guilabel> tree and open <guilabel>rf</guilabel>. Recall that <guilabel>rf</guilabel> was declared
+as a global object both inside the function and in the main script. Notice that both the controls (i.e. <guilabel>TCM</guilabel> burn elements) and constraints (i.e. <guilabel>BdotT</guilabel>, <guilabel>BdotR</guilabel>) are reported as 
+well as <guilabel>MAVEN</guilabel> inclination relative to <guilabel>MarsInertial</guilabel> coordinate system. The desired constraints that were set in the first targeter sequence have been successfully achieved.</para>
+
+<para>Now go back to <guilabel>Mission</guilabel> tree and right click on <guilabel>Target Desired B-Plane Coord. From Inside Function</guilabel> command and click on <guilabel>Command Summary</guilabel> option.
+ Under <guilabel>Coordinate System</guilabel> drop down menu, select <guilabel>MarsIntertial</guilabel> and study the command summary. This command summary
+corresponds to the very last <guilabel>Propagate</guilabel> command (i.e. 'Prop to Mars Periapsis') from inside the GMAT function. Under <guilabel>Hyperbolic Parameters</guilabel>, notice
+the values of <guilabel>BdotT</guilabel> and <guilabel>BdotR</guilabel>. These are the constraints that have been achieved on the very last 'Prop to Mars Periapsis' <guilabel>Propagate</guilabel> command from the first targeter which
+was set up inside the GMAT function.</para>
+
+
+    <section>
+      <title>Create the Second Target Sequence</title>
+
+      <para>Recall that we still need to create second
+      <guilabel>Target</guilabel> sequence in order to perform Mars Orbit
+      Insertion maneuver to achieve the desired capture orbit. In the
+      <guilabel>Mission</guilabel> tree, we will create the second
+      <guilabel>Target</guilabel> sequence right after the first
+      <guilabel>Target</guilabel> sequence which was defined inside the GMAT function <guilabel>TargeterInsideFunction</guilabel>.</para>
+
+      <para>Now let’s create the commands necessary to perform the second
+      <guilabel>Target</guilabel> sequence. <xref
+      linkend="Tut_UsingGMATFunctions_8"/> illustrates the
+      configuration of the <guilabel>Mission</guilabel> tree after you have
+      completed the steps in this section. Notice that in <xref
+      linkend="Tut_UsingGMATFunctions_8"/>, the second
+      <guilabel>Target</guilabel> sequence is created after the first
+      <guilabel>Target</guilabel> sequence which was called via the <guilabel>CallGmatFunction</guilabel> command. We’ll discuss the second
+      <guilabel>Target</guilabel> sequence after it has been created.</para>
+
+      <figure xml:id="Tut_UsingGMATFunctions_8">
+        <title>Mission Sequence showing first and second Target
+        sequences</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_UsingGMATFunctions_8.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <para>To create the second <guilabel>Target</guilabel> sequence:</para>
+
+      <procedure>
+        <step>
+          <para>Click on the <guilabel>Mission</guilabel> tab to show the
+          <guilabel>Mission</guilabel> tree.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Mission</guilabel> tree, right-click on
+          <guilabel>Mission Sequence</guilabel> folder, point to
+          <guilabel>Append</guilabel>, and click <guilabel>Target</guilabel>.
+          This will insert two separate commands: <guilabel>Target1</guilabel>
+          and <guilabel>EndTarget1</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>Target1</guilabel> and click
+          <guilabel>Rename</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Type <guilabel>Mars Capture</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>Mars Capture</guilabel>, point to
+          <guilabel>Append</guilabel>, and click <guilabel>Vary</guilabel>. A
+          new command called <guilabel>Vary4</guilabel> will be
+          created.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>Vary4</guilabel> and click
+          <guilabel>Rename</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Rename</guilabel> box, type <guilabel>Vary
+          MOI.V</guilabel> and click <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Complete the <guilabel>Target</guilabel> sequence by appending
+          the commands in <xref
+          linkend="Tut_Mars_B_Plane_Second_Targeting_CommandTable_ID"/>.</para>
+
+          <para><table colsep="0" frame="topbot" rowsep="0"
+              xml:id="Tut_Mars_B_Plane_Second_Targeting_CommandTable_ID">
+              <title>Additional Second <guilabel>Target</guilabel> Sequence
+              Commands</title>
+
+              <tgroup cols="2">
+                <thead>
+                  <row rowsep="1">
+                    <entry>Command</entry>
+
+                    <entry>Name</entry>
+                  </row>
+                </thead>
+
+                <tbody>
+                  <row>
+                    <entry><guilabel>Maneuver</guilabel></entry>
+
+                    <entry><userinput>Apply MOI</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Propagate</guilabel></entry>
+
+                    <entry><userinput>Prop to Mars
+                    Apoapsis</userinput></entry>
+                  </row>
+
+                  <row>
+                    <entry><guilabel>Achieve</guilabel></entry>
+
+                    <entry><userinput>Achieve RMAG</userinput></entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table></para>
+        </step>
+      </procedure>
+
+      <note>
+        <para>Let’s discuss what the second <guilabel>Target</guilabel>
+        sequence does. We know that a maneuver is required for the Mars
+        capture orbit. We also know that the desired radius of capture orbit
+        at apoapsis must be 12,000 km. However, we don’t know the size (or ΔV
+        magnitude) of the <guilabel>MOI</guilabel> maneuver that will
+        precisely achieve the desired orbital conditions. You use the second
+        <guilabel>Target</guilabel> sequence to solve for that precise
+        maneuver value. You must tell GMAT what controls are available (in
+        this case, a single maneuver) and what conditions must be satisfied
+        (in this case, radius magnitude value). Once again, just like in the
+        first <guilabel>Target</guilabel> sequence, here we accomplish this by
+        using the <guilabel>Vary</guilabel> and <guilabel>Achieve</guilabel>
+        commands. Using the <guilabel>Vary</guilabel> command, you tell GMAT
+        what to solve for—in this case, the ΔV value for
+        <guilabel>MOI</guilabel>. You use the <guilabel>Achieve</guilabel>
+        command to tell GMAT what conditions the solution must satisfy—in this
+        case, RMAG value of 12,000 km.</para>
+      </note>
+    </section>
+
+    <section>
+      <title>Create the Final Propagate Command</title>
+
+      <para>We need a <guilabel>Propagate</guilabel> command after the second
+      <guilabel>Target</guilabel> sequence so that we can see our final
+      orbit.</para>
+
+      <procedure>
+        <step>
+          <para>In the <guilabel>Mission</guilabel> tree, right-click
+          <guilabel>End Mars Capture</guilabel>, point to <guilabel>Insert
+          After</guilabel>, and click <guilabel>Propagate</guilabel>. A new
+          <guilabel>Propagate3</guilabel> command will appear.</para>
+        </step>
+
+        <step>
+          <para>Right-click <guilabel>Propagate6</guilabel> and click
+          <guilabel>Rename</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Type <guilabel>Prop for 1 day</guilabel> and click
+          <guilabel>OK</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Double-click <guilabel>Prop for 1 day</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Propagator</guilabel>, replace
+          <guilabel>NearEarth</guilabel> with
+          <guilabel>NearMars</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Parameter</guilabel>, replace
+          <guilabel>MAVEN.ElapsedSeconds</guilabel> with
+          <guilabel>MAVEN.ElapsedDays</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Condition</guilabel>, replace the value
+          <guilabel>0.0</guilabel> with <guilabel>1</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Prop for 1 day</guilabel> Command
+        Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_Mars_B_Plane Prop For 1 Day_better.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Configure the second Target Sequence</title>
+
+      <para>Now that the structure is created, we need to configure various
+      parts of the second <guilabel>Target</guilabel> sequence to do what we
+      want.</para>
+    </section>
+
+    <section>
+      <title>Configure the Mars Capture Command</title>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>Mars Capture</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>ExitMode</guilabel> list, click
+          <guilabel>SaveAndContinue</guilabel>. This instructs GMAT to save
+          the final solution of the targeting problem after you run it.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Mars Capture</guilabel> Command Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_Mars_B_Plane Mars Capture.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Configure the Vary MOI.V Command</title>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>Vary MOI.V</guilabel> to edit its
+          properties. Notice that the variable in the
+          <guilabel>Variable</guilabel> box is
+          <guilabel>TCM.Element1</guilabel>. We want
+          <guilabel>MOI.Element1</guilabel> which is the velocity component of
+          <guilabel>MOI</guilabel> in the local VNB coordinate system. So
+          let’s change that.</para>
+        </step>
+
+        <step>
+          <para>Next to <guilabel>Variable</guilabel>, click the
+          <guilabel>Edit</guilabel> button.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Object</guilabel> List, click
+          <guilabel>MOI</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Object Properties</guilabel> list,
+          double-click <guilabel>Element1</guilabel> to move it to the
+          <guilabel>Selected Value(s)</guilabel> list. See the image below for
+          results.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to close the
+          <guilabel>ParameterSelectDialog window</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Initial Value</guilabel> box, type
+          <guilabel>-1.0</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Perturbation</guilabel> box, type
+          <guilabel>0.00001</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Lower</guilabel> box, type
+          <guilabel>-10e300</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Upper</guilabel> box, type
+          <guilabel>10e300</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Max Step</guilabel> box, type
+          <guilabel>0.1</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Vary MOI</guilabel> Parameter Selection</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_Mars_B_Plane_Vary MOI_V Parameter Select.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+
+      <figure>
+        <title><guilabel>Vary MOI</guilabel> Command Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_Mars_B_Plane Vary MOI_V Command.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Configure the Apply MOI Command</title>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>Apply MOI</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Burn</guilabel> list, click
+          <guilabel>MOI</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Apply MOI</guilabel> Command Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_Mars_B_Plane Apply MOI.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Configure the Prop to Mars Apoapsis Command</title>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>Prop to Mars Apoapsis</guilabel> to
+          edit its properties.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Propagator</guilabel>, replace
+          <guilabel>NearEarth</guilabel> with
+          <guilabel>NearMars</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Parameter</guilabel>, replace
+          <guilabel>MAVEN.ElapsedSeconds</guilabel> with
+          <guilabel>MAVEN.Mars.Apoapsis</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Prop to Mars Apoapsis</guilabel> Command
+        Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_Mars_B_Plane Prop to Mars Apoapsis_better.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+
+    <section>
+      <title>Configure the Achieve RMAG Command</title>
+
+      <procedure>
+        <step>
+          <para>Double-click <guilabel>Achieve RMAG</guilabel> to edit its
+          properties.</para>
+        </step>
+
+        <step>
+          <para>Next to <guilabel>Goal</guilabel>, click the
+          <guilabel>Edit</guilabel> button.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Object Properties</guilabel> list, click
+          <guilabel>RMAG</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Under <guilabel>Central Body</guilabel>, select
+          <guilabel>Mars</guilabel> and double-click on
+          <guilabel>RMAG</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to close the
+          <guilabel>ParameterSelectDialog</guilabel> window.</para>
+        </step>
+
+        <step>
+          <para>In the <guilabel>Value</guilabel> box, type
+          <guilabel>12000</guilabel>.</para>
+        </step>
+
+        <step>
+          <para>Click <guilabel>OK</guilabel> to save these changes.</para>
+        </step>
+      </procedure>
+
+      <figure>
+        <title><guilabel>Achieve RMAG</guilabel> Command Configuration</title>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata align="center" contentdepth="100%"
+                         fileref="files/images/Tut_Mars_B_Plane Achieve RMAG.png"
+                         scalefit="1" width="100%"/>
+            </imageobject>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </section>
+  </section>
+
+  <section>
+    <title>Run the Mission with first and second Target Sequences</title>
+
+    <para>Before running the mission, click <guilabel>Save</guilabel>
+    (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/SaveMission.png" width="1em"/>
+        </imageobject>
+      </inlinemediaobject>). This will save the additional changes that we
+    implemented in the <guilabel>Mission</guilabel> tree. Now click
+    <guilabel>Run</guilabel> (<inlinemediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="8pt"
+                     fileref="files/images/icons/RunMission.png" width="1em"/>
+        </imageobject>
+      </inlinemediaobject>). The first <guilabel>Target</guilabel> sequence
+    will converge first after a few iterations.</para>
+
+    <para>As the mission runs, you will see GMAT solve the second
+    <guilabel>Target</guilabel> sequence’s targeting problem. Each iteration
+    and perturbation is shown in <guilabel>MarsView</guilabel> windows in
+    light blue, and the final solution is shown in red. After the mission
+    completes, the <guilabel>MarsView</guilabel> 3D view should appear as in
+    the image shown below. <guilabel>EarthView</guilabel> and
+    <guilabel>SolarSystemView</guilabel> 3D views are same as before. You may
+    want to run the mission several times to see the targeting in
+    progress.</para>
+
+    <figure>
+      <title>3D view of Mars Capture orbit after MOI maneuver
+      (MarsView)</title>
+
+      <screenshot>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" contentdepth="100%"
+                       fileref="files/images/Tut_UsingGMATFunctions_9.png"
+                       scalefit="1" width="100%"/>
+          </imageobject>
+        </mediaobject>
+      </screenshot>
+    </figure>
+
+
+    <para>If you want to know MOI maneuver’s delta-V vector values and how
+    much fuel was expended during the maneuver, do the following steps:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Mission</guilabel> tree, right-click
+        <guilabel>Apply MOI</guilabel>, and click on <guilabel>Command
+        Summary</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Scroll down and under <literal>Maneuver Summary</literal>
+        heading, values for delta-V vector are:</para>
+
+        <para><literal>Delta V Vector:</literal></para>
+
+        <para><literal>Element 1: -1.6032580309280 km/s</literal></para>
+
+        <para><literal>Element 2: 0.0000000000000 km/s</literal></para>
+
+        <para><literal>Element 3: 0.0000000000000 km/s</literal></para>
+      </step>
+
+      <step>
+        <para>Scroll down and under <literal>Mass depletion from
+        MainTank</literal> heading, <literal>Delta V</literal> and
+        <literal>Mass Change</literal> tells you MOI maneuver’s magnitude and
+        how much fuel was used for the maneuver:</para>
+
+        <para><literal>Delta V: 1.6032580309280 km/s</literal></para>
+
+        <para><literal>Mass change: -1075.9520121897 kg</literal></para>
+      </step>
+    </procedure>
+
+    <para>Just to make sure that the goal of second
+    <guilabel>Target</guilabel> sequence was met successfully, let us access
+    command summary for <guilabel>Achieve RMAG</guilabel> command by doing the
+    following steps:</para>
+
+    <procedure>
+      <step>
+        <para>In the <guilabel>Mission</guilabel> tree, right-click
+        <guilabel>Achieve RMAG</guilabel>, and click on <guilabel>Command
+        Summary</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Under <guilabel>Coordinate System</guilabel>, select
+        <guilabel>MarsInertial</guilabel>.</para>
+      </step>
+
+      <step>
+        <para>Under <literal>Keplerian State</literal> and <literal>and
+        Spherical State</literal> headings, see the values of
+        <literal>TA</literal> and <literal>RMAG</literal>. You can see that
+        the desired radius of the capture orbit at apoapsis was achieved
+        successfully:</para>
+
+        <para><literal>TA = 180.00000085377 deg</literal></para>
+
+        <para><literal>RMAG = 12000.017390989 km</literal></para>
+      </step>
+    </procedure>
+  </section>
+</chapter>

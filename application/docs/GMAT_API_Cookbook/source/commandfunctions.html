@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>A Collection of Command Functions &#8212; API Cookbook R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    
+    <script src="../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Control of Scripted Solvers" href="solvercontrol.html" />
+    <link rel="prev" title="Accessing GMAT Commands" href="commandaccess.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="solvercontrol.html" title="Control of Scripted Solvers"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="commandaccess.html" title="Accessing GMAT Commands"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">A Collection of Command Functions</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="a-collection-of-command-functions">
+<h1>A Collection of Command Functions<a class="headerlink" href="#a-collection-of-command-functions" title="Link to this heading">¶</a></h1>
+<p>This chapter gathers together functions used when accessing GMAT commands from the API.  These functions collect, in a single utility file, the functions used in sunbsequent chapters.  The chapter itself is just a listing of the code.  Copy the following code into a file named CommandFunctions.py for later use.</p>
+<section id="the-commandfunction-code">
+<h2>The CommandFunction Code<a class="headerlink" href="#the-commandfunction-code" title="Link to this heading">¶</a></h2>
+<div class="literal-block-wrapper docutils container" id="id1">
+<span id="commandfunctionpython"></span><div class="code-block-caption"><span class="caption-number">Listing 15 </span><span class="caption-text">Command access function utilities</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/python3</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Functions used to access Mission Control Sequence commands</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">load_gmat</span> <span class="kn">import</span> <span class="n">gmat</span>
+
+<span class="k">def</span> <span class="nf">GetMissionSequence</span><span class="p">():</span>
+<span class="w">	</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Access method for the mission control sequence of a loaded script</span>
+
+<span class="sd">		returns:</span>
+<span class="sd">			A reference to the first scripted command of the MCS</span>
+<span class="sd">	&#39;&#39;&#39;</span>
+
+	<span class="n">mod</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Moderator</span><span class="o">.</span><span class="n">Instance</span><span class="p">()</span>
+	<span class="n">mcs</span> <span class="o">=</span> <span class="n">mod</span><span class="o">.</span><span class="n">GetFirstCommand</span><span class="p">()</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+
+	<span class="k">if</span> <span class="n">mcs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Please load a script before accessing the MCS&quot;</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">mcs</span>
+
+<span class="k">def</span> <span class="nf">FindSolverCommand</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">	</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Function used to find a Solver branch command.</span>
+
+<span class="sd">		inputs:</span>
+<span class="sd">			node The starting node in a control sequence</span>
+<span class="sd">			number	A counter allowing access to later nodes.  Set to 1 for the </span>
+<span class="sd">			        first SolverBranchCommand, 2 for the second, etc.</span>
+
+<span class="sd">		returns:</span>
+<span class="sd">			The requested node, or None if the node was not found</span>
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">retnode</span> <span class="o">=</span> <span class="kc">None</span>
+
+	<span class="k">while</span> <span class="n">node</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">IsOfType</span><span class="p">(</span><span class="s2">&quot;SolverBranchCommand&quot;</span><span class="p">):</span>
+			<span class="n">counter</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">1</span>
+			<span class="k">if</span> <span class="n">counter</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
+				<span class="n">retnode</span> <span class="o">=</span> <span class="n">node</span>
+				<span class="k">break</span>
+		<span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+
+	<span class="k">return</span> <span class="n">retnode</span>
+
+<span class="k">def</span> <span class="nf">FindCommand</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">	</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Function used to find a child command of a set type.</span>
+
+<span class="sd">		inputs:</span>
+<span class="sd">			parent  A branch command node in a control sequence</span>
+<span class="sd">			type 	The type of node requested</span>
+<span class="sd">			number	A counter allowing access to later nodes.  Set to 1 for the </span>
+<span class="sd">			        first instance, 2 for the second, etc.</span>
+
+<span class="sd">		returns:</span>
+<span class="sd">			The requested node, or None if the node was not found</span>
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">retnode</span> <span class="o">=</span> <span class="kc">None</span>
+
+	<span class="k">while</span> <span class="n">node</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">IsOfType</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+			<span class="n">counter</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">1</span>
+			<span class="k">if</span> <span class="n">counter</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
+				<span class="n">retnode</span> <span class="o">=</span> <span class="n">node</span>
+				<span class="k">break</span>
+		<span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+
+	<span class="k">return</span> <span class="n">retnode</span>
+
+<span class="k">def</span> <span class="nf">FindCommandByName</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">	</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Function used to find a Solver branch command.</span>
+
+<span class="sd">		inputs:</span>
+<span class="sd">			node	The starting node in a control sequence</span>
+<span class="sd">			name	The name set on the command</span>
+
+<span class="sd">		returns:</span>
+<span class="sd">			The requested node, or None if the node was not found</span>
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="n">retnode</span> <span class="o">=</span> <span class="kc">None</span>
+
+	<span class="k">while</span> <span class="n">node</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+			<span class="n">retnode</span> <span class="o">=</span> <span class="n">node</span>
+			<span class="k">break</span>
+		<span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+
+	<span class="k">return</span> <span class="n">retnode</span>
+
+<span class="k">def</span> <span class="nf">FindChild</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">	</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Function used to find a child command of a set type.</span>
+
+<span class="sd">		inputs:</span>
+<span class="sd">			parent  A branch command node in a control sequence</span>
+<span class="sd">			type 	The type of node requested</span>
+<span class="sd">			number	A counter allowing access to later nodes.  Set to 1 for the </span>
+<span class="sd">			        first instance, 2 for the second, etc.</span>
+
+<span class="sd">		returns:</span>
+<span class="sd">			The requested node, or None if the node was not found</span>
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">retnode</span> <span class="o">=</span> <span class="kc">None</span>
+	<span class="n">node</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">GetChildCommand</span><span class="p">()</span>
+
+	<span class="k">while</span> <span class="n">node</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">IsOfType</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+			<span class="n">counter</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">1</span>
+			<span class="k">if</span> <span class="n">counter</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
+				<span class="n">retnode</span> <span class="o">=</span> <span class="n">node</span>
+				<span class="k">break</span>
+		<span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+
+	<span class="k">return</span> <span class="n">retnode</span>
+
+
+<span class="k">def</span> <span class="nf">FindChildByName</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">	</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Function used to find a child command with a specific name.</span>
+
+<span class="sd">		inputs:</span>
+<span class="sd">			parent  A branch command node in a control sequence</span>
+<span class="sd">			name 	The name of node requested</span>
+<span class="sd">			number	A counter allowing access to later nodes.  Set to 1 for the </span>
+<span class="sd">			        first instance, 2 for the second, etc.</span>
+
+<span class="sd">		returns:</span>
+<span class="sd">			The requested node, or None if the node was not found</span>
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">retnode</span> <span class="o">=</span> <span class="kc">None</span>
+	<span class="n">node</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">GetChildCommand</span><span class="p">()</span>
+
+	<span class="k">while</span> <span class="n">node</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">GetName</span><span class="p">()</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+			<span class="n">retnode</span> <span class="o">=</span> <span class="n">node</span>
+			<span class="k">break</span>
+		<span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">GetNext</span><span class="p">()</span>
+
+	<span class="k">return</span> <span class="n">retnode</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">A Collection of Command Functions</a><ul>
+<li><a class="reference internal" href="#the-commandfunction-code">The CommandFunction Code</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="commandaccess.html"
+                          title="previous chapter">Accessing GMAT Commands</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="solvercontrol.html"
+                          title="next chapter"><strong>Control of Scripted Solvers</strong></a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/commandfunctions.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="solvercontrol.html" title="Control of Scripted Solvers"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="commandaccess.html" title="Accessing GMAT Commands"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">A Collection of Command Functions</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

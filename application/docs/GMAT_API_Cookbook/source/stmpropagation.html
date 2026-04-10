@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>STM and Covariance Propagation &#8212; API Cookbook R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    
+    <script src="../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Executing Finite Burns" href="finiteBurn.html" />
+    <link rel="prev" title="State Management with the GMAT API" href="statemanagement.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="finiteBurn.html" title="Executing Finite Burns"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="statemanagement.html" title="State Management with the GMAT API"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>STM and Covariance Propagation</strong></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="stm-and-covariance-propagation">
+<h1><strong>STM and Covariance Propagation</strong><a class="headerlink" href="#stm-and-covariance-propagation" title="Link to this heading">¶</a></h1>
+<section id="problem">
+<h2><strong>Problem</strong><a class="headerlink" href="#problem" title="Link to this heading">¶</a></h2>
+<p>Spacecraft propagation advances the position and velocity of the spacecraft through time, and models mass flow during finite burn maneuvers.  Users may also need to propagate the spacecraft’s orbital state transition matrix (STM) and the orbital covariance matrix.  This chapter shows how to add the STM and covariance propagation to the propagation example shown in <a class="reference internal" href="propagation.html#spacecraftpropagation"><span class="std std-ref">Propagation with the GMAT API</span></a>.</p>
+</section>
+<section id="solution">
+<h2><strong>Solution</strong><a class="headerlink" href="#solution" title="Link to this heading">¶</a></h2>
+<p>The GMAT Spacecraft and propagation models work together to build and propagate the state transition and covariance matrices.</p>
+<section id="example-stm-propagation">
+<h3>Example STM Propagation<a class="headerlink" href="#example-stm-propagation" title="Link to this heading">¶</a></h3>
+<p><strong>Step 1</strong>: Configure the Spacecraft</p>
+<p>We’ll need a spacecraft to propagate.  <a class="reference internal" href="#basicspacecraftsnippet"><span class="std std-numref">Listing 2</span></a> shows an abbreviated block of the spacecraft configuration from <a class="reference internal" href="propagation.html#spacecraftpropagation"><span class="std std-ref">Propagation with the GMAT API</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<span id="basicspacecraftsnippet"></span><div class="code-block-caption"><span class="caption-number">Listing 2 </span><span class="caption-text">Abbreviated Spacecraft configuration (see <a class="reference internal" href="propagation.html#spacecraftconfig"><span class="std std-numref">Listing 1</span></a> for full version)</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;LeoSat&quot;</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DateFormat&quot;</span><span class="p">,</span> <span class="s2">&quot;UTCGregorian&quot;</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cr&quot;</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DragArea&quot;</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SRPArea&quot;</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The spacecraft initializes the state transition matrix to an identity matrix, and the covariance matrix to a 6x6 matrix with large values set nonzero along its diagonal.  The STM setting is required so that the propagated and unpropagated STM requirements are met</p>
+<div class="math">
+<p><img src="../_images/math/2b233dbdd40ac005d88b3db9615041deed1b99de.png" alt="r(t1) = \Phi(t0, t1) r(t0)
+
+\Phi(t0, t0) = I"/></p>
+</div><p>The covariance matrix is generally set to more reasonable numbers before proceeding with covariance propagation, either through an estimation process or by direct user intervention.  <a class="reference internal" href="#covarianceinitialization"><span class="std std-numref">Listing 3</span></a> shows the latter approach.</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<span id="covarianceinitialization"></span><div class="code-block-caption"><span class="caption-number">Listing 3 </span><span class="caption-text">Covariance initialization of sat using the API</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize the covariance matrix</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">0.000001</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">0.0000015</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">0.000001</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">2.5e-11</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">2.5e-11</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">2.5e-11</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><strong>Step 2</strong>: Update the propagation subsystem</p>
+<p>GMAT’s propagators configure the data that is integrated using a component called the propagation state manager (PSM).  The PSM assembles the data that is integrated into a vector that the numerical integrator uses to advance the GMAT simulation through time.  The STM and covariance matrix are set to participated in the integration through calls to the PSM, shown in <a class="reference internal" href="#psmsetupforstmcovprop"><span class="std std-numref">Listing 4</span></a>.</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<span id="psmsetupforstmcovprop"></span><div class="code-block-caption"><span class="caption-number">Listing 4 </span><span class="caption-text">Propagation State Manager Configuration for Covariance Propagation</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Setup STM and covariance propagation</span>
+<span class="n">psm</span> <span class="o">=</span> <span class="n">pdprop</span><span class="o">.</span><span class="n">GetPropStateManager</span><span class="p">()</span>
+<span class="n">psm</span><span class="o">.</span><span class="n">SetProperty</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span><span class="n">sat</span><span class="p">)</span>
+<span class="n">psm</span><span class="o">.</span><span class="n">SetProperty</span><span class="p">(</span><span class="s2">&quot;STM&quot;</span><span class="p">,</span><span class="n">sat</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><strong>Step 3</strong>: Spacecraft Updating</p>
+<p>The propagation chapter of this document glosses over an object synchronization item that is required for successful covariance propagation.  After a propagation step has been performed, the propagation vector managed by the PSM needs to be passed to the spacecraft object so that the internal spacecraft data is in sync with the propagation.  This synchronization is performed by directing the initialized propagator to pass the state vector into the spacecraft.  The propagator performs this action by calling methods on the PSM.  <a class="reference internal" href="#stmcovsync"><span class="std std-numref">Listing 5</span></a> shows the calls that accomplish this data synchronization.</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<span id="stmcovsync"></span><div class="code-block-caption"><span class="caption-number">Listing 5 </span><span class="caption-text">Data synchronization between the propagator and the spacecraft</span><a class="headerlink" href="#id4" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Perform top level and integrator initialization</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="n">pdprop</span><span class="o">.</span><span class="n">PrepareInternals</span><span class="p">()</span>
+<span class="n">propagator</span> <span class="o">=</span> <span class="n">pdprop</span><span class="o">.</span><span class="n">GetPropagator</span><span class="p">()</span>
+
+<span class="c1"># Push the data into the spacecraft runtime elements</span>
+<span class="n">propagator</span><span class="o">.</span><span class="n">UpdateSpaceObject</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Note, in particular, the last line in this block.  The call to UpdateSpaceObjects() is new in this chapter, and is the call that feeds the data from the propagation subsystem into the spacecraft object.</p>
+<p><strong>Step 4</strong>: Accessing the STM and Covariance</p>
+<p>The steps shown above configure the GMAT API for STM and covariance propagation.  The data is viewed by accessing it from the spacecraft object.  The code in <a class="reference internal" href="#stmcovarianceaccess"><span class="std std-numref">Listing 6</span></a> shows the access methods needed to use the matrix data.  The code shown here accesses the data for printing.</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<span id="stmcovarianceaccess"></span><div class="code-block-caption"><span class="caption-number">Listing 6 </span><span class="caption-text">Code that displays the STM and covariance to the user</span><a class="headerlink" href="#id5" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">sat</span><span class="o">.</span><span class="n">GetName</span><span class="p">(),</span> <span class="s2">&quot; State and matrix data:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Epoch:  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetEpoch</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Position:  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">),</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Velocity:  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;VX&quot;</span><span class="p">),</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;VY&quot;</span><span class="p">),</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;VZ&quot;</span><span class="p">))</span>
+
+<span class="c1"># Access the state transition matrix data</span>
+<span class="n">stm</span> <span class="o">=</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetRmatrixParameter</span><span class="p">(</span><span class="s2">&quot;STM&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">State Transition Matrix:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="n">cstr</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+        <span class="n">cstr</span> <span class="o">=</span> <span class="n">cstr</span> <span class="o">+</span> <span class="s2">&quot;    &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">stm</span><span class="o">.</span><span class="n">GetElement</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cstr</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+
+<span class="c1"># Access the covariance matrix data</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetCovariance</span><span class="p">()</span><span class="o">.</span><span class="n">GetCovariance</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Covariance:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="n">cstr</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+        <span class="n">cstr</span> <span class="o">=</span> <span class="n">cstr</span> <span class="o">+</span> <span class="s2">&quot;    &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cov</span><span class="o">.</span><span class="n">GetElement</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cstr</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="discussion">
+<h2><strong>Discussion</strong><a class="headerlink" href="#discussion" title="Link to this heading">¶</a></h2>
+<p>This example has provides an overview of the methods used to access the STM and Covariance matrices using the GMAT API.  The appendix to this chapter contains a complete working of these features.</p>
+</section>
+<section id="appendix-a-complete-example">
+<h2><strong>Appendix: A Complete Example</strong><a class="headerlink" href="#appendix-a-complete-example" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/python3</span>
+
+<span class="c1"># The Propagation chapter example code from the GMAT API Cookbook</span>
+
+<span class="kn">from</span> <span class="nn">load_gmat</span> <span class="kn">import</span> <span class="n">gmat</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+
+<span class="c1"># Define core objects</span>
+
+<span class="k">def</span> <span class="nf">ConfigureCoreObjects</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; </span>
+<span class="sd">    Objects built in the earlier exercise</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># Configure the spacecraft</span>
+    <span class="n">sat</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Spacecraft&quot;</span><span class="p">,</span> <span class="s2">&quot;LeoSat&quot;</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DateFormat&quot;</span><span class="p">,</span> <span class="s2">&quot;UTCGregorian&quot;</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Epoch&quot;</span><span class="p">,</span> <span class="s2">&quot;12 Mar 2020 15:00:00.000&quot;</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;CoordinateSystem&quot;</span><span class="p">,</span> <span class="s2">&quot;EarthMJ2000Eq&quot;</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DisplayStateType&quot;</span><span class="p">,</span> <span class="s2">&quot;Keplerian&quot;</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SMA&quot;</span><span class="p">,</span> <span class="mi">7005</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;ECC&quot;</span><span class="p">,</span> <span class="mf">0.008</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;INC&quot;</span><span class="p">,</span> <span class="mf">28.5</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;RAAN&quot;</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;AOP&quot;</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;TA&quot;</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DryMass&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cd&quot;</span><span class="p">,</span> <span class="mf">2.2</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Cr&quot;</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;DragArea&quot;</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)</span>
+    <span class="n">sat</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;SRPArea&quot;</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">)</span>
+
+    <span class="c1"># Create the ODEModel container</span>
+    <span class="n">fm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;ForceModel&quot;</span><span class="p">,</span> <span class="s2">&quot;TheForces&quot;</span><span class="p">)</span>
+
+    <span class="c1"># An 8x8 JGM-3 Gravity Model</span>
+    <span class="n">earthgrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;GravityField&quot;</span><span class="p">)</span>
+    <span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;BodyName&quot;</span><span class="p">,</span><span class="s2">&quot;Earth&quot;</span><span class="p">)</span>
+    <span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Degree&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Order&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">earthgrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;PotentialFile&quot;</span><span class="p">,</span><span class="s2">&quot;JGM2.cof&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Add the force into the ODEModel container</span>
+    <span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">earthgrav</span><span class="p">)</span>
+
+    <span class="c1"># The Point Masses</span>
+    <span class="n">moongrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PointMassForce&quot;</span><span class="p">)</span>
+    <span class="n">moongrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;BodyName&quot;</span><span class="p">,</span><span class="s2">&quot;Luna&quot;</span><span class="p">)</span>
+    <span class="n">sungrav</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PointMassForce&quot;</span><span class="p">)</span>
+    <span class="n">sungrav</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;BodyName&quot;</span><span class="p">,</span><span class="s2">&quot;Sun&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Drag using Jacchia-Roberts</span>
+    <span class="n">jrdrag</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;DragForce&quot;</span><span class="p">)</span>
+    <span class="n">jrdrag</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;AtmosphereModel&quot;</span><span class="p">,</span><span class="s2">&quot;JacchiaRoberts&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Build and set the atmosphere for the model</span>
+    <span class="n">atmos</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;JacchiaRoberts&quot;</span><span class="p">)</span>
+    <span class="n">jrdrag</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">atmos</span><span class="p">)</span>
+
+    <span class="c1"># Add all of the forces into the ODEModel container</span>
+    <span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">moongrav</span><span class="p">)</span>
+    <span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">sungrav</span><span class="p">)</span>
+    <span class="n">fm</span><span class="o">.</span><span class="n">AddForce</span><span class="p">(</span><span class="n">jrdrag</span><span class="p">)</span>
+
+    <span class="c1"># Build the propagation container that connect the integrator, force model, and spacecraft together</span>
+    <span class="n">pdprop</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;Propagator&quot;</span><span class="p">,</span><span class="s2">&quot;PDProp&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create and assign a numerical integrator for use in the propagation</span>
+    <span class="n">gator</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">Construct</span><span class="p">(</span><span class="s2">&quot;PrinceDormand78&quot;</span><span class="p">,</span> <span class="s2">&quot;Gator&quot;</span><span class="p">)</span>
+    <span class="n">pdprop</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">gator</span><span class="p">)</span>
+
+    <span class="c1"># Set some of the fields for the integration</span>
+    <span class="n">pdprop</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;InitialStepSize&quot;</span><span class="p">,</span> <span class="mf">60.0</span><span class="p">)</span>
+    <span class="n">pdprop</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;Accuracy&quot;</span><span class="p">,</span> <span class="mf">1.0e-12</span><span class="p">)</span>
+    <span class="n">pdprop</span><span class="o">.</span><span class="n">SetField</span><span class="p">(</span><span class="s2">&quot;MinStep&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Assign the force model to the propagator</span>
+    <span class="n">pdprop</span><span class="o">.</span><span class="n">SetReference</span><span class="p">(</span><span class="n">fm</span><span class="p">)</span>
+    <span class="n">pdprop</span><span class="o">.</span><span class="n">AddPropObject</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sat</span><span class="p">,</span> <span class="n">pdprop</span>
+
+<span class="k">def</span> <span class="nf">StepAMinute</span><span class="p">(</span><span class="n">sat</span><span class="p">,</span> <span class="n">propagator</span><span class="p">):</span>
+    <span class="n">propagator</span><span class="o">.</span><span class="n">Step</span><span class="p">(</span><span class="mf">60.0</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">UpdateData</span><span class="p">(</span><span class="n">propagator</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">vel</span><span class="p">):</span>
+    <span class="n">gatorstate</span> <span class="o">=</span> <span class="n">propagator</span><span class="o">.</span><span class="n">GetState</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+       <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">60.0</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatorstate</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatorstate</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">vel</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">ShowStateStmCov</span><span class="p">(</span><span class="n">sat</span><span class="p">):</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">sat</span><span class="o">.</span><span class="n">GetName</span><span class="p">(),</span> <span class="s2">&quot; State and matrix data:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Epoch:  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetEpoch</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Position:  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">),</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span> 
+        <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Velocity:  &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;VX&quot;</span><span class="p">),</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;VY&quot;</span><span class="p">),</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span> 
+        <span class="n">sat</span><span class="o">.</span><span class="n">GetField</span><span class="p">(</span><span class="s2">&quot;VZ&quot;</span><span class="p">))</span>
+
+    <span class="c1"># Access the state transition matrix data</span>
+    <span class="n">stm</span> <span class="o">=</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetRmatrixParameter</span><span class="p">(</span><span class="s2">&quot;STM&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">State Transition Matrix:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+        <span class="n">cstr</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+            <span class="n">cstr</span> <span class="o">=</span> <span class="n">cstr</span> <span class="o">+</span> <span class="s2">&quot;    &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">stm</span><span class="o">.</span><span class="n">GetElement</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">cstr</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+
+    <span class="c1"># Access the covariance matrix data</span>
+    <span class="n">cov</span> <span class="o">=</span> <span class="n">sat</span><span class="o">.</span><span class="n">GetCovariance</span><span class="p">()</span><span class="o">.</span><span class="n">GetCovariance</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Covariance:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+        <span class="n">cstr</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+            <span class="n">cstr</span> <span class="o">=</span> <span class="n">cstr</span> <span class="o">+</span> <span class="s2">&quot;    &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cov</span><span class="o">.</span><span class="n">GetElement</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">cstr</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+
+
+<span class="c1"># Load the preliminaries</span>
+<span class="n">sat</span><span class="p">,</span> <span class="n">pdprop</span> <span class="o">=</span> <span class="n">ConfigureCoreObjects</span><span class="p">()</span>
+
+<span class="c1"># ------------------------------------------------------------------------------</span>
+<span class="c1"># New code</span>
+<span class="c1"># ------------------------------------------------------------------------------</span>
+
+<span class="c1"># Initialize the covariance matrix</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">0.000001</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">0.0000015</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">0.000001</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">2.5e-11</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">2.5e-11</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">sat</span><span class="o">.</span><span class="n">SetRealParameter</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span> <span class="mf">2.5e-11</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+<span class="c1"># Setup STM and covariance propagation</span>
+<span class="n">psm</span> <span class="o">=</span> <span class="n">pdprop</span><span class="o">.</span><span class="n">GetPropStateManager</span><span class="p">()</span>
+<span class="n">psm</span><span class="o">.</span><span class="n">SetProperty</span><span class="p">(</span><span class="s2">&quot;Covariance&quot;</span><span class="p">,</span><span class="n">sat</span><span class="p">)</span>
+<span class="n">psm</span><span class="o">.</span><span class="n">SetProperty</span><span class="p">(</span><span class="s2">&quot;STM&quot;</span><span class="p">,</span><span class="n">sat</span><span class="p">)</span>
+
+<span class="c1"># Perform top level and integrator initialization</span>
+<span class="n">gmat</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="n">pdprop</span><span class="o">.</span><span class="n">PrepareInternals</span><span class="p">()</span>
+<span class="n">propagator</span> <span class="o">=</span> <span class="n">pdprop</span><span class="o">.</span><span class="n">GetPropagator</span><span class="p">()</span>
+
+<span class="c1"># Push the data into the spacecraft runtime elements</span>
+<span class="n">propagator</span><span class="o">.</span><span class="n">UpdateSpaceObject</span><span class="p">()</span>
+
+<span class="c1"># Matplotlib graphics buffers</span>
+<span class="n">time</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">vel</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Save initial state information into the graphics buffers</span>
+<span class="n">UpdateData</span><span class="p">(</span><span class="n">propagator</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">vel</span><span class="p">)</span>
+
+<span class="c1"># Show initial information</span>
+<span class="n">ShowStateStmCov</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+
+<span class="c1"># Propagate 10 minutes and buffer data at each step</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">StepAMinute</span><span class="p">(</span><span class="n">sat</span><span class="p">,</span> <span class="n">propagator</span><span class="p">)</span>
+    <span class="c1"># Push the propagation data onto the spacecraft</span>
+    <span class="n">propagator</span><span class="o">.</span><span class="n">UpdateSpaceObject</span><span class="p">()</span>
+    <span class="n">UpdateData</span><span class="p">(</span><span class="n">propagator</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">vel</span><span class="p">)</span>
+
+<span class="c1"># Show the results</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">positions</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+<span class="n">f2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">velocities</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">vel</span><span class="p">)</span>
+
+<span class="n">f1</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">f2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="n">ShowStateStmCov</span><span class="p">(</span><span class="n">sat</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Press Enter&quot;</span><span class="p">)</span>
+<span class="nb">input</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#"><strong>STM and Covariance Propagation</strong></a><ul>
+<li><a class="reference internal" href="#problem"><strong>Problem</strong></a></li>
+<li><a class="reference internal" href="#solution"><strong>Solution</strong></a><ul>
+<li><a class="reference internal" href="#example-stm-propagation">Example STM Propagation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#discussion"><strong>Discussion</strong></a></li>
+<li><a class="reference internal" href="#appendix-a-complete-example"><strong>Appendix: A Complete Example</strong></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="statemanagement.html"
+                          title="previous chapter"><strong>State Management with the GMAT API</strong></a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="finiteBurn.html"
+                          title="next chapter"><strong>Executing Finite Burns</strong></a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/stmpropagation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="finiteBurn.html" title="Executing Finite Burns"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="statemanagement.html" title="State Management with the GMAT API"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">API Cookbook R2026a documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><strong>STM and Covariance Propagation</strong></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>API Best Practices &#8212; GMAT Tools and Extensions R2026a documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../../_static/documentation_options.js?v=9c2fd029"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="GMAT API Cheat Sheet" href="usage/CheatSheet.html" />
+    <link rel="prev" title="Example: MONTE-GMAT Interoperability" href="usage/UseCase2.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="usage/CheatSheet.html" title="GMAT API Cheat Sheet"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="usage/UseCase2.html" title="Example: MONTE-GMAT Interoperability"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../apiIndex.html" accesskey="U">GMAT API Design and User’s Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">API Best Practices</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="api-best-practices">
+<h1>API Best Practices<a class="headerlink" href="#api-best-practices" title="Link to this heading">¶</a></h1>
+<section id="general-practices">
+<h2>General Practices<a class="headerlink" href="#general-practices" title="Link to this heading">¶</a></h2>
+<p>API users work more closely with the core GMAT code than users that run GMAT
+through the console for GUI applications.  This feature of the API system adds
+responsibility for understanding how the system manages objects to the list of
+items an API user must consider.  The following items capture some of the
+lessons we have learned from using the API.</p>
+<section id="understand-object-ownership">
+<h3>Understand Object Ownership<a class="headerlink" href="#understand-object-ownership" title="Link to this heading">¶</a></h3>
+<p>The API provides a function, Construct(), that builds GMAT objects and retains
+object ownership in the GMAT module.  Objects created using Construct() remain
+GMAT’s responsibility for management.  Sometimes, API users may need to create
+objects directly by calling the object’s constructor, like this:</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-number">Listing 21 </span><span class="caption-text">Creating a propagation state manager in Python</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">psm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">PropagationStateManager</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>or, in MATLAB:</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-number">Listing 22 </span><span class="caption-text">Creating a propagation state manager in MATLAB</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">psm</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gmat</span><span class="p">.</span><span class="n">gmat</span><span class="p">.</span><span class="n">PropagationStateManager</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>The objects created this way are managed on the client side of the interface: in
+either Python or the MATLAB Java systems.  The garbage collectors on the client
+side will delete the underlying objects when it determines that the object is no
+longer needed.  This can cause memory management issues for objects that are
+passed to other GMAT objects.  The API code provides a mechanism to assign
+ownership to the component that needs it, using the setSwigOwnership() method in
+Java code:</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-number">Listing 23 </span><span class="caption-text">Managing ownership for a propagation state manager in MATLAB</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Create the state manager</span>
+<span class="n">psm</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gmat</span><span class="p">.</span><span class="n">PropagationStateManager</span><span class="p">();</span>
+
+<span class="c">% Hand the manager to a force model, and assign ownership to the GMAT object</span>
+<span class="n">fm</span><span class="p">.</span><span class="n">SetPropStateManager</span><span class="p">(</span><span class="n">psm</span><span class="p">);</span>
+<span class="n">psm</span><span class="p">.</span><span class="n">setSwigOwnership</span><span class="p">(</span><span class="nb">false</span><span class="p">());</span>
+</pre></div>
+</div>
+</div>
+<p>or the thisown setting in Python:</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-number">Listing 24 </span><span class="caption-text">Managing ownership for a propagation state manager in Python</span><a class="headerlink" href="#id4" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span> <span class="n">Create</span> <span class="n">the</span> <span class="n">state</span> <span class="n">manager</span>
+<span class="n">psm</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">PropagationStateManager</span><span class="p">();</span>
+
+<span class="o">%</span> <span class="n">Hand</span> <span class="n">the</span> <span class="n">manager</span> <span class="n">to</span> <span class="n">a</span> <span class="n">force</span> <span class="n">model</span><span class="p">,</span> <span class="ow">and</span> <span class="n">assign</span> <span class="n">ownership</span> <span class="n">to</span> <span class="n">the</span> <span class="n">GMAT</span> <span class="nb">object</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">SetPropStateManager</span><span class="p">(</span><span class="n">psm</span><span class="p">);</span>
+<span class="n">psm</span><span class="o">.</span><span class="n">thisown</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</div>
+<p>For either of these mechanisms, a false setting indicates that the client does
+not own the object.</p>
+</section>
+</section>
+<section id="java-and-matlab-best-practices">
+<h2>Java and MATLAB Best Practices<a class="headerlink" href="#java-and-matlab-best-practices" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Adding the bin folder to your MATLAB path allows you to run the GMAT API from
+any other working directory</p></li>
+<li><p>Use the GMATAPI MATLAB class contained in the bin folder when using the API
+helper functions Construct(), Copy(), GetObject(), or GetRuntimeObject().
+These functions in the GMATAPI MATLAB class will automatically perform
+class casting, so the object returned is the more specific type instead of
+just being of type GmatBase. The GMATAPI MATLAB class also contains a
+SetClass() function which will also automatically perform the class casting
+on any GmatBase object provided.</p></li>
+</ul>
+</section>
+<section id="python-best-practices">
+<h2>Python Best Practices<a class="headerlink" href="#python-best-practices" title="Link to this heading">¶</a></h2>
+<ul>
+<li><p>The import function loads GMAT by loading all of the libraries in the
+gmatpy folder (gmat, station, etc).  These libraries can be imported
+separately if you do not need all of the API functions in your application.</p></li>
+<li><p>The import can rename the interface calls for user convenience.  In this
+document we often load the engine using</p>
+<blockquote>
+<div><p>import gmatpy as gmat</p>
+</div></blockquote>
+</li>
+<li><p>The GMAT startup file is loaded the first time a GMAT API function is
+called.  Users that want to use a startup file that is different from
+the default file, gmat_startup_file.txt, can load their file using the
+Setup(<em>path_and_startup_file_name</em>) function call.</p>
+<p>This approach is used for running the API from folders outside of the GMAT bin
+folder, as described in <a class="reference internal" href="Setup.html#runningexternally"><span class="std std-ref">Running the API Outside of the GMAT Folders</span></a>.</p>
+</li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../../../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">API Best Practices</a><ul>
+<li><a class="reference internal" href="#general-practices">General Practices</a><ul>
+<li><a class="reference internal" href="#understand-object-ownership">Understand Object Ownership</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#java-and-matlab-best-practices">Java and MATLAB Best Practices</a></li>
+<li><a class="reference internal" href="#python-best-practices">Python Best Practices</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="usage/UseCase2.html"
+                          title="previous chapter">Example: MONTE-GMAT Interoperability</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="usage/CheatSheet.html"
+                          title="next chapter">GMAT API Cheat Sheet</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../_sources/API/source/userguide/BestPractices.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="usage/CheatSheet.html" title="GMAT API Cheat Sheet"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="usage/UseCase2.html" title="Example: MONTE-GMAT Interoperability"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">GMAT Tools and Extensions R2026a documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../apiIndex.html" >GMAT API Design and User’s Guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">API Best Practices</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2018-2026, United States Government as represented by the Administrator of the National Aeronautics and Space Administration..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

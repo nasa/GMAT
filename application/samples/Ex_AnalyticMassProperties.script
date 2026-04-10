@@ -1,0 +1,206 @@
+%
+%   Ex_AnalyticMassProperties
+%
+%   Demonstrate analytic computation of dynamic center-of-mass and moment of 
+%   inertia during a finite burn. The analytic model is set on the Spacecraft
+%   ExtendedMassPropertiesModel and ExtendedMassPropertiesModelType parameters.
+%   
+%   The center-of-mass and moment of inertia remain constant during free-flight
+%   propagation arcs, but change during the burn segments.
+%
+%   Released: R2025a
+%
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Sat1
+
+Sat1.DateFormat                      = UTCGregorian
+Sat1.Epoch                           = '03 Feb 2023 12:00:00.000'
+Sat1.CoordinateSystem                = EarthMJ2000Eq
+Sat1.DisplayStateType                = Keplerian
+Sat1.SMA                             = 42165.0
+Sat1.ECC                             = 0.0005
+Sat1.INC                             = 1.0
+Sat1.RAAN                            = 360.0
+Sat1.AOP                             = 0.0
+Sat1.TA                              = 90.0
+Sat1.DryMass                         = 800
+Sat1.Cd                              = 2.2
+Sat1.Cr                              = 1.8
+Sat1.DragArea                        = 15
+Sat1.SRPArea                         = 15
+Sat1.ExtendedMassPropertiesModel     = 'CenterOfMassAndMomentOfInertia'
+Sat1.ExtendedMassPropertiesModelType = 'Analytic'
+Sat1.DryCenterOfMassX                = 1
+Sat1.DryCenterOfMassY                = 2
+Sat1.DryCenterOfMassZ                = 3
+Sat1.DryMomentOfInertiaXX            = 111
+Sat1.DryMomentOfInertiaXY            = 222
+Sat1.DryMomentOfInertiaXZ            = 333
+Sat1.DryMomentOfInertiaYY            = 444
+Sat1.DryMomentOfInertiaYZ            = 555
+Sat1.DryMomentOfInertiaZZ            = 666
+Sat1.Tanks                           = {Tank1, Tank2}
+Sat1.Thrusters                       = {Thruster1, Thruster2}
+
+%----------------------------------------
+%----- Propulsion system components
+%----------------------------------------
+
+Create ChemicalTank Tank1
+
+Tank1.FuelMass              = 400
+Tank1.FuelCenterOfMassX     = -4
+Tank1.FuelCenterOfMassY     = -5
+Tank1.FuelCenterOfMassZ     = -6
+Tank1.FuelMomentOfInertiaXX = 111
+Tank1.FuelMomentOfInertiaXY = 222
+Tank1.FuelMomentOfInertiaXZ = 333
+Tank1.FuelMomentOfInertiaYY = 444
+Tank1.FuelMomentOfInertiaYZ = 555
+Tank1.FuelMomentOfInertiaZZ = 666
+Tank1.Pressure              = 1500
+Tank1.Temperature           = 20
+Tank1.RefTemperature        = 20
+Tank1.Volume                = 0.75
+Tank1.FuelDensity           = 1260
+Tank1.PressureModel         = PressureRegulated
+
+Create ChemicalTank Tank2
+
+Tank2.FuelMass              = 650
+Tank2.FuelCenterOfMassX     = -1
+Tank2.FuelCenterOfMassY     = -1
+Tank2.FuelCenterOfMassZ     = -1
+Tank2.FuelMomentOfInertiaXX = 300
+Tank2.FuelMomentOfInertiaXY = 350
+Tank2.FuelMomentOfInertiaXZ = 400
+Tank2.FuelMomentOfInertiaYY = 200
+Tank2.FuelMomentOfInertiaYZ = 250
+Tank2.FuelMomentOfInertiaZZ = 300
+Tank2.Pressure              = 1500
+Tank2.Temperature           = 20
+Tank2.RefTemperature        = 20
+Tank2.Volume                = 0.75
+Tank2.FuelDensity           = 1260
+Tank2.PressureModel         = PressureRegulated
+
+Create ChemicalThruster Thruster1
+
+Thruster1.HWOriginInBCSX     = 0
+Thruster1.HWOriginInBCSY     = 0
+Thruster1.HWOriginInBCSZ     = 0
+Thruster1.CoordinateSystem   = Local
+Thruster1.Origin             = Earth
+Thruster1.Axes               = VNB
+Thruster1.ThrustDirection1   = 1
+Thruster1.ThrustDirection2   = 0
+Thruster1.ThrustDirection3   = 0
+Thruster1.DutyCycle          = 1
+Thruster1.ThrustScaleFactor  = 1
+Thruster1.DecrementMass      = True
+Thruster1.Tank               = {Tank1}
+Thruster1.MixRatio           = [ 1 ]
+Thruster1.GravitationalAccel = 9.81
+Thruster1.K1                 = 30
+
+Create ChemicalThruster Thruster2
+
+Thruster2.HWOriginInBCSX     = 0
+Thruster2.HWOriginInBCSY     = 0
+Thruster2.HWOriginInBCSZ     = 0
+Thruster2.CoordinateSystem   = Local
+Thruster2.Origin             = Earth
+Thruster2.Axes               = VNB
+Thruster2.ThrustDirection1   = 1
+Thruster2.ThrustDirection2   = 0
+Thruster2.ThrustDirection3   = 0
+Thruster2.DutyCycle          = 1
+Thruster2.ThrustScaleFactor  = 1
+Thruster2.DecrementMass      = True
+Thruster2.Tank               = {Tank2}
+Thruster2.MixRatio           = [ 1 ]
+Thruster2.GravitationalAccel = 9.81
+Thruster2.K1                 = 30
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel FM
+
+FM.CentralBody  = Earth
+FM.PointMasses  = {Earth}
+FM.Drag         = None
+FM.SRP          = Off
+FM.ErrorControl = None
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator Prop
+
+Prop.FM                       = FM
+Prop.Type                     = PrinceDormand78
+Prop.InitialStepSize          = 60
+Prop.Accuracy                 = 1.0e-11
+Prop.MinStep                  = 60
+Prop.MaxStep                  = 60
+Prop.MaxStepAttempts          = 50
+Prop.StopIfAccuracyIsViolated = True
+
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create FiniteBurn Burn1
+
+Burn1.Thrusters              = {Thruster1}
+Burn1.ThrottleLogicAlgorithm = 'MaxNumberOfThrusters'
+
+Create FiniteBurn Burn2
+
+Burn2.Thrusters              = {Thruster2}
+Burn2.ThrottleLogicAlgorithm = 'MaxNumberOfThrusters'
+
+%----------------------------------------
+%----------  Report file
+%----------------------------------------
+
+Create ReportFile RF
+
+RF.Filename    = 'cm_moi_report.txt'
+RF.Precision   = 16
+RF.ColumnWidth = 23
+RF.Add         = {Sat1.UTCGregorian, ...
+    Sat1.SystemCenterOfMassX, Sat1.SystemCenterOfMassY, Sat1.SystemCenterOfMassZ,...
+    Sat1.SystemMomentOfInertiaXX, Sat1.SystemMomentOfInertiaXY, Sat1.SystemMomentOfInertiaXZ,...
+    Sat1.SystemMomentOfInertiaYY, Sat1.SystemMomentOfInertiaYZ, Sat1.SystemMomentOfInertiaZZ}
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+%   The center-of-mass and moment of inertia remain constant during free-flight
+%   propagation arcs, but change during the burn segments.
+%
+
+BeginMissionSequence
+
+Propagate Prop(Sat1) {Sat1.ElapsedSecs = 3600.0}
+
+BeginFiniteBurn Burn1(Sat1)
+Propagate Prop(Sat1) {Sat1.ElapsedSecs = 1000.0}
+EndFiniteBurn Burn1(Sat1)
+
+Propagate Prop(Sat1) {Sat1.ElapsedSecs = 3600.0}
+
+BeginFiniteBurn Burn2(Sat1)
+Propagate Prop(Sat1) {Sat1.ElapsedSecs = 1000.0}
+EndFiniteBurn Burn2(Sat1)
+
+Propagate Prop(Sat1) {Sat1.ElapsedSecs = 3600.0}

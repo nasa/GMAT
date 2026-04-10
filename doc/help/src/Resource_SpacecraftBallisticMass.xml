@@ -1,0 +1,2926 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="SpacecraftBallisticMass"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>Spacecraft Ballistic/Mass Properties</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Spacecraft Ballistic/Mass Properties</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Spacecraft Ballistic/Mass Properties</refname>
+
+    <refpurpose>The physical properties of the spacecraft</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The <guilabel>Spacecraft</guilabel> ballistic and mass properties
+    include the drag and SRP areas and coefficients as well as the spacecraft
+    dry mass. These quantities are used primarily in orbital dynamics
+    modeling. GMAT supports spherical SRP and drag models, and a higher
+    fidelity drag and area model called SPAD.</para>
+
+    <para>GMAT also supports an extended set of mass properties that are used
+    in modeling torques and changes in angular momentum. The
+    <guilabel>Spacecraft</guilabel> extended mass properties are the
+    spacecraft dry center of mass and dry moment of inertia.</para>
+
+    <para>Both the standard and extended mass property models collaborate with
+    <emphasis role="bold">FuelTank</emphasis> models to compute the
+    aggregation of the dry spacecraft mass properties and the mass properties
+    of the tank contents. The details of how this is done are discussed in the
+    Remarks.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="Propagate"/>, <xref linkend="Propagator"/>, <xref
+    linkend="Spacecraft"/>, <xref linkend="FuelTank"/>,</para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.0*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>AddPlates</guilabel></entry>
+
+            <entry><para>For use with the NPlate area model. Selection of
+            <guilabel>Plate</guilabel> objects that comprise the spacecraft
+            area model. See also <xref linkend="Plate"/> </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Resource array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Instances of the <guilabel>Plate</guilabel>
+                    resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Empty</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Not applicable</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>AtmosDensityScaleFactor</guilabel></entry>
+
+            <entry><para>A multiplicative scale factor applied to the nominal
+            atmospheric density computed by the chosen density
+            model.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>1.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Cd</guilabel></entry>
+
+            <entry><para>The coefficient of drag used to compute the
+            acceleration due to drag for the spherical drag area model. This
+            parameter is ignored when using SPAD drag
+            modeling.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>2.2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>CenterOfMassOffsetX</guilabel></entry>
+
+            <entry><para>X component of offset to center of mass. This offset
+            is only used with the "Lookup" model, allowing for deviations
+            caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>m</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>CenterOfMassOffsetY</guilabel></entry>
+
+            <entry><para>Y component of offset to center of mass. This offset
+            is only used with the "Lookup" model, allowing for deviations
+            caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>m</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>CenterOfMassOffsetZ</guilabel></entry>
+
+            <entry><para>Z component of offset to center of mass. This offset
+            is only used with the "Lookup" model, allowing for deviations
+            caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>m</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>CenterOfMassTableFileName</guilabel></entry>
+
+            <entry><para>Name of file containing center of mass interpolation
+            data for various values of total spacecraft mass. The total mass
+            includes both the dry mass of the spacecraft and the mass of the
+            contents of fuel tanks.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid file name for the center of mass table lookup
+                    file</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Cr</guilabel></entry>
+
+            <entry><para>The coefficient of reflectivity used to compute the
+            acceleration due to SRP for the spherical area model. A value of
+            zero means the spacecraft is translucent to incoming radiation. A
+            value of 1.0 indicates all radiation is absorbed and all the force
+            is transmitted to the spacecraft. A value of 2.0 indicates all
+            radiation is reflected and twice the force is transmitted to the
+            spacecraft. This parameter is ignored when using SPAD SRP
+            modeling.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>1.8</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Drag Area</guilabel></entry>
+
+            <entry><para>The area used to compute acceleration due to
+            atmospheric drag for the spherical drag area model. This parameter
+            is ignored when using SPAD drag modeling.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; = 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>15</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryCenterOfMassX</guilabel></entry>
+
+            <entry><para>The X component of dry spacecraft center of mass in
+            BCS (m)</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>m</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryCenterOfMassY</guilabel></entry>
+
+            <entry><para>The Y component of dry spacecraft center of mass in
+            BCS (m)</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>m</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryCenterOfMassZ</guilabel></entry>
+
+            <entry><para>The Z component of dry spacecraft center of mass in
+            BCS (m)</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>m</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryMass</guilabel></entry>
+
+            <entry><para>The dry mass of the <guilabel>Spacecraft</guilabel>
+            (does not include fuel mass).</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;=0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>850</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>kg</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryMomentOfInertiaXX</guilabel></entry>
+
+            <entry><para>The XX component of the dry spacecraft moment of
+            inertia</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>999</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryMomentOfInertiaXY</guilabel></entry>
+
+            <entry><para>The XY component of the dry spacecraft moment of
+            inertia</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryMomentOfInertiaXZ</guilabel></entry>
+
+            <entry><para>The XZ component of the dry spacecraft moment of
+            inertia</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryMomentOfInertiaYY</guilabel></entry>
+
+            <entry><para>The YY component of the dry spacecraft moment of
+            inertia</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>999</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryMomentOfInertiaYZ</guilabel></entry>
+
+            <entry><para>The YZ component of the dry spacecraft moment of
+            inertia</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DryMomentOfInertiaZZ</guilabel></entry>
+
+            <entry><para>The ZZ component of the dry spacecraft moment of
+            inertia</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>999</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ExtendedMassPropertiesModel</guilabel></entry>
+
+            <entry><para>Selection of whether to model center of mass, moment
+            of inertia, both, or neither.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel><emphasis role="bold">,
+                    </emphasis><guilabel>CenterOfMass</guilabel><emphasis
+                    role="bold">,
+                    </emphasis><guilabel>MomentOfInertia</guilabel><emphasis
+                    role="bold">,
+                    </emphasis><guilabel>CenterOfMassAndMomentOfInertia</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><emphasis role="bold">None</emphasis></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ExtendedMassPropertiesModelType</guilabel></entry>
+
+            <entry><para>Selection of models used to compute center of mass
+            and moment of inertia. The available models are to interpolate
+            mass property files ("Lookup") or to compute the system mass
+            properties based on the dry spacecraft mass properties and the
+            mass properties of the contents of each FuelTank ("Analytic").</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><guilabel>Lookup</guilabel>,
+                    <guilabel>Analytic</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Analytic</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MassPropertiesTableFilePath</guilabel></entry>
+
+            <entry><para>Path to files used to interpolate center of mass or
+            moment of inertia data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid path to directory containing interpolation
+                    table text file(s) for center of mass or moment of
+                    inertia</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>""</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MomentOfInertiaOffsetXX</guilabel></entry>
+
+            <entry><para>XX component of offset to moment of inertia. This
+            offset is only used with the "Lookup" model, allowing for
+            deviations caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MomentOfInertiaOffsetXY</guilabel></entry>
+
+            <entry><para>XY component of offset to moment of inertia. This
+            offset is only used with the "Lookup" model, allowing for
+            deviations caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MomentOfInertiaOffsetXZ</guilabel></entry>
+
+            <entry><para>XZ component of offset to moment of inertia. This
+            offset is only used with the "Lookup" model, allowing for
+            deviations caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MomentOfInertiaOffsetYY</guilabel></entry>
+
+            <entry><para>YY component of offset to moment of inertia. This
+            offset is only used with the "Lookup" model, allowing for
+            deviations caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MomentOfInertiaOffsetYZ</guilabel></entry>
+
+            <entry><para>YZ component of offset to moment of inertia. This
+            offset is only used with the "Lookup" model, allowing for
+            deviations caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MomentOfInertiaOffsetZZ</guilabel></entry>
+
+            <entry><para>ZZ component of offset to moment of inertia. This
+            offset is only used with the "Lookup" model, allowing for
+            deviations caused by factors not accounted for in pre-tabulated
+            data.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>kg-m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MomentOfInertiaTableFileName</guilabel></entry>
+
+            <entry><para>Name of file containing moment of inertia
+            interpolation data for various values of total spacecraft mass.
+            The total mass includes both the dry mass of the spacecraft and
+            the mass of the contents of fuel tanks.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid file name for the moment of inertia table
+                    lookup file</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>NPlateSRPEquateAreaCoefficients</guilabel></entry>
+
+            <entry><para>Equate or link NPlate model SRP area coefficients for
+            estimation. When estimating the AreaCoefficient for one or more
+            plates, any plates specified in this list will be forced to have
+            the same value of AreaCoefficient during the estimation process.
+            Only applicable when the NPlate area model is in use and solving
+            for AreaCoefficient.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Resource array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Instances of the <guilabel>Plate</guilabel>
+                    resource</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Empty</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Not applicable</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SPADDragFile</guilabel></entry>
+
+            <entry><para>Name (and optionally path information) of SPAD drag
+            model file.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>valid path and SPAD file</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SPADDragInterpolationMethod</guilabel></entry>
+
+            <entry><para>Interpolation method for SPAD drag
+            vectors.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>'Bicubic' or 'Bilinear'</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Bilinear</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SPADDragScaleFactor</guilabel></entry>
+
+            <entry><para>Scale factor applied to the drag force when using a
+            SPAD drag area model.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>1.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SPADSRPFile</guilabel></entry>
+
+            <entry><para>Name (and optionally path information) of SPAD SRP
+            model file.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>valid path and SPAD file</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SPADSRPInterpolationMethod</guilabel></entry>
+
+            <entry><para>Interpolation method for SPAD SRP model
+            vectors.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>'Bicubic' or 'Bilinear'</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Bilinear</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SPADSRPScaleFactor</guilabel></entry>
+
+            <entry><para>Scale factor applied to SRP force when using a SPAD
+            SRP area model.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>1.0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>dimensionless</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SRPArea</guilabel></entry>
+
+            <entry><para>The area used to compute acceleration due to solar
+            radiation pressure for the spherical SRP area model. This
+            parameter is ignored when using SPAD SRP
+            modeling.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>1</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>m^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>GUI</title>
+
+    <screenshot>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" contentdepth="100%"
+                     fileref="files/images/Resource_Spacecraft_BallisticMass_GUI.png"
+                     scalefit="1" width="100%"/>
+        </imageobject>
+      </mediaobject>
+    </screenshot>
+
+    <para>The GUI interface for ballistic and mass properties is contained on
+    the<guilabel> Ballistic/Mass</guilabel> tab of the
+    <guilabel>Spacecraft</guilabel> resource. You can enter physical
+    properties such as the drag and SRP areas and coefficients and the
+    <guilabel>Spacecraft</guilabel> dry mass which are used in orbital
+    dynamics modeling. GMAT supports a spherical SRP model and a SPAD (Solar
+    Pressure and Aerodynamic Drag) file.</para>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <refsection>
+      <title>Configuring Area Properties for the Spherical Area Model</title>
+
+      <indexterm>
+        <primary>Solar Radiation Pressure</primary>
+
+        <secondary>Spherical area modeling</secondary>
+      </indexterm>
+
+      <para>GMAT supports a spherical (sometimes called a "cannonball") area
+      model for drag and SRP modeling. In the spherical model, the area is
+      assumed to be independent of the spacecraft's orientation with respect
+      to the local velocity vector and the sun vector. The spherical area
+      model is selected by setting the configured
+      <guilabel>ForceModel</guilabel> <guilabel>SRP.SRPModel</guilabel> and
+      <guilabel>Drag.DragModel</guilabel> to <guilabel>Spherical</guilabel>.
+      For more details on the computation and configuration of drag and SRP
+      models see the <xref linkend="ForceModel"
+      xrefstyle="select:title"/> documentation.</para>
+    </refsection>
+
+    <refsection>
+      <title>Configuring Area Properties for the NPlate Area Model</title>
+
+      <para>GMAT supports a multi-plate area model for SRP modeling. In the
+      NPlate model, the area is built up from a collection of
+      <guilabel>Plate</guilabel> resources, each specifying a separate area,
+      orientation, and reflectivity properties. The NPlate area model is
+      selected by setting the configured <guilabel>ForceModel</guilabel>
+      <guilabel>SRP.SRPModel</guilabel> to <guilabel>NPlate</guilabel>. The
+      NPlate model is not currently available for drag modeling. For more
+      details on the configuration of the NPlate model, see the <xref
+      linkend="Plate" xrefstyle="select:title"/> documentation.</para>
+    </refsection>
+
+    <refsection>
+      <title>Configuring Area Properties for the SPAD Area Model</title>
+
+      <indexterm>
+        <primary>Solar Radiation Pressure</primary>
+
+        <secondary>SPAD area modeling</secondary>
+      </indexterm>
+
+      <indexterm>
+        <primary>SPAD modeling</primary>
+
+        <secondary>SPAD file format</secondary>
+      </indexterm>
+
+      <para>SPAD stands for Solar Pressure and Aerodynamic Drag. A SPAD file
+      can be used for high fidelity SRP and drag modeling taking into account
+      the physical properties of the spacecraft (shape and reflectivity) and
+      the spacecraft attitude. SPAD files contain tabulated data representing
+      the spacecraft area scaled by physical properties like Cr including
+      specular, diffuse, and reflective properties. Area data in the SPAD file
+      is tabulated as a function of azimuth and elevation in the spacecraft
+      body frame. In the case of SRP modeling, the azimuth and elevation
+      tabulated on the file should be the azimuth and elevation of the vector
+      from the Spacecraft to the Sun, expressed in the body frame. For drag
+      modeling, the azimuth and elevation denote the direction of the
+      spacecraft velocity vector relative to the rotating atmosphere. The SPAD
+      area model is selected by setting the configured
+      <guilabel>ForceModel</guilabel> <guilabel>SRP.SRPModel</guilabel> and
+      <guilabel>Drag.DragModel</guilabel> to
+      <guilabel>SPADFile</guilabel>.</para>
+
+      <para>To compute the SRP or drag acceleration at each integration point,
+      GMAT determines the sun or relative velocity vector’s azimuth and
+      elevation in the spacecraft body frame at the integration time, and then
+      interpolates the SPAD data using bi-linear or bi-cubic interpolation.
+      Since the SRP or drag vector is taken in the spacecraft body frame, this
+      formulation results in an attitude dependent acceleration. For more
+      details on the computation and configuration of drag and SRP models see
+      the <xref linkend="ForceModel" xrefstyle="select:title"/>
+      documentation.</para>
+
+      <caution>
+        <para>When using a SPAD file, GMAT uses the attitude defined on the
+        <guilabel>Spacecraft</guilabel> resource to compute the Sun's or
+        relative velocity vector in the body frame. If the attitude uses a
+        coordinate system with <guilabel>Axes</guilabel> set to
+        <guilabel>ObjectReferenced</guilabel>, and those axes refer back to
+        the <guilabel>Spacecraft</guilabel> orbit state (i.e. VNB or LVLH
+        systems), GMAT holds the attitude constant over a given integration
+        step. In those cases, we recommend carefully choosing a maximum step
+        size small enough to ensure the resulting approximation is acceptable
+        for your application.</para>
+      </caution>
+
+      <para>A valid SPAD file header, and the first three lines of data are
+      shown below for illustrative purposes. Note, GMAT does not use all
+      values provide on the file and GMAT's usage of SPAD files is described
+      in detail in the table below the example.</para>
+
+      <programlisting><?db-font-size 90% ?><code>Version            : 4.21
+System             : sphericalSat
+Analysis Type      : Area
+Pixel Size         : 5
+Spacecraft Size    : 436.2
+Pressure           : 1
+Center of Mass     :  (50.9, 184.9, -49)
+Current time       : May  7, 2009  15:53:38.00
+
+Motion    : 1
+  Name    : Azimuth
+  Method  : Step
+  Minimum : -180
+  Maximum : 180
+  Step    : 5
+Motion    : 2
+  Name    : Elevation
+  Method  : Step
+  Minimum : -90
+  Maximum : 90
+  Step    : 5
+: END
+
+Record count       : 2701
+
+ AzimuthElevatio  Force(X)  Force(Y)  Force(Z)  
+ degrees degrees      m^2      m^2      m^2      
+ ------- ------- --------- --------- --------- --------- 
+ -180.00   -90.00 -0.00000000000000 -0.00000000000000 -8.94500000000000 
+ -180.00   -85.00 -0.77960811887780 -0.00000000000000 -8.91096157443066 
+ -180.00   -80.00 -1.55328294923069 -0.00000000000000 -8.80910535069420 </code></programlisting>
+
+      <para>A SPAD file contains three sections as illustrated below. Data
+      specifications for items in each section are described in the tables
+      below. A SPAD file header may contain many fields but only a few are
+      used by GMAT as described below. Other fields are ignored.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="3">
+          <colspec colnum="1" colwidth="2*"/>
+
+          <colspec colnum="2" colwidth="0.5*"/>
+
+          <colspec colnum="3" colwidth="5*"/>
+
+          <thead>
+            <row>
+              <entry>Keyword</entry>
+
+              <entry>Required</entry>
+
+              <entry>Description and Supported Values</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>Analysis Type</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>The SPAD software can creates files with Analysis
+              Types of Solar Pressure, Area, and Drag. GMAT only supports the
+              Area option. </para><para>Example: </para> <programlisting><code>Analysis Type : Area</code></programlisting></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Pressure</guilabel></entry>
+
+              <entry><para>N</para></entry>
+
+              <entry><para>SPAD supports the ability to apply a scale factor
+              for SRP and drag. GMAT does not read this value, and its purpose
+              in the SPAD file is to inform the user that the properties on
+              the file have been scaled by the Pressure factor. The value is
+              usually “1”. However, when not 1, it is possible to apply a
+              scale factor twice, once from the value applied on the data in
+              the SPAD file, and once from the
+              <guilabel>SPADSRPScaleFactor</guilabel> or
+              <guilabel>SPADDragScaleFactor</guilabel>. Care should be taken
+              to ensure that if the desired scale factor was applied during
+              file creation that it is not reapplied in GMAT. </para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>The SPAD file Motion Data section describes the data contained in
+      the body of the file. The Motion Data fields used by GMAT are described
+      below. Others are ignored.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="3">
+          <colspec colnum="1" colwidth="2*"/>
+
+          <colspec colnum="2" colwidth="0.5*"/>
+
+          <colspec colnum="3" colwidth="5*"/>
+
+          <thead>
+            <row>
+              <entry>Keyword</entry>
+
+              <entry>Required</entry>
+
+              <entry>Description and Supported Values</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>Motion</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>Together, the Motion and Name fields specify the
+              type of data in the first two columns of the body of the file.
+              GMAT currently supports Azimuth and Elevation Motion only (no
+              articulating appendages) and requires that the first Motion is
+              Azimuth and the second Motion is Elevation as shown
+              below.</para> <para> Examples:</para> <programlisting><code>Motion : 1
+Name : Azimuth</code></programlisting> <para>and</para><programlisting><code>Motion : 2 
+Name : Elevation</code></programlisting></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Name</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>Together, the Motion and Name fields specify the
+              type of data in the first two columns of the body of the file.
+              GMAT currently supports Azimuth and Elevation Motion only (no
+              articulating appendages) and requires that the first Motion is
+              Azimuth and the second Motion is Elevation as shown
+              below.</para><para> Examples:</para> <programlisting><code>Motion : 1
+Name : Azimuth</code></programlisting> <para>and</para><programlisting><code>Motion : 2 
+Name : Elevation</code></programlisting></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Method</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>The step size in the independent variable. The only
+              supported value is Step.</para><para>Example:</para>
+              <programlisting><code>Motion : 1 
+Method : Step </code></programlisting></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Maximum</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>The maximum value for an independent variable
+              (Motion Type). For Azimuth, Maximum must be 180, and for
+              Elevation Maximum must be 90.</para><para>Example:</para>
+              <programlisting><code>Motion : 1
+Name : Azimuth 
+Maximum : 180 
+
+Motion : 2
+Name : Elevation
+Maximum : 90</code></programlisting></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Minimum</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>The minimum value for an independent variable.
+              (Motion Type). For Azimuth, minimum must be -180, and for
+              Elevation minimum must be -90. </para><para>Example:</para>
+              <programlisting><code>Motion : 1
+Name : Azimuth
+Minimum : -180
+
+Motion : 2
+Name : Elevation
+Minimum : -90</code></programlisting></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Step</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>The step size for the independent variable (Motion
+              Type). If Step does not divide evenly into the variable range,
+              then errors may occur because the maximum and/or minimum values
+              may not be on the file. </para><para>Example:</para><para>Motion
+              : 1 </para><para> Step : 15</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Record count </guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>Record count is the number of rows of data in the
+              data segment. Record count = (360/(Azimuth Step)
+              +1)*(180/(Elevation Step) +1).</para><para>Example:</para>
+              <programlisting><code>Record count : 325</code></programlisting></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>The SPAD file data block contains tabulated force modeling data as
+      described below.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="3">
+          <colspec colnum="1" colwidth="2*"/>
+
+          <colspec colnum="2" colwidth="0.5*"/>
+
+          <colspec colnum="3" colwidth="5*"/>
+
+          <thead>
+            <row>
+              <entry>Keyword</entry>
+
+              <entry>Required</entry>
+
+              <entry>Description and Supported Values</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>Azimuth</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>Azimuth data column. Must be first column in the
+              data. Units must be degrees. Azimuth is the azimuth of the
+              vector from spacecraft to Sun (for SRP, atan2(ySun,xSun)), or
+              the relative velocity vector (for drag) expressed in the body
+              frame.</para><para>Example: </para> <programlisting><code>AzimuthElevatio
+degrees degrees
+------- -------
+-180.00 -90.00
+-180.00 -75.00
+-180.00 -60.00</code></programlisting></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Elevation</guilabel></entry>
+
+              <entry><para>N</para></entry>
+
+              <entry><para>Elevation data column. Must be second column in the
+              data. Units must be degrees. Elevation is the elevation of the
+              vector from spacecraft to Sun (for SRP, atan2(zSun,sqrt(xSun^2 +
+              ySun^2)), or the relative velocity vector (for drag) expressed
+              in the body frame.</para><para>Example: </para><programlisting><code>AzimuthElevatio
+degrees degrees
+------- -------
+-180.00 -90.00
+-180.00 -75.00
+-180.00 -60.00</code></programlisting></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Force(*)</guilabel></entry>
+
+              <entry><para>N</para></entry>
+
+              <entry><para>Area vector columns. Must be columns 3-5 in the
+              data. Quantities must be in base units of m^2,mm^2,cm^2,in^2, or
+              ft^2. If another unit is provided in the header lines, an
+              exception is thrown. The area vector is the direction of the
+              resulting SRP force in the spacecraft body frame, scaled by area
+              and reflectivity properties. </para><para>Example: See code
+              listing above.</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>Total Mass Computation</title>
+
+      <para>The <guilabel>TotalMass</guilabel> property of a
+      <guilabel>Spacecraft</guilabel> is a read-only property that is the sum
+      of the <guilabel>DryMass</guilabel> value and the sum of the fuel mass
+      in all attached fuel tanks. GMAT’s propagators will not allow the total
+      mass of a spacecraft to be negative. However, GMAT will allow the mass
+      of a <guilabel>ChemicalTank</guilabel> to be negative. See the <xref
+      linkend="FuelTank" xrefstyle="select:title"/> documentation for
+      details.</para>
+    </refsection>
+
+    <refsection>
+      <title>Extended Mass Properties: Overview</title>
+
+      <para>In addition to computing the <guilabel>TotalMass</guilabel>
+      property of a <guilabel>Spacecraft</guilabel>, GMAT can compute the
+      <guilabel>SystemCenterOfMass</guilabel> and
+      <guilabel>SystemMomentOfInertia</guilabel> properties. Like
+      <guilabel>TotalMass</guilabel> these properties are read-only and they
+      are computed from the corresponding properties of the dry
+      <guilabel>Spacecraft</guilabel>. The resulting
+      <guilabel>SystemCenterOfMass</guilabel> is expressed in the
+      <guilabel>Spacecraft</guilabel>'s body coordinate system (BCS), and the
+      resulting <guilabel>SystemMomentOfInertia</guilabel> is with respect to
+      the <guilabel>SystemCenterOfMass</guilabel>.</para>
+
+      <para>There are two models for computing the extended mass
+      properties</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>the <guilabel>Lookup</guilabel> option which interpolates
+          lookup tables where mass is the independent variable and either
+          center of mass or moment of inertia is the dependent variable,
+          and</para>
+        </listitem>
+
+        <listitem>
+          <para>the <guilabel>Analytic</guilabel> option, which computes the
+          system properties from the dry properties and the fuel
+          properties.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>At this writing the <guilabel>Lookup</guilabel> model is fully
+      implemented and the <guilabel>Analytic</guilabel> model is under
+      development.</para>
+
+      <para>The selection of models is controlled by two input parameters. The
+      first, <guilabel>ExtendedMassPropertiesModelType</guilabel>, controls
+      whether the <guilabel>Lookup</guilabel> or <guilabel>Analytic</guilabel>
+      model is to be used. The second,
+      <guilabel>ExtendedMassPropertiesModeled</guilabel>, controls which
+      properties are to be computed. The <guilabel>TotalMass</guilabel> is
+      always computed, if neither center of mass nor moment of inertia are
+      needed, the value of <guilabel>ExtendedMassPropertiesModeled</guilabel>
+      is set to <guilabel>None</guilabel>. This is the default. The default
+      value of <guilabel>ExtendedMassPropertiesModelType</guilabel> is
+      <guilabel>Analytic</guilabel>; this was chosen so that no lookup files
+      would need to be specified in the default case. Until the analytic model
+      for extended mass properties is completed choosing the
+      <guilabel>Analytic</guilabel> model is <emphasis>only</emphasis> valid
+      if <guilabel>ExtendedMassPropertiesModel</guilabel> is set to
+      <guilabel>None</guilabel>. Put another way, the default is to not model
+      the extended mass properties, and only compute
+      <guilabel>TotalMass</guilabel><emphasis role="bold">. </emphasis>The
+      other options are <guilabel>CenterOfMass</guilabel>,
+      <guilabel>MomentOfInertia</guilabel>, and
+      <guilabel>CenterOfMassAndMomentOfInertia</guilabel>, and should be
+      self-explanatory.</para>
+    </refsection>
+
+    <refsection>
+      <title>Extended Mass Properties: Lookup Model</title>
+
+      <para>There are three elements to using the <guilabel>Lookup</guilabel>
+      model: specifying the filenames to be used, understanding the formats of
+      the lookup table files, and the offsets from interpolated data. The
+      center of mass and moment of inertia lookup data are stored in separate
+      files and interpolated independently. It is up to the user to get a
+      consistent set of data for a given spacecraft; the
+      <guilabel>Lookup</guilabel> model is more often used in mission
+      operations for spacecraft whose properties are well understood. It is
+      expected that the two files will be stored in the same folder; the
+      parameter <guilabel>MassPropertiesTableFilePath</guilabel> is used to
+      set a path to that folder. The file names are provided by the parameters
+      <guilabel>CenterOfMassTableFileName</guilabel> and
+      <guilabel>MomentOfInertiaTableFileName</guilabel>.</para>
+
+      <para>Both files are text files containing spacecraft masses as the
+      first parameter in each row, and the corresponding center of mass or
+      moment of inertia values completing the row.</para>
+
+      <para>The center of mass data is tabulated in a text file indexed by
+      this value. A sample file is shown below. The header data in this file
+      is informational only in the current implementation. The data shown
+      there is not used in the current GMAT code, but may be used in a later
+      implementation.</para>
+
+      <para><programlisting><code>
+% Center of Mass Datafile
+
+Spacecraft:  SampleSat
+Index:  TotalMass
+CoordinateSystem:  BCS
+Units:   Meters
+
+% Data order:
+% RefMass, COMx COMy COMz
+
+BeginData
+2200    0.0220    0.0500    0.3000
+2100    0.0215    0.0366    0.2888
+2000    0.0211    0.0233    0.2777
+1900    0.0206    0.0100    0.2666
+1800    0.0202   -0.0033    0.2555
+1700    0.0197   -0.0166    0.2444
+1600    0.0193   -0.0300    0.2333
+1500    0.0188   -0.0433    0.2222
+1400    0.0184   -0.0566    0.2111
+1300    0.0180   -0.0700    0.2000
+EndData</code></programlisting></para>
+
+      <para>The data tabulated between the BeginData and EndData lines are
+      used in GMAT to interpolate the location of the center of mass, using
+      GMAT’s Lagrange interpolator. The first column of the data is
+      spacecraft’s total mass, providing the index into the table. This index
+      column must be monotonic, but can be either increasing or, as shown
+      here, decreasing. The location of the center of mass is tabulated in
+      Cartesian body fixed coordinates. Each row specifies the center of mass
+      location corresponding to the total mass value in the first column. The
+      data are in X-Y-Z order. The center of mass location is specified in
+      meters. If the <guilabel>TotalMass</guilabel> used to interpolate is
+      outside of the range given by the upper and lower bounds of the
+      tabulated masses in the first column, GMAT throws an exception
+      indicating that the spacecraft center of mass cannot be
+      interpolated.</para>
+
+      <para>The moment of inertia tensor is tabulated similarly. A sample file
+      is shown below. As in the case of center of mass, the header information
+      in the moment of inertial table file is not currently used, but may be
+      in a later implementation.</para>
+
+      <para><programlisting><code>
+% Moment of Inertia Datafile
+
+Spacecraft:  SampleSat
+Index:  TotalMass
+Origin:  Spacecraft Center of Mass
+Units:   kg-m^2
+
+% Data order:
+% RefMass, MOIxx MOIyy MOIzz MOIxy MOIxz MOIyz
+
+BeginData
+1300    12.755    17.423   14.111     0.187   -0.622    0.455
+1400    12.655    17.001   14.116     0.186   -0.622    0.445
+1500    12.455    16.722   14.120     0.185   -0.622    0.435
+1600    12.155    16.432   14.123     0.184   -0.622    0.425
+1700    12.055    16.395   14.124     0.183   -0.622    0.415
+1800    12.155    16.388   14.124     0.182   -0.622    0.405
+1900    12.455    16.376   14.124     0.181   -0.622    0.395
+2000    12.555    16.368   14.123     0.180   -0.622    0.385
+2100    12.755    16.365   14.119     0.179   -0.622    0.375
+2200    12.955    16.365   14.107     0.178   -0.622    0.365
+EndData</code></programlisting></para>
+
+      <para>The data tabulated between the BeginData and EndData lines are
+      used in GMAT to interpolate the moments and products of inertia relative
+      to the spacecraft’s center of mass, using GMAT’s Lagrange interpolator.
+      The first column of the data is spacecraft’s total mass, providing the
+      index into the table. This index column must be monotonic, but can be
+      either increasing, as shown here, or decreasing. Each tensor element is
+      tabulated in the Cartesian system. Each row specifies the inertia tensor
+      component relative to the spacecraft center of mass that corresponds to
+      the total mass value in the first column. The data are in
+      XX-YY-ZZ-XY-XZ-YZ order. The moments and products of inertia are
+      specified in kilogram-meters squared. If the
+      <guilabel>TotalMass</guilabel> used to interpolate is outside of the
+      range given by the upper and lower bounds of the tabulated masses in the
+      first column, GMAT throws an exception indicating that the spacecraft
+      center of mass cannot be interpolated.</para>
+
+      <para>The spacecraft center of mass as tabulated above is specified as a
+      nominal location for the center of mass. That location may shift based
+      on factors in the spacecraft configuration that were not accounted for
+      in the tabulated data at the start of a project. GMAT scripting
+      accommodates these factors through a set of offset values on the
+      spacecraft. Center of mass has 3 offset parameters representing an
+      offset in the X, Y and Z directions. Moment of inertia has 6 offsets,
+      representing the XX, YY, ZZ, XY, XZ, and YZ. In both cases the offsets
+      default to zero. Of the two, the center of mass offset is more likely to
+      be used in practice; the moment of inertia offsets are there for
+      completeness and the unanticipated.</para>
+    </refsection>
+
+    <refsection>
+      <title>Extended Mass Properties: Analytic Model</title>
+
+      <para>As this model is not yet completed, this section will outline the
+      computations and not emphasize the different user options, which will be
+      documented here upon complete implementation. We will assume that both
+      center of mass and moment of inertia have been selected.</para>
+
+      <para>The analytic model divides the responsibility for computing the
+      extended mass properties between the <guilabel>Spacecraft</guilabel> and
+      <guilabel>FuelTank</guilabel> classes. The <guilabel>FuelTank</guilabel>
+      will be capable of computing its own center of mass in BCS and moment of
+      inertia about the system center of mass. The
+      <guilabel>Spacecraft</guilabel> is responsible for adding up all the
+      fuel mass properties and the dry spacecraft mass properties to get the
+      system mass properties. For moment of inertia, since all the components
+      are computing their moments of inertia around the system center of mass
+      the system moment of inertia is the sum of all the component moments of
+      inertia. The computational steps are:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>For each <guilabel>FuelTank</guilabel>, compute center of mass
+          and moment of inertia of its contents -- this is the part of the
+          model that has not yet been completed.</para>
+        </listitem>
+
+        <listitem>
+          <para>For each <guilabel>FuelTank</guilabel>, compute the center of
+          mass in BCS. This is a function of the tank's center of mass in tank
+          coordinates, the position of the tank coordinate system's origin in
+          BCS and the orientation of the tank coordinate system to the
+          BCS.</para>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>Spacecraft</guilabel> object, compute the
+          system center of mass. This is the weighted average of the
+          individual centers of mass of fuel and the dry spacecraft, weighted
+          by the mass of each.</para>
+        </listitem>
+
+        <listitem>
+          <para>For each <guilabel>FuelTank</guilabel>, compute the moment of
+          inertia about the system center of mass using the Parallel Axis
+          Theorem. Note that this computation uses the system center of mass
+          computed in the previous step.</para>
+        </listitem>
+
+        <listitem>
+          <para>In the <guilabel>Spacecraft</guilabel> object, compute system
+          moment of inertia. This is simply the sum of each of the individual
+          moments of inertia, as they are all computed about the system center
+          of mass.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>The code for the last 4 steps is implemented and integrated into
+      both classes. When the last piece is implemented the code raising an
+      exception if analytic modeling of extended mass properties is selected
+      will be removed.</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Configure physical properties for a spherical SRP model.</para>
+
+      <programlisting><code>Create Spacecraft aSpacecraft
+aSpacecraft.Cd       = 2.2
+aSpacecraft.Cr       = 1.8
+aSpacecraft.DragArea = 40
+aSpacecraft.SRPArea  = 35
+aSpacecraft.DryMass  = 2000
+Create Propagator aPropagator
+
+BeginMissionSequence
+
+Propagate aPropagator(aSpacecraft, {aSpacecraft.ElapsedSecs = 600})</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Configure a SPAD SRP model.</para>
+
+      <programlisting><code><?db-font-size 90% ?>Create Spacecraft aSpacecraft;
+aSpacecraft.DryMass = 2000
+aSpacecraft.SPADSRPFile = '../data/vehicle/spad/SphericalModel.spo'
+aSpacecraft.SPADSRPScaleFactor = 1
+aSpacecraft.SPADDragInterpolationMethod = Bicubic
+
+Create ForceModel aFM;
+aFM.SRP          = On;
+aFM.SRP.SRPModel = SPADFile
+
+Create Propagator aProp;
+aProp.FM = aFM;
+
+BeginMissionSequence
+
+Propagate aProp(aSpacecraft) {aSpacecraft.ElapsedDays = 0.2}</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>Computing center of mass and moment of inertia changes.</para>
+
+      <programlisting><code>
+         %---------- Spacecraft ----------------
+         Create Spacecraft JSL;
+         JSL.Tanks = {TankA}
+         JSL.Thrusters = {ThrusterA}
+
+         %% Added Mass Properties' lookup table files
+         JSL.DryMass = 2440;
+         JSL.MassPropertiesTableFilePath = '../include'
+         JSL.ExtendedMassPropertiesModelType = 'Lookup'
+         JSL.ExtendedMassPropertiesModel     = 'CenterOfMassAndMomentOfInertia'
+         JSL.CenterOfMassTableFileName       = 'FakeLinearCM.table'
+         JSL.MomentOfInertiaTableFileName    = 'FakeLinearMOI.table'
+
+         Create ChemicalTank TankA
+         TankA.Volume = 2.0
+         TankA.FuelMass = 1500
+         Create Thruster ThrusterA
+         ThrusterA.Tank = {TankA}
+         Create FiniteBurn fb1;
+         fb1.Thrusters = {ThrusterA};
+         ThrusterA.DecrementMass = true;
+
+         %---------- Propagator ----------------
+         Create Propagator EarthProp;
+         Create ForceModel TorqueForces;
+         EarthProp.FM = TorqueForces
+
+         %---------- Reports -------------------
+         Create ReportFile CM;
+         CM.Filename = 'CM.report'
+         Create ReportFile MOI;
+         MOI = 'MOI.report'
+
+         %---------- Mission Sequence ----------
+         BeginMissionSequence;
+
+         BeginFiniteBurn fb1(JSL);
+            For loop = 1:14
+               Report  CM JSL.TotalMass JSL.SystemCenterOfMassX JSL.SystemCenterOfMassY JSL.SystemCenterOfMassZ
+               Report MOI JSL.SystemMomentOfInertiaXX JSL.SystemMomentOfInertiaXY JSL.SystemMomentOfInertiaXZ  ...
+                          JSL.SystemMomentOfInertiaYY JSL.SystemMomentOfInertiaYZ JSL.SystemMomentOfInertiaZZ
+               nextFuelMass = JSL.TankA.FuelMass - 100
+               Propagate EarthProp(JSL) {JSL.TankA.FuelMass = nextFuelMass}
+            EndFor
+            Report  CM JSL.TotalMass JSL.SystemCenterOfMassX JSL.SystemCenterOfMassY JSL.SystemCenterOfMassZ
+            Report MOI JSL.SystemMomentOfInertiaXX JSL.SystemMomentOfInertiaXY JSL.SystemMomentOfInertiaXZ  ...
+                       JSL.SystemMomentOfInertiaYY JSL.SystemMomentOfInertiaYZ JSL.SystemMomentOfInertiaZZ
+
+         EndFiniteBurn fb1(JSL);</code>code&gt;</programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

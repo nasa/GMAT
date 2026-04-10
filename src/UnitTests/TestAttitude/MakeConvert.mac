@@ -1,0 +1,48 @@
+# Project: ConsoleApp
+# Author:  W. Shoan/MAB 2006.03.28
+
+PROJECT_ROOT    = ../..
+BINDIR	= $(PROJECT_ROOT)/bin
+LIBDIR	= $(PROJECT_ROOT)/lib
+BASELIBDIR = $(PROJECT_ROOT)/base/lib
+INCDIR	= $(PROJECT_ROOT)/include
+INSTALLED_LIB	= $(LIBDIR)/libgmatbase.a	
+LIB_TO_USE = $(BASELIBDIR)/libGmatgui.a
+EXECUTABLE = $(BINDIR)/TestAttConvert
+
+TEST_FLAGS = -D__DEBUG__ -D__CONSOLE_APP__ -DDS_UNX -DSKIP_DEVIL
+
+# Source files for EXECUTABLE
+SRC	=  TestConvert.cpp
+#
+# LIB need to compile the EXECUTABLE  
+LIB	= -L$(LIBDIR)
+LIB_FLAG = -L$(BASELIBDIR)
+# How they are invoked on the compile  line
+LIBS	= -lgmatbase
+LIBS_TO_USE = -lGmatGui
+#
+# Define macro for using the included file
+INCMK = $(PROJECT_ROOT)/test/inc.mac
+include ${INCMK}
+#
+###############################################################################
+# Target defiitions
+#
+all: $(EXECUTABLE)
+
+#$(EXECUTABLE): $(OBJ) $(INSTALLED_LIB) 
+#	@if [ ! -x $(BINDIR) ]; then mkdir $(BINDIR); fi 
+#	$(CPP) $(OBJ) $(LIB) $(LIBS) -o $@
+#	@chmod -R 755 $(BINDIR)
+
+$(EXECUTABLE): $(OBJ) $(LIB_TO_USE) 
+	@if [ ! -x $(BINDIR) ]; then mkdir $(BINDIR); fi 
+	$(CPP) $(OBJ) $(LIB_FLAG) $(LIBS_TO_USE) -o $@
+	@chmod -R 755 $(BINDIR)
+
+clean:
+	rm -f $(OBJ) core
+
+bare: clean
+	rm -f $(EXECUTABLE) 

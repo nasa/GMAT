@@ -1,0 +1,104 @@
+%
+%  Ex_Attitude_Spinner
+%
+%  Use of a spinning attitude model.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Sat;
+
+Sat.DateFormat                   = UTCGregorian;
+Sat.Epoch                        = '09 Aug 2010 09:53:50.937';
+Sat.CoordinateSystem             = EarthMJ2000Eq;
+Sat.DisplayStateType             = Keplerian;
+Sat.SMA                          = 10924.38026705;
+Sat.ECC                          = 0.001627899999999591;
+Sat.INC                          = 38.03820000000003;
+Sat.RAAN                         = 250.4634999999999;
+Sat.AOP                          = 225.0000000000109;
+Sat.TA                           = 63.36085033997288;
+Sat.Attitude                     = Spinner;
+Sat.AttitudeDisplayStateType     = 'EulerAngles';
+Sat.AttitudeRateDisplayStateType = 'AngularVelocity';
+Sat.EulerAngleSequence           = '123';
+Sat.EulerAngle1                  = 0;
+Sat.EulerAngle2                  = 0;
+Sat.EulerAngle3                  = 0;
+Sat.AngularVelocityX             = 180;
+Sat.AngularVelocityY             = 0;
+Sat.AngularVelocityZ             = 0;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM      = DefaultProp_ForceModel;
+
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp.MaxStep = 0.123;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem LVLH;
+
+LVLH.Origin    = Sat;
+LVLH.Axes      = ObjectReferenced;
+LVLH.YAxis     = -N;
+LVLH.ZAxis     = -R;
+LVLH.Primary   = Earth;
+LVLH.Secondary = Sat;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.SolverIterations     = Current;
+OFI_EarthView.Add                  = {Sat, Earth, Sun};
+OFI_EarthView.View                 = {Earth_View};
+
+OFI_EarthView.DrawObject           = [ true true true];
+OFI_EarthView.DrawXYPlane          = [ false false false];
+OFI_EarthView.DrawLabel            = [ true true true];
+OFI_EarthView.DrawGrid             = [ false false false];
+
+OFI_EarthView.Axes                 = On;
+OFI_EarthView.XYPlane              = On;
+OFI_EarthView.EclipticPlane        = Off;
+OFI_EarthView.EnableStars          = On;
+OFI_EarthView.StarCount            = 40000;
+OFI_EarthView.ShowPlot             = true;
+
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame          = CoordinateSystem;
+Earth_View.SetDefaultLocation = On;
+Earth_View.SetCurrentLocation = Off;
+
+Earth_View.DefaultEye         = [ -35000 0 0]; 
+Earth_View.DefaultCenter      = [ 0 0 0 ];
+Earth_View.DefaultUp          = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+Propagate 'Prop 12000 s' DefaultProp(Sat) {Sat.ElapsedSecs = 1200.0};
+
+

@@ -1,0 +1,131 @@
+%
+%   Ex_IntrusionLocator_Mercury_Sun_Transit
+%
+%   Demonstration of IntrusionLocator intrusion and transit reporting
+%
+%   This script models a spacecraft orbiting the Sun. The spacecraft
+%   has a conical sensor with a 5-degree half-angle field of view. 
+%   The sensor observes Mercury entering the field-of-view and then
+%   transiting the disc of the Sun.
+%
+%   Released: R2026a
+%
+
+
+
+SolarSystem.EphemerisSource = 'DE421'
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create CoordinateSystem SunMJ2000Eq
+
+SunMJ2000Eq.Origin = Sun
+SunMJ2000Eq.Axes   = MJ2000Eq
+
+Create Spacecraft Watcher
+
+Watcher.DateFormat             = UTCGregorian
+Watcher.Epoch                  = '12 Nov 2032 00:00:00.000'
+Watcher.CoordinateSystem       = SunMJ2000Eq
+Watcher.DisplayStateType       = Cartesian
+Watcher.X                      =  94986272.1515218
+Watcher.Y                      = 102436688.584819
+Watcher.Z                      =  44366802.6886497
+Watcher.VX                     = -22.9970858608802
+Watcher.VY                     =  17.4657087276134
+Watcher.VZ                     =   7.49292189681473
+Watcher.DryMass                = 850
+Watcher.Cd                     = 2.2
+Watcher.Cr                     = 1.8
+Watcher.DragArea               = 15
+Watcher.SRPArea                = 15
+Watcher.NAIFId                 = -123
+
+Watcher.Attitude               = NadirPointing
+Watcher.AttitudeReferenceBody  = Sun
+Watcher.BodyAlignmentVectorX   = 0
+Watcher.BodyAlignmentVectorY   = 0
+Watcher.BodyAlignmentVectorZ   = 1
+Watcher.AttitudeConstraintType = Velocity
+Watcher.BodyConstraintVectorX  = 1
+Watcher.BodyConstraintVectorY  = 0
+Watcher.BodyConstraintVectorZ  = 0
+
+
+%----------------------------------------
+%--- Sensor and field-of-view
+%----------------------------------------
+
+Create Imager Sensor1
+Create ConicalFOV Sensor1FOV
+
+Sensor1.DirectionX          = 0.0
+Sensor1.DirectionY          = 0.0
+Sensor1.DirectionZ          = 1.0
+Sensor1.SecondDirectionX    = 0.0
+Sensor1.SecondDirectionY    = 1.0
+Sensor1.SecondDirectionZ    = 0.0
+Sensor1.FieldOfView         = Sensor1FOV
+Sensor1FOV.FieldOfViewAngle = 5.0
+
+Watcher.AddHardware = {Sensor1}
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel FM
+
+FM.CentralBody            = Sun
+FM.PointMasses            = {Sun, Earth, Luna}
+FM.Drag                   = None
+FM.SRP                    = Off
+FM.RelativisticCorrection = Off
+FM.ErrorControl           = RSSStep
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator Prop
+
+Prop.FM                       = FM
+Prop.Type                     = PrinceDormand78
+Prop.InitialStepSize          = 60
+Prop.Accuracy                 = 1e-12
+Prop.MinStep                  = 0
+Prop.MaxStep                  = 3600
+Prop.MaxStepAttempts          = 50
+Prop.StopIfAccuracyIsViolated = True
+
+
+%----------------------------------------
+%--- Intrusion locator
+%----------------------------------------
+
+Create IntrusionLocator IL
+
+IL.CentralBody           = Sun
+IL.Spacecraft            = Watcher
+IL.Sensors               = {Sensor1}
+IL.IntrudingBodies       = {Mercury}
+IL.StepSize              = 600.0
+IL.UseLightTimeDelay     = False
+IL.UseStellarAberration  = False
+IL.WriteReport           = True
+IL.RunMode               = Automatic
+IL.UseEntireInterval     = False
+IL.InputEpochFormat      = 'UTCGregorian'
+IL.InitialEpoch          = '13 Nov 2032 00:00:00.000'
+IL.FinalEpoch            = '14 Nov 2032 00:00:00.000'
+IL.Filename              = 'Ex_IntrusionLocator_Mercury_Sun_Transit.txt'
+IL.ReportCoordinates     = 'SensorFrame'
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Propagate Prop(Watcher) {Watcher.ElapsedDays = 2}

@@ -1,0 +1,107 @@
+%
+%   Ex_Propagate_Covariance
+%
+%   Propagate covariance with SNC orbiting the Moon
+%
+%   Created: R2022a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft Sat;
+
+Sat.DateFormat       = UTCGregorian;
+Sat.Epoch            = '10 Jun 2010 00:00:00.000';
+Sat.CoordinateSystem = MoonMJ2000Eq;
+Sat.DisplayStateType = Cartesian;
+Sat.X                = 1758.666869;
+Sat.Y                = 322.9107107;
+Sat.Z                = -104.1123265;
+Sat.VX               = 0.1892761718;
+Sat.VY               = -0.6091334738;
+Sat.VZ               = 1.525196842;
+Sat.DryMass          = 850;
+Sat.Cd               = 2.2;
+Sat.Cr               = 1.8;
+Sat.DragArea         = 15;
+Sat.SRPArea          = 1;
+Sat.Id               = 'Sat';
+Sat.ProcessNoiseModel= SNC;
+
+ 
+%----------------------------------------
+%-------- CoordinateSystems
+%----------------------------------------
+
+Create CoordinateSystem SatVNB;
+
+SatVNB.Origin    = Sat;
+SatVNB.Axes      = ObjectReferenced;
+SatVNB.XAxis     = V;
+SatVNB.YAxis     = N;
+SatVNB.Primary   = Earth;
+SatVNB.Secondary = Sat;
+
+Create CoordinateSystem MoonMJ2000Eq;
+
+MoonMJ2000Eq.Origin = Luna;
+MoonMJ2000Eq.Axes   = MJ2000Eq;
+
+%
+%   
+%----------------------------------------
+%-------  ProcessNoiseModel
+%----------------------------------------
+
+Create ProcessNoiseModel SNC;
+
+SNC.Type             = StateNoiseCompensation;
+SNC.CoordinateSystem = SatVNB;
+SNC.AccelNoiseSigma  = [1.1e-7 2.2e-6 3.3e-6]; 
+
+%----------------------------------------
+%-------   Covariance report file
+%----------------------------------------
+
+Create ReportFile CovarianceReport
+
+CovarianceReport.Filename     = 'Ex_R2022a_Propagate_Covariance.txt'
+CovarianceReport.Add          = {Sat.SatVNB.OrbitErrorCovariance}
+CovarianceReport.WriteHeaders = False
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+ 
+FM.CentralBody                     = Luna
+FM.PrimaryBodies                   = {Luna}
+FM.PointMasses                     = {Earth, Sun, Jupiter}
+FM.GravityField.Luna.Degree        = 20
+FM.GravityField.Luna.Order         = 20
+FM.SRP                             = On
+FM.SRP.Flux                        = 1358.0
+FM.ErrorControl                    = 'None'
+ 
+Create Propagator Prop;
+ 
+Prop.FM                             = FM
+Prop.Type                           = RungeKutta89
+Prop.InitialStepSize                = 60
+Prop.Accuracy                       = 1e-13
+Prop.MinStep                        = 0
+Prop.MaxStep                        = 60
+Prop.MaxStepAttempts                = 50
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Sat.OrbitErrorCovariance = diag([1.0e-6 1.5e-6 1.0e-6 2.5e-11 2.5e-11 2.5e-11]);
+
+Propagate Prop(Sat, 'Covariance') {Sat.ElapsedDays = 1}

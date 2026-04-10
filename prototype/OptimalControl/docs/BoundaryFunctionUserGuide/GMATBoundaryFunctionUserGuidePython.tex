@@ -1,0 +1,620 @@
+\documentclass[]{article}
+\usepackage{amsmath}
+
+%opening
+\title{GMAT Boundary Function Python Prototype User Guide}
+\author{Noble Hatten}
+
+%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%
+
+\maketitle
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%
+\begin{abstract}
+%%%%%%%%%%%%%%%%
+
+This document describes how to create a new GMAT boundary function using the Python prototype interface.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fundamental Concepts}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%
+\subsection{Phases}
+%%%%%%%%%%%%%%%%%%%
+
+A \emph{phase} is a segment of a trajectory.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Boundary Functions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+A \emph{boundary function} is a function that is dependent on the independent and/or dependent variables of one or more phases, evaluated at a finite number of points.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The \texttt{PhaseConfig} Class}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The \texttt{PhaseConfig} class is used to define both phases and boundary functions. When creating a boundary function, a \texttt{PhaseConfig} object is required for every phase and the boundary function itself.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Relevant Attributes}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{OrbitStateRep}}
+\label{sec:orbitstaterep}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: variable (string)
+	\item Description: A string that selects the variable representation of the orbit state from among preset options. Valid values and the associated orbit state vectors are:
+	\begin{itemize}
+		\item `Cartesian': $[x, y, z, v_x, v_y, v_z]$
+		\item `SphericalAzFPA': $[r, RA, DEC, v, AZI, FPA]$
+		\item `ClassicalKeplerian': $[a, e, i, \omega, \Omega, \nu]$
+	\end{itemize}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{Origin}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: variable (string)
+	\item Description: A string that sets the origin of the coordinate system in which the orbit state is described. The string must be recognizable as a central body by SPICE and must be in the body ephemeris file specified by the user.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{Axes}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: variable (string)
+	\item Description: A string that sets the coordinate axes in which the orbit state is described. The string must be recognizable as a coordinate system by SPICE and must be in the coordinate system kernel specified by the user.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{DecVecData}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: variable (list)
+	\begin{itemize}
+		\item Each element of the list is itself a two-element list.
+	\end{itemize}
+	\item Description: A list of lists that describes the contents of the state of the phase. Each inner list contains two elements: 
+	\begin{enumerate}
+		\item The name of the ``substate'' (string)
+		\item The number of elements of the substate (integer greater than zero)
+	\end{enumerate}
+	The order in which the substates are listed is the order in which data is stored in the state vector. 
+	
+	The substate name ``OrbitState'' is special in the sense that it is recognized internally. The orbit state must always be called \texttt{OrbitState} and must consistent of six elements. The six elements correspond to the variables defined by the value of \texttt{OrbitStateRep} (Section~\ref{sec:orbitstaterep}).
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{Units}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: variable (list of strings)
+	\item Description: A list of strings that describes the units of each element of the state vector and is used for scaling the problem. The elements are in the same order as the corresponding elements of the state vector itself, as defined by \texttt{OrbitStateRep} and \texttt{DecVecData}. More information on units and scaling is given in Section~\ref{sec:scaleUtility}.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Example}
+%%%%%%%%%%%%%%%%%%%%
+
+The example in this section demonstrates how to create a \texttt{PhaseConfig} object and assign valid values to relevant attributes.
+
+\begin{verbatim}
+pConfig = PhaseConfig()
+pConfig.OrbitStateRep = `Cartesian'
+pConfig.Origin = `Sun'
+pConfig.Axes = `EclipJ2000'
+pConfig.DecVecData = [[`OrbitState', 6], [`TotalMass', 1]]
+pConfig.Units = ["DU", "ANGU", "ANGU", "VU", "ANGU", "ANGU", "MU"]
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The \texttt{ScaleUtility} Class}
+\label{sec:scaleUtility}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The \texttt{ScaleUtility} class is used to define the scaling of variables for both phases and boundary functions. When creating a boundary function, a \texttt{ScaleUtility} object is required for every phase and the boundary function itself.
+
+A \texttt{ScaleUtility} object can hold multiple units. Each unit is defined by a string name and a unit factor $f$ and shift $\delta$. A variable or function of a given unit is then scaled according to
+
+\begin{align}
+x_{scaled} &= \frac{\left( x_{unscaled} - \delta \right)}{f}
+\end{align}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Relevant Attributes}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{SetUnit}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: method
+	\item Description: Sets an existing unit's scale factor
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{unitName}: string; the name of the unit
+		\item \texttt{unitValue}: real; the value of the scale factor
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{SetShift}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: method
+	\item Description: Sets an existing unit's shift factor
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{unitName}: string; the name of the unit
+		\item \texttt{unitShift}: real; the value of the shift
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{SetUnitAndShift}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: method
+	\item Description: Sets an existing unit's scale factor and shift factor
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{unitName}: string; the name of the unit
+		\item \texttt{unitValue}: real; the value of the scale factor
+		\item \texttt{unitShift}: real; the value of the shift
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{\texttt{AddUnitAndShift}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+	\item Attribute type: method
+	\item Description: Adds a key to the \texttt{ScaleUtility} object's dictionary of units and sets the unit's scale factor and shift factor
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{unitName}: string; the name of the unit
+		\item \texttt{unitValue}: real; the value of the scale factor
+		\item \texttt{unitShift}: real; the value of the shift
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+Some units are pre-added to the dictionary of every \texttt{ScaleUtility} object and do not need to be added: \texttt{DU} (distance unit), \texttt{TU} (time unit), \texttt{VU} (velocity unit), \texttt{MU} (mass unit), \texttt{ACCU} (acceleration unit), and \texttt{MFU} (mass flow rate unit). For these units, the preset values of $f$ and $\delta$ are 1 and 0, respectively.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Example}
+%%%%%%%%%%%%%%%%%%%%
+
+The example in this section demonstrates how to create a \texttt{ScaleUtility} object for a phase and a \texttt{ScaleUtility} object for a function and use the methods described to assign values to pre-existing units and create new units.
+
+\begin{verbatim}
+# Set scaling values
+MU = 1000.0 # kg
+ANGU = 1.0 # rad
+
+muSun = 1.32712440018e+11 # km^3/s^2
+DUSun = 149597870.691 # km
+TUSun = 2.0*np.pi*np.sqrt(DUSun**3/muSun) # sec
+VUSun = DUSun/TUSun # km/s
+
+muEarth = 398600.4415 # km^3/s^2
+DUEarth = 6378.1363 # km
+TUEarth = 2.0*np.pi*np.sqrt(DUEarth**3/muEarth) # sec
+VUEarth = DUEarth/TUEarth # km/s
+VUSquaredEarth = VUEarth * VUEarth # km^2/s^2
+
+# Set scaler for a phase
+pScaler = ScaleUtility()
+pScaler.SetUnit("DU",DUSun)
+pScaler.SetUnit("TU",TUSun)
+pScaler.SetUnit("VU",VUSun)
+pScaler.SetUnit("MU",MU)
+pScaler.SetUnit("MFU",MFUSun)
+pScaler.AddUnitAndShift("ANGU",ANGU,0.0)
+
+# Set scaler for a function
+fScaler = ScaleUtility()
+fScaler.AddUnitAndShift("VUSquared",VUSquaredEarth,0.0)
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Creating and Configuring a Function Class}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+A user creates a function by creating a class for that function. The class is derived from the \texttt{GMATFunction} class, so the beginning of the class to hold a function called \texttt{VelocitySquaredFunction} might look like:
+
+\begin{verbatim}
+import numpy as np    
+import GMATFunction
+
+class VelocitySquaredFunction(GMATFunction.GMATFunction):
+
+    def __init__(self):
+        """
+        Constructor
+        """
+
+        # Call parent class constructor
+        super().__init__()
+        return
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Configuring the Function Object}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+When creating an object from a user-created function class, the user is required to set several attributes:
+
+\begin{itemize}
+	\item The number of points at which the state is evaluated in order to calculate the function.
+	\item The number of elements of the function (e.g., 1 for a scalar function, 6 for a vector function of six elements).
+	\item The configuration objects of all phases and the function itself.
+	\item The scaling objects of all phases and the function itself.
+	\item The lower and upper bounds on the function.
+	\item Optionally, any custom settings for the function.
+\end{itemize}
+
+Other attributes would, normally, be set by CSALT. However, for prototyping purposes, the attributes are set by the user:
+
+\begin{itemize}
+	\item The time data, state data, control data, and parameter data for each phase that is used to calculate the function.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Relevant Attributes}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{\texttt{SetNumPoints}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{AlgebraicFunction})
+	\item Description: Sets the number of points on which the function is dependent
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{numPoints}: integer; the number of points on which the function is dependent
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+\paragraph{\texttt{SetNumFunctions}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{AlgebraicFunction})
+	\item Description: Sets the dimension of the function vector
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{numFunctions}: integer; the dimension of the function vector
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+\paragraph{\texttt{SetPhaseConfig}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{GMATFunction})
+	\item Description: Sets the \texttt{PhaseConfig} object for a point on which the function is dependent. \texttt{SetPhaseConfig} must be called once for each point on which the function is dependent.
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{pointIdx}: integer; the index of the point whose phase configuration is to be set, indexed from zero
+		\item \texttt{phaseConfig}: \texttt{phaseConfig} object; the \texttt{PhaseConfig} object for point \texttt{pointIdx}
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+\paragraph{\texttt{SetFunConfig}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{GMATFunction})
+	\item Description: Sets the \texttt{PhaseConfig} object for the function
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{funConfig}: \texttt{phaseConfig} object; the \texttt{PhaseConfig} object for the function
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+\paragraph{\texttt{SetPhaseScaler}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{GMATFunction})
+	\item Description: Sets the \texttt{ScaleUtility} object for a point on which the function is dependent. \texttt{SetPhaseScaler} must be called once for each point on which the function is dependent.
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{pointIdx}: integer; the index of the point whose scaling is to be set, indexed from zero
+		\item \texttt{scaler}: \texttt{ScaleUtility} object; the \texttt{ScaleUtility} object for point \texttt{pointIdx}
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+\paragraph{\texttt{SetFunScaler}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{GMATFunction})
+	\item Description: Sets the \texttt{ScaleUtility} object for the function
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{scaler}: \texttt{ScaleUtility} object; the \texttt{ScaleUtility} object for the function
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+\paragraph{\texttt{SetFunBounds}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{GMATFunction})
+	\item Description: Sets lower and upper bounds on the function. An equality constraint is imposed by setting the lower bound and upper bound of a function equal to one another.
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{funLBUnscaled}: 1D numpy array of reals; array of unscaled lower bounds on the function. The elements of the array are organized in the same order as the elements of the function vector itself.
+		\item \texttt{funUBUnscaled}: 1D numpy array of reals; array of unscaled upper bounds on the function. The elements of the array are organized in the same order as the elements of the function vector itself.
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+\paragraph{\texttt{SetData}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{AlgebraicFunction})
+	\item Description: Sets function data, where data can be time, state, control, or parameter data.
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{varType}: string; the type of data to be set. Valid values are:
+		\begin{itemize}
+			\item ``State''
+			\item ``Control''
+			\item ``Time''
+			\item ``Param''
+		\end{itemize} 
+		\item \texttt{pointIdx}: integer; the index of the point whose data is to be set, indexed from zero
+		\item \texttt{theData}: real (scaler or 1D numpy array); the data to be set. The dimension of \texttt{theData} is equal to the dimension of either the state vector, the control vector, time, or the parameter vector, depending on the value of \texttt{varType}.
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+\paragraph{\texttt{SetCustomSetting}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{GMATFunction})
+	\item Description: Sets a value for a user-defined setting for a function.
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{key}: string; name for the custom setting
+		\item \texttt{value}: any data type; the value for the custom setting
+	\end{enumerate}
+	\item Output(s): None
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Example}
+%%%%%%%%%%%%%%%%%%%%%%%
+
+Altogether, setting the necessary data for a scalar function \texttt{vFun} (an instance of the class \texttt{VelocitySquaredFunction}) that depends on a single phase could look like:
+
+\begin{verbatim}
+import numpy as np
+
+vFun = VelocitySquaredFunction() # create the function object
+vFun.SetNumPoints(1) # set the number of points on which the function depends
+vFun.SetNumFunctions(1) # set the dimension of the function vector
+
+pConfig = PhaseConfig()
+# ... Set pConfig as required ...
+vFun.SetPhaseConfig(0,pConfig) # set the configuration object for the zeroth point
+
+fConfig = PhaseConfig()
+# ... Set fConfig as required ...
+vFun.SetFunConfig(fConfig) # set the configuration object for the function
+
+pScaler = ScaleUtility()
+# ... Set pScaler as required ...
+vFun.SetPhaseScaler(0,pScaler) # set the scaling object for the zeroth point
+
+fScaler = ScaleUtility()
+# ... Set fScaler as required ...
+vFun.SetFunScaler(0,fScaler) # set the scaling object for the function
+
+funLB = np.array([7.5]) # unscaled lower bound on function
+funUB = np.array([20000.0]) # unscaled upper bound on function
+vFun.SetFunBounds(funLB, funUB) # set the lower and upper bounds on the function
+
+vFun.SetCustomSetting(`TargetVelocitySquared', 1000.5) # add a custom setting
+
+# Simulate CSALT populating the function with data
+time = 30000.0
+vFun.SetData("Time",0,time) # set the time
+
+# State data as [RMAG, RA, DEC, VMAG, AZI, FPA] w.r.t. the Sun
+stateData = np.array([150.0e6/DUSun, 1.2/ANGU, 
+    -0.1/ANGU, 36.0/VUSun, 0.7/ANGU, 0.2/ANGU, 3000.0/MU]) 
+vFun.SetData("State",0, stateData) # set SCALED state data
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{The \texttt{EvaluateFunction} Method}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The user is required to write a method for their function class called \texttt{EvaluateFunction} that evaluates the function and returns its \emph{scaled} value:
+
+\paragraph{\texttt{EvaluateFunction}}
+
+\begin{itemize}
+	\item Attribute type: method
+	\item Description: Returns the scaled function value
+	\item Argument(s): None
+	\item Output(s):
+	\begin{enumerate}
+		\item \texttt{funcValue}\footnote{The name of the return variable is set by the user and is unimportant.}: 1D numpy array of reals; the scaled function values
+	\end{enumerate}
+\end{itemize}
+
+The \texttt{EvaluateFunction} uses attributes of the base \texttt{GMATFunction} class to access data (time, state, control, parameters, etc.).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Relevant Attributes}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The contents of this section are relevant attributes of classes from which the function class derives or of objects that are attributes of the function class.
+
+\paragraph{\texttt{GetUnscaledStateForFun}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{GMATFunction})
+	\item Description: Returns the state, unscaled and in the format desired based on the \texttt{FunConfig} and \texttt{FunScaler} objects
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{pointIdx}: integer; the index of the point at which the unscaled state is to be retrieved, indexed from zero
+		\item \texttt{returnElements = [`All']}: list of strings; which substates are to be returned. Stings must correspond to elements specified in \texttt{PhaseConfig.DecVecData}. Passing the default list \texttt{[`All']} returns all elements of the state, in the order specified in \texttt{PhaseConfig.DecVecData}. 
+	\end{enumerate}
+	\item Output(s):
+	\begin{enumerate}
+		\item \texttt{unscaledState}: 1D numpy array of reals; the unscaled state in the format desired by the function
+	\end{enumerate}
+\end{itemize}
+
+The elements of the state are returned in the order in which they are listed in the input argument.
+
+\paragraph{\texttt{GetTime}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{AlgebraicFunction})
+	\item Description: Returns the time
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{pointIdx}: integer; the index of the point at which the time is to be retrieved, indexed from zero
+	\end{enumerate}
+	\item Output(s):
+	\begin{enumerate}
+		\item \texttt{timeData}: real; the time
+	\end{enumerate}
+\end{itemize}
+
+\paragraph{\texttt{GetControl}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{AlgebraicFunction})
+	\item Description: Returns the control
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{pointIdx}: integer; the index of the point at which the control vector is to be retrieved, indexed from zero
+	\end{enumerate}
+	\item Output(s):
+	\begin{enumerate}
+		\item \texttt{controlData}: 1D numpy array; the control vector
+	\end{enumerate}
+\end{itemize}
+
+\paragraph{\texttt{GetParams}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{AlgebraicFunction})
+	\item Description: Returns the parameters
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{pointIdx}: integer; the index of the point at which the parameter vector is to be retrieved, indexed from zero
+	\end{enumerate}
+	\item Output(s):
+	\begin{enumerate}
+		\item \texttt{paramData}: 1D numpy array; the parameter vector
+	\end{enumerate}
+\end{itemize}
+
+\paragraph{\texttt{GetCustomSetting}}
+
+\begin{itemize}
+	\item Attribute type: method (derived from \texttt{GMATFunction})
+	\item Description: Returns the value of a custom setting that was previously set using the \texttt{SetCustomSetting} method
+	\item Argument(s):
+	\begin{enumerate}
+		\item \texttt{key}: string; a key for the custom setting dictionary
+	\end{enumerate}
+	\item Output(s):
+	\begin{enumerate}
+		\item \texttt{value}: any variable type; value of the custom setting associated with \texttt{key}
+	\end{enumerate}
+\end{itemize}
+
+\paragraph{\texttt{ScaleVector}}
+
+This method returns the scaled value of its input. The method accepts two arguments. The first argument is a numpy array of one or more entries to scale. The second argument is a \texttt{PhaseConfig.Units} attribute that describes how to scale the input.
+
+%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Example}
+%%%%%%%%%%%%%%%%%%%%%%%
+
+The \texttt{EvaluateFunction} method for the \texttt{VelocitySquaredFunction} class could look like:
+
+\begin{verbatim}
+def EvaluateFunction(self):
+    # get the state at point 0
+    # only the orbit state is required, so only `OrbitState' is requested
+    state = self.GetUnscaledStateForFun(0, returnElements=['OrbitState'])
+    
+    # get the time at point 0
+    # (not used, but this example shows how to get it)
+    t = self.GetTime(0) 
+    
+    # the target value of the square of the velocity is set using a custom setting
+    target = self.GetCustomSetting(`TargetVelocitySquared')
+    
+    # calculate the function value (unscaled)
+    funcValue = np.linalg.norm(v)**2 - target 
+    
+    # scale the function value
+    # funcValue needs to be passed in as an array because len() is used on it
+    funcValue = self.funScaler.ScaleVector([funcValue], self.funConfig.Units) 
+    
+    return funcValue
+    
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The \texttt{helperData} Class}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Because the prototype is not integrated with GMAT, certain capabilities are implemented manually rather than through GMAT. One relevant example is accessing data related to celestial bodies, such as gravitational parameters and states as functions of time. These capabilities are necessary for converting between different state representations. In order to mimic this capability, the \texttt{helperData} class is used to hold data. Specifically, \texttt{helperData} holds two dictionaries as class variables: \texttt{mu} and \texttt{kernels}:
+
+\paragraph{\texttt{mu}}
+
+\begin{itemize}
+	\item Attribute type: variable (dictionary)
+	\item Description: Holds names of celestial bodies as keys and corresponding gravitational parameters as values
+\end{itemize}
+
+\paragraph{\texttt{kernels}}
+
+\begin{itemize}
+	\item Attribute type: variable (dictionary)
+	\item Description: Holds generic names of NAIF SPICE kernels as keys and system-specific filepaths as values. There are three generic names that are used by other routines within the boundary function prototype:
+	\begin{enumerate}
+		\item \texttt{deKernel}: A bsp file (e.g., de430.bsp) that hold celestial body ephemerides
+		\item \texttt{naifTlsKernel}: A tls file (e.g., naif0012.tls) that holds leap seconds
+		\item \texttt{pckKernel}: A pck file (e.g., pck00010.tpc) that holds celestial body orientation parameters
+	\end{enumerate}
+\end{itemize}
+
+A user is free to edit the contents of these dictionaries to reflect files and filepaths on their own system, as well as add contents if other celestial bodies are desired.
+
+\end{document}

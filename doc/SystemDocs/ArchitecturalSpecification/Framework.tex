@@ -1,0 +1,66 @@
+\chapter{GMAT System Framework}
+
+\chapauthor{Darrel J. Conway}{Thinking Systems, Inc.}
+
+The GMAT system consists of a high level framework, the GMAT Application, that manages system level
+messages processed by GMAT.  This framework contains a single instance of the core GMAT executive,
+the Moderator, which manages the functionality of the system.  The Moderator interacts with five
+high level elements, shown in Figure 1, that function together to run the system.
+
+The Interpreter subsystem consists of two separate components.  The interpreter contains the current
+mission script, used to generate the mission event sequence, and the interface to the GMAT user
+interface.  This latter interface takes the defined user actions and passes these actions to the
+appropriate elements in the system -- for instance, when a user presses a ``Run Mission'' button on
+the GMAT GUI, the command is passed to the user action interpreter, which then configures the
+objects needed to run the current script and then starts the execution of the script.  (Okay, that
+sentence assumes a lot that I haven't talked about yet...)
+
+The Environment subsystem contains configuration information for the system data files, external
+programs (e.g. MATLAB), and a number of utility subsystems (Okay, I needed someplace to put these --
+is this the best place?) used to perform common tasks.  It acts as the repository for all of the
+information needed for GMAT to talk to other elements running on a user's workstation, along with
+the central location for information about the data files used by the system.
+
+GMAT contains numerous classes that are used to perform spacecraft modeling.  These classes are all
+managed by a set of components that construct instances of the classes needed by a script; these
+components are shown on Figure 1 as a set of object factories defined for the system.  This
+infrastructure provides the flexibility needed by the system to give users the ability to add custom
+components to the system, and will be described in more detail later in this document.  (This piece
+is pretty core to the design I'm thinking about right now, so it needs to be examined closely to be
+sure we get what we want in GMAT.  Of course, that means it's also the hardest part to explain --
+especially when I try to muddle through the way the system puts it together with the script
+interpreter and the configurations!)
+
+The GMAT Moderator includes a container used to manage lists of configured components used by the
+system to perform mission analysis.  GMAT maintains these lists as the core object structures
+manipulated by the system to perform mission analysis.  The Moderator has the following core lists
+used in a mission timeline:
+
+\begin{enumerate}
+\item Solar System Configurations: A list of the celestial objects (star(s), planets, moons,
+asteroids and comets that represent the playing field for mission analysis scenarios
+\item Propagation Configurations: A list of configured propagation elements used to evolve the
+modeled elements during analysis
+\item Asset Configurations: A container for spacecraft, formations1 of spacecraft, and ground assets
+\item Force Model Configurations: Collections of forces used to model perturbations acting on the
+assets
+\item Script Configurations: Either complete timelines or ``subscripts'', consisting of a sequence
+of actions taken by the system to model all or a piece of an orbit problem
+\item Mathematical Configurations: Elements used to perform custom calculations and for
+communication with external programs like MATLAB
+\end{enumerate}
+
+GMAT runs are performed in the GMAT Sandbox.  This portion of the system is the container for the
+components of a run, linked together to perform the sequence of events in the mission timeline. When
+a user tells GMAT to run the script, the system moderator uses the script interpreter to interpret
+the contents of a script, and to place the corresponding script elements into the sandbox for use
+during the run.  The Moderator links each element placed into the sandbox to its neighboring
+elements.  Once the full script has been translated into the components in the sandbox, the
+Moderator starts the run by calling the Run method on the sandbox.
+
+The following sections describe each of these components more completely.  These descriptions are
+followed by several sample system configurations.  The last section of this document provides
+details of the classes used in this design.
+
+
+

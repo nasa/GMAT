@@ -1,0 +1,307 @@
+%
+%  Ex_OptFiniteBurn
+%
+%  Use the SNOPT optimizer to find a minimum duration set of burns to raise and 
+%  circularize an orbit.
+%
+%  Released: R2015a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+DefaultSC.DateFormat                   = TAIModJulian;
+DefaultSC.Epoch                        = '21545';
+DefaultSC.CoordinateSystem             = EarthMJ2000Eq;
+DefaultSC.DisplayStateType             = Cartesian;
+DefaultSC.X                            = 6900;
+DefaultSC.Y                            = 0;
+DefaultSC.Z                            = 0;
+DefaultSC.VX                           = 0;
+DefaultSC.VY                           = 7.60053813407552;
+DefaultSC.VZ                           = 0;
+DefaultSC.DryMass                      = 850;
+DefaultSC.Cd                           = 2.2;
+DefaultSC.Cr                           = 1.8;
+DefaultSC.DragArea                     = 15;
+DefaultSC.SRPArea                      = 1;
+DefaultSC.Tanks                        = {FuelTank1};
+DefaultSC.Thrusters                    = {Thruster1};
+DefaultSC.NAIFId                       = -123456789;
+DefaultSC.NAIFIdReferenceFrame         = -123456789;
+DefaultSC.OrbitColor                   = Red;
+DefaultSC.TargetColor                  = Teal;
+DefaultSC.Id                           = 'SatId';
+DefaultSC.Attitude                     = CoordinateSystemFixed;
+DefaultSC.SPADSRPScaleFactor           = 1;
+DefaultSC.ModelFile                    = '../data/vehicle/models/aura.3ds';
+DefaultSC.ModelOffsetX                 = 0;
+DefaultSC.ModelOffsetY                 = 0;
+DefaultSC.ModelOffsetZ                 = 0;
+DefaultSC.ModelRotationX               = 0;
+DefaultSC.ModelRotationY               = 0;
+DefaultSC.ModelRotationZ               = 0;
+DefaultSC.ModelScale                   = 3;
+DefaultSC.AttitudeDisplayStateType     = 'Quaternion';
+DefaultSC.AttitudeRateDisplayStateType = 'AngularVelocity';
+DefaultSC.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+DefaultSC.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+Create ChemicalTank FuelTank1;
+
+FuelTank1.AllowNegativeFuelMass = false;
+FuelTank1.FuelMass              = 400;
+FuelTank1.Pressure              = 1500;
+FuelTank1.Temperature           = 20;
+FuelTank1.RefTemperature        = 20;
+FuelTank1.Volume                = 0.75;
+FuelTank1.FuelDensity           = 1260;
+FuelTank1.PressureModel         = PressureRegulated;
+
+
+Create ChemicalThruster Thruster1;
+
+Thruster1.CoordinateSystem   = Local;
+Thruster1.Origin             = Earth;
+Thruster1.Axes               = VNB;
+Thruster1.ThrustDirection1   = 0.577350269189626;
+Thruster1.ThrustDirection2   = 0.577350269189626;
+Thruster1.ThrustDirection3   = 0.577350269189626;
+Thruster1.DutyCycle          = 1;
+Thruster1.ThrustScaleFactor  = 1;
+Thruster1.DecrementMass      = true;
+Thruster1.Tank               = {FuelTank1};
+Thruster1.GravitationalAccel = 9.810000000000001;
+Thruster1.C1                 = 1000;
+Thruster1.C2                 = 0;
+Thruster1.C3                 = 0;
+Thruster1.C4                 = 0;
+Thruster1.C5                 = 0;
+Thruster1.C6                 = 0;
+Thruster1.C7                 = 0;
+Thruster1.C8                 = 0;
+Thruster1.C9                 = 0;
+Thruster1.C10                = 0;
+Thruster1.C11                = 0;
+Thruster1.C12                = 0;
+Thruster1.C13                = 0;
+Thruster1.C14                = 0;
+Thruster1.C15                = 0;
+Thruster1.C16                = 0;
+Thruster1.K1                 = 300;
+Thruster1.K2                 = 0;
+Thruster1.K3                 = 0;
+Thruster1.K4                 = 0;
+Thruster1.K5                 = 0;
+Thruster1.K6                 = 0;
+Thruster1.K7                 = 0;
+Thruster1.K8                 = 0;
+Thruster1.K9                 = 0;
+Thruster1.K10                = 0;
+Thruster1.K11                = 0;
+Thruster1.K12                = 0;
+Thruster1.K13                = 0;
+Thruster1.K14                = 0;
+Thruster1.K15                = 0;
+Thruster1.K16                = 0;
+Thruster1.MixRatio           = [ 1 ];
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp_ForceModel.CentralBody            = Earth;
+DefaultProp_ForceModel.PointMasses            = {Earth};
+DefaultProp_ForceModel.Drag                   = None;
+DefaultProp_ForceModel.SRP                    = Off;
+DefaultProp_ForceModel.RelativisticCorrection = Off;
+DefaultProp_ForceModel.ErrorControl           = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM                       = DefaultProp_ForceModel;
+DefaultProp.Type                     = RungeKutta89;
+DefaultProp.InitialStepSize          = 60;
+DefaultProp.Accuracy                 = 9.999999999999999e-012;
+DefaultProp.MinStep                  = 0.001;
+DefaultProp.MaxStep                  = 2700;
+DefaultProp.MaxStepAttempts          = 50;
+DefaultProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn DefaultIB;
+
+DefaultIB.CoordinateSystem   = Local;
+DefaultIB.Origin             = Earth;
+DefaultIB.Axes               = VNB;
+DefaultIB.Element1           = 0;
+DefaultIB.Element2           = 0;
+DefaultIB.Element3           = 0;
+DefaultIB.DecrementMass      = false;
+DefaultIB.Isp                = 300;
+DefaultIB.GravitationalAccel = 9.810000000000001;
+
+Create FiniteBurn FiniteBurn1;
+FiniteBurn1.Thrusters = {Thruster1};
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+% Create VF13ad NLP;
+% NLP.ShowProgress          = true;
+% NLP.ReportStyle           = Normal;
+% NLP.ReportFile            = 'VF13adNLP.data';
+% NLP.MaximumIterations     = 200;
+% NLP.Tolerance             = 0.001;
+% NLP.UseCentralDifferences = false;
+% NLP.FeasibilityTolerance  = 0.001;
+
+Create SNOPT NLP;
+
+NLP.ShowProgress = true;
+NLP.ReportStyle  = Normal;
+NLP.ReportFile   = 'SNOPTSNOPT1.data';
+
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.SolverIterations = Current;
+OFI_DefaultOrbitView.UpperLeft        = [ 0.2776470588235294 0.02206619859578736 ];
+OFI_DefaultOrbitView.Size             = [ 0.4382352941176471 0.5747241725175527 ];
+OFI_DefaultOrbitView.RelativeZOrder   = 81;
+OFI_DefaultOrbitView.Maximized        = false;
+
+OFI_DefaultOrbitView.Add              = {DefaultSC, Earth};
+OFI_DefaultOrbitView.View             = {DefaultOrbit_View};
+
+OFI_DefaultOrbitView.CoordinateSystem = EarthMJ2000Eq;
+OFI_DefaultOrbitView.DrawObject       = [ true true ];
+OFI_DefaultOrbitView.DrawXYPlane      = [ false false ];
+OFI_DefaultOrbitView.DrawLabel        = [ true true ];
+OFI_DefaultOrbitView.DrawGrid         = [ false false ];
+
+OFI_DefaultOrbitView.Axes             = On;
+OFI_DefaultOrbitView.XYPlane          = On;
+OFI_DefaultOrbitView.EclipticPlane    = Off;
+OFI_DefaultOrbitView.EnableStars      = On;
+OFI_DefaultOrbitView.StarCount        = 40000;
+OFI_DefaultOrbitView.ShowPlot         = true;
+
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame           = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation  = On;
+DefaultOrbit_View.SetCurrentLocation  = Off;
+
+DefaultOrbit_View.DefaultEye          = [ 30000 0 0 ]; 
+DefaultOrbit_View.DefaultCenter       = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp           = [ 0 0 1 ];
+
+Create GroundTrackPlot DefaultGroundTrackPlot;
+
+DefaultGroundTrackPlot.SolverIterations     = Current;
+DefaultGroundTrackPlot.UpperLeft            = [ 0.4188235294117647 0.2547642928786359 ];
+DefaultGroundTrackPlot.Size                 = [ 0.4894117647058824 0.6599799398194584 ];
+DefaultGroundTrackPlot.RelativeZOrder       = 83;
+DefaultGroundTrackPlot.Maximized            = false;
+DefaultGroundTrackPlot.Add                  = {DefaultSC};
+DefaultGroundTrackPlot.DataCollectFrequency = 1;
+DefaultGroundTrackPlot.UpdatePlotFrequency  = 50;
+DefaultGroundTrackPlot.NumPointsToRedraw    = 0;
+DefaultGroundTrackPlot.ShowPlot             = true;
+DefaultGroundTrackPlot.CentralBody          = Earth;
+DefaultGroundTrackPlot.TextureMap           = '../data/graphics/texture/ModifiedBlueMarble.jpg';
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable burn1Duration burn2Duration propDuration costFunction smaError;
+
+burn1Duration = 300;
+burn2Duration = 300;
+
+
+Create ReportFile solData
+
+solData.WriteHeaders = false
+solData.Filename     = Ex_OptFiniteBurn.report
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+%Optimize
+% Vary NLP(burn1Duration = 300 ,{Perturbation = .01,MaxStep = 50})
+
+Optimize NLP {SolveMode  = Solve, ExitMode = DiscardAndContinue};
+
+   %  Define the variables
+   Vary NLP(burn1Duration = 230, {Perturbation = .01, Lower = 1, Upper = 10000, MultiplicativeScaleFactor = .1});
+   Vary NLP(burn2Duration = 221, {Perturbation = .01,  Lower = 1, Upper = 10000, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = .1});
+   Vary NLP(propDuration  = 2706, {Perturbation = .01,  Lower = 100, Upper = 10000, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = .01});
+   
+	%  Perform the first maneuver
+   BeginFiniteBurn FiniteBurn1(DefaultSC);
+   DefaultSC.OrbitColor = 'Red';
+   If burn1Duration > 0
+      Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = burn1Duration};
+   Else
+      Propagate BackProp DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = burn1Duration};
+   EndIf;
+   EndFiniteBurn FiniteBurn1(DefaultSC);
+	
+   %  Propagate through the coast phase
+   DefaultSC.OrbitColor = 'Green';
+   If propDuration > 0
+      Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = propDuration};
+   Else
+      Propagate BackProp DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = propDuration};
+   EndIf;
+   
+	%  Perform the second maneuver
+   BeginFiniteBurn FiniteBurn1(DefaultSC);
+   DefaultSC.OrbitColor = 'Red';
+   If burn2Duration > 0
+      Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = burn2Duration};
+   Else
+      Propagate BackProp DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = burn2Duration};
+   EndIf;
+   EndFiniteBurn FiniteBurn1(DefaultSC);
+   
+	%  Apply the final
+	smaError = (DefaultSC.SMA - 7100)/10000
+   NonlinearConstraint NLP(smaError = 0);
+   NonlinearConstraint NLP(DefaultSC.ECC=0.0);
+   costFunction = -DefaultSC.TotalMass/1000;
+   Minimize NLP(costFunction);
+
+EndOptimize;  % For optimizer NLP
+%EndOptimize
+
+Report solData smaError DefaultSC.ECC costFunction

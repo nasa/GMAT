@@ -1,0 +1,376 @@
+\chapter{Time } \label{Ch:TimeSystems} \index{Time systems}
+
+Time is the primary independent variable in GMAT.  Time is used in
+integrating the equations of motion, and calculating planetary
+ephemerides, the orientations of planets and moons, and atmospheric
+density among others.  GMAT uses three types of time systems
+depending on the type of calculations being performed: universal
+time systems based on the Earth's rotation with respect to the Sun;
+dynamic time systems that are based on the dynamic motion of the
+solar system and take into account relativistic effects; and atomic
+time systems based on the oscillation of the cesium atom. Each of
+these time systems has specific uses and is discussed below.  In
+addition,  universal, dynamic, and atomic time systems can be
+expressed in different time formats.  The two time formats used in
+GMAT are the Modified Julian Date (MJD) format, and the Gregorian
+Date (GD) format.  In the next section, we'll take a look at the
+time systems used in GMAT, and when GMAT uses each time system. Then
+we'll look at the different time formats.
+
+\section{Time Systems}
+
+GMAT uses several different time systems in physical models and
+spacecraft dynamics modelling.  The choice of time system for  a
+particular calculation is determined by which time system is most
+natural and convenient, as well as the  accuracy required.  In
+general, for determining Earth's orientation at a given epoch, we
+use one of several forms of Universal Time (UT), because universal
+time is based on the Earth's rotation with respect to the Sun.
+Planetary ephemerides are usually provided with time in a dynamic
+time system, because dynamic time is the independent variable in the
+dynamic theories and ephemerides.  The independent variable in
+spacecraft equations of motion in GMAT is time expressed in an
+atomic time system.  Let's look at each of these three systems,
+starting with atomic time.
+
+\subsection{Atomic Time:  TAI and A.1} \index{Time systems!TAI}
+\index{Time systems!A.1} \label{Sec:AtomicTime}
+
+Atomic time (AT) is a highly accurate time system which is
+independent of the rotation of the Earth\cite{vallado2}.
+Therefore, AT is a natural system for integrating a spacecraft's
+equations of motion.  AT is defined in terms of the oscillations
+of the cesium atom at mean sea level. The duration of the SI
+second is defined to be 9,192,631,770 oscillations of the cesium
+nuclide 133Ce. Two atomic times systems are are used in GMAT: A.1,
+and international atomic time (TAI). A.1 is in advance of TAI by
+0.0343817 seconds.
+%
+\begin{equation}
+     A.1 = TAI + 0.0343817 sec
+\end{equation}
+%
+where
+%
+\begin{equation}
+   TAI = UTC + \Delta AT
+\end{equation}
+%
+and $\Delta AT$ is the number of leap seconds, added since 1972,
+needed to keep $\mid UTC - UT1 \mid \leq 0.9 $sec.  GMAT reads
+$\Delta AT$ from the file named \emph{tai-utc.dat}. For times that
+appear before the first epoch on the file, GMAT uses the first value
+found in the file.  For times that appear after the last epoch, GMAT
+uses the last value contained in the file.  Currently, GMAT uses A.1
+time as the independent variable in the equations of motion. TAI is
+used as a time system for defining spacecraft state information.
+
+Now let's look at the universal time system.
+
+
+\subsection{Universal Time: UTC and UT1}\index{Time systems!UTC}
+\index{Time systems!UT1} \label{Sec:UniversalTime}
+
+All of the universal time (UT) scales are based on the Earth's
+rotation with respect to a fixed point (sidereal time) or with
+respect to the Sun (solar time). The observed universal time (UTO)
+is determined from observations of stellar transits to determine
+mean local sidereal time. UT1 is UTO corrected for the Earth's polar
+motion and is used when the instantaneous orientation of the Earth
+is needed.  UTC is the basis for all civil time standards. It is
+also known as Greenwich mean time (GMT) and Zulu time (Z). The UTC
+time unit is defined to be an SI second, but UTC is kept within 0.9
+seconds of UT1 by occasional leap second adjustments.  The equation
+relating UTC and UT1 is
+%
+\begin{equation}
+    UTC = UT1 - \Delta UT1 \label{Eq:UT1ToUTC}
+\end{equation}
+%
+In GMAT,  $\Delta UT1$ is read from the file \emph{eopc04.62-now}
+provided by the International Earth Rotation and Reference Systems
+Service (IERS). The file containing the latest measurements and
+predictions can be found at
+\\\emph{http://www.iers.org/}. For times past the last epoch
+contained in the file, GMAT uses the last value of $ \Delta UT1$
+contained in the file. GMAT uses UTC as a time system to define
+spacecraft state information. UT1 is used to determine the Greenwich
+hour angle and for the sidereal time portion of FK5 reduction.
+
+\subsection{Dynamic Time: TT, TDB and TCB}\index{Time systems!TDB}
+\index{Time systems!TT}\index{Time systems!TCB}
+\label{Sec:DynamicTime}
+
+Dynamical time is the independent variable in the dynamical
+theories and ephemerides. This class of time scales contains
+terrestrial time (TT),  Barycentric Dynamical time (TDB), and
+Barycentric Coordinate Time (TCB).    TDB is the independent
+variable in the equations of motion referred to the solar system
+barycenter. It is also the coordinate time in the theory of
+general relativity. Despite the fact that the Jet Propulsion
+Laboratory (JPL) J2000.0 ephemerides are referred to in TDB, TT is
+frequently used. This is because TT and TDB always differ by less
+than 0.002 sec. As higher accuracy or more sensitive missions are
+planned, the difference may need to be distinguished.  In this
+section we'll discuss how to calculate TT, TDB and TCB, and
+discuss where each is used in GMAT.
+
+TT is the independent variable in the equations of motion referred
+to the Earth's center. It is also the proper time in the theory of
+general relativity. The unit of TT is a day of 86400 SI seconds at
+mean sea level.  In GMAT, TT is used in FK5 reduction, and as an
+intermediate time system in the calculation of TDB and TCB.  TT
+can be calculated from the following equation:
+%
+\begin{equation}
+     TT = TAI + 32.184 \hspace{.05 in}\mbox{sec}
+\end{equation}
+%
+
+Calculating TDB exactly is a complicated process that involves
+iteratively solving a transcendental equation.  For this reason,
+it is convenient to use the following approximation
+%
+\begin{equation}
+     TDB \approx TT + \underbrace{0.001658\sin{M_E} +
+     0.00001385\sin{2M_E}}_{\mbox{units of seconds}}
+\end{equation}
+%
+Note that the term in the underbrace has units of seconds, and
+depending upon the units of $TT$, which is usually in days, a
+conversion of the term may be necessary before performing the
+addition with $TT$. $M_E$ is the Earth's mean anomaly with respect
+to the sun and is given approximately as
+%
+\begin{equation}
+     M_E \approx 357.5277233 + 35,999.05034 T_{TT}
+\end{equation}
+%
+where $T_{TT}$ is the time in TT expressed in the Julian Century
+format.  $T_{TT}$ can be calculated from
+%
+\begin{equation}
+     T_{TT} = \frac{JD_{TT} - 2,451,545.0}{36,525} \label{Eq:T_TTComputation}
+\end{equation}
+%
+where $JD_{TT}$  is the time in TT expressed in the Julian Date
+format.  For a more complete discussion of the TDB time system, see
+Vallado\cite{vallado2} (pp. 195-198) and Seidelmann\cite{seidelmann}
+(pp. 41-48).  GMAT uses TDB as the default time system in the JPL
+ephemerides files. There is an option to use TT in the ephemerides
+using the \st{UseTTForEphemeris} flag.
+
+The last dynamic time system GMAT uses is Barycentic Coordinate
+Time.  In 1992, the IAU adopted this system and clarified the
+relationships between space-time coordinates\cite{seidelmann}.  In
+general, calculating TCB requires a four-dimensional space-time
+transformation that is well beyond the scope of this discussion.
+However, TCB can be approximated using the following equation:
+%
+\begin{equation}
+ TCB - TDB = L_B  (JD - 2443144.5)  86400
+ \end{equation}
+%
+The present estimate of the value of $L_B$ is $1.550505 x 10^{-8}$
+$(+/- 1 x 10^{-14})$ (Fukushima et al., Celestial Mechanics, 38,
+215, 1986).  It is important to note that the main difference
+between TDB and TCB is a secular drift, and that as of the J2000
+Epoch, the difference was approximately 11.25 seconds and growing
+\cite{Seidelmann:etal:92}. GMAT uses time in the TCB system to
+evaluate the IAU data  for the spin axes and prime meridian
+locations of all planets and moons except for
+Earth.\cite{Seidelmann:etal:02}  Note that
+Seidelmann\cite{Seidelmann:etal:02} mistakenly says that time in TCB
+should be used in the equations given for the  pole and meridian
+locations of the planets.  The correct time to use is TDB, and GMAT
+uses this time system.
+
+\section{Time Formats} \index{Time Formats} \label{Sec:TimeFormats}
+
+There are two time formats that GMAT uses to represent time in the
+systems discussed above.  These formats are called the Gregorian
+Date (GD), and the Julian Date (JD).  The difference between the GD
+and JD formats is how they represent the Year, Month, Day, Hours,
+Minutes, and Seconds of a given date.  The GD format is well known,
+and the J2000 epoch is expressed as, 01 Jan 2000 12:00:00.000 TT.
+The reference epoch for the GD calendar is the beginning of the
+Christian Epoch.  The JD format represents an epoch as a continuous
+number containing the day and the fraction of day.
+
+The J2000 epoch \index{J2000 Epoch} is commonly used in
+astrodynamics as a reference epoch for planetary and other data. The
+J2000 epoch occurred at 01 Jan 2000 12:00:00.000 TT.  The time
+system, TT, is important for precise applications!  While the J2000
+epoch is a specific instant in time, the numerical value changes
+depending upon which time system you express it in. We can make an
+analogy with vector algebra where we have an abstract quantity that
+is a vector, and can't write down a set of numbers representing the
+vector until we choose a coordinate system. Similarly, the J2000
+epoch can be written in any of the different time systems and
+formats. All of the following are equivalent definitions of the
+J2000 Epoch:
+%
+\begin{eqnarray}
+    2451545.0 & TT \nonumber \\
+    2451544.9996274998411 & TAI \nonumber \\
+    2451544.9992571294708 & UTC \nonumber\\
+    2451544.9999999990686 & TDB \nonumber
+\end{eqnarray}
+%
+\begin{eqnarray}
+ & \mbox{01 Jan }   2000 \hspace{.1 in} 12:00:00.000000000 &\mbox{TT} \nonumber \\
+& \mbox{01 Jan }  2000 \hspace{.1 in}   11:59:27.815986276  &\mbox{TAI} \nonumber \\
+& \mbox{01 Jan }  2000 \hspace{.1 in} 11:58:55.815986276 &\mbox{UTC} \nonumber\\
+ & \mbox{01 Jan }  2000 \hspace{.1 in} 11:59:59.999919534  &\mbox{TDB} \nonumber
+\end{eqnarray}
+
+In the next two sections we'll look at how to convert an epoch in a
+given time system from the GD format to the JD format, and vice
+versa.
+
+\subsection{Julian Date and Modified Julian Date}\index{Time
+formats!Julian date} \index{Time formats!modified Julian
+date}\label{Sec:JDFormat}
+
+The Julian date is a time format in which we can express a time
+known in any of the Atomic, Universal or Dynamic time systems. The
+Julian Date is composed of the Julian day number and the decimal
+fraction of the current day.  Seidelmann\cite{seidelmann} (pp.
+55-56) says ``The Julian day number represents the number of days
+that has elapsed, at Greenwich noon on the day designated, since
+...the epoch noon Jan 1 4713 B.C. in the Julian proleptic
+calendar.  The Julian date (JD) corresponding to any instant is,
+by simple extension to this concept, the Julian day number
+followed by  the fraction of the day elapsed since the preceding
+noon".
+
+The fundamental epoch for most astrodynamic calculations is the
+J2000.0 epoch\cite{seidelmann}.  This epoch is GD 01 Jan 2000
+12:00:00.000 in the TT time system and is expressed as JD 2451545.0
+TT. To convert between Julian Date format and Gregorian Date format,
+GMAT uses Algorithm 14 from Vallado\cite{vallado2}
+%
+\begin{equation}
+\begin{split}
+    JD = 367Y - Int\left( \displaystyle\frac{ 7\left( Y + Int\left( \displaystyle\frac{M + 9}{12} \right) \right)}{4}
+    \right)+ \\Int\left(\displaystyle\frac{275M}{9} \right) + D +
+    1,721,013.5 + \frac{ \displaystyle\frac{ \displaystyle\frac{s}{60}+m}{60} + H}{24}
+    \end{split}
+\end{equation}
+%
+where $Y$ is the four digit year, $Int$ signifies real truncation,
+and $M$, $D$, $H$, $m$ and $s$ are month, day, hour, minutes, and
+seconds respectively. This equation is valid for the time period 01
+Mar. 1900 to 28 Feb. 2100.
+
+For numerical reasons it is often convenient to work in a Modified
+Julian Date (MJD) format to ensure we can capture enough significant
+figures using double precision computers.  In GMAT the MJD system is
+defined as
+%
+\begin{equation}
+     MJD = JD - 2,430,000.0
+\end{equation}
+%
+where the reference epoch expressed in the GD format is 05 Jan 1941
+12:00:00.000.  However, we must be careful in calculating the
+Modified Julian Date, or we will lose the precision we are trying to
+gain.  GMAT calculates the MJD as follows:
+%
+\begin{equation}
+     \begin{split}
+     \mbox{JDay} = & 367Y - Int\left( \displaystyle\frac{ 7\left( Y + Int\left( \displaystyle\frac{M + 9}{12} \right) \right)}{4}
+    \right)+ \\ & Int\left(\displaystyle\frac{275M}{9} \right) + D +
+    1,721,013.5
+    \end{split}
+\end{equation}
+%
+\begin{equation}
+     \mbox{PartofDay} = \frac{ \displaystyle\frac{ \displaystyle\frac{s}{60}+m}{60} + H}{24}
+\end{equation}
+%
+\begin{equation}
+     \mbox{MJD} = (\mbox{JDay}- 2,430,000.0) + \mbox{PartofDay}
+\end{equation}
+%
+The important subtlety is that we must subtract the MJD reference
+from the JD, before we add the fraction of day, to avoid losing
+precision in the MJD.
+
+\subsection{Gregorian Date}\index{Time formats!Gregorian
+date}\label{Sec:GregorianDateFormat}
+
+The Gregorian Date format is primarily used as a time system in
+which to enter state information in GMAT.  GD is not a convenient
+time format for most mathematical calculations.  Hence, GMAT often
+takes input in the GD format and converts it to a MJD format for
+use internally.  The algorithm for converting from GD to JD is
+taken from Vallado\cite{vallado2} and reproduced here verbatim.
+
+\begin{equation}
+\begin{array}{llll}
+      & T_{1900} = \displaystyle\frac{JD - 2,415,019.5}{365.25}\\
+      & \\
+      & Year = 1900 + \mbox{TRUNC}(T_{1900}) \\
+      & \\
+      & LeapYrs = \mbox{TRUNC}((Year - 1900 - 1)(0.25))\\
+      & \\
+      & Days = (JD - 2,415,019.5) - \\
+      & \hspace{.5 in}((Year - 1900)(365.0) +
+               LeapYrs)\\
+      & \\
+      & \mbox{IF} Days < 1.0 \mbox{ THEN}
+      \end{array}\nonumber
+\end{equation}
+%
+\begin{equation}
+     \begin{array}{llll}
+      & \\
+      & \hspace{.5 in} Year = Year - 1 \\
+      &  \\
+      & \hspace{.5 in} LeapYrs = \mbox{TRUNC}((Year - 1900 - 1)(0.25))\\
+      & \\
+      & \hspace{.5 in}Days = (JD - 2,415,019.5) - \\
+      & \hspace{1 in}((Year - 1900)(365.0) +
+               LeapYrs)\\
+      & \\
+      & \mbox{If (\emph{Year} Mod 4)} = 0 \mbox{ Then} \\
+      & \\
+      &  \hspace{.5 in} LMonth[2] = 29 \\
+       \end{array}\nonumber
+\end{equation}
+%
+\begin{equation}
+     \begin{array}{llll}
+      & DayofYr = \mbox{TRUNC}(Days) \\
+      & \\
+      & \mbox{Sum days in each month until}\\
+      & \hspace{.5 in} \mbox{\emph{LMonth} + 1 summation} > \mbox{\emph{DayofYr}} \\
+      & \\
+      &  Mon = \# \mbox{ of months in summation} \\
+      & \\
+      &  Day = DayofYr - LMonth \mbox{ summation}\\
+      & \\
+      &  \tau = (Days - DayofYr)24\\
+      &  \\
+      &  h = \mbox{TRUNC}(Temp)\\
+      &  \\
+      &  min = \mbox{TRUNC}((Temp - h)60) \\
+      &  \\
+      &  s = \left( Temp - h - \displaystyle\frac{min}{60} \right)3600
+      %
+       \end{array}\nonumber
+\end{equation}
+
+\section{Conclusions}
+
+In this chapter we looked at three time systems that GMAT uses to
+perform internal calculations:  atomic time, universal time, and
+dynamic time.  Atomic time is used to integrate spacecraft
+equations of motion, while universal time is used to determine the
+sidereal time and greenwhich hour angle for use in FK5 reduction.
+Dynamic time systems are used in the JPL ephemerides and in the
+IAU planetary orientation data.   Time, in any of these time
+systems, are represented in two formats:  the Gregorian Date, and
+Julian Date. We looked at how to convert between different time
+systems, and between different time formats.

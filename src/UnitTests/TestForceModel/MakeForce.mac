@@ -1,0 +1,46 @@
+# Project: ConsoleApp
+# Makefile created by Dev-C++ 4.9.8.3
+# Modified for Mac OS X - W. Shoan - 2003/10/27
+# Modified for adjustment on MacOS X - Joey Gurganus - 2003/11/03
+# Modified for replacing Subsciber with Subscriber - Joey Gurganus - 2003/11/10
+# Modified for making some change - Joey Gurganus - 2003/11/19
+
+PROJECT_ROOT    = ../..
+BINDIR	= $(PROJECT_ROOT)/bin
+LIBDIR	= $(PROJECT_ROOT)/lib
+INCDIR	= $(PROJECT_ROOT)/include
+INSTALLED_LIB	= $(LIBDIR)/libgmatbase.a	
+EXECUTABLE = $(BINDIR)/GMATFORCESAGAIN
+
+TEST_FLAGS = -D__DEBUG__ -D__CONSOLE_APP__ -DDS_UNX
+
+# Source files for EXECUTABLE
+#SRC	= driver.cpp ConsoleAppException.cpp
+SRC	=  TestForcesAgain.cpp  ConsoleAppException.cpp
+#
+# LIB need to compile the EXECUTABLE  
+#LIB	= -L$(LIBDIR) -L$(LIBDIR)/../val/lib
+#LIB	= -L$(LIBDIR) -L$(LIBDIR)/../base/solarsys/valsrcFolder/lib
+LIB	= -L$(LIBDIR)
+# How they are invoked on the compile  line
+LIBS	= -lgmatbase
+#
+# Define macro for using the included file
+INCMK = $(PROJECT_ROOT)/test/inc.mac
+include ${INCMK}
+#
+###############################################################################
+# Target defiitions
+#
+all: $(EXECUTABLE)
+
+$(EXECUTABLE): $(OBJ) $(INSTALLED_LIB) 
+	@if [ ! -x $(BINDIR) ]; then mkdir $(BINDIR); fi 
+	$(CPP) $(OBJ) $(LIB) $(LIBS) -o $@
+	@chmod -R 755 $(BINDIR)
+
+clean:
+	rm -f $(OBJ) core
+
+bare: clean
+	rm -f $(EXECUTABLE) 

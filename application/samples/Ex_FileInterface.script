@@ -1,0 +1,69 @@
+%
+%  Ex_FileInterface
+%
+%  This script is a simple example of reading spacecraft initial state date from
+%  a data file instead of setting it in the script.
+%
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+% Create default resources
+Create Spacecraft sc
+Create Propagator prop
+
+% Link to the data file
+Create FileInterface tvhf
+
+tvhf.Filename = '../samples/SupportFiles/Ex_FileInterface_TVHF.sv'
+tvhf.Format   = 'TVHF_ASCII'
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+%-------------------------
+% Set up the visualization
+%-------------------------
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.Add              = {sc, Earth};
+OFI_EarthView.View             = {Earth_View};
+
+OFI_EarthView.CoordinateSystem = EarthMJ2000Eq;
+OFI_EarthView.DrawObject       = [ true true ];
+OFI_EarthView.DrawXYPlane      = [ false false ];
+OFI_EarthView.DrawLabel        = [ true true ];
+OFI_EarthView.DrawGrid         = [ false false ];
+
+OFI_EarthView.Axes             = On;
+OFI_EarthView.XYPlane          = On;
+OFI_EarthView.EclipticPlane    = Off;
+OFI_EarthView.EnableStars      = On;
+OFI_EarthView.StarCount        = 40000;
+OFI_EarthView.ShowPlot         = true;
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame           = CoordinateSystem;
+Earth_View.SetDefaultLocation  = On;
+Earth_View.SetCurrentLocation  = Off;
+							   
+Earth_View.DefaultEye          = [ 0 0 200000 ]; 
+Earth_View.DefaultCenter       = [ 0 0 0 ];
+Earth_View.DefaultUp           = [ 1 0 0 ];
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+% Populate sc with data from file
+Set 'Read initial state' sc tvhf
+
+% Propagate
+Propagate 'Propagate 2 days' prop(sc) {sc.ElapsedDays = 2}

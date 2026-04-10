@@ -1,0 +1,141 @@
+%%
+%% This is file `dropping.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% dropping.dtx  (with options: `paketkod')
+%% 
+%% 
+%% Copyright (c) 1998 by Mats Dahlgren <matsd@sssk.se>.
+%% All rights reserved.  See the file `dropping.ins' for information
+%% on how you may (re-)distribute the `dropping' package files.
+%% You are not allowed to make any changes to this file without
+%% explicit permission from the author.
+%% 
+%% 
+\NeedsTeXFormat{LaTeX2e}[1995/12/01]
+\ProvidesPackage{dropping}[1997/06/12 v.0.12]
+\newcount\bigscale
+\newcount\down
+\newdimen\saveunitlength
+\newdimen\wantedheight
+\newif\ifstrtcmmnd \strtcmmndfalse
+\DeclareOption{dvips}{%
+\newcount\wantedcount
+\newcount\actualcount%
+\newdimen\actualheight%
+\def\findsize#1#2{%
+\bigscale=1000%
+\font\BIG=#1 scaled \bigscale%
+\setbox0=\hbox{\BIG #2\/}%
+\actualheight=\ht0%
+\wantedcount=\wantedheight \actualcount=\actualheight%
+\advance\actualcount by 50%
+\divide\actualcount by 100%
+\multiply\wantedcount by 10%
+\divide\wantedcount by \actualcount%
+\font\BIG=#1 scaled \wantedcount%
+\setbox0=\hbox{\BIG #2\/}%
+\bigscale=\wantedcount}}
+\DeclareOption{other}{%
+\def\nextmagstep#1#2#3{%
+\bigscale=#3%
+\font\BIG=#1 scaled \bigscale%
+\setbox0=\hbox{\BIG #2\/}}%
+\def\findsize#1#2{%
+\nextmagstep{#1}{#2}{\magstep0}%
+\ifdim\ht0<\wantedheight%
+\nextmagstep{#1}{#2}{\magstephalf}%
+\ifdim\ht0<\wantedheight%
+\nextmagstep{#1}{#2}{\magstep1}%
+\ifdim\ht0<\wantedheight%
+\nextmagstep{#1}{#2}{\magstep2}%
+\ifdim\ht0<\wantedheight%
+\nextmagstep{#1}{#2}{\magstep3}%
+\ifdim\ht0<\wantedheight%
+\nextmagstep{#1}{#2}{\magstep4}%
+\ifdim\ht0<\wantedheight%
+\nextmagstep{#1}{#2}{\magstep5}%
+\fi\fi\fi\fi\fi\fi}}
+\DeclareOption{xdvi}{\ExecuteOptions{dvips}}
+\DeclareOption{dvipsone}{\ExecuteOptions{other}}
+\DeclareOption{dviwindo}{\ExecuteOptions{other}}
+\DeclareOption{emtex}{\ExecuteOptions{other}}
+\DeclareOption{dviwin}{\ExecuteOptions{other}}
+\DeclareOption{oztex}{\ExecuteOptions{dvips}}
+\DeclareOption{textures}{\ExecuteOptions{other}}
+\DeclareOption{pctexps}{\ExecuteOptions{other}}
+\DeclareOption{pctexwin}{\ExecuteOptions{other}}
+\DeclareOption{pctexhp}{\ExecuteOptions{other}}
+\DeclareOption{dvi2ps}{\ExecuteOptions{other}}
+\DeclareOption{dvialw}{\ExecuteOptions{other}}
+\DeclareOption{dvilaser}{\ExecuteOptions{other}}
+\DeclareOption{dvitops}{\ExecuteOptions{other}}
+\DeclareOption{psprint}{\ExecuteOptions{other}}
+\DeclareOption{pubps}{\ExecuteOptions{other}}
+\DeclareOption{ln}{\ExecuteOptions{other}}
+\DeclareOption*{\ExecuteOptions{other}}
+\InputIfFileExists{graphics.cfg}{}{%
+\PackageWarningNoLine{dropping}{%
+You have no `graphics.cfg' file installed.\MessageBreak
+I will assume you are using `dvips'}
+\ExecuteOptions{dvips}}
+\ProcessOptions
+\def\bigdrop#1#2#3#4{%
+\saveunitlength=\unitlength%
+\unitlength=\baselineskip%
+\setbox1=\hbox{\the\font I}%
+\wantedheight=#2\baselineskip \advance\wantedheight by -\baselineskip%
+\advance\wantedheight by \ht1%
+\findsize{#3}{#4}%
+\hangindent=\wd0 \advance\hangindent by #1%
+\hangafter=-#2%
+\ifdim\dp0>0.25\baselineskip%
+ \loop\ifdim\dp0>\baselineskip
+  \advance\baselineskip by \baselineskip
+  \advance\hangafter by -1
+ \repeat
+ \advance\hangafter by -1
+ \baselineskip=\unitlength
+\fi%
+\noindent%
+\down=-#2 \advance\down by 1%
+\begin{picture}(0,0)%
+\put(0,\down){\makebox(0,0)[br]{\box0}}%
+\end{picture}%
+\unitlength=\saveunitlength}
+\def\spltatspc#1 #2\spltatspc{#1}
+\def\spltstrng#1{\expandafter\@split#1\end}
+\def\@split#1 #2\end{\def\strngn{#1}\def\strngtw{#2}}
+\def\isit#1{\expandafter\@isit\string#1\@null}
+\def\@isit#1#2\@null{%
+  \ifnum`#1=`\\
+    \global\strtcmmndtrue
+  \else
+    \global\strtcmmndfalse
+  \fi
+}
+\newcommand{\dropping}[3][0pt]{%
+\get@external@font%
+\edef\n@vf@nt{\expandafter\spltatspc\external@font \spltatspc}%
+\setbox8=\hbox{#3\get@external@font%
+\global\let\external@font@export\external@font%
+\edef\n@vf@ntb@x{\expandafter\spltatspc\external@font \spltatspc}%
+\global\let\n@vf@nt\n@vf@ntb@x}%
+\let\external@font\external@font@export%
+\edef\xprt@rgtr{\expandafter\spltatspc\external@font\expandafter{}
+\spltatspc}
+\def\spltslsk{#3}%
+\isit{#3}%
+\ifstrtcmmnd
+\spltstrng\spltslsk%
+\let\xprt@rgfr\strngtw
+\else
+\def\xprt@rgfr{#3}
+\fi
+\protect\bigdrop{#1}{#2}{\xprt@rgtr}{\xprt@rgfr}%
+}
+\endinput
+%%
+%% End of file `dropping.sty'.

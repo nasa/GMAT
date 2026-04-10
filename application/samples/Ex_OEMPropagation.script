@@ -1,0 +1,86 @@
+%
+%   Ex_OEMPropagation
+%
+%   Use a precomputed CCSDS OEM Ephemeris file for orbit visualization and 
+%   reporting.
+%
+%   Released: R2022a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft EphSat;
+
+EphSat.EphemerisName = '../data/vehicle/ephem/ccsds/SampleOEMEphem.oem';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator EphProp;
+
+EphProp.Type     = 'CCSDS-OEM';
+EphProp.StepSize = 60
+
+%----------------------------------------
+%---------- Output
+%----------------------------------------
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OF;
+
+OF.Add              = {EphSat, Earth};
+OF.View             = {OF_View};
+
+OF.DrawObject       = [ true true ];
+OF.DrawXYPlane      = [ false false ];
+OF.DrawLabel        = [ true true ];
+OF.DrawGrid         = [ false false ];
+
+OF.Axes             = On;
+OF.XYPlane          = On;
+OF.EclipticPlane    = Off;
+OF.EnableStars      = On;
+OF.StarCount        = 40000;
+OF.ShowPlot         = true;
+
+Create OpenFramesView OF_View;
+
+OF_View.ViewFrame           = CoordinateSystem;
+OF_View.SetDefaultLocation  = On;
+OF_View.SetCurrentLocation  = Off;
+
+OF_View.DefaultEye          = [ 0 0 150000 ];
+OF_View.DefaultCenter       = [ 0 0 0 ];
+OF_View.DefaultUp           = [ 0 0 1 ];
+
+
+
+Create GroundTrackPlot GroundTrack;
+
+GroundTrack.Add = {EphSat};
+
+
+Create ReportFile KeplerianElements
+
+KeplerianElements.Filename = 'KeplerianElements.txt'
+KeplerianElements.Add      = {EphSat.UTCGregorian, ...
+    EphSat.SMA, EphSat.ECC, EphSat.INC, EphSat.RAAN, EphSat.AOP, EphSat.TA}
+	 
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+
+While EphSat.ElapsedDays <= 2
+      
+   Propagate EphProp(EphSat);
+
+EndWhile;

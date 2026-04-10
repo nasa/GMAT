@@ -1,0 +1,2009 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="ExtendedKalmanFilter"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>ExtendedKalmanFilter</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary>Orbit Determination</primary>
+
+    <secondary>Extended Kalman filter</secondary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>ExtendedKalmanFilter</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>ExtendedKalmanFilter</refname>
+
+    <refpurpose>An extended Kalman filter orbit determination
+    estimator</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>A sequential estimator implementing an extended Kalman
+    filter.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="BatchEstimator"/>, <xref linkend="TrackingFileSet"/>, <xref
+    linkend="RunEstimator"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.0*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>AddPredictToMatlabFile</guilabel></entry>
+
+            <entry><para>Set to True to include the data from the
+            ExtendedKalmanFilter prediction span in the MATLAB file. Predicted
+            data is only generated if <guilabel>PredictTimeSpan</guilabel> is
+            non-zero. Setting this parameter to True will add the predicted
+            states, covariance, process noise, and state transition matrix to
+            the Filter MATLAB data file.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>True/False</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>True or False</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>False</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DataFilters</guilabel></entry>
+
+            <entry><para>Defines data selection filters to be applied to the
+            measurement pool. One or more filters of either type
+            (<guilabel>AcceptFilter</guilabel>,
+            <guilabel>RejectFilter</guilabel>) may be specified. Rules
+            specified by data filters on an
+            <guilabel>ExtendedKalmanFilter</guilabel> are applied to determine
+            what measurements are accepted or rejected from the computation of
+            the state update.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Resource array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>User defined instances of
+                    <guilabel>AcceptFilter</guilabel> and
+                    <guilabel>RejectFilter</guilabel> resources</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DelayRectifyTimeSpan</guilabel></entry>
+
+            <entry><para>Defines a period of time, beginning from warm start
+            or initialization, for which the reference trajectory is generated
+            from the a-priori or initial state. As always, any measurements
+            are used to update the estimated state, but the measurements will
+            not be applied to the reference trajectory used for linearization.
+            After the delay rectify time span has elapsed, the a-priori state
+            is discarded, and the current filter estimated state is used as
+            the reference trajectory for linearization, in accordance with
+            normal operation of an extended Kalman filter. </para><para>This
+            parameter can aid convergence when the initial state covariance is
+            very large and the measurement noise is small. Delaying
+            rectification until enough measurements have been processed to
+            assure an improved state estimate can keep the filter from
+            immediately diverging due to too-rapid collapse of the state
+            covariance.</para><para>Rectification will begin at the last
+            measurement prior to expiration of the
+            <guilabel>DelayRectifyTimeSpan</guilabel>. Warm start records will
+            not be written to a specified
+            <guilabel>OutputWarmStartFile</guilabel> while delayed
+            rectification is in effect. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Seconds</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>InputWarmStartFile</guilabel></entry>
+
+            <entry><para>CSV-format file containing records of states and
+            covariances. This file should be the
+            <guilabel>OutputWarmStartFile</guilabel> from a prior
+            <guilabel>ExtendedKalmanFilter</guilabel> run. See
+            <guilabel>OutputWarmStartFile</guilabel> and the remarks below for
+            more details about this file. If an
+            <guilabel>InputWarmStartFile</guilabel> is not specified, the
+            <guilabel>ExtendedKalmanFilter</guilabel> begins processing in
+            "cold start" or initialization mode, using the resource object
+            settings.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Empty, or the path to a valid warm start file</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MatlabFile</guilabel></entry>
+
+            <entry><para>File name for the output MATLAB file. Leaving this
+            parameter unset means that no MATLAB file will be generated. This
+            file can only be generated if GMAT is properly connected to
+            MATLAB. See remarks below for details on the contents of the
+            estimator MATLAB file.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any valid file name</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MeasDeweightingCoefficient</guilabel></entry>
+
+            <entry><para>Coefficient used for Measurement Underweighting.
+            Using the default value, Measurement Underweighting is effectively
+            turned off. As shown in the Remarks, we use Lear’s Measurement
+            Underweighting method described by Eq. (4.36) in Reference 1.
+            </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>MeasDeweightingSigmaThreshold</guilabel></entry>
+
+            <entry><para>1-sigma RSS position threshold used for Measurement
+            Underweighting processing. Measurement Underweighting is only
+            performed if the 1-sigma RSS position uncertainty, derived from
+            the error covariance matrix, is greater than this threshold AND
+            the <guilabel>MeasDeweightingCoefficient</guilabel> is greater
+            than 0. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>km</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Measurements</guilabel></entry>
+
+            <entry><para>Specifies a list of
+            <guilabel>TrackingFileSets</guilabel> identifying measurements
+            used for estimation</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Resource array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>One or more valid
+                    <guilabel>TrackingFileSet</guilabel> instances</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>Empty list</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>OutputWarmStartFile</guilabel></entry>
+
+            <entry><para>File path and name of an output file to store warm
+            start records. This file receives the full state and lower
+            triangle of the square-root covariance matrix at all filter time
+            and measurement updates during processing. This file may be later
+            assigned as the <guilabel>InputWarmStartFile</guilabel> to force
+            the filter to begin processing in warm start mode. It is
+            recommended to use a ".csv" suffix for this file, but this is not
+            required.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Empty, or any valid file name.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>PredictTimeSpan</guilabel></entry>
+
+            <entry><para>Time span in seconds for filter ephemeris prediction
+            after processing the last measurement.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt;= 0.</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Seconds</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Propagator</guilabel></entry>
+
+            <entry><para>Specifies the propagator resource instance used for
+            estimation. </para> <!--para>Optionally, a
+            separate <guilabel>Propagator</guilabel> field can be used to
+            identify the propagator for specific spacecraft in the estimator's
+            configuration, as described below.</para--><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Object</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid <guilabel>Propagator</guilabel> object <!--para> optionally followed by a set of valid
+                    <guilabel>Spacecraft</guilabel> objects</para--></para>
+
+                    <!--para><emphasis>Propagator</emphasis>, or
+                    <emphasis>{Propagator, Spacecraft[, Spacecraft2,
+                    Spacecraft3, ...]}</emphasis></para-->
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>
+                      <guilabel>None</guilabel>
+                    </para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportFile</guilabel></entry>
+
+            <entry><para>Specifies the name of the output estimation report
+            file</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>String containing a valid file name</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>'ExtendedKalmanFilter' + instancename +
+                    '.data'</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ReportStyle</guilabel></entry>
+
+            <entry><para>Specifies the type of estimation report. The
+            <guilabel>Normal</guilabel> style excludes reporting of
+            observation TAI, partials, and frequency information. Selection of
+            <guilabel>Verbose</guilabel> mode requires the user to assign
+            RUN_MODE = Testing in the GMAT startup file. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Normal, Verbose</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>Normal</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ScaledResidualThreshold</guilabel></entry>
+
+            <entry><para>Scaled residual editing criteria. The scaled residual
+            is a unitless value representing the raw residual divided by the
+            sum of state noise (appropriately transformed) and measurement
+            noise. Schematically, Scaled Residual = Raw Residual / (HPH' + R).
+            Any measurement will be edited out (and not used in the
+            estimation) if the computed scaled residual is greater than the
+            specified threshold.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any positive integer</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>3</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ShowAllResiduals</guilabel></entry>
+
+            <entry><para>Allows residuals plots to be shown in the GMAT
+            GUI.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>On/Off</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>On or Off</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>On</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>ShowProgress</guilabel></entry>
+
+            <entry><para>Toggle generation of the estimator output report file
+            and additional detailed output in the GUI console
+            window.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>True/False</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>True or False</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>True</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>WarmStartEpoch</guilabel></entry>
+
+            <entry><para>Initial epoch from which to begin processing, when
+            processing in warm start mode. GMAT will look for a record at this
+            time in the <guilabel>InputWarmStartFile</guilabel>. If a record
+            at the specified epoch does not exist in the
+            <guilabel>InputWarmStartFile</guilabel>, the warm start record
+            closest to, but earlier than, the specified epoch will be used.
+            The default setting is 'FirstMeasurement', which means GMAT will
+            automatically choose the closet input warm start record that is
+            earlier than the first available measurement in the run. The user
+            may also specify 'LastWarmStartRecord' to automatically use the
+            last record in the input warm start file.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String or Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid GMAT epoch string or value,
+                    'FirstMeasurement', or 'LastWarmStartRecord'</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>FirstMeasurement</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>WarmStartEpochFormat</guilabel></entry>
+
+            <entry><para>Specifies the format and time system of the warm
+            start epoch.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>UTCGregorian, UTCModJulian, TAIGregorian,
+                    TAIModJulian, TTGregorian, TTModJulian A1Gregorian,
+                    A1ModJulian, TDBGregorian, TDBModJulian</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>TAIModJulian</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <note>
+      <para>When configuring a numerical integrator for the Kalman filter, you
+      must use the fixed-step option. The <code>ErrorControl</code> parameter
+      of the <guilabel>ForceModel</guilabel> in use by the
+      <guilabel>ExtendedKalmanFilter</guilabel> must be set to
+      '<code>None</code>.' Of course, when using fixed step control, the user
+      must choose a step size, as given by the <guilabel>Propagator</guilabel>
+      <code>InitialStepSize</code> field, that yields the desired accuracy for
+      the chosen orbit regime and force profile.</para>
+    </note>
+
+    <refsection>
+      <title>Filter Startup Modes</title>
+
+      <para>The <guilabel>ExtendedKalmanFilter</guilabel> may be run in either
+      a first-time initialization (called here "cold start") mode, or as a
+      continuation of a prior run, called here "warm start" mode.</para>
+
+      <para>In cold start mode, the states and covariances assigned on the
+      resources configured in the script are used as the filter initial state
+      and covariance. The spacecraft initial covariance is taken from the
+      Spacecraft <guilabel>OrbitErrorCovariance</guilabel> parameter, and
+      initial uncertainties for other estimated parameters are taken from each
+      parameter's associated "sigma" value. For example the initial
+      coefficient of drag is assigned on the Spacecraft
+      <guilabel>Cd</guilabel> parameter and the initial uncertainty in Cd is
+      assigned on the Spacecraft <guilabel>CdSigma</guilabel> parameter. The
+      filter will run in cold start mode any time an
+      <guilabel>InputWarmStart</guilabel> file is not specified on the
+      ExtendedKalmanFilter resource.</para>
+
+      <para>In warm start mode, the filter full state and covariance from a
+      prior run are used as the filter initial state and covariance. This mode
+      allows the user to stop and start the filter in a manner that allows
+      continuous operation of the filter in a fully converged state. To enable
+      a warm start, the user should specify an
+      <guilabel>InputWarmStartFile</guilabel> on the EKF resource. The user
+      may optionally also specify a <guilabel>WarmStartEpoch</guilabel>, to
+      identify the time at which the filter should begin processing. If a warm
+      start epoch is given, the filter ignores all measurements prior to the
+      warm start epoch. If a warm start epoch is not given, the filter will
+      start up from the first measurement time, using the input warm start
+      record closest to, but earlier than, the first measurement time. The
+      warm start epoch must be within the time span of the input warm start
+      file. The input warm start file should ideally be the output warm start
+      file from a prior filter run.</para>
+    </refsection>
+
+    <refsection>
+      <title>Generating an Ephemeris File from an Extended Kalman Filter
+      Run</title>
+
+      <para>An ephemeris file can be created during the Kalman filter run. The
+      ephemeris file is configured according to the usual methods (see <xref
+      linkend="EphemerisFile"/>). This file will contain the Kalman filter
+      estimated states at both the measurement and time update steps. The
+      ephemeris file will also contain predicted states if the KalmanFilter
+      <guilabel>PredictTimeSpan</guilabel> is non-zero. Measurement updates
+      typically do not occur at constant time intervals and the estimated
+      states at each measurement update are at least slightly discontinuous.
+      For these reasons, only ephemeris formats supporting variable step sizes
+      are permitted for use with the Kalman Filter. A Code500 ephemeris may
+      not be generated during a Kalman filter run.</para>
+
+      <para><note>
+          <para>When generating an STK ephemeris during a filter or smoother
+          run, <guilabel>IncludeEventBoundaries</guilabel> should always be
+          set to <guilabel>True</guilabel> on the STK ephemeris resource. The
+          filter ephemeris is always at least slightly discontinuous at each
+          measurement and including the event boundaries ensures that users of
+          the STK ephemeris do not attempt to interpolate improperly across
+          the discontinuities.</para>
+        </note></para>
+    </refsection>
+
+    <refsection>
+      <title>Using a ReportFile Resource with the Kalman Filter</title>
+
+      <para>A <guilabel>ReportFile</guilabel> resource (see <xref
+      linkend="ReportFile"/>) may be configured for use during a filter run.
+      This allows the user to output data such as the spacecraft state,
+      OrbitErrorCovariance, Cd, CdSigma, and other estimated parameters to a
+      custom report file during the estimation run. The contents of the custom
+      report file depend on the setting of the <guilabel>ReportFile</guilabel>
+      <guilabel>SolverIterations</guilabel> parameter as follows:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>If <guilabel>SolverIterations</guilabel> is
+          <guilabel>None</guilabel>, only the last state in the run is
+          written. If there is a measurement at this time, the reported state
+          is the measurement pre-update state.</para>
+        </listitem>
+
+        <listitem>
+          <para>If <guilabel>SolverIterations</guilabel> is
+          <guilabel>Current</guilabel> (the default), data is written at each
+          measurement and time update. The reported state at each measurement
+          update is the pre-update state.</para>
+        </listitem>
+
+        <listitem>
+          <para>If <guilabel>SolverIterations</guilabel> is
+          <guilabel>All</guilabel>, data is written at each measurement and
+          time update. At each measurement update both the pre-update and
+          post-update state are reported.</para>
+        </listitem>
+      </itemizedlist>
+    </refsection>
+
+    <refsection>
+      <title>Propagator Settings</title>
+
+      <para>The <guilabel>ExtendedKalmanFilter</guilabel> resource has a
+      <guilabel>Propagator</guilabel> field containing the name of the
+      <guilabel>Propagator</guilabel> resource that will be used during the
+      estimation process. The minimum step size, <guilabel>MinStep</guilabel>,
+      of your propagator should always be set to 0.</para>
+
+      <!--para>The <guilabel>ExtendedKalmanFilter</guilabel> resource uses the
+      first <guilabel>Propagator</guilabel> identified as the default
+      propagator for spacecraft that are simulated. The user can specify a
+      different <guilabel>Propagator</guilabel> for specific spacecraft using
+      an optional list of spacecraft assigned to other propagator components.
+      An example of this usage is shown below.</para>
+
+      <note>
+        <para>Use of multiple propagators on the EKF is not supported in this
+        release.</para>
+      </note-->
+    </refsection>
+
+    <refsection>
+      <title>Kalman filter report file</title>
+
+      <para>The Weighted RMS statistic reported for each data type in the
+      Filter Measurement Statistics report is the weighted RMS of pre-update
+      residuals.</para>
+    </refsection>
+
+    <refsection xml:id="ExtendedKalmanFilter_MatlabFile">
+      <title>Kalman Filter MATLAB Data File</title>
+
+      <para>If MATLAB is installed and properly configured to interface with
+      GMAT (see <xref linkend="MatlabInterface"/>), the user may generate a
+      mat-file containing useful analysis data from the
+      <guilabel>ExtendedKalmanFilter</guilabel> run. This option is enabled by
+      specifying a path and filename for the output file on the
+      <guilabel>MatlabFile</guilabel> field of the configured
+      <guilabel>ExtendedKalmanFilter</guilabel> resource. The file contains
+      four top-level data structures - <guilabel>EstimationConfig</guilabel>,
+      <guilabel>Observed</guilabel>, <guilabel>Computed</guilabel>, and
+      <guilabel>Filter</guilabel>. Except as noted in the tables below, the
+      units for data in the mat-file are the same as those in the Kalman
+      filter output file; seconds, km, km/sec, DSN Range Units, Hz, and
+      degrees.</para>
+
+      <para><guilabel>EstimationConfig</guilabel> contains general information
+      about the estimation run configuration. Contents of the
+      <guilabel>EstimationConfig</guilabel> structure are described in the
+      table below.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>InitialEpochUTC</entry>
+
+              <entry>A 1x2 column vector containing the filter starting epoch
+              as a MATLAB datenum in the first row and GMAT TAIModJulian in
+              the second row.</entry>
+            </row>
+
+            <row>
+              <entry>FinalEpochUTC</entry>
+
+              <entry>A 1x2 column vector containing the filter end epoch as a
+              MATLAB datenum in the first row and GMAT TAIModJulian in the
+              second row.</entry>
+            </row>
+
+            <row>
+              <entry>GravitationalParameter</entry>
+
+              <entry>The gravitational parameter of the primary central body
+              of the run, in km^3/sec^2.</entry>
+            </row>
+
+            <row>
+              <entry>StateNames</entry>
+
+              <entry>Names of the run estimated parameters.</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>The <guilabel>Observed</guilabel> structure contains the tracking
+      data observation measurement data. Contents of the
+      <guilabel>Observed</guilabel> structure are described in the table
+      below.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>DopplerCountInterval</entry>
+
+              <entry>For each Doppler-type measurement, the Doppler counting
+              interval. Set to NaN for other data types.</entry>
+            </row>
+
+            <row>
+              <entry>EpochTAI</entry>
+
+              <entry>The TAI epoch of each measurement. Each member is a
+              column vector where the first row is the epoch as a MATLAB
+              datenum and the second row is the epoch as a GMAT TAIModJulian
+              date.</entry>
+            </row>
+
+            <row>
+              <entry>EpochUTC</entry>
+
+              <entry>The UTC epoch of each measurement. Each member is a
+              column vector where the first row is the epoch as a MATLAB
+              datenum and the second row is the epoch as a GMAT UTCModJulian
+              date.</entry>
+            </row>
+
+            <row>
+              <entry>Frequency</entry>
+
+              <entry>Signal receive frequency in Hertz. Set to NaN for
+              GPS_PosVec data.</entry>
+            </row>
+
+            <row>
+              <entry>Measurement</entry>
+
+              <entry>Observed measurements. For GPS_PosVec, each cell holds a
+              1x3 column vector of X, Y, Z measurements.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementNumber</entry>
+
+              <entry>Measurement record number.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementType</entry>
+
+              <entry>The GMAT observation type name.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementWeight</entry>
+
+              <entry>Measurement weights (1/noise^2). For GPS_PosVec, each
+              cell holds a 1x3 column vector of X, Y, Z weights.</entry>
+            </row>
+
+            <row>
+              <entry>Participants</entry>
+
+              <entry>For each measurement, a cell array whose members are the
+              ID's of the participants in the measurement path.</entry>
+            </row>
+
+            <row>
+              <entry>RangeModulo</entry>
+
+              <entry>For each DSN_SeqRange measurement, the range ambiguity
+              interval in Range Units. Set to NaN for other data
+              types.</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>The <emphasis role="bold">Computed</emphasis> structure stores
+      information about filter measurement updates. Contents of the
+      <guilabel>Computed</guilabel> structure are described in the table
+      below. Some fields are not applicable to some measurement types (for
+      example Elevation, Frequency, and FrequencyBand do not apply for
+      GPS_PosVec measurements) and are set to NaN or zero. The epoch of a
+      record in the <guilabel>Computed</guilabel> structure can be determined
+      by matching the computed <guilabel>MeasurementNumber</guilabel> to the
+      same measurement number in the <guilabel>Observed</guilabel>
+      structure.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>Elevation</entry>
+
+              <entry>Computed elevation in degrees at the measurement epoch.
+              Does not apply (set to 0) for GPS_PosVec data.</entry>
+            </row>
+
+            <row>
+              <entry>IonosphericCorrection</entry>
+
+              <entry>The magnitude of the ionospheric measurement correction.
+              Units are the same as the measurement. See note below regarding
+              media corrections for X/Y angle measurements.</entry>
+            </row>
+
+            <row>
+              <entry>KalmanGain</entry>
+
+              <entry>The Kalman gain matrix.</entry>
+            </row>
+
+            <row>
+              <entry>Measurement</entry>
+
+              <entry>Computed measurements. For GPS_PosVec, each cell holds a
+              1x3 column vector of X, Y, Z computed measurements.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementEditFlag</entry>
+
+              <entry>The string observation edit flag. 'N' indicates
+              unedited/accepted observations.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementNumber</entry>
+
+              <entry>Measurement record number.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementPartials</entry>
+
+              <entry>A cell array of matrices. Each member is a matrix of the
+              partial derivatives of the measurement with respect to each
+              element of the state. The partials are taken with respect to the
+              element type selected on the Spacecraft
+              <guilabel>SolveFors</guilabel> field. For example, if the user
+              has chosen to estimate the KeplerianState, the partials are with
+              respect to the Keplerian elements. The order of elements matches
+              that given in the EstimationConfig state names. For GPS_PosVec
+              data, each cell holds a 3xN matrix, where N is the number of
+              estimated states. Each row contains the partials with respect to
+              the X, Y, and Z GPS_PosVec measurement in order.</entry>
+            </row>
+
+            <row>
+              <entry>PreUpdateCovariance</entry>
+
+              <entry>Filter state covariance prior to measurement
+              update.</entry>
+            </row>
+
+            <row>
+              <entry>PreUpdateCovarianceVNB</entry>
+
+              <entry>Filter state covariance prior to measurement update, in
+              the VNB reference frame.</entry>
+            </row>
+
+            <row>
+              <entry>PreUpdateResidual</entry>
+
+              <entry>Filter state residual prior to measurement
+              update.</entry>
+            </row>
+
+            <row>
+              <entry>PreUpdateState</entry>
+
+              <entry>Filter state prior to measurement update.</entry>
+            </row>
+
+            <row>
+              <entry>ScaledResidual</entry>
+
+              <entry>A unitless value representing the raw residual divided by
+              the sum of state noise (appropriately transformed) and
+              measurement noise. Schematically, Scaled Residual = Raw Residual
+              / (HPH' + R).</entry>
+            </row>
+
+            <row>
+              <entry>TroposphericCorrection</entry>
+
+              <entry>The magnitude of the tropospheric measurement correction.
+              Units are the same as the measurement. See note below regarding
+              media corrections for X/Y angle measurements.</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>The <emphasis role="bold">Filter</emphasis> structure stores
+      information about processing that occurs at both measurement and time
+      updates. Contents of the <guilabel>Filter</guilabel> structure are
+      described in the table below.</para>
+
+      <informaltable>
+        <tgroup align="left" cols="2">
+          <colspec colwidth="300*"/>
+
+          <colspec colwidth="600*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Variable</entry>
+
+              <entry align="center">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>Covariance</entry>
+
+              <entry>The filter state covariance (Cartesian), after the
+              measurement or time update.</entry>
+            </row>
+
+            <row>
+              <entry>CovarianceVNB</entry>
+
+              <entry>The filter state covariance (VNB coordinates), after the
+              measurement or time update.</entry>
+            </row>
+
+            <row>
+              <entry>EpochTAI</entry>
+
+              <entry>The TAI epoch of each filter record. Each member is a
+              column vector where the first row is the epoch as a MATLAB
+              datenum and the second row is the epoch as a GMAT TAIModJulian
+              date.</entry>
+            </row>
+
+            <row>
+              <entry>EpochUTC</entry>
+
+              <entry>The UTC epoch of each filter record. Each member is a
+              column vector where the first row is the epoch as a MATLAB
+              datenum and the second row is the epoch as a GMAT UTCModJulian
+              date.</entry>
+            </row>
+
+            <row>
+              <entry>MeasurementNumber</entry>
+
+              <entry>Measurement record number. Set to NaN for time update
+              steps.</entry>
+            </row>
+
+            <row>
+              <entry>ProcessNoise</entry>
+
+              <entry>The filter process noise matrix.</entry>
+            </row>
+
+            <row>
+              <entry>State</entry>
+
+              <entry>Filter state after the measurement or time
+              update.</entry>
+            </row>
+
+            <row>
+              <entry>StateTransitionMatrix</entry>
+
+              <entry>State transition matrix <inlineequation>
+                  <m:math display="inline">
+                    <m:msub>
+                      <m:mi>Φ</m:mi>
+
+                      <m:mn>i</m:mn>
+                    </m:msub>
+                  </m:math>
+                </inlineequation> from <emphasis
+              role="bold">t<subscript>i-1</subscript></emphasis> to <emphasis
+              role="bold">t<subscript>i</subscript></emphasis>, such that
+              <inlineequation>
+                  <m:math display="inline">
+                    <m:msub>
+                      <m:mi>Φ</m:mi>
+
+                      <m:mn>i</m:mn>
+                    </m:msub>
+
+                    <m:mo>=</m:mo>
+
+                    <m:mi>Φ</m:mi>
+
+                    <m:mo>(</m:mo>
+
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mn>i-1</m:mn>
+                    </m:msub>
+
+                    <m:mo>,</m:mo>
+
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mn>i</m:mn>
+                    </m:msub>
+
+                    <m:mo>).</m:mo>
+                  </m:math>
+                </inlineequation></entry>
+            </row>
+
+            <row>
+              <entry>UpdateType</entry>
+
+              <entry>Filter update mode (Initial, Time, or
+              Measurement).</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>MATLAB File Media Corrections for X/Y Angle Data</title>
+
+      <para>When formulating computed angle measurements, GMAT applies
+      ionosphere and troposphere corrections as an elevation adjustment to the
+      ground station to spacecraft slant-range vector. All computed angle
+      observables are then derived from the slant-range vector. This process
+      yields the exact correction applied to the Elevation angle, but
+      corrections to other angle measurement types are not directly computed
+      and stored. To provide the user with an estimate of these corrections
+      for X/Y angles, approximate X/Y angle corrections are computed from the
+      elevation correction by an alternate method and stored in the MATLAB
+      file. The user should be aware that the media corrections for X/Y data
+      stored in the MATLAB file are not exactly consistent with the method
+      used in formulation of the X/Y computed measurement. The differences are
+      less than 1% for elevations greater than 5 degrees, but may be on the
+      order of 100% for elevations below 5 degrees.</para>
+    </refsection>
+
+    <refsection>
+      <title>Measurement Underweighting</title>
+
+      <para>Measurement underweighting changes how the Extended Kalman Filter
+      calculates the gain, K.</para>
+
+      <para><inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:mtext>Let </m:mtext>
+
+              <m:msub>
+                <m:mi>K</m:mi>
+
+                <m:mi>i</m:mi>
+              </m:msub>
+
+              <m:mo>=</m:mo>
+
+              <m:msubsup>
+                <m:mi>P</m:mi>
+
+                <m:mi>i</m:mi>
+
+                <m:mo>−</m:mo>
+              </m:msubsup>
+
+              <m:msubsup>
+                <m:mi>H</m:mi>
+
+                <m:mi>i</m:mi>
+
+                <m:mi>T</m:mi>
+              </m:msubsup>
+
+              <m:msubsup>
+                <m:mi>W</m:mi>
+
+                <m:mi>i</m:mi>
+
+                <m:mrow>
+                  <m:mo>−</m:mo>
+
+                  <m:mn>1</m:mn>
+                </m:mrow>
+              </m:msubsup>
+
+              <m:mtext> where </m:mtext>
+
+              <m:msub>
+                <m:mi>W</m:mi>
+
+                <m:mi>i</m:mi>
+              </m:msub>
+
+              <m:mo>≡</m:mo>
+
+              <m:mrow>
+                <m:mo>(</m:mo>
+
+                <m:mrow>
+                  <m:mn>1</m:mn>
+
+                  <m:mo>+</m:mo>
+
+                  <m:mtext>MeasDeweightingCoefficient</m:mtext>
+                </m:mrow>
+
+                <m:mo>)</m:mo>
+              </m:mrow>
+
+              <m:msub>
+                <m:mi>H</m:mi>
+
+                <m:mi>i</m:mi>
+              </m:msub>
+
+              <m:msubsup>
+                <m:mi>P</m:mi>
+
+                <m:mi>i</m:mi>
+
+                <m:mo>−</m:mo>
+              </m:msubsup>
+
+              <m:msubsup>
+                <m:mi>H</m:mi>
+
+                <m:mi>i</m:mi>
+
+                <m:mi>T</m:mi>
+              </m:msubsup>
+
+              <m:mo>+</m:mo>
+
+              <m:msub>
+                <m:mi>R</m:mi>
+
+                <m:mi>i</m:mi>
+              </m:msub>
+
+              <m:mtext>.</m:mtext>
+            </m:mrow>
+          </m:math>
+        </inlineequation> be the Kalman gain at some time, <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:msub>
+                <m:mi>t</m:mi>
+
+                <m:mi>i</m:mi>
+              </m:msub>
+            </m:mrow>
+          </m:math>
+        </inlineequation> . The use of a positive value for <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:mtext>MeasDeweightingCoefficient</m:mtext>
+            </m:mrow>
+          </m:math>
+        </inlineequation> makes the gain "smaller" and effectively makes the
+      measurement at time <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:msub>
+                <m:mi>t</m:mi>
+
+                <m:mi>i</m:mi>
+              </m:msub>
+            </m:mrow>
+          </m:math>
+        </inlineequation> less important in calculating the estimated state at
+      time <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:msub>
+                <m:mi>t</m:mi>
+
+                <m:mi>i</m:mi>
+              </m:msub>
+            </m:mrow>
+          </m:math>
+        </inlineequation> . Note that if <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:mtext>MeasDeweightingCoefficient</m:mtext>
+
+              <m:mo>=</m:mo>
+
+              <m:mn>0</m:mn>
+            </m:mrow>
+          </m:math>
+        </inlineequation> , then <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:msub>
+                <m:mi>K</m:mi>
+
+                <m:mi>i</m:mi>
+              </m:msub>
+            </m:mrow>
+          </m:math>
+        </inlineequation> is the normal Kalman gain.</para>
+
+      <para>Let the 3x3 matrix, <inlineequation>
+          <m:math display="inline">
+            <m:msubsup>
+              <m:mover accent="true">
+                <m:mi>P</m:mi>
+
+                <m:mo>˜</m:mo>
+              </m:mover>
+
+              <m:mi>i</m:mi>
+
+              <m:mo>−</m:mo>
+            </m:msubsup>
+          </m:math>
+        </inlineequation>, be the partition of the state estimation error
+      covariance associated with the Cartesian position error states. If
+      <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:msqrt>
+                <m:mrow>
+                  <m:mtext>trace</m:mtext>
+
+                  <m:mrow>
+                    <m:mo>(</m:mo>
+
+                    <m:mrow>
+                      <m:msubsup>
+                        <m:mover accent="true">
+                          <m:mi>P</m:mi>
+
+                          <m:mo>˜</m:mo>
+                        </m:mover>
+
+                        <m:mi>i</m:mi>
+
+                        <m:mo>−</m:mo>
+                      </m:msubsup>
+                    </m:mrow>
+
+                    <m:mo>)</m:mo>
+                  </m:mrow>
+                </m:mrow>
+              </m:msqrt>
+
+              <m:mo>&gt;</m:mo>
+
+              <m:mtext>MeasDeweightingSigmaThreshold</m:mtext>
+            </m:mrow>
+          </m:math>
+        </inlineequation>, GMAT calculates the Kalman gain using the user
+      input value for <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:mtext>MeasDeweightingCoefficient.</m:mtext>
+            </m:mrow>
+          </m:math>
+        </inlineequation> Otherwise, GMAT uses <inlineequation>
+          <m:math display="inline">
+            <m:mrow>
+              <m:mtext>MeasDeweightingCoefficient</m:mtext>
+
+              <m:mo>=</m:mo>
+
+              <m:mn>0</m:mn>
+            </m:mrow>
+          </m:math>
+        </inlineequation> .</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Below is an example of a configured extended Kalman filter
+      estimator instance. In this example, <guilabel>EstData</guilabel> is an
+      instance of a <guilabel>TrackingFileSet</guilabel> and
+      <guilabel>Prop</guilabel> is an instance of
+      <guilabel>Propagator</guilabel>. Here, no input warm start file is
+      specified, so the filter runs from a cold start (initialization), but
+      generates an output warm start file which can be used in a subsequent
+      run.</para>
+
+      <programlisting>Create ExtendedKalmanFilter EKF;
+
+EKF.ShowProgress            = True;
+EKF.Measurements            = {EstData};
+EKF.Propagator              = Prop;
+EKF.ShowAllResiduals        = On;
+EKF.ScaledResidualThreshold = 3.;
+EKF.DataFilters             = {}
+EKF.PredictTimeSpan         = 86400.;
+EKF.ReportFile              = 'filter_report.txt';
+EKF.MatlabFile              = 'filter.mat';
+EKF.OutputWarmStartFile     = 'warm_start.csv';
+
+BeginMissionSequence;</programlisting>
+    </informalexample>
+  </refsection>
+
+  <refsection>
+    <title>References</title>
+
+    <orderedlist>
+      <listitem>
+        <para>Carpenter, Russell and Chris D'Souza. <emphasis>Navigation
+        Filter Best Practices</emphasis>. Technical Report TP-2018-219822,
+        NASA, April 2018.</para>
+      </listitem>
+    </orderedlist>
+  </refsection>
+</refentry>

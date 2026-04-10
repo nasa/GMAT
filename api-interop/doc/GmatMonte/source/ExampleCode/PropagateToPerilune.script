@@ -1,0 +1,58 @@
+% General Mission Analysis Tool(GMAT) Script
+%
+% PropagateToPerilune.script
+%
+% Example of GMAT propagation of MONTE Ephemeris, stopping near the Moon
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft LunarExpedition;
+GMAT LunarExpedition.NAIFId = -421;
+GMAT LunarExpedition.NAIFIdReferenceFrame = -9000001;
+GMAT LunarExpedition.OrbitSpiceKernelName = {'LunarExpedition.bsp'};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+GMAT DefaultProp.Type = SPK;
+GMAT DefaultProp.StepSize = 300;
+GMAT DefaultProp.CentralBody = Earth;
+GMAT DefaultProp.EpochFormat = 'UTCGregorian';
+GMAT DefaultProp.StartEpoch = '24 Jul 2014 00:00:00.000';
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesView CoordinateSystemView1;
+GMAT CoordinateSystemView1.ViewFrame = CoordinateSystem;
+GMAT CoordinateSystemView1.SetCurrentLocation = On;
+GMAT CoordinateSystemView1.CurrentEye = [ 0 0 1200000 ];
+GMAT CoordinateSystemView1.CurrentCenter = [ 0 0 0 ];
+GMAT CoordinateSystemView1.CurrentUp = [ 0 1 0 ];
+
+Create OpenFramesView EarthView1;
+GMAT EarthView1.ViewFrame = Earth;
+
+Create OpenFramesView LunaView1;
+GMAT LunaView1.ViewFrame = Luna;
+
+Create OpenFramesView LunarExpeditionView1;
+GMAT LunarExpeditionView1.ViewFrame = LunarExpedition;
+
+Create OpenFramesInterface EarthMJ2000EqView;
+GMAT EarthMJ2000EqView.Add = {LunarExpedition, Earth, Luna};
+GMAT EarthMJ2000EqView.View = {CoordinateSystemView1, EarthView1, LunaView1, LunarExpeditionView1};
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+Propagate DefaultProp(LunarExpedition) {LunarExpedition.Luna.Periapsis};

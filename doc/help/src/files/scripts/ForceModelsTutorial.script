@@ -1,0 +1,120 @@
+% -------------------------------------------------------------------------
+% --------------------------- Create Objects ------------------------------
+% -------------------------------------------------------------------------
+
+%----------------------------Create the Spacecraft----------------------
+% Create Sat1 and define its orbit
+Create Spacecraft Sat1;
+GMAT Sat1.DateFormat = UTCGregorian;
+GMAT Sat1.Epoch = '04 Jan 2003 00:00:00.000';
+GMAT Sat1.DisplayStateType = Keplerian;
+GMAT Sat1.SMA = 11295.67681418613;
+GMAT Sat1.ECC = 0.2032349944098091;
+GMAT Sat1.INC = 0;
+GMAT Sat1.RAAN = 0;
+GMAT Sat1.AOP = 0;
+GMAT Sat1.TA = 0;
+
+%------------------Create ForceModels and Propagators-------------------
+Create ForceModel PointMass;
+GMAT PointMass.PrimaryBodies = {Earth};
+GMAT PointMass.GravityField.Earth.Degree = 0;
+GMAT PointMass.GravityField.Earth.Order = 0;
+Create Propagator RKV89PointMass;
+GMAT RKV89PointMass.FM = PointMass;
+GMAT RKV89PointMass.InitialStepSize = 30;
+GMAT RKV89PointMass.Accuracy = 1e-012;
+GMAT RKV89PointMass.MinStep = 30;
+GMAT RKV89PointMass.MaxStep = 30;
+
+Create ForceModel ThirdBodies;
+GMAT ThirdBodies.PrimaryBodies = {Earth};
+GMAT ThirdBodies.GravityField.Earth.Degree = 0;
+GMAT ThirdBodies.GravityField.Earth.Order = 0;
+GMAT ThirdBodies.PointMasses = {Sun, Luna, Venus, Mars, Jupiter, Saturn, Uranus, Neptune};
+Create Propagator RKV89ThirdBodies;
+GMAT RKV89ThirdBodies.FM = ThirdBodies;
+GMAT RKV89ThirdBodies.InitialStepSize = 30;
+GMAT RKV89ThirdBodies.Accuracy = 1e-012;
+GMAT RKV89ThirdBodies.MinStep = 30;
+GMAT RKV89ThirdBodies.MaxStep = 30;
+
+Create ForceModel NonSpherical12;
+GMAT NonSpherical12.PrimaryBodies = {Earth};
+GMAT NonSpherical12.GravityField.Earth.Degree = 12;
+GMAT NonSpherical12.GravityField.Earth.Order = 12;
+Create Propagator RKV8912x12;
+GMAT RKV8912x12.FM = NonSpherical12;
+GMAT RKV8912x12.InitialStepSize = 30;
+GMAT RKV8912x12.Accuracy = 1e-012;
+GMAT RKV8912x12.MinStep = 30;
+GMAT RKV8912x12.MaxStep = 30;
+
+Create ForceModel MSISE90Drag;
+GMAT MSISE90Drag.PrimaryBodies = {Earth};
+GMAT MSISE90Drag.Drag = MSISE90;
+GMAT MSISE90Drag.GravityField.Earth.Degree = 0;
+GMAT MSISE90Drag.GravityField.Earth.Order = 0;
+Create Propagator RKV89MSISE90;
+GMAT RKV89MSISE90.FM = MSISE90Drag;
+GMAT RKV89MSISE90.Accuracy = 1e-012;
+GMAT RKV89MSISE90.MinStep = 30;
+GMAT RKV89MSISE90.MaxStep = 30;
+
+Create ForceModel JRDrag;
+GMAT JRDrag.PrimaryBodies = {Earth};
+GMAT JRDrag.Drag = JacchiaRoberts;
+GMAT JRDrag.GravityField.Earth.Degree = 0;
+GMAT JRDrag.GravityField.Earth.Order = 0;
+Create Propagator RKV89JR;
+GMAT RKV89JR.FM = JRDrag;
+GMAT RKV89JR.InitialStepSize = 30;
+GMAT RKV89JR.Accuracy = 1e-012;
+GMAT RKV89JR.MinStep = 30;
+GMAT RKV89JR.MaxStep = 30;
+
+Create ForceModel SRP;
+GMAT SRP.PrimaryBodies = {Earth};
+GMAT SRP.SRP = On;
+GMAT SRP.GravityField.Earth.Degree = 0;
+GMAT SRP.GravityField.Earth.Order = 0;
+Create Propagator RKV89SRP;
+GMAT RKV89SRP.FM = SRP;
+GMAT RKV89SRP.InitialStepSize = 30;
+GMAT RKV89SRP.Accuracy = 1e-012;
+GMAT RKV89SRP.MinStep = 30;
+GMAT RKV89SRP.MaxStep = 30;
+
+%----------------------------Create Plots/Reports----------------------
+Create OpenGLPlot OpenGLSat1;
+GMAT OpenGLSat1.Add = {Sat1, Earth};
+GMAT OpenGLSat1.ViewUpAxis = X;
+
+Create ReportFile ForceModelRpt;
+GMAT ForceModelRpt.Filename = './output/SampleMissions/Ex_ForceModels.report';
+
+
+% -------------------------------------------------------------------------
+% ---------------------------  Begin Mission Sequence ---------------------
+% -------------------------------------------------------------------------
+
+Report ForceModelRpt Sat1.A1ModJulian Sat1.X Sat1.Y Sat1.Z Sat1.VX Sat1.VY Sat1.VZ;
+GMAT ForceModelRpt.WriteHeaders = Off;
+
+Propagate  RKV89PointMass(Sat1, {Sat1.ElapsedDays = 0.1});
+Report ForceModelRpt Sat1.A1ModJulian Sat1.X Sat1.Y Sat1.Z Sat1.VX Sat1.VY Sat1.VZ;
+
+Propagate   RKV89ThirdBodies(Sat1, {Sat1.ElapsedDays = 0.1});
+Report ForceModelRpt Sat1.A1ModJulian Sat1.X Sat1.Y Sat1.Z Sat1.VX Sat1.VY Sat1.VZ;
+
+Propagate  RKV8912x12(Sat1, {Sat1.ElapsedDays = 0.1});
+Report ForceModelRpt Sat1.A1ModJulian Sat1.X Sat1.Y Sat1.Z Sat1.VX Sat1.VY Sat1.VZ;
+
+Propagate  RKV89MSISE90(Sat1, {Sat1.ElapsedDays = 0.1});
+Report ForceModelRpt Sat1.A1ModJulian Sat1.X Sat1.Y Sat1.Z Sat1.VX Sat1.VY Sat1.VZ;
+
+Propagate  RKV89JR(Sat1, {Sat1.ElapsedDays = 0.1});
+Report ForceModelRpt Sat1.A1ModJulian Sat1.X Sat1.Y Sat1.Z Sat1.VX Sat1.VY Sat1.VZ;
+
+Propagate  RKV89SRP(Sat1, {Sat1.ElapsedDays = 0.1});
+Report ForceModelRpt Sat1.A1ModJulian Sat1.X Sat1.Y Sat1.Z Sat1.VX Sat1.VY Sat1.VZ;

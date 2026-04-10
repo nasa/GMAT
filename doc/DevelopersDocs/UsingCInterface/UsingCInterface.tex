@@ -1,0 +1,529 @@
+%% Based on a TeXnicCenter-Template by Gyorgy SZEIDL.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%------------------------------------------------------------
+%
+\documentclass[letterpaper,10pt]{article}
+%
+\usepackage{amsmath}%
+\usepackage{amsfonts}%
+\usepackage{amssymb}%
+\usepackage{graphicx}
+%\usepackage{verbatim}
+\usepackage{listings}
+%-------------------------------------------
+\newtheorem{theorem}{Theorem}
+\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+\newtheorem{algorithm}[theorem]{Algorithm}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{case}[theorem]{Case}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{conclusion}[theorem]{Conclusion}
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{criterion}[theorem]{Criterion}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{solution}[theorem]{Solution}
+\newtheorem{summary}[theorem]{Summary}
+\newenvironment{proof}[1][Proof]{\textbf{#1.} }{\ \rule{0.5em}{0.5em}}
+
+% Construct the basic page sizes
+\oddsidemargin  0.0in
+\evensidemargin 0.0in
+\textwidth      6.5in
+\headheight     0.25in
+\topmargin      0.0in
+\textheight=8.5in
+
+\begin{document}
+
+\title{Using GMAT's C Interface Library\\\large{Revision 0.01, ODTBX Instructions}}
+\author{Darrel J. Conway\thanks{Developed under Prime Contract NNG10CP02C, Task Order 28.}
+\\Thinking Systems, Inc.}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+This document describes how to use GMAT's C-interface.  It includes descriptions of the methods currently implemented and examples of the calls into the interface made from MATLAB.  It also includes a section showing how to use the interface from ODTBX. 
+\end{abstract}
+
+\section{Introduction}
+
+The General Mission Analysis Tool, GMAT, is a space trajectory optimization and mission analysis system developed by NASA and private industry in the spirit of the NASA Vision. GMAT contains new technology and is a testbed for future technology development. One way GMAT provides testbed capabilities is through a library designed to access part of the system's features using calls to C functions.  This document describes that interface.
+
+GMAT is coded in C++ using modern, object oriented design principles.  The implementation of the system in C++ provides challenges for systems written in other languages that want to access GMAT components.  The C interface described here overcomes some of these difficulties by providing simpler calls into GMAT than would be possible if the class structures were accessed directly.  This functionality is limited to the components that have been exposed through the interface.  GMAT's C interface currently provides access to a small subset of the total system, but has been designed to be extended to other components as needed.  The full set of currently implemented elements is provided in Appendix~\ref{sec:FunctionList}.
+
+The following sections describe how to configure a computer to use the C interface, how to make calls into GMAT from MATLAB, and provide an example of the call into GMAT's ODE model for use in an ODTBX integrator.
+
+\section{Setting up the Environment}
+
+GMAT's C interface is implemented as a plugin library that provides access to GMAT objects through C functions.  The library starts a copy of GMAT's engine, loads a configuration by means of a GMAT script, populates a GMAT Sandbox with the configuration, and then provides access to the objects in the Sandbox.
+
+There are several requirements that must be met for the interface to work correctly.  The basic setup procedure can be broken into three pieces: (1)~collecting the files into a set of folders, (2) updating the startup file and configuration script, and (3) testing the setup.
+
+\subsection{Collecting the files}
+
+There are two sets of files that you'll need to organize: those that are found in the folder where you want to run the interface, and the data files GMAT needs to run.  In order to perform the configuration described here, you'll need a functional installation of GMAT on your computer that includes the libCInterface shared library.
+
+The interface needs four files in the run folder - the two shared libraries libGmatBase and libCInterface, the GMAT file gmat\_startup\_file.txt which describes the locations of GMAT's environment data, and the script file defining the configuration of objects that you want to access.  Below I'll describe the steps you take to copy these files into a run folder.  The following steps setup the interface in a folder named InterfaceRunFolder.  Replace that name with the path to the folder you will be using for the interface.  The following instructions describe actions taken from a terminal window (or ``command prompt'' in Windows) for a system with GMT installed in the folder ``/GMAT\_R2011b''; replace that folder name with the path to your installation of GMAT.
+
+\begin{enumerate}
+\item If it does not already exist, create the folder in your file system:
+\begin{itemize}
+\item From a command prompt or console window, type:
+\begin{quote}
+\texttt{mkdir ~/InterfaceRunFolder} \hfill (Mac or Linux)
+\end{quote}
+or
+\begin{quote}
+\texttt{mkdir }\textbackslash\texttt{InterfaceRunFolder} \hfill (Windows)
+\end{quote} 
+\item Set the current working directory to the new folder:
+\begin{quote}
+\texttt{cd }\textbackslash\texttt{InterfaceRunFolder}\hfill(Windows)
+\end{quote} 
+or
+\begin{quote}
+\texttt{cd ~/InterfaceRunFolder}\hfill(Mac or Linux)
+\end{quote} 
+\end{itemize}
+\item Copy the files needed locally onto the folder:
+\begin{itemize}
+\item On Windows:
+\begin{quote}
+\begin{verbatim}
+copy \GMAT_R2011b\bin\libGmatBase.dll .
+copy \GMAT_R2011b\bin\libCInterface.dll .
+copy \GMAT_R2011b\bin\gmat_startup_file.txt .
+\end{verbatim}
+\end{quote} 
+\item On Linux or Mac:
+\begin{quote}
+\begin{verbatim}
+cp /GMAT_R2011b/bin/libGmatBase* .
+cp /GMAT_R2011b/bin/libCInterface* .
+cp /GMAT_R2011b/bin/gmat_startup_file.txt .
+\end{verbatim}
+\end{quote} 
+\end{itemize}
+\end{enumerate}
+
+\noindent You'll also need a script defining the configuration you want to access through the interface.  A sample script is shown in Appendix~\ref{sec:SampleConfigurationScript}.  Place the test for this script in a file named GmatConfig.script.  Once you have finished these instruction, you should have the following files in InterfaceRunFolder:
+\begin{itemize}
+	\item gmat\_startup\_file.txt
+	\item libGmatBase.dll, libGmatBase.so, or libGmatBase.dylib
+	\item libCInterface.dll, libCInterface.so, or libCInterface.dylib
+	\item GmatConfig.script
+\end{itemize}
+
+Finally, if you are planning to access GMAT from MATLAB, your MATLAB environment will need access to the script files that drive the interface.  These files are in the trunk code of the ODTBX project, in the folder trunk{\textbackslash}ODTBX\_Source{\textbackslash}GMAT\_Adapters.  We will add this folder to the MATLAB path below; be sure that you have access to the folder if you are using MATLAB.
+
+\subsection{Updating the configuration file and script}
+
+Appendix~\ref{sec:DataFileOrganization} describes the standard data file organization for GMAT.  This file organization is described in the GMAT startup file, gmat\_startup\_file.txt.  There is no need to move the data files into your interface run folder.  Instead, open the startup file, and look for these lines:
+
+\begin{quote}
+\begin{verbatim}
+#-----------------------------------------------------------
+ROOT_PATH              = ../
+#-----------------------------------------------------------
+PLUGIN                 = ../plugins/proprietary/libVF13Optimizer
+PLUGIN                 = ../plugins/libGmatEstimation
+PLUGIN                 = ../plugins/libMatlabInterface
+PLUGIN                 = ../plugins/libFminconOptimizer
+#-----------------------------------------------------------
+OUTPUT_PATH            = ../output/
+LOG_FILE               = OUTPUT_PATH/GmatLog.txt
+REPORT_FILE            = OUTPUT_PATH/GmatReport.txt
+SCREENSHOT_FILE        = OUTPUT_PATH
+#-----------------------------------------------------------
+MEASUREMENT_PATH       = OUTPUT_PATH/
+#-----------------------------------------------------------
+EPHEM_PATH             = OUTPUT_PATH/
+#-----------------------------------------------------------
+#GMAT_FUNCTION_PATH    = 
+#-----------------------------------------------------------
+#MATLAB_FUNCTION_PATH  = 
+#-----------------------------------------------------------
+DATA_PATH              = ROOT_PATH/data/
+#-----------------------------------------------------------
+\end{verbatim}
+\end{quote}
+
+Begin by removing the PLUGIN lines or editing them to point to your GMAT folder.  Insert this line at that location:  
+
+\begin{quote}
+\begin{verbatim}
+PLUGIN                 = libCInterface
+\end{verbatim}
+\end{quote}
+
+\noindent Change the ROOT\_PATH and the OUTPUT\_PATH entries to the current folder: 
+
+\begin{quote}
+\begin{verbatim}
+ROOT_PATH              = ./
+...
+OUTPUT_PATH            = ./
+\end{verbatim}
+\end{quote}
+
+\noindent Finally, change the DATA\_PATH to point to your GMAT data folder; for instance, 
+
+\begin{quote}
+\begin{verbatim}
+DATA_PATH              = /GMAT_R2011b/data/
+\end{verbatim}
+\end{quote}
+
+\noindent The lines listed above should now look like this (with changes to match your configuration): 
+
+\begin{quote}
+\begin{verbatim}
+#-----------------------------------------------------------
+ROOT_PATH              = ./
+#-----------------------------------------------------------
+PLUGIN                 = libCInterface
+#-----------------------------------------------------------
+OUTPUT_PATH            = ./
+LOG_FILE               = OUTPUT_PATH/GmatLog.txt
+REPORT_FILE            = OUTPUT_PATH/GmatReport.txt
+SCREENSHOT_FILE        = OUTPUT_PATH
+#-----------------------------------------------------------
+MEASUREMENT_PATH       = OUTPUT_PATH/
+#-----------------------------------------------------------
+EPHEM_PATH             = OUTPUT_PATH/
+#-----------------------------------------------------------
+#GMAT_FUNCTION_PATH    = 
+#-----------------------------------------------------------
+#MATLAB_FUNCTION_PATH  = 
+#-----------------------------------------------------------
+DATA_PATH              = /GMAT_R2011b/data/
+#-----------------------------------------------------------
+\end{verbatim}
+\end{quote}
+
+
+\subsection{Testing the Setup from MATLAB}
+
+At this point, the C interface is ready for testing.  To test the interface from MATLAB, start MATLAB and change your working folder to the interface folder.  Add the path to the GMAT\_Adapters folder from the ODTBX source to your MATLAB environment with this command (on Windows, assuming the ODTBX source code is in the C:{\textbackslash}ODTBX-Trunk folder):
+
+\begin{quote}
+\begin{verbatim}
+addpath C:\ODTBX-Trunk\ODTBX_Source\GMAT_Adapters
+\end{verbatim}
+\end{quote}
+
+\noindent or this command (on Mac or Linux, with the ODTBX code in the ~/ODTBX-Trunk folder):
+
+\begin{quote}
+\begin{verbatim}
+addpath ~/ODTBX-Trunk/ODTBX_Source/GMAT_Adapters
+\end{verbatim}
+\end{quote}
+
+Test the installation by running the startgmat MATLAB function, passing in the name of your configuration script:
+
+\begin{quote}
+\begin{verbatim}
+>> startgmat('GmatConfig.script');
+\end{verbatim}
+\end{quote}
+
+\noindent If the configuration is set correctly, you should see a message reporting that GMAT initialized, ran a mission, and retrieves an ODEModel for use in the interface: 
+\begin{quote}
+\begin{verbatim}
+The Moderator has been initialized
+Mission run succeeded!
+ODE model is set to DefaultProp_ForceModel
+\end{verbatim}
+\end{quote}
+
+\noindent Now close the GMAT interface and unload it from memory:
+
+\begin{quote}
+\begin{verbatim}
+>> closegmat
+\end{verbatim}
+\end{quote}
+
+\noindent This command should result in the following messages: 
+
+\begin{quote}
+\begin{verbatim}
+Unloading libCInterface...
+Unloaded
+\end{verbatim}
+\end{quote}
+
+\section{Accessing GMAT Objects from MATLAB}
+
+The \texttt{startgmat} and \texttt{closegmat} functions wrap several calls to GMAT's C interface inside of simpler MATLAB functions.  In this section, we'll examine the raw calls into the interface from MATLAB to illustrate how the interface works.  Appendix~\ref{sec:FunctionList} lists all of the functions in the current implementation of the interface.
+
+There are 3 core MATLAB functions that are used to access the GMAT C interface: loadlibrary, calllib, and unloadlibrary.  The functions supported in the interface are defined in a header file in the GMAT plugin source code named CInterfaceFunctions.hpp.  A MATLAB compatible version of that header is included in the interfacewrapper.m script file in ODTBX's GMAT\_Adapters folder.  That script is included when MATLAB loads the interface library.  The full call to load the interface is this:
+
+\begin{quote}
+\begin{verbatim}
+loadlibrary('libCInterface.dll',@interfacewrapper)
+\end{verbatim}
+\end{quote}
+
+\noindent After running this line in MATLAB, the library is loaded into memory but the GMAT engine is not yet started.  You can check to see that the library is loaded by calling MATLAB's libisloaded function.  If the library is loaded, the return value will be 1:
+
+\begin{quote}
+\begin{verbatim}
+>> libisloaded('libCInterface')
+
+ans =
+
+     1
+\end{verbatim}
+\end{quote}
+
+\noindent The GMAT engine is started by calling the StartGmat function in the interface.  Interface functions are all called using the calllib function in MATLAB.  The function that initializes the GMAT engine is a good example of this function call:
+
+\begin{quote}
+\begin{verbatim}
+>> retval = calllib('libCInterface','StartGmat')
+
+retval =
+
+     0
+\end{verbatim}
+\end{quote}
+
+\noindent The StartGmat command returns 0 when the engine starts correctly, and a negative number if the startup failed.  
+
+You can also retrieve data from the C interface about the last function called using the getLastMessage function.  If you call that function immediately after calling StartGmat, you'll see that the engine did start:
+
+\begin{quote}
+\begin{verbatim}
+>> calllib('libCInterface','getLastMessage')
+
+ans =
+
+The Moderator has been initialized
+\end{verbatim}
+\end{quote}
+
+C interface functions that take extra parameters pass in those parameters as extra arguments on the calllib function.  Fir example, the configuration script is loaded in a call to LoadScript that looks like this:
+
+\begin{quote}
+\begin{verbatim}
+>> calllib('libCInterface', 'LoadScript', 'GmatConfig.script');
+>> calllib('libCInterface','getLastMessage')
+
+ans =
+
+Interpreted the script GmatConfig.script successfully.
+\end{verbatim}
+\end{quote}
+
+\noindent (Note that the text here checked the loading by retrieving the last message generated inside of the interface.)
+
+Once a script has been loaded, the interconnections between objects in the script is made by passing the objects defined in the script into an object in GMAT called the Sandbox, which manages the objects used in a running script.  You populate a Sandbox with by calling the RunScript function:
+
+\begin{quote}
+\begin{verbatim}
+>> calllib('libCInterface', 'RunScript');
+\end{verbatim}
+\end{quote}
+
+\noindent When a script is run, GMAT will either load a Sandbox with the script contents and then wait for further calls, or load a Sandbox, execute the timeline defined in the script (the timeline is called a ``Mission Control Sequence'' in other GMAT documentation), and then wait for further instructions.  If the loaded script starts the Mission Control Sequence with the command BeginMissionSequence, the latter action is performed.  If the script starts the sequence with the command PrepareMissionSequence, as in the example in Appendix~\ref{sec:SampleConfigurationScript}, a Sandbox is loaded but the timeline is not actually executed.
+
+You can examine the results of a run using the GetRunSummary command:
+
+\begin{quote}
+\begin{verbatim}
+>> calllib('libCInterface', 'GetRunSummary')
+
+ans =
+
+        Spacecraft       : DefaultSC
+        Coordinate System: EarthMJ2000Eq 
+
+        Time System   Gregorian                     Modified Julian  
+        ----------------------------------------------------------------------    
+        UTC Epoch:    01 Jan 2000 11:59:28.000      21544.9996296296
+        TAI Epoch:    01 Jan 2000 12:00:00.000      21545.0000000000
+        TT  Epoch:    01 Jan 2000 12:00:32.184      21545.0003725000
+        TDB Epoch:    01 Jan 2000 12:00:32.184      21545.0003724992
+
+        Cartesian State                       Keplerian State
+        ---------------------------           -------------------------------- 
+        X  =   7100.0000000000 km             SMA  =   7191.9388176290 km
+        Y  =   0.0000000000000 km             ECC  =   0.0245497490060
+        Z  =   1300.0000000000 km             INC  =   12.850080056581 deg
+        VX =   0.0000000000000 km/sec         RAAN =   306.61480219480 deg
+        VY =   7.3500000000000 km/sec         AOP  =   314.19055153599 deg
+        VZ =   1.0000000000000 km/sec         TA   =   99.887749332049 deg
+
+        Spherical State:
+        ---------------------------       
+        RMAG =   7218.0329730474 km
+        RA   =   0.0000000000000 deg
+        DEC  =   10.375844920051 deg
+        VMAG =   7.4177152816753 km/s
+        AZI  =   82.377421681550 deg
+        VFPA =   88.608703653704 deg
+        RAV  =   90.000000000000 deg
+        DECV =   7.7477720361081 deg
+
+
+        Spacecraft properties:
+        ------------------------------
+        Cd =                      2.200000
+        Drag area =               15.00000 m^2
+        Cr =                      1.800000
+        Reflective (SRP) area =   1.000000 m^2
+        Dry mass =                850.00000000000 kg
+        Total mass =              850.00000000000 kg
+
+-----------------------------------
+Command Summary: Propagate Command
+Execute the script to generate command summary data
+
+-----------------------------------
+\end{verbatim}
+\end{quote}
+
+A typical use for the C interface is to access objects internal to GMAT in order to perform some outside processing.  The current interface supplies access to a GMAT ODEModel for this purpose through the interface functions FindOdeModel, GetStateSize, GetStateDescription, SetState, GetState, GetDerivativesForState, and GetDerivatives.  Examples of the calls to these functions can be found in the startgmat.m, gmatforces\_km.m, and validate\_gmatforces.m functions in the ODTBX GMAT\_Adapters folder.  The next section illustrates this usage in order to propagate an orbit using GMAT's ODEModel with an ODTBX propagator.
+
+\section{An ODTBX Example: Integrating an Orbit}
+
+The process of integrating an orbit using a numerical integrator is straightforward:
+
+\begin{enumerate}
+\item Define an state vector.  I'll use a Cartesian state for this example.
+\item Choose an initial state (for this example, a position and velocity).
+\item Set up a set of differential equations for the time rate of change of the state vector.
+\item Select a numerical integrator that uses the differential equations selected above.
+\item Tell the integrator about the differential equations and use then to evolve the state vector.
+\end{enumerate}
+
+ODTBX has a numerical integrator named integ, located in the ODTBX\_Source folder, that we can use for this process.  In order to use integ with the GMAT C interface, we need to format GMAT's differential equations in the ODEModel class into a form compatible with integ.
+
+The MATLAB function gmatforces\_km provides the interface needed to connect GMAT's ODEModel to integ.  The core calls into the interface are those that set the state vector and then retrieve the time derivative.  The state vector is set by passing in an a.1 modified Julian date and a state vector.  This happens on lines 61-63 of the function:
+
+\begin{quote}
+\lstset{language=Matlab, numbers=left, numberstyle=\tiny}
+\begin{lstlisting}[firstnumber=61]
+epoch = 21545.0 + t(i) / 86400.0;
+statep = libpointer('doublePtr', x(:,i));
+retval = calllib('libCInterface','SetState',epoch,statep,nx);
+\end{lstlisting}
+\end{quote}
+
+\noindent GMAT computes the positions of celestial bodies, their orientations, and related data needed for the force model based on an a.1 modified Julian date referenced to January 5, 1941 12:00:00.000.  In that time system, the J2000 epoch, Jan 1 2000 12:00:00.000 has a modified Julian value of 21545.0; that is the reference number for the time offset in this sample code (line~61), and should be adjusted for the reference epoch needed for other applications.  The time offset from this reference epoch is given by t(i) for the i\,\textsuperscript{th} spacecraft in the call.  The state pointer is set to point to the start of the matching Cartesian state on line~62.  These data are then passed into GMAT using the call to SetState on line~63.
+
+The derivative data is retrieved from GMAT using a call to the GetDerivatives function on line~68:
+    
+\begin{quote}
+\lstset{language=Matlab, numbers=left, numberstyle=\tiny}
+\begin{lstlisting}[firstnumber=68]
+derivsptr = calllib('libCInterface','GetDerivatives',0.0,1,dimptr);
+\end{lstlisting}
+\end{quote}
+
+\noindent This call returns the derivative data in a single vector that needs to be broken apart for use by integ (and the rest of ODTBX).  This data rearrangement is performed in the subsequent lines of gmatforces\_km:
+
+\begin{quote}
+\lstset{language=Matlab, numbers=left, numberstyle=\tiny}
+\begin{lstlisting}[firstnumber=77]
+setdatatype(derivsptr, 'doublePtr', dimval, 1);
+derivatives = get(derivsptr,'Value');
+xDot(:,i) = derivatives(1:6);
+
+if nargout > 1
+    for m=1:6
+        for n=1:6
+            A(m,n,i) = derivatives(m*6+n);
+        end
+    end
+end
+\end{lstlisting}
+\end{quote}
+
+The ODTBX repository includes a sample script, validate\_gmatforces, that uses this function with integ to test the C interface.  validate\_gmatforces, initializes GMAT by calling startgmat with a configuration script name.  It then defines some state data and performs integration through a call on line~45:
+
+\begin{quote}
+\lstset{language=Matlab, numbers=left, numberstyle=\tiny}
+\begin{lstlisting}[firstnumber=45]
+[tPlot,xPlot] = integ(@gmatforces_km,[0 T],state,[],w);
+\end{lstlisting}
+\end{quote}
+
+\noindent The results of this integration are then displayed on screen, and additional integration is performed and plotted.
+
+\appendix
+
+\section{\label{sec:DataFileOrganization}Data File Organization}
+
+GMAT requires access to data files organized in a file structure described in the GMAT startup file, gmat\_startup\_file.txt.  That file should be in the working folder from which the interface is accessed.  In a typical setup, the GMAT startup file identifies a root folder, a data file folder, and then uses these tow locations to identify the locations of additional data files needed by GMAT.  A typical startup file contains these lines for the top level folders:
+
+\begin{quote}
+\begin{verbatim}
+ROOT_PATH              = ../
+DATA_PATH              = ROOT_PATH/data/
+\end{verbatim}
+\end{quote}
+
+\noindent The remaining lines in the file describe the locations of planetary ephemerides, coefficient files for planetary gravity fields, time system data, and other data elements needed when GMAT runs.  A typical file structure for the data files is shown in Figure~\ref{fig:DataFileStrucure}.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics{Images/DataFileLayout.eps}
+\caption{The Default Data File Strucure for GMAT}
+\label{fig:DataFileStrucure}
+\end{center}
+\end{figure}
+
+\noindent This file structure matches the structure delivered with GMAT R2011a.  It also matches the data file structure found in the source code repository for GMAT at SourceForge at the time of this writing.  The entries in the GMAT startup file point to specific files in this structure.  For example, the lines
+
+\begin{quote}
+\begin{verbatim}
+SPK_PATH               = DATA_PATH/planetary_ephem/spk/
+PLANETARY_SPK_FILE     = SPK_PATH/de421.bsp
+\end{verbatim}
+\end{quote}
+
+\noindent identify the location of the SPICE planetary ephemeris file, de421.bsp, in the file system.  Using the entries provided thus far, GMAT looks for the file
+
+\begin{quote}
+\begin{verbatim}
+../data/planetary_ephem/spk/de421.bsp
+\end{verbatim}
+\end{quote}
+
+\noindent relative to the starting folder for the system.  The startup file provides similar path data for all of GMAT's data files; interested users should look in this file when trying to understand the data used when running a mission.
+
+\section{\label{sec:FunctionList}Supported Functions}
+
+The C interface supports the following functions:
+
+\begin{quote}
+\lstinputlisting{Scripts/CInterfaceFunctions.hpp}
+\end{quote} 
+
+\section{\label{sec:SampleConfigurationScript}Sample Configuration Script}
+
+The GMAT engine is configured for use through a GMAT script.  The C-interface specifies this script in the function LoadScript.  Once a script is loaded, it is run and the resulting configuration used by the C interface for further processing.  
+
+A minimal script designed to prepare a point mass gravity model for use by a single spacecraft looks like this:
+
+\begin{quote}
+\lstset{numbers=left, numberstyle=\tiny}
+\lstinputlisting{Scripts/defaultConfig.script}
+\end{quote}
+
+\noindent The \texttt{PrepareMissionSequence} command on line~34 of this listing tells GMAT to establish all interconnections necessary for the objects in the script, but not to actually exercise these objects.  If you want to actually execute the scripted mission control sequence, use the \texttt{BeginMissionSequence} command here instead.
+
+\end{document}

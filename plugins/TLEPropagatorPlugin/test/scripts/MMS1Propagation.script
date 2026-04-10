@@ -1,0 +1,48 @@
+%General Mission Analysis Tool(GMAT) Script
+%Created: 2019-11-20 17:15:43
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft MMS1;
+GMAT MMS1.DateFormat = UTCGregorian;
+GMAT MMS1.Epoch = '10 Nov 2019 00:00:00.000';
+GMAT MMS1.EphemerisName = '../TLE/MMS1_Nov-09-2019.txt';
+GMAT MMS1.Id = 'MMS 1';
+
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator TLEProp;
+GMAT TLEProp.Type = TLE;
+GMAT TLEProp.StepSize = 300;
+
+%TLEProp.J2 = -4.84165374886470e-04   %"J2",                // J2   J2 value
+%TLEProp.J3 =    %"J3",                // J3   J3 value
+%TLEProp.J4 =    %"J4",                // J4   J4 value
+%TLEProp.KE = 0.07436686   %"KE",                // KE   sqrt(mu) in earth-radii**1.5/MIN
+%TLEProp.QO =    %"QO",                // QO   Upper bound of atmospheric model in KM
+%TLEProp.SO =    %"SO",                // SO   Lower bound of atmospheric model in KM
+%TLEProp.ER = 6378.1363   %"ER",                // ER   Earth equatorial radius in KM.
+%TLEProp.AE = 1.0   %"AE"                 // AE   Distance units/earth radius111
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create ReportFile rf;
+rf.Filename = MMS1Propagation.txt
+rf.Add = {MMS1.UTCGregorian, MMS1.X, MMS1.Y, MMS1.Z, MMS1.VX, MMS1.VY, MMS1.VZ}
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+Propagate TLEProp(MMS1) {MMS1.ElapsedDays = 1.0};

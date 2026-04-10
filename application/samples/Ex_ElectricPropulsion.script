@@ -1,0 +1,343 @@
+%
+%  Ex_ElectricPropulsion
+%
+%  Use a long low-thrust burn using an electric thruster.
+%
+%  Released: R2015a
+% 
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DefaultSC;
+
+DefaultSC.DateFormat       = UTCGregorian;
+DefaultSC.Epoch            = '15 Dec 2017 14:56:42.200';
+DefaultSC.CoordinateSystem = EarthMJ2000Eq;
+DefaultSC.DisplayStateType = Cartesian;
+DefaultSC.X                = -15015.40312811781;
+DefaultSC.Y                = -23568.97680091111;
+DefaultSC.Z                = 2241.504923500546;
+DefaultSC.VX               = -0.485537892208224;
+DefaultSC.VY               = -5.048763191594085;
+DefaultSC.VZ               = -0.8799883161637991;
+DefaultSC.DryMass          = 7;
+DefaultSC.Cd               = 2.2;
+DefaultSC.Cr               = 1.8;
+DefaultSC.DragArea         = 15;
+DefaultSC.SRPArea          = 1;
+DefaultSC.Tanks            = {ElectricTank1};
+DefaultSC.Thrusters        = {ElectricThruster1};
+DefaultSC.PowerSystem      = SolarPowerSystem1;
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+Create ElectricTank ElectricTank1;
+
+ElectricTank1.AllowNegativeFuelMass = false;
+ElectricTank1.FuelMass = 5;
+
+Create ElectricThruster ElectricThruster1;
+
+ElectricThruster1.CoordinateSystem   = Local;
+ElectricThruster1.Origin             = Earth;
+ElectricThruster1.Axes               = VNB;
+ElectricThruster1.ThrustDirection1   = -1;
+ElectricThruster1.ThrustDirection2   = 0;
+ElectricThruster1.ThrustDirection3   = 0;
+ElectricThruster1.DutyCycle          = 1;
+ElectricThruster1.ThrustScaleFactor  = 0.9;
+ElectricThruster1.DecrementMass      = false;
+ElectricThruster1.Tank               = {ElectricTank1};
+ElectricThruster1.MixRatio           = [1];
+ElectricThruster1.GravitationalAccel = 9.810000000000001;
+ElectricThruster1.ThrustModel        = ConstantThrustAndIsp;
+ElectricThruster1.MaximumUsablePower = 7.266;
+ElectricThruster1.MinimumUsablePower = 0.01;
+ElectricThruster1.ThrustCoeff1       = -5.19082;
+ElectricThruster1.ThrustCoeff2       = 2.96519;
+ElectricThruster1.ThrustCoeff3       = -14.4789;
+ElectricThruster1.ThrustCoeff4       = 54.05382;
+ElectricThruster1.ThrustCoeff5       = -0.00100092;
+ElectricThruster1.MassFlowCoeff1     = -0.004776;
+ElectricThruster1.MassFlowCoeff2     = 0.05717;
+ElectricThruster1.MassFlowCoeff3     = -0.09956;
+ElectricThruster1.MassFlowCoeff4     = 0.03211;
+ElectricThruster1.MassFlowCoeff5     = 2.13781;
+ElectricThruster1.FixedEfficiency    = 0.7;
+ElectricThruster1.Isp                = 2800;
+ElectricThruster1.ConstantThrust     = 0.0012;
+
+
+Create SolarPowerSystem SolarPowerSystem1;
+
+SolarPowerSystem1.EpochFormat     = 'UTCGregorian';
+SolarPowerSystem1.InitialEpoch    = ''01 Jan 2000 11:59:28.000'';
+SolarPowerSystem1.InitialMaxPower = 1.2;
+SolarPowerSystem1.AnnualDecayRate = 5;
+SolarPowerSystem1.Margin          = 5;
+SolarPowerSystem1.BusCoeff1       = 0.3;
+SolarPowerSystem1.BusCoeff2       = 0;
+SolarPowerSystem1.BusCoeff3       = 0;
+SolarPowerSystem1.ShadowModel     = 'DualCone';
+SolarPowerSystem1.ShadowBodies    = {'Luna'};
+SolarPowerSystem1.SolarCoeff1     = 1.32077;
+SolarPowerSystem1.SolarCoeff2     = -0.10848;
+SolarPowerSystem1.SolarCoeff3     = -0.11665;
+SolarPowerSystem1.SolarCoeff4     = 0.10843;
+SolarPowerSystem1.SolarCoeff5     = -0.01279;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+DefaultProp_ForceModel.CentralBody            = Luna;
+DefaultProp_ForceModel.PointMasses            = {Earth, Luna, Sun};
+DefaultProp_ForceModel.Drag                   = None;
+DefaultProp_ForceModel.SRP                    = Off;
+DefaultProp_ForceModel.RelativisticCorrection = Off;
+DefaultProp_ForceModel.ErrorControl           = RSSStep;
+
+Create ForceModel LunarProp_ForceModel;
+
+LunarProp_ForceModel.CentralBody                     = Luna;
+LunarProp_ForceModel.PrimaryBodies                   = {Luna};
+LunarProp_ForceModel.PointMasses                     = {Earth, Sun};
+LunarProp_ForceModel.Drag                            = None;
+LunarProp_ForceModel.SRP                             = Off;
+LunarProp_ForceModel.RelativisticCorrection          = Off;
+LunarProp_ForceModel.ErrorControl                    = RSSStep;
+LunarProp_ForceModel.GravityField.Luna.Degree        = 4;
+LunarProp_ForceModel.GravityField.Luna.Order         = 4;
+LunarProp_ForceModel.GravityField.Luna.PotentialFile = 'LP165P.cof';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM                       = DefaultProp_ForceModel;
+DefaultProp.Type                     = RungeKutta89;
+DefaultProp.InitialStepSize          = 60;
+DefaultProp.Accuracy                 = 9.999999999999999e-012;
+DefaultProp.MinStep                  = 0.001;
+DefaultProp.MaxStep                  = 86400;
+DefaultProp.MaxStepAttempts          = 50;
+DefaultProp.StopIfAccuracyIsViolated = true;
+
+Create Propagator LunarProp;
+
+LunarProp.FM                       = LunarProp_ForceModel;
+LunarProp.Type                     = RungeKutta89;
+LunarProp.InitialStepSize          = 60;
+LunarProp.Accuracy                 = 9.999999999999999e-012;
+LunarProp.MinStep                  = 0.001;
+LunarProp.MaxStep                  = 2700;
+LunarProp.MaxStepAttempts          = 50;
+LunarProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create FiniteBurn FiniteBurn1;
+
+FiniteBurn1.Thrusters = {ElectricThruster1};
+FiniteBurn1.ThrottleLogicAlgorithm = 'MaxNumberOfThrusters';
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MoonJ2k;
+
+MoonJ2k.Origin = Luna;
+MoonJ2k.Axes = MJ2000Eq;
+
+Create CoordinateSystem CS_ESRotating;
+
+CS_ESRotating.Origin    = Earth;
+CS_ESRotating.Axes      = ObjectReferenced;
+CS_ESRotating.XAxis     = -R;
+CS_ESRotating.ZAxis     = N;
+CS_ESRotating.Primary   = Earth;
+CS_ESRotating.Secondary = Sun;
+
+Create CoordinateSystem CS_EMRotating;
+
+CS_EMRotating.Origin    = Earth;
+CS_EMRotating.Axes      = ObjectReferenced;
+CS_EMRotating.XAxis     = R;
+CS_EMRotating.ZAxis     = N;
+CS_EMRotating.Primary   = Earth;
+CS_EMRotating.Secondary = Luna;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_MoonInertialView;
+
+OFI_MoonInertialView.SolverIterations = Current;
+OFI_MoonInertialView.UpperLeft        = [ 0.3724358974358975 0.3297872340425532 ];
+OFI_MoonInertialView.Size             = [ 0.4442307692307692 0.6569148936170213 ];
+OFI_MoonInertialView.RelativeZOrder   = 1649;
+OFI_MoonInertialView.Maximized        = false;
+				  
+OFI_MoonInertialView.Add              = {DefaultSC, Luna, Sun, Earth};
+OFI_MoonInertialView.View             = {Moon_InertialView};
+OFI_MoonInertialView.Vector           = {TheOFIVector};
+				  
+OFI_MoonInertialView.CoordinateSystem = MoonJ2k;
+OFI_MoonInertialView.DrawObject       = [ true true true true ];
+OFI_MoonInertialView.DrawXYPlane      = [ false false false false ];
+OFI_MoonInertialView.DrawLabel        = [ true true true true ];
+OFI_MoonInertialView.DrawGrid         = [ false false false false ];
+				  
+OFI_MoonInertialView.Axes             = On;
+OFI_MoonInertialView.XYPlane          = On;
+OFI_MoonInertialView.EclipticPlane    = Off;
+OFI_MoonInertialView.EnableStars      = On;
+OFI_MoonInertialView.StarCount        = 40000;
+OFI_MoonInertialView.ShowPlot         = true;
+
+Create OpenFramesView Moon_InertialView;
+
+Moon_InertialView.ViewFrame           = CoordinateSystem;
+Moon_InertialView.SetDefaultLocation  = On;
+Moon_InertialView.SetCurrentLocation  = Off;
+		   
+Moon_InertialView.DefaultEye          = [ 0 0 30000 ]; 
+Moon_InertialView.DefaultCenter       = [ 0 0 0 ];
+Moon_InertialView.DefaultUp           = [ 1 0 0 ];
+
+
+Create OpenFramesVector TheOFIVector
+
+TheOFIVector.VectorColor              = [255 255 0];
+TheOFIVector.SourceObject             = DefaultSC;
+TheOFIVector.VectorType               = Relative Position;
+TheOFIVector.DestinationObject        = Sun;
+TheOFIVector.VectorLabel              = 'Sun';
+TheOFIVector.VectorLengthType         = 'Auto';
+
+
+Create OpenFramesInterface OFI_EarthMoonRotatingView;
+
+OFI_EarthMoonRotatingView.SolverIterations     = Current;
+OFI_EarthMoonRotatingView.UpperLeft            = [ 0.6352564102564102 0 ];
+OFI_EarthMoonRotatingView.Size                 = [ 0.3237179487179487 0.5226063829787234 ];
+OFI_EarthMoonRotatingView.RelativeZOrder       = 1647;
+OFI_EarthMoonRotatingView.Maximized            = false;
+
+OFI_EarthMoonRotatingView.Add                  = {DefaultSC, Earth, Sun, Luna};
+OFI_EarthMoonRotatingView.View                 = {Earth_MoonRotatingView};
+OFI_EarthMoonRotatingView.Vector               = {Earth_MoonRotatingVector};
+
+OFI_EarthMoonRotatingView.CoordinateSystem     = CS_EMRotating;
+OFI_EarthMoonRotatingView.DrawObject           = [ true true true true ];
+OFI_EarthMoonRotatingView.DrawXYPlane          = [ false false false false ];
+OFI_EarthMoonRotatingView.DrawLabel            = [ true true true true ];
+OFI_EarthMoonRotatingView.DrawGrid             = [ false false false false ];
+
+OFI_EarthMoonRotatingView.Axes                 = On;
+OFI_EarthMoonRotatingView.XYPlane              = On;
+OFI_EarthMoonRotatingView.EclipticPlane        = Off;
+OFI_EarthMoonRotatingView.EnableStars          = On;
+OFI_EarthMoonRotatingView.StarCount            = 40000;
+OFI_EarthMoonRotatingView.ShowPlot             = true;
+
+Create OpenFramesView Earth_MoonRotatingView;
+
+Earth_MoonRotatingView.ViewFrame          = CoordinateSystem;
+Earth_MoonRotatingView.SetDefaultLocation = On;
+Earth_MoonRotatingView.SetCurrentLocation = Off;
+
+Earth_MoonRotatingView.DefaultEye         = [ 0 0 1650000 ]; 
+Earth_MoonRotatingView.DefaultCenter      = [ 0 0 0 ];
+Earth_MoonRotatingView.DefaultUp          = [ 0 1 0 ];
+
+
+Create OpenFramesVector Earth_MoonRotatingVector
+
+Earth_MoonRotatingVector.VectorColor       = [255 255 0];
+Earth_MoonRotatingVector.SourceObject      = DefaultSC;
+Earth_MoonRotatingVector.VectorType        = Relative Position;
+Earth_MoonRotatingVector.DestinationObject = Sun;
+Earth_MoonRotatingVector.VectorLabel       = 'Sun';
+Earth_MoonRotatingVector.VectorLengthType  = 'Auto';
+
+
+Create OpenFramesInterface OFI_EarthSunRotatingView;
+
+OFI_EarthSunRotatingView.SolverIterations     = Current;
+OFI_EarthSunRotatingView.UpperLeft            = [ 0.2532051282051282 0.009308510638297872 ];
+OFI_EarthSunRotatingView.Size                 = [ 0.3692307692307693 0.5172872340425532 ];
+OFI_EarthSunRotatingView.RelativeZOrder       = 1641;
+OFI_EarthSunRotatingView.Maximized            = false;
+
+OFI_EarthSunRotatingView.Add                  = {DefaultSC, Earth, Sun, Luna};
+OFI_EarthSunRotatingView.View                 = {Earth_SunRotatingView};
+OFI_EarthSunRotatingView.Vector               = {Earth_SunRotatingVector};
+
+OFI_EarthSunRotatingView.CoordinateSystem     = CS_ESRotating;
+OFI_EarthSunRotatingView.DrawObject           = [ true true true true ];
+OFI_EarthSunRotatingView.DrawXYPlane          = [ false false false false ];
+OFI_EarthSunRotatingView.DrawLabel            = [ true true true true ];
+OFI_EarthSunRotatingView.DrawGrid             = [ false false false false ];
+
+OFI_EarthSunRotatingView.Axes                 = On;
+OFI_EarthSunRotatingView.XYPlane              = On;
+OFI_EarthSunRotatingView.EclipticPlane        = Off;
+OFI_EarthSunRotatingView.EnableStars          = On;
+OFI_EarthSunRotatingView.StarCount            = 40000;
+OFI_EarthSunRotatingView.ShowPlot             = true;
+
+Create OpenFramesView Earth_SunRotatingView;
+
+Earth_SunRotatingView.ViewFrame           = CoordinateSystem;
+Earth_SunRotatingView.SetDefaultLocation  = On;
+Earth_SunRotatingView.SetCurrentLocation  = Off;
+
+Earth_SunRotatingView.DefaultEye          = [ 0 0 1500000 ];
+Earth_SunRotatingView.DefaultCenter       = [ 0 0 0 ];
+Earth_SunRotatingView.DefaultUp           = [ 0 1 0 ];
+
+
+Create OpenFramesVector Earth_SunRotatingVector
+
+Earth_SunRotatingVector.VectorColor       = [255 255 0];
+Earth_SunRotatingVector.SourceObject      = DefaultSC;
+Earth_SunRotatingVector.VectorType        = Relative Position;
+Earth_SunRotatingVector.DestinationObject = Sun;
+Earth_SunRotatingVector.VectorLabel       = 'Sun';
+Earth_SunRotatingVector.VectorLengthType  = 'Auto';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+
+Propagate 'Coast for 2 Hours' DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 7200};
+%  Turn on the electric propulsion system
+BeginFiniteBurn FiniteBurn1(DefaultSC);
+Propagate 'Prop Through Burn' DefaultProp(DefaultSC) {DefaultSC.ElapsedDays = 1.98, OrbitColor = Red};
+
+%  Turn off the electric propulsion system
+EndFiniteBurn FiniteBurn1(DefaultSC);
+Propagate 'Lunar Periapsis' DefaultProp(DefaultSC) {DefaultSC.Luna.Periapsis, OrbitColor = Green};
+Propagate 'Earth Apoapsis' DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis, OrbitColor = Green};
+Propagate 'Earth Periapsis' DefaultProp(DefaultSC) {DefaultSC.Earth.Periapsis, OrbitColor = Green};
+Propagate 'Earth RMAG = 400000' DefaultProp(DefaultSC) {DefaultSC.Earth.RMAG = 400000, StopTolerance = 1e-005, OrbitColor = Green};
+Propagate 'Earth Apoapsis' DefaultProp(DefaultSC) {DefaultSC.Earth.Apoapsis, OrbitColor = Green};
+
+

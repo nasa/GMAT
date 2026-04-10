@@ -1,0 +1,185 @@
+%
+%  Ex_OptimalLunarApsidesRotation_2Burn
+%
+%  Demonstrates the use of an optimizer to move the line of apsides from an 
+%  initial orientation to a desired orientation. 
+%
+%  Author:  Darrel Conway, Thinking Systems, Inc.
+%  Created: June 8, 2023
+%
+%  This script optimizes a pair of burns to rotate the Lunar line of apsides.
+%  Users can further optimize a third burn to ensure matching SMAs by 
+%  uncommenting a few lines of script. 
+%
+
+Create Spacecraft LunarSat;
+LunarSat.DateFormat = UTCGregorian;
+LunarSat.Epoch = '01 Jan 2026 12:00:00.000';
+LunarSat.CoordinateSystem = Selenocentric;
+LunarSat.DisplayStateType = Keplerian;
+LunarSat.SMA = 5800;
+LunarSat.ECC = 0.6;
+LunarSat.INC = 130;
+LunarSat.RAAN = 180;
+LunarSat.AOP = 50;    % Start at 50 deg, and move this to 90 degrees
+LunarSat.TA = 135;
+LunarSat.DryMass = 200;
+LunarSat.Cd = 2.2;
+LunarSat.Cr = 1.8;
+LunarSat.DragArea = 3;
+LunarSat.SRPArea  = 3;
+
+% Coordinate Systems
+
+% This is the lunar inertial reference frame.  Note that using the BodyInertial
+% axes make the system True of Epoch MJ2000
+Create CoordinateSystem Selenocentric;
+Selenocentric.Origin = Luna;
+Selenocentric.Axes = BodyInertial;
+
+Create ForceModel MoonProp_ForceModel;
+MoonProp_ForceModel.CentralBody = Luna;
+MoonProp_ForceModel.PrimaryBodies = {Luna};
+MoonProp_ForceModel.PointMasses = {Earth, Sun, Jupiter, Venus};
+MoonProp_ForceModel.Drag = None;
+MoonProp_ForceModel.SRP = On;
+MoonProp_ForceModel.GravityField.Luna.Degree = 30;
+MoonProp_ForceModel.GravityField.Luna.Order = 30;
+MoonProp_ForceModel.GravityField.Luna.PotentialFile = 'grgm900c.cof';
+MoonProp_ForceModel.RelativisticCorrection = Off;
+
+Create Propagator MoonProp;
+MoonProp.FM = MoonProp_ForceModel;
+MoonProp.Type = PrinceDormand78;
+MoonProp.InitialStepSize = 60;
+MoonProp.Accuracy = 1e-12;
+MoonProp.MinStep = 0;
+MoonProp.MaxStep = 3600;
+MoonProp.MaxStepAttempts = 50;
+MoonProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface LunarView;
+LunarView.UpperLeft = [ 0 0 ];
+LunarView.Size = [ 0.5 1 ];
+LunarView.Add = {LunarSat, Luna, Sun, Earth};
+LunarView.View = {CoordinateSystemView1};
+LunarView.CoordinateSystem = Selenocentric;
+LunarView.DrawObject = [ false true false true true ];
+LunarView.DrawTrajectory = [ true true true false true ];
+
+Create XYPlot SMA;
+SMA.UpperLeft = [ 0.5 0 ];
+SMA.Size = [ 0.5 0.3333 ];
+SMA.XVariable = LunarSat.ElapsedDays;
+SMA.YVariables = {LunarSat.Luna.SMA};
+%SMA.ShowLegend = False;
+
+Create XYPlot Inclination;
+Inclination.UpperLeft = [ 0.5 0.3333 ];
+Inclination.Size = [ 0.5 0.3333 ];
+Inclination.XVariable = LunarSat.ElapsedDays;
+Inclination.YVariables = {LunarSat.Selenocentric.INC};
+%Inclination.ShowLegend = False;
+
+Create XYPlot LineOfNodes;
+LineOfNodes.UpperLeft = [ 0.5 0.6666 ];
+LineOfNodes.Size = [ 0.5 0.3333 ];
+LineOfNodes.XVariable = LunarSat.ElapsedDays;
+LineOfNodes.YVariables = {LunarSat.Selenocentric.AOP};
+%LineOfNodes.ShowLegend = False;
+
+%----------------------------------------
+%---------- User Objects
+%----------------------------------------
+
+Create OpenFramesView CoordinateSystemView1;
+CoordinateSystemView1.ViewFrame = CoordinateSystem;
+CoordinateSystemView1.ViewTrajectory = Off;
+CoordinateSystemView1.InertialFrame = Off;
+CoordinateSystemView1.SetDefaultLocation = Off;
+CoordinateSystemView1.SetCurrentLocation = On;
+CoordinateSystemView1.CurrentEye = [ 0 -15000 25000 ];
+CoordinateSystemView1.CurrentCenter = [ -45 -0.3 -200 ];
+CoordinateSystemView1.CurrentUp = [ 0 0 1 ];
+CoordinateSystemView1.FOVy = 45;
+
+% Impulse used to change inclination
+Create ImpulsiveBurn apseChange
+apseChange.CoordinateSystem = Local;
+apseChange.Origin = Luna;
+apseChange.Axes = VNB;
+apseChange.DecrementMass = false;
+apseChange.Isp = 300;
+
+% Impulse used to change SMA
+Create ImpulsiveBurn SmaControl
+SmaControl.CoordinateSystem = Local;
+SmaControl.Origin = Luna;
+SmaControl.Axes = VNB;
+SmaControl.DecrementMass = false;
+SmaControl.Isp = 300;
+
+%----------------------------------------
+% Objects used to rotate the apsidal line
+%----------------------------------------
+Create Variable dv SMAi TAi TAf deltaV
+
+Create VF13ad optimizer
+optimizer.MaximumIterations = 100
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+% Draw the initial orbit
+Propagate MoonProp(LunarSat) {LunarSat.ElapsedDays = 1};
+
+% Save SMA in case SMA control is activated
+SMAi = LunarSat.Luna.SMA
+
+Optimize optimizer
+
+   deltaV = 0.0
+
+   Vary optimizer(dv = 0.1, {Perturbation = 0.0001, MaxStep = 0.1})
+   Vary optimizer(TAi = 100, {Perturbation = 0.001, MaxStep = 5})
+   TAf = 360 - TAi
+
+   Propagate MoonProp(LunarSat) {LunarSat.Luna.TA = TAi};
+
+   apseChange.Element1 = dv;
+   Maneuver apseChange(LunarSat)
+   deltaV = deltaV + Abs(apseChange.Element1);
+
+   % Draw the transfer orbit in yellow
+   Propagate MoonProp(LunarSat) {LunarSat.Luna.TA = TAf, OrbitColor = Yellow};
+
+   apseChange.Element1 = -apseChange.Element1;
+   Maneuver apseChange(LunarSat)
+   deltaV = deltaV + Abs(apseChange.Element1);
+
+   Propagate MoonProp(LunarSat) {LunarSat.Luna.Periapsis}
+    
+   % Uncomment these lines to also control SMA
+   % Vary optimizer(SmaControl.Element1 = 0.0, {Perturbation = 0.00001, MaxStep = 0.001})
+   % Maneuver SmaControl(LunarSat)
+   % deltaV = deltaV + Abs(SmaControl.Element1);
+
+   % NonlinearConstraint optimizer(LunarSat.Luna.SMA = SMAi, {Tolerance = 0.1})
+   
+   NonlinearConstraint optimizer(LunarSat.Selenocentric.AOP = 90, {Tolerance = 0.05})
+   Minimize optimizer(deltaV)
+
+EndOptimize
+
+% Display the new AOP to prove the rotation was achieved
+Write LunarSat.AOP
+
+% Draw the final orbit
+Propagate MoonProp(LunarSat) {LunarSat.ElapsedDays = 1};

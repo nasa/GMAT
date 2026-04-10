@@ -1,0 +1,111 @@
+%
+%  Ex_SPICEOrbitAndAttitudePropagation
+%
+%  Use SPICE files to model the orbit and attitude of a spacecraft.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft MarsExpress;
+
+MarsExpress.DateFormat                   = UTCGregorian;
+MarsExpress.Epoch                        = '01 Jun 2010 16:00:00.000';
+MarsExpress.NAIFId                       = -41;
+MarsExpress.NAIFIdReferenceFrame         = -41001;
+MarsExpress.OrbitSpiceKernelName         = {'../data/vehicle/ephem/spk/MarsExpress_Short.bsp'};
+MarsExpress.AttitudeSpiceKernelName      = {'../data/vehicle/ephem/spk/MarsExpress_ATNM_PTR00012_100531_002.BC'};
+MarsExpress.SCClockSpiceKernelName       = {'../data/vehicle/ephem/spk/MarsExpress_MEX_100921_STEP.TSC'};
+MarsExpress.FrameSpiceKernelName         = {'../data/vehicle/ephem/spk/MarsExpress_MEX_V10.TF'};
+MarsExpress.Attitude                     = 'SpiceAttitude';
+MarsExpress.ModelFile                    = '../data/vehicle/models/aura.3ds';
+MarsExpress.AttitudeDisplayStateType     = 'Quaternion';
+MarsExpress.AttitudeRateDisplayStateType = 'AngularVelocity';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator spkProp;
+
+spkProp.Type        = SPK;
+spkProp.StepSize    = 5;
+spkProp.CentralBody = Mars;
+spkProp.EpochFormat = 'UTCGregorian';
+spkProp.StartEpoch  = '01 Jun 2010 16:00:00.000';
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MarsMJ2000Eq;
+
+MarsMJ2000Eq.Origin = Mars;
+MarsMJ2000Eq.Axes   = MJ2000Eq;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View 
+
+Create OpenFramesInterface OFI_Mars3DView;
+
+OFI_Mars3DView.UpperLeft         = [ 0.01 0.01 ];
+OFI_Mars3DView.Size              = [ 0.98 0.98 ];
+
+OFI_Mars3DView.Add               = {MarsExpress, Mars, Sun};
+OFI_Mars3DView.View              = {Mars3D_View, Express_View};
+
+OFI_Mars3DView.CoordinateSystem  = MarsMJ2000Eq;
+OFI_Mars3DView.DrawObject        = [ true true true];
+OFI_Mars3DView.DrawXYPlane       = [ false false false];
+OFI_Mars3DView.DrawLabel         = [ true true true];
+OFI_Mars3DView.DrawGrid          = [ false false false];
+
+OFI_Mars3DView.Axes              = On;
+OFI_Mars3DView.XYPlane           = On;
+OFI_Mars3DView.EclipticPlane     = Off;
+OFI_Mars3DView.EnableStars       = On;
+OFI_Mars3DView.StarCount         = 40000;
+OFI_Mars3DView.ShowPlot          = true;
+
+%----------------------------------------
+%---------- View Objects
+%----------------------------------------
+
+Create OpenFramesView Mars3D_View;
+
+Mars3D_View.ViewFrame           = CoordinateSystem;
+Mars3D_View.SetDefaultLocation  = On;
+Mars3D_View.SetCurrentLocation  = Off;
+
+Mars3D_View.DefaultEye          = [ 23293.0251159668  -15468.8549541012  -9076.80471682545];
+Mars3D_View.DefaultCenter       = [ 0 0 0 ];
+Mars3D_View.DefaultUp           = [ 0 0 1 ];
+
+Create OpenFramesView Express_View;
+
+Express_View.ViewFrame          = MarsExpress;
+Express_View.ViewTrajectory     = Off;
+Express_View.InertialFrame      = On;
+Express_View.LookAtFrame        = Mars;
+Express_View.ShortestAngle      = Off;
+Express_View.SetDefaultLocation = Off;
+Express_View.SetCurrentLocation = On;
+Express_View.CurrentEye         = [ 0 -3500 0 ];
+Express_View.CurrentCenter      = [ 0 0 0 ];
+Express_View.CurrentUp          = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate spkProp(MarsExpress){MarsExpress.ElapsedDays = 1.0}
+
+
+

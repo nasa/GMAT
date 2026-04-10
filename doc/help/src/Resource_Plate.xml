@@ -1,0 +1,1082 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="Plate" xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>Plate</primary>
+  </indexterm>
+
+  <indexterm>
+    <primary>Solar Radiation Pressure</primary>
+
+    <secondary>Multi-plate area modeling</secondary>
+  </indexterm>
+
+  <indexterm>
+    <primary>Spacecraft Ballistic/Mass Properties</primary>
+
+    <secondary>Multi-plate area modeling</secondary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>Plate</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>Plate</refname>
+
+    <refpurpose>Used to specify the properties of a single spacecraft surface
+    (body panel, solar array side, or other surface) for high-fidelity solar
+    radiation pressure modeling, including specular, diffuse, and absorptive
+    effects.</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The <guilabel>Plate</guilabel> resource allows the user to construct
+    a detailed spacecraft area model for higher-fidelity solar radiation
+    pressure (SRP) modeling. A spacecraft will typically be modeled as a
+    collection of plates; at a minimum six plates are required to represent
+    the spacecraft as a rectangular prism or box. You may also specify plates
+    to represent appendages such as solar arrays or a high-gain antenna. These
+    plates can be modeled as having a dynamic attitude with respect to the
+    spacecraft body, either by specifying them as Sun-facing (normal to the
+    instantaneous spacecraft-Sun vector) or by providing an external file
+    which gives the plate attitude as a function of time.</para>
+
+    <para>The collection of <guilabel>Plate</guilabel> resources that comprise
+    the model are assigned on the Spacecraft object using the Spacecraft
+    <guilabel>AddPlates</guilabel> field. Each Plate has an associated
+    AreaCoefficient parameter which represents a correction factor that may be
+    estimated in the orbit determination. You may estimate an individual
+    correction for each Plate in the model, or choose to associate a single
+    correction with a grouping of plates using the Spacecraft
+    <guilabel>NPlateSRPEquateAreaCoefficients</guilabel> parameter.</para>
+
+    <para>See Also <xref linkend="SpacecraftBallisticMass"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Fields</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colwidth="1.0*"/>
+
+        <colspec colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Field</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>Area</guilabel></entry>
+
+            <entry><para>The plate area surface area. </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Any positive Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1 m^2</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Meters^2</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>AreaCoefficient</guilabel></entry>
+
+            <entry><para>A scale factor applied to the plate area, typically
+            used for estimating errors in the plate model.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>None</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>AreaCoefficientSigma</guilabel></entry>
+
+            <entry><para>A-priori uncertainty of the
+            <guilabel>AreaCoefficient</guilabel>. Only used for constraining
+            estimation of the <guilabel>AreaCoefficient</guilabel>
+            parameter.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1e70</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>None</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DiffuseFraction</guilabel></entry>
+
+            <entry><para>Plate coefficient of diffuse
+            reflectivity.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real number</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>0 &lt;= DiffuseFraction &lt;= 1</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>None</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>DiffuseFractionSigma</guilabel></entry>
+
+            <entry><para>A-priori uncertainty of the
+            <guilabel>DiffuseFraction</guilabel>. Only used for constraining
+            estimation of the <guilabel>DiffuseFraction</guilabel>
+            parameter.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1e70</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>None</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>LitFraction</guilabel></entry>
+
+            <entry><para>A scale factor applied to the plate area to specify
+            the fraction of the plate that is illuminated (not in shadow).
+            This parameter can be used to model spacecraft self-shadowing, for
+            example due to a solar array casting a shadow on a side of the
+            spacecraft body.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>0 &lt; LitFraction &lt;= 1</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1.0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>None</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>PlateNormal</guilabel></entry>
+
+            <entry><para>Plate surface normal vector. This specifies the
+            orientation of the plate in the spacecraft body frame, when the
+            <guilabel>Plate</guilabel><guilabel>.Type</guilabel> is set to
+            <guilabel>FixedInBody</guilabel>.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Vector</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Non-null 3-D vector</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>[1,0,0]</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>None</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>PlateNormalHistoryFile</guilabel></entry>
+
+            <entry><para>Plate surface normal vector history file. This
+            specifies the orientation of the plate when the
+            <guilabel>Plate</guilabel><guilabel>.Type</guilabel> is set to
+            <guilabel>File</guilabel>.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Valid path and file name</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>None</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Not applicable</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>PlateX</guilabel></entry>
+
+            <entry><para>X-component of the plate's location expressed
+            in the spacecraft's body coordinate system.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Meters</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>PlateY</guilabel></entry>
+
+            <entry><para>Y-component of the plate's location expressed
+            in the spacecraft's body coordinate system.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Meters</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>PlateZ</guilabel></entry>
+
+            <entry><para>Z-component of the plate's location expressed
+            in the spacecraft's body coordinate system.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set, get</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>0</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Meters</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SolveFors</guilabel></entry>
+
+            <entry><para>List of estimated parameters for the
+            plate.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>AreaCoefficient, DiffuseFraction,
+                    SpecularFraction</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>Empty</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Not applicable</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SpecularFraction</guilabel></entry>
+
+            <entry><para>Plate coefficient of specular
+            reflectivity.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>0 &lt;= SpecularFraction &lt;= 1</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>None</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>SpecularFractionSigma</guilabel></entry>
+
+            <entry><para>A-priori uncertainty of the
+            <guilabel>SpecularFraction</guilabel>. Only used for constraining
+            estimation of the <guilabel>SpecularFraction</guilabel> parameter.
+            </para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Real</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Real &gt; 0</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>1e70</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>None</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
+            <entry><guilabel>Type</guilabel></entry>
+
+            <entry><para>Specifies the method of describing the plate
+            orientation. The orientation of a <guilabel>FixedInBody</guilabel>
+            plate is specified by the <guilabel>PlateNormal</guilabel> vector.
+            The orientation of a File plate is specified by the
+            <guilabel>PlateNormalHistoryFile</guilabel>. </para><para>The
+            orientation of a SunFacing plate is taken to be perpendicular to
+            the spacecraft-Sun vector. The attitude of a SunFacing plate is
+            computed automatically by GMAT, and the
+            <guilabel>PlateNormal</guilabel> and
+            <guilabel>PlateNormalHistoryFile</guilabel> parameters are ignored
+            if the plate is a SunFacing plate.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>Enumeration</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>FixedInBody, SunFacing, File</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>Set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>FixedInBody</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>Not applicable</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>Script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <para>Modeling of solar radiation pressure for each plate includes effects
+    due to individual plate specular reflectivity, diffuse reflectivity, and
+    absorption. The sum of each plate's specular, diffuse, and absorptive
+    fractions must equal 1. In the Plate resource, the user specifies the
+    specular and diffuse coefficients; the absorption fraction is the
+    remainder from 1 of the sum of the specular and diffuse fractions.</para>
+
+    <refsection>
+      <title>Plate normal history file format</title>
+
+      <para>If the Plate Type is set to <guilabel>File</guilabel>, the user
+      must provide an external attitude history file, assigned on the
+      <guilabel>Plate.PlateNormalHistoryFile</guilabel> parameter. The plate
+      normal history file gives the plate normal vector as a function of time.
+      The file contains a header as described below.</para>
+
+      <informaltable colsep="0" frame="topbot">
+        <tgroup cols="3">
+          <colspec colwidth="2*"/>
+
+          <colspec colwidth="0.5*"/>
+
+          <colspec colwidth="5*"/>
+
+          <thead>
+            <row>
+              <entry>Keyword</entry>
+
+              <entry>Required</entry>
+
+              <entry>Description and Supported Values</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><guilabel>Coordinate_System</guilabel></entry>
+
+              <entry><para>Y</para></entry>
+
+              <entry><para>Reference coordinate system of the included normal
+              vectors. This may be any built-in or user defined inertial
+              frame, or 'FixedInBody' to use the spacecraft body
+              frame.</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Interpolation_Method</guilabel></entry>
+
+              <entry><para>N</para></entry>
+
+              <entry><para>Interpolation method to be used on the normal
+              vectors. Linear interpolation is the only method currently
+              supported.</para></entry>
+            </row>
+
+            <row>
+              <entry><guilabel>Start_Epoch</guilabel></entry>
+
+              <entry>Y</entry>
+
+              <entry>Base epoch for times in the table of normal vectors.
+              Required format is UTCGregorian 'DD Mon YYYY
+              HH:MM:SS.SSS'</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+
+      <para>Following the header are a series of records, one per line, giving
+      a time in seconds from the Start_Epoch, followed by the Cartesian
+      components of the normal vector to the plate at the given time in
+      seconds past the Start_Epoch. A sample file is shown below.</para>
+
+      <para><programlisting>Start_Epoch = '11 Jun 2019 00:00:00.000'
+Coordinate_System = EarthMJ2000Eq
+Interpolation_Method = Linear
+
+   0.118      0.71134437  0.59768958  0.36980583
+  60.118      0.70844298  0.64262126  0.29179866
+ 120.117      0.70342991  0.67911896  0.20972316
+ 180.118      0.69632195  0.70683245  0.12459387
+ 240.118      0.68720633  0.72550392  0.03730319
+ 300.118      0.67618273  0.73495324  -0.05119232
+ 360.118      0.6635059   0.73500373  -0.13974778
+ 420.118      0.64938672  0.72563809  -0.22747802
+ 480.117      0.63365791  0.70727707  -0.31342751
+ 540.118      0.6166704   0.67998056  -0.39666617
+ 600.118      0.59854485  0.64412315  -0.47628713
+ 660.118      0.57958926  0.60014396  -0.55127445
+ 720.118      0.55997495  0.54842962  -0.62100966
+ 780.117      0.5399806   0.48973174  -0.68453179
+ 840.117      0.51976556  0.42453172  -0.7413613
+ 900.117      0.49951296  0.35366998  -0.79082511
+ 960.117      0.47946796  0.27785984  -0.83240879
+1020.118      0.45991923  0.19807528  -0.86558679
+1080.118      0.44098414  0.11493292  -0.8901255
+1140.118      0.42293817  0.02963382  -0.90567386
+1200.117      0.40594474  -0.05701248 -0.91211756
+1260.117      0.39029164  -0.14410621 -0.90934363
+1320.117      0.37589181  -0.23056147 -0.89752257
+1380.117      0.36306455  -0.31566225 -0.87666497
+1440.118      0.35205587  -0.39829948 -0.84700306
+</programlisting></para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>This example shows how to create a simple single-plate model. In
+      this example, we model both the front and back of a single plate on the
+      X-face of the spacecraft body.</para>
+
+      <programlisting>Create Spacecraft SimSat;
+
+%
+%   N-Plate models
+%
+
+Create Plate PlusX MinusX;
+
+PlusX.Type             = FixedInBody;
+PlusX.PlateNormal      = [1.0, 0.0, 0.0];
+PlusX.LitFraction      = 1.0;
+PlusX.AreaCoefficient  = 1.0;
+PlusX.Area             = 12;
+PlusX.SpecularFraction = 1;
+PlusX.DiffuseFraction  = 0;
+
+MinusX.Type             = FixedInBody;
+MinusX.PlateNormal      = [-1.0, 0.0, 0.0];
+MinusX.LitFraction      = 1.0;
+MinusX.AreaCoefficient  = 1.0;
+MinusX.Area             = 12;
+MinusX.SpecularFraction = 0.5;
+MinusX.DiffuseFraction  = 0.1;
+
+SimSat.AddPlates  = {PlusX, MinusX}; </programlisting>
+    </informalexample>
+  </refsection>
+</refentry>

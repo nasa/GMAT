@@ -1,0 +1,1425 @@
+
+\chapter{Measurement Modeling} \label{Ch:MeasurementModelling}
+
+This chapter gives the formulation for computed measurement values
+and their partial derivatives, measurement media corrections,
+measurement error models, and measurement feasibility and editing
+criteria. We begin with a discussion of the general form of the
+measurement model which is broken down into several contributions
+including the model for the ideal observable quantity, media
+corrections, and measurement errors.   The geometry of a generic measurement is presented
+and the notation used throughout the measurement model formulation is discussed. For each observable type such
+as two-way range or one-way Doppler we present the general model and then discuss specific
+details of how these measurements are modeled for specific tracking systems such as TDRSS and DSN.
+We conclude this chapter with a section on simple geometric measurement
+models that neglect media corrections, error modeling, and light time corrections.
+
+\section{General Form of the Measurement Model}
+
+Spacecraft tracking measurements are produced by complex
+interactions between the measurement participants, their associated
+sensors, and the space environment.  Examples of measurement
+participants include spacecraft with antennas and transponders, tracking stations,
+quasars, and other celestial bodies such as Earth.
+
+The measurement model in GMAT divides the computed measurement value
+into three terms
+%
+\begin{equation}
+    y_c = y_i + e_t + \delta_m
+\end{equation}
+%
+where $y_c$ is the computed measurement value,
+ $y_i$ is the  model of the ideal measurement observable quantity including light time correction and sensor delays,
+$e_t$ is the  total stochastic error contribution from all sources including sensor and systematic errors, and
+$\delta_m$ is the sum of media corrections from ionospheric, tropospheric, general relativistic corrections to name a few.
+
+In the next three sections, we discuss each of the contributions to
+the measurement computed value in  detail.
+
+\subsection{Ideal Observables: Geometry, Coordinate Systems, and Notation}
+
+The ideal measurement observable, $y_i$, accounts for the deterministic portion of the measurement-given the current best estimate.  This portion of the computed measurement value contains the model for (1) the specific measurement data
+type, (2) the dynamics of the participants during the measurement process, and (3) the sequence of events that occur
+during the taking of a measurement (i.e. light time delays, sensor delays,  and averaging intervals).  The ideal measurement quantity does not contain stochastic errors such as bias or exponentially correlated noise.  Nor does the ideal measurement quantity contain media corrections due to the properties of the space environment such as ionospheric delays or general relativistic corrections.
+
+We use a basic one-way measurement model, shown in Fig.~(\ref{Fig:OneWayMeas}), to aid in defining our notation.  For the purposes of illustration, we have assumed that both participants
+are spacecraft and that their states are known -- being propagated or estimated -- with respect to different coordinate systems.  The subsequent mathematical development is general and is valid for measurement processes that involve
+different participant types such as ground stations.
+
+GMAT allows users to input and output orbit states in numerous coordinate systems.  However, internal to GMAT, spacecraft are propagated and estimated with respect to a coordinate system that has a celestial body as the origin and uses the J2000 axis system.  Different spacecraft in a single simulation may have different reference celestial bodies depending upon the flight regime of a particular application.  Ground station states are defined and estimated in a celestial body fixed system.  Below, we express quantities such as the inertial position and velocity of participants and antennas in terms of the coordinate systems in which they are internally (propagated/estimated ) represented.  These quantities are referenced repeatedly in later sections.
+
+
+
+\begin{figure}[h!]
+    \begin{center}
+        \begin{picture}(370,180)
+            \special{psfile= ./Images/OneWayMeas.eps hscale= 100 vscale= 100 hoffset = -100 voffset = -410}
+             \makebox(195,25){$\mathcal{F}_{I_{1}}$}
+             \makebox(190,165){$\mathcal{F}_{I_{2}}$}
+             \makebox(-220,215){$\mathbf{r}_{p_{2}}^{\mcI_2}$}
+             \makebox(-290,215){$\mathbf{r}_{a_2}^{\mcI_2}$}
+             \makebox(-275,315){$\mathcal{F}_{B_{2}}$}
+             \makebox(-330,297){$\mathbf{r}_{a_{2}}^{\mcB_2}$}
+             \makebox(-380,340){$\mathcal{F}_{A_{2}}$}
+             \makebox(-500,277){$\boldsymbol{\rho}_{a_2/a_1}$}
+             \makebox(-600,280){$\mathcal{F}_{A_{1}}$}
+             \makebox(-645,195){$\mathbf{r}_{a_{1}}^{\mcB_1}$}
+             \makebox(-705,205){$\mathcal{F}_{B_{1}}$}
+             \makebox(-600,150){$\mathbf{r}_{a_{1}}^{\mathcal{I}_1}$}
+             \makebox(-640,60){$\mathbf{r}_{p_{1}}^{\mcI_1}$}
+             \makebox(-460,110){$\mathbf{r}_{i_{1}/i_{2}}$}
+             \makebox(-460,15){$\mathbf{r}_{i_{1}/s}$}
+             \makebox(-330,65){$\mathbf{r}_{i_{2}/s}$}
+             \makebox(-355,0){$\mathcal{F}_{S}$}
+        \end{picture}
+    \end{center}
+    \vspace{.2 in}
+    \caption{ Measurement Geometry and Notation }
+    \label{Fig:OneWayMeas}
+\end{figure}
+
+Define the following objects: the initiating participant, $\mathcal{P}_1$, and its attached antenna $\mcA_1$,  the receiving participant, $\mathcal{P}_2$, and its attached antenna $\mcA_2$. Define the following coordinates systems: $\mathcal{F}_{S}$ is the solar system barycentric system, $\mathcal{F}_{\mcR_{1}}$ is the system in which  $\mathcal{P}_1$ is naturally (internally) represented (propagated/estimated), $\mathcal{F}_{\mcB_{1}}$ is the body-fixed system of  $\mathcal{P}_1$, $\mathcal{F}_{\mcA_{1}}$ is the antenna-fixed system for antenna $\mathcal{A}_1$, and $\mathcal{F}_{\mcI_{1}}$ is the local celestial-body-centered J2000 system for $\mathcal{P}_1$.
+
+Using the definitions above, the system propagates/estimates spacecraft and ground stations using the representation $\mathbf{r}_{p}^{\mathcal{R}}$.  This means the position of participant $p$ in coordinate system $\mathcal{R}$.  For a spacecraft, $\mathcal{R}$ is the celestial-body-centered J2000 system, for a ground station $\mathcal{R}$ is the celestial-body-centered, body-fixed system.  The location of antennas are defined with respect to their parent participant's attitude coordinate system and notated $\mathbf{r}_{a}^{\mathcal{B}}$.
+
+The measurement models require the expressions for the locations of participants $\mathcal{P}_1$ and $\mathcal{P}_2$ and the phase centers of antennas $\mathcal{A}_1$ and $\mathcal{A}_2$ in the local inertial systems $\mathcal{F}_{I_{1}}$ and $\mathcal{F}_{I_{2}}$, and in the solar system barycentric coordinate system,  $\mathcal{F}_{S}$.  The locations of participants $\mathcal{P}_1$ and $\mathcal{P}_2$ in their local inertial systems are calculated using
+%
+\begin{equation}
+    \mathbf{r}_{p_{1}}^{\mathcal{I}_1}  = \mathbf{R}^{\mathcal{I}/\mathcal{R}_1}\mathbf{r}_{p1}^{\mathcal{R}_1}  \label{Eq:LocalInertialParticipantPos1}
+\end{equation}
+%
+\begin{equation}
+    \mathbf{r}_{p_{2}}^{\mathcal{I}_2}  = \mathbf{R}^{\mathcal{I}/\mathcal{R}_2}\mathbf{r}_{p2}^{\mathcal{R}_2}  \label{Eq:LocalInertialParticipantPos2}
+\end{equation}
+%
+If $\mathcal{P}_1$ is a spacecraft, $\mathbf{R}^{\mathcal{I}/\mathcal{R}_1} = I_{3x3}$ because spacecraft are represented with respect J2000 axis system (i.e .  $\mathcal{F}_{\mathcal{R}_1} = \mathcal{F}_{\mathcal{I}_1})$. If $\mathcal{P}_1$ is a ground station, $\mathbf{R}^{\mcI/\mathcal{R}_1}$ is the body-fixed rotation matrix for the ground station's reference central body (i.e. for Earth-based ground systems $\mathbf{R}^{\mcI/\mathcal{R}_1}$ is the rotation matrix from Earth-fixed to Earth-J2000 ). The expressions for the locations of participants $\mathcal{P}_1$ and $\mathcal{P}_2$ in the solar system barycentric system are
+%
+\begin{equation}
+    \mathbf{r}_{p_{1}}^{\mcS}  =  \mathbf{r}_{p_{1}}^{\mcI_{1}} +  \mathbf{r}_{i_1}^{\mathcal{S}} \label{Eq:BarycentricParticipantPos1}
+\end{equation}
+%
+\begin{equation}
+    \mathbf{r}_{p_{2}}^{S}  = \mathbf{r}_{p_{2}}^{\mathcal{I}_{2}} + \mathbf{r}_{i_2}^{\mathcal{S}}
+    \label{Eq:BarycentricParticipantPos2}
+\end{equation}
+%
+where $\mathbf{r}_{i_2}^{\mathcal{S}}$ is the location of the origin of $\mcF_{\mcI_2}$ expressed in $\mcF_{S}$.  Note that to transform a vector from a local inertial system to the barycentric system only requires a translation because $\mathcal{F}_{\mathcal{I}_1}$ and $\mathcal{F}_{\mathcal{S}}$  both use the J2000 axis system.
+
+The locations of antenna phase centers in local inertial coordinates are
+%
+\begin{equation}
+    \mathbf{r}_{a_{1}}^{\mathcal{I}}  = \mathbf{R}^{\mathcal{I}/\mathcal{R}_1}\mathbf{r}_{p1}^{\mathcal{R}_1} + \mathbf{R}^{\mathcal{I}/\mathcal{B}_1}\mathbf{r}_{a_{1}}^{\mathcal{B}_1} \label{Eq:LocalInertialAntennaPos1}
+\end{equation}
+%
+\begin{equation}
+    \mathbf{r}_{a_{2}}^{\mathcal{I}}  = \mathbf{R}^{\mathcal{I}/\mathcal{R}_2}\mathbf{r}_{p2}^{\mathcal{R}_2} + \mathbf{R}^{\mathcal{I}/\mathcal{B}_2}\mathbf{r}_{a_{2}}^{\mathcal{B}_2} \label{Eq:LocalInertialAntennaPos2}
+\end{equation}
+%
+The locations of antenna phase centers in solar system barycentric coordinates are
+%
+\begin{equation}
+    \mathbf{r}_{a_{1}}^{S}  =  \mathbf{r}_{a_{1}}^{\mathcal{I}} +  \mathbf{r}_{i_1}^{\mathcal{S}}\label{Eq:BaryInertialAntennaPos1}
+\end{equation}
+%
+\begin{equation}
+    \mathbf{r}_{a_{2}}^{S}  =  \mathbf{r}_{a_{2}}^{\mcI} +  \mathbf{r}_{i_2}^{\mathcal{S}}\label{Eq:BaryInertialAntennaPos2}
+\end{equation}
+
+\subsection{One Way Range Example}
+
+\begin{figure}[h!]
+    \begin{center}
+        \begin{picture}(370,190)
+            \special{psfile= ./Images/MeasurementParadox.eps hscale= 75 vscale= 75 hoffset = -60 voffset = -350}
+             \makebox(130,-55){\small{Earth's Surface}}
+             \makebox(50,-55){\small{Orbit Path}}
+             \makebox(-200,67){$\mathbf{r}_{p_2}^\mcI(t_2^{p_2})$}
+             \makebox(-195,215){$\mathbf{r}_{p_1}^\mcI(t_2^{p_1})$}
+             \makebox(-130,190){$\boldsymbol{\rho}^\mcI$}
+             \makebox(-230,360){\textbf{Geocentric Perspective}}
+             \makebox(150,360){\textbf{Barycentric Perspective}}
+             \makebox(-170,305){$\boldsymbol{\rho}^\mcS$}
+             \makebox(-16,258){$\mathbf{r}_{p_1}^\mcI(t_2^{p_1})$}
+             \makebox(-90,190){Earth's}
+             \makebox(-94,174){Surface}
+             \makebox(-160,70){Earth's Orbit}
+             \makebox(-151,134){$\mathbf{r}_E^\mcS(t_1^\mcS)$}
+             \makebox(-257,134){$\mathbf{r}_E^\mcS(t_2^\mcS)$}
+             \makebox(-310,300){$\mathbf{r}_{p_2}^\mcI(t_2^{p_2})$}
+        \end{picture}
+    \end{center}
+    \vspace{.3 in}
+    \caption{ Illustration of Range Vector in Geocentric and Barycentric Systems }
+    \label{Fig:BarycentricTransformation}
+\end{figure}
+%
+
+The range vector as seen from the geocentric inertial observer is
+%
+\begin{equation}
+    \boldsymbol{\rho}^\mcI = \mathbf{r}_{p_2}^\mcI(t_2^{p_2}) - \mathbf{r}_{p_1}^\mcI(t_2^{p_1})
+\end{equation}
+%
+The range vector as seen by a barycentric inertial observer is
+%
+\begin{equation}
+    \boldsymbol{\rho}^\mcS = (\mathbf{r}_E^\mcS(t_2^\mcS) + \mathbf{r}_{p_2}^\mcI(t_2^{p_2}))  - ( \mathbf{r}_E^\mcS(t_1^\mcS) +  \mathbf{r}_{p_1}^\mcI(t_2^{p_1})
+\end{equation}
+%
+Note the two ranges are not the same
+%
+\begin{equation}
+    \boldsymbol{\rho}^\mcS = \boldsymbol{\rho}^\mcI + (\mathbf{r}_E^\mcS(t_2^\mcS)  -  \mathbf{r}_E^\mcS(t_1^\mcS) )
+\end{equation}
+
+%\subsection{Stochastic Errors}
+%
+%\subsection{Media Corrections}
+%
+%Media corrections are additive terms in the computed observable that model the effects
+%of the space environment on the measurement quantity.  GMAT models the following effects
+%as media corrections.
+%%
+%\begin{itemize}
+%    \item tropospheric delay
+%    \item ionospheric delay
+%    \item abberation
+%    \item general relativity (time and bending of light)
+%\end{itemize}
+
+\section{Light-Time Solution}
+
+\subsection{One-Way Light Time} \label{Sec:OneWayLightTime}
+
+The definition of the one-way light time is the time duration for light to travel from a transmitting antenna to a receiving antenna in a vacuum with no gravity.  The center of mass location is used for a spacecraft or ground station that does not have an antenna model.  Atmospheric corrections such as Tropospheric and Ionospheric delays, as well as relativistic corrections due to gravity, are additive corrections discussed in detail in later sections.
+
+Define the time duration for the light transit as $\tau = t_{2_{a}} - t_{1_{a}}$ where $t_{1_{a}}$ and $t_{2_{a}}$ are the signal transmission and receive times at antennas $\mathcal{A}_1$ and $\mathcal{A}_2$ respectively. It two participants share the same reference celestial body, the range vector from $\mathcal{A}_1$ to $\mathcal{A}_2$ is given by
+%
+\begin{equation}
+     \boldsymbol{\rho}^\mcI= \mathbf{r}_{a_{2}}^{\mcI}(t_{2_{a}}) - \mathbf{r}_{a_{1}}^{\mcI}(t_{1_{a}}) \label{Eq:RangeVecLocalInertial}
+\end{equation}
+%
+where $\mathbf{r}_{a_{2}}^{\mcI}(t_{2_{a}})$ and $\mathbf{r}_{a_{1}}^{\mcI}(t_{1_{a}})$ are calculated using Eqs.~(\ref{Eq:LocalInertialAntennaPos1}) and (\ref{Eq:LocalInertialAntennaPos2}). To solve for $\tau$, we find the solution to the following equation:
+%
+\begin{equation}
+     c\tau - \rho_{a_2/a_1} = 0
+\end{equation}
+%
+where $\rho = \| \boldsymbol{\rho}  \|$. Depending upon the measurement, we know either time $t_{1_{a}}$ or $t_{2_{a}} $, and solve for the unknown time.   In the case where $t_{2_{a}}$ is known, $\tau$ is found using fixed-point iteration on the following equation \cite{Montenbruck:Gill:05}
+%
+\begin{equation}
+   \tau^{(i+1)} = \frac{1}{c}\| \mathbf{r}_{a_{2}}^{\mcI}(t_{2_{a}})  -  \mathbf{r}_{a_{1}}^{\mcI}(t_{2_{a}} - \tau^{(i)}) \|
+\end{equation}
+%
+In the case where $t_{1_{a}}$is known, $\tau$ is found using fixed-point iteration on the following equation
+%
+\begin{equation}
+   \tau^{(i+1)} = \frac{1}{c}\| \mathbf{r}_{a_{2}}^\mathcal{I}(t_{1_{a}}+\tau^{(i)})  -  \mathbf{r}_{a_{1}}^\mathcal{I}(t_{1_{a}}) \|
+\end{equation}
+%
+In either case, the value $\tau^{(0)} = 0$ is used as the initial guess.
+
+If the two participants do not share a common reference celestial body then the range vector is calculated in the solar system barycentric system using
+%
+ \begin{equation}
+     \boldsymbol{\rho}^\mcS = \mathbf{r}_{a_{2}}^{\mcS}(t_{2_{a}}) - \mathbf{r}_{a_{1}}^{\mcS}(t_{1_{a}})\label{Eq:RangeVecBaryInertial}
+\end{equation}
+%
+where $\mathbf{r}_{a_{1}}^{\mcS}(t_{1_{a}})$ and $\mathbf{r}_{a_{2}}^{\mcS}(t_{2_{a}})$ are calculated using Eqs.~(\ref{Eq:BaryInertialAntennaPos1}) and (\ref{Eq:BaryInertialAntennaPos2}) respectively.
+When $t_{2_{a}}$ is known, $\tau$ is found using fixed-point iteration on the following equation \cite{Montenbruck:Gill:05}
+%
+\begin{equation}
+   \tau^{(i+1)} = \frac{1}{c}\| \mathbf{r}_{a_{2}}^{\mcS}(t_{2_{a}})  -  \mathbf{r}_{a_{1}}^{\mcS}(t_{2_{a}} - \tau^{(i)}) \|
+\end{equation}
+%
+When $t_{1_{a}}$is known, $\tau$ is found using fixed-point iteration on the following equation
+%
+\begin{equation}
+   \tau^{(i+1)} = \frac{1}{c}\| \mathbf{r}_{a_{2}}^{\mcS}(t_{1_{a}}+\tau^{(i)})  -  \mathbf{r}_{a_{1}}^{\mcS}(t_{1_{a}}) \|
+\end{equation}
+%
+
+\subsection{Partial Derivatives of the One-Way Light Time} \label{Sec:OneWayLightTimePartials}
+
+In this section, we derive the partial derivatives of the one-way light time with respect to the solve-for parameters. Partial derivatives of the one-way light time appear in most partial derivatives for computed observations in later sections.  The light time solution can be solved in the local inertial system or the solar system barycentric system.  Furthermore, the light time solution can be expressed as a time duration or a distance.  We begin by formulating the expressions for the partial derivatives of the light time solution in the local inertial system expressed as a distance. Next we formulate the partials of the barycentric light time solution expressed as a distance.  Finally, we show the relationship between the partials for the distance-based and time-based formulations.
+
+From the light time solution, we know the range vector in either the local inertial or solar system barycenter as shown below, which are Eqs.~(\ref{Eq:RangeVecBaryInertial}) and (\ref{Eq:RangeVecLocalInertial}), repeated here for convenience.
+%
+ \begin{equation}
+     \boldsymbol{\rho}^\mcS = \mathbf{r}_{a_{2}}^{\mcS}(t_{2_{a}}) - \mathbf{r}_{a_{1}}^{\mcS}(t_{1_{a}}) \nonumber
+\end{equation}
+%
+\begin{equation}
+     \boldsymbol{\rho}^\mcI =  \mathbf{r}_{a_{2}}^{\mcI}(t_{2_{a}}) - \mathbf{r}_{a_{1}}^{\mcI}(t_{1_{a}}) \nonumber
+\end{equation}
+%
+If the two participants are referenced to the same celestial body we use the local inertial expression, otherwise we use the solar system barycentric expression.  Let's look at the local inertial formulation first.  Writing $\boldsymbol{\rho}^\mcI$   in terms of the solve-for parameters we obtain:
+%
+ \begin{eqnarray}
+    \boldsymbol{\rho}^\mcI &=& \left(\mathbf{R}^{\mathcal{I}/\mathcal{R}_2}\mathbf{r}_{p2}^{\mathcal{R}_2} + \mathbf{R}^{\mathcal{I}/\mathcal{B}_2}\mathbf{r}_{a_{2}}^{\mathcal{B}_2} \right)  - \left( \mathbf{R}^{\mathcal{I}/\mathcal{R}_1}\mathbf{r}_{p1}^{\mathcal{R}_1} + \mathbf{R}^{\mathcal{I}/\mathcal{B}_1}\mathbf{r}_{a_{1}}^{\mathcal{B}_1}\right)
+\end{eqnarray}
+%
+To simplify the notation, we have assumed that the rotation matrices and position vectors associated with $\mcP_1$ are evaluated at time $t_{1_a}$ and the rotation matrices and position vectors associated with $\mcP_2$ are evaluated at time $t_{2_a}$.  The partial derivative of the norm of a vector $\mathbf{a}$ with respect to a dummy variable $\boldsymbol{\chi}$ is given by
+%
+\begin{equation}
+   \frac{\partial a}{\partial \boldsymbol{\chi}} = \frac{\mathbf{a}^T}{a}\frac{\partial \mathbf{a}}{\partial \boldsymbol{\chi}}
+\end{equation}
+%
+where the superscript ``T" is the transpose operator. Define $t_m$ as the measurement time tag and define $\mathbf{r}^{\mcI_1}_{p_{1}}(t_m)$  as the position of participant 1,at time $t_m$, expressed in $\mcF_{R_1}$.
+%
+\begin{equation}
+   \frac{\partial \rho^\mcI}{\partial \mathbf{r}^{\mcR_1}_{p_{1}}(t_m)} = - \frac{(\boldsymbol{\rho}^\mcI)^T}{\rho^\mcI}\mathbf{R}^{\mathcal{I}/\mathcal{R}_1}(t_{1_a})\mathbf{A}_{p_1}^{\mcR_1}(t_{1_a},t_m) \label{Eq:InertialDistancePartial1}
+\end{equation}
+%
+\begin{equation}
+   \frac{\partial \rho^\mcI}{\partial \mathbf{v}^{\mcR_1}_{p_{1}}(t_m)} = - \frac{(\boldsymbol{\rho}^\mcI)^T}{\rho^\mcI}\mathbf{R}^{\mathcal{I}/\mathcal{R}_1}(t_{1_a})\mathbf{B}_{p_1}^{\mcR_1}(t_{1_a},t_m)
+\end{equation}
+%
+\begin{equation}
+   \frac{\partial \rho^\mcI}{\partial \mathbf{r}^{\mcR_2}_{p_{2}}(t_m)} =  \frac{(\boldsymbol{\rho}^\mcI)^T}{\rho^\mcI}\mathbf{R}^{\mathcal{I}/\mathcal{R}_2}(t_{2_a})\mathbf{A}_{p_2}^{\mcR_2}(t_{2_a},t_m)
+\end{equation}
+%
+\begin{equation}
+   \frac{\partial \rho^\mcI}{\partial \mathbf{v}^{\mcR_2}_{p_{2}}(t_m)} =  \frac{(\boldsymbol{\rho}^\mcI)^T}{\rho^\mcI}\mathbf{R}^{\mathcal{I}/\mathcal{R}_2}(t_{2_a})\mathbf{B}_{p_2}^{\mcR_2}(t_{2_a},t_m)
+   \label{Eq:InertialDistancePartial4}
+\end{equation}
+%
+Writing  $\partial \boldsymbol{\rho}^\mcS/\partial \boldsymbol{\chi}$ in terms of the solve-for parameters:
+\begin{equation}
+    \boldsymbol{\rho}^\mcS = \left(\mathbf{R}^{\mathcal{I}/\mathcal{R}_2}\mathbf{r}_{p2}^{\mathcal{R}_2} + \mathbf{R}^{\mathcal{I}/\mathcal{B}_2}\mathbf{r}_{a_{2}}^{\mathcal{B}_2} \right)  - \left( \mathbf{R}^{\mathcal{I}/\mathcal{R}_1}\mathbf{r}_{p1}^{\mathcal{R}_1} + \mathbf{R}^{\mathcal{I}/\mathcal{B}_1}\mathbf{r}_{a_{1}}^{\mathcal{B}_1}\right) + \left( \mathbf{r}_{i_1}^{\mathcal{S}}(t_{2_a}) - \mathbf{r}_{i_1}^{\mathcal{S}} (t_{1_a})\right)
+\end{equation}
+%
+The partial derivatives are
+%
+\begin{equation}
+   \frac{\partial \rho^\mcS}{\partial \mathbf{r}^{\mcR_1}_{p_{1}}(t_m)} = - \frac{(\boldsymbol{\rho}^\mcS)^T}{\rho^\mcS}\mathbf{R}^{\mathcal{I}/\mathcal{R}_1}(t_{1_a})\mathbf{A}_{p_1}^{\mcR_1}(t_{1_a},t_m)
+   \label{Eq:BarycentricDistancePartial1}
+\end{equation}
+%
+\begin{equation}
+   \frac{\partial \rho^\mcS}{\partial \mathbf{v}^{\mcR_1}_{p_{1}}(t_m)} =  - \frac{(\boldsymbol{\rho}^\mcS)^T}{\rho^\mcS}\mathbf{R}^{\mathcal{I}/\mathcal{R}_1}(t_{1_a})\mathbf{B}_{p_1}^{\mcR_1}(t_{1_a},t_m)
+\end{equation}
+%
+\begin{equation}
+   \frac{\partial \rho^\mcS}{\partial \mathbf{r}^{\mcR_2}_{p_{2}}(t_m)} = \frac{(\boldsymbol{\rho}^\mcS)^T}{\rho^\mcS}\mathbf{R}^{\mathcal{I}/\mathcal{R}_2}(t_{2_a})\mathbf{A}_{p_2}^{\mcR_2}(t_{2_a},t_m)
+\end{equation}
+%
+\begin{equation}
+   \frac{\partial \rho^\mcS}{\partial \mathbf{v}^{\mcR_2}_{p_{2}}(t_m)} =  \frac{(\boldsymbol{\rho}^\mcS)^T}{\rho^\mcS}\mathbf{R}^{\mathcal{I}/\mathcal{R}_2}(t_{2_a})\mathbf{B}_{p_2}^{\mcR_2}(t_{2_a},t_m)
+   \label{Eq:BarycentricDistancePartial4}
+\end{equation}
+%
+In the derivatives above, $\mathbf{A}_{p_1}$ is the upper left 3x3 partition of the state transition matrix for $\mcP_1$ and $\mathbf{B}_{p_1}$ is the upper right 3x3 partition.
+%
+\begin{equation}
+     \boldsymbol{\Phi}_{p_1}^{\mcR_1}(t_f,t_i) =
+     \left(\begin{array}{ccc}
+              \mathbf{A}_{p_1}^{\mcR_1}(t_f,t_i) & \mathbf{B}_{p_1}^{\mcR_1}(t_f,t_i)\vspace{.1 in}\\
+              %
+              \mathbf{C}_{p_1}^{\mcR_1}(t_f,t_i) & \mathbf{C}_{p_1}^{\mcR_1}(t_f,t_i)
+     \end{array}\right)
+\end{equation}
+%
+Above we assume that light time solution is expressed as a distance.  Some measurement formulations use the light time solution expressed as a time duration.  The time $\Delta t$ for light to travel a distance $\rho$ (in a vacuum with no gravity) is given by
+%
+\begin{equation}
+    \Delta t = \frac{\rho}{c} = (t_{2_a} - t_{1_a})
+\end{equation}
+%
+The partial derivative of $\Delta t$ with respect to a dummy variable $\boldsymbol{\chi}$ is given by
+%
+\begin{equation}
+     \frac{\partial \Delta t}{\partial \boldsymbol{\chi} } = \frac{1}{c}\frac{\partial \rho}{\partial \boldsymbol{\chi}} \label{Eq:LightTimePartial}
+\end{equation}
+%
+Partial derivatives of the light time solution expressed in terms of a time duration are calculate using Eq.~(\ref{Eq:LightTimePartial}) along with the appropriate expression from Eqs.(\ref{Eq:InertialDistancePartial1} - \ref{Eq:InertialDistancePartial4}) and (\ref{Eq:BarycentricDistancePartial1} - \ref{Eq:BarycentricDistancePartial4}).
+
+
+%\subsection{Round Trip Light Time}
+%
+%The round trip light time, $\Delta T_{RT}$, is defined as the time between signal transmission at the transmitting electronics to the time of signal reception at the receiving electronics where the light path is modeled in a vacuum with no gravity. So, the round trip light time includes electronics delays and two (or more in the case of TDRSS for example) one-way light-time solutions.
+%
+%A time-line of the two-participant round trip light time is shown in Fig.~ {\ref{Fig:TwoWayMeasTimeLine}.
+%%
+%\begin{figure}[h!]
+%    \begin{center}
+%        \begin{picture}(370,40)
+%            \special{psfile= ./Images/TwoWayMeasTimeLine.eps hscale= 100 vscale= 100 hoffset = -150 voffset = -480}
+%             \makebox(70,-5){$t_{1_E}$}
+%             \makebox(10,-5){$t_{1_{T}}$}
+%             \makebox(445,-5){$t_{3_R}$   \hspace{.14 in} $t_{3_E} $}
+%             \makebox(-755,-5){$t_{2_R}$  }
+%             \makebox(-690,-5){$t_{2_T}$  }
+%        \end{picture}
+%    \end{center}
+%    \vspace{.1 in}
+%    \caption{ Two-Way Measurement Time Line}
+%    \label{Fig:TwoWayMeasTimeLine}
+%\end{figure}
+%%
+%where $t_{1_E}$ is the time stamp of the signal generation by the electronics on the first participant.  Time $t_{1_S}$ is the time the signal is transmitted from the antenna on participant 1 where the uplink delay of $\mathcal{P}_1$.  The electronics delay of $\mcP_1$ is defined as $\tau_1$ and such that
+%%
+%\begin{equation}
+%     t_{1_T} =  t_{1_E} + \tau_1
+%\end{equation}
+%%
+%At time $t_{2_R}$, the signal arrives at the receiving antenna on  $\mathcal{P}_2$.  At time $t_{2_T}$ the signal is transmitted by the transmitting antenna on $\mathcal{P}_2$. The transponder delay for $\mathcal{P}_2$ is defined as $\tau_2$ such that
+%%
+%\begin{equation}
+%     t_{2_T} =  t_{2_R} + \tau_2
+%\end{equation}
+%%
+%Finally, at $t_{3_R}$ the return signal is received at the antenna on $\mathcal{P}_1$ and is stamped and processed at time $t_{3_E}$.  The down-link electronics delay is defined $\tau_3$ such that
+%%
+%\begin{equation}
+%   t_{3_E} = t_{3_R} + \tau_3
+%\end{equation}
+%%
+%According to these definitions, the expression for the round trip light time is
+%%
+%\begin{eqnarray}
+%   \Delta t_{RT} &=& \tau_1 + \frac{\rho_u}{c} + \tau_2 + \frac{\rho_d}{c} + \tau_3 \\
+%                 &=& \tau_1 + \Delta t_u + \tau_2 + \Delta t_d + \tau_3\label{Eq:TwoWayRange}
+%\end{eqnarray}
+%%
+%where
+%%
+%\begin{equation}
+%   \rho_u = c \left ( t_{2_R} - t_{1_T}\right)= || \mathbf{r}_{2_{a}}^C(t_{2_R}) - \mathbf{r}_{1_{a}}^C(t_{1_T}) || \label{Eq:LightTime1}
+%\end{equation}
+%%
+%and
+%%
+%\begin{equation}
+%   \rho_d = c \left ( t_{3_R} - t_{2_T}\right) = || \mathbf{r}_{1_a}^C(t_{3_R}) - \mathbf{r}_2^C(t_{2_{T}}) || \label{Eq:LightTime2}
+%\end{equation}
+%%
+%Eqs.~(\ref{Eq:LightTime1}) and (\ref{Eq:LightTime2}) are solved using the one-way light time algorithm described in Sec. \ref{Sec:OneWayLightTime}.  The coordinate system,$\mcF_{\mathcal{C}}$, in which the light time is solved is described in \ref{Sec:OneWayLightTime}.
+%
+%\subsection{Partial Derivatives of the Round Trip Light Time}
+
+\section{Computed Value of Two-Way Range }
+
+\subsection{Overview}
+
+The computed value of two-way range is a measure of the round trip signal time between a set of two or more participants and uses a single clock on the initiating participant to determine the elapsed time of signal transit.   While the basic model is common to many two-way tracking systems, different systems handle time delays and precision differently.  Also, if and how the round trip signal time delay is converted to a range or distance unit varies among tracking systems.  Below we develop a general formulation of the two-way range observable for two participants and then present how the model applies to different tracking systems including what transponder delays are put on the tracking data file or subtracted from the observed quantity, and how the different systems handle conversion to distance units.
+
+The geometry, definitions, and notation for a two-way measurement are simple extensions of those illustrated in Fig.~\ref{Fig:OneWayMeas}. For the initial development, assume we have two participants, each with an attached sensor and antenna.  A time-line for a two-participant, two-way measurement is shown in Fig.~\ref{Fig:TwoWayMeasTimeLine} where $t_{1_E}$ is the time the signal is generated by the electronics on the first participant.
+%
+\begin{figure}[h!]
+    \begin{center}
+        \begin{picture}(370,40)
+            \special{psfile= ./Images/TwoWayMeasTimeLine.eps hscale= 100 vscale= 100 hoffset = -150 voffset = -480}
+             \makebox(70,-5){$t_{1_E}$}
+             \makebox(10,-5){$t_{1_{T}}$}
+             \makebox(445,-5){$t_{3_R}$   \hspace{.14 in} $t_{3_E} $}
+             \makebox(-755,-5){$t_{2_R}$  }
+             \makebox(-690,-5){$t_{2_T}$  }
+        \end{picture}
+    \end{center}
+    \vspace{.1 in}
+    \caption{ Two-Way Measurement Time Line}
+    \label{Fig:TwoWayMeasTimeLine}
+\end{figure}
+%
+Time $t_{1_T}$ is the time the signal is transmitted from the antenna on participant 1 where the uplink delay of $\mathcal{P}_1$.  The electronics delay of $\mcP_1$ is defined as $\tau_1$ and such that
+%
+\begin{equation}
+     t_{1_T} =  t_{1_E} + \tau_1
+\end{equation}
+%
+At time $t_{2_R}$, the signal arrives at the receiving antenna on  $\mathcal{P}_2$.  At time $t_{2_T}$ the signal is transmitted by the transmitting antenna on $\mathcal{P}_2$. The transponder delay for $\mathcal{P}_2$ is defined as $\tau_2$ such that
+%
+\begin{equation}
+     t_{2_T} =  t_{2_R} + \tau_2
+\end{equation}
+%
+Finally, at $t_{3_R}$ the return signal is received at the antenna on $\mathcal{P}_1$ and is stamped and processed at time $t_{3_E}$.  The down-link electronics delay is defined as $\tau_3$ such that
+%
+\begin{equation}
+   t_{3_E} = t_{3_R} + \tau_3
+\end{equation}
+%
+According to these definitions, the total elapsed time for a two-participant, two-way range measurement is given by
+%
+\begin{equation}
+   \Delta t = \tau_1 + \frac{\rho_u}{c} + \tau_2 + \frac{\rho_d}{c} + \tau_3 \label{Eq:TwoWayRange}
+\end{equation}
+%
+where
+%
+\begin{equation}
+   \rho_u = c \left ( t_{2_R} - t_{1_T}\right)= || \mathbf{r}_{2_{a}}^C(t_{2_R}) - \mathbf{r}_{1_{a}}^C(t_{1_T}) || \label{Eq:LightTime1}
+\end{equation}
+%
+and
+%
+\begin{equation}
+   \rho_d = c \left ( t_{3_R} - t_{2_T}\right) = || \mathbf{r}_{1_a}^C(t_{3_R}) - \mathbf{r}_2^C(t_{2_{T}}) || \label{Eq:LightTime2}
+\end{equation}
+%
+Eqs.~(\ref{Eq:LightTime1}) and (\ref{Eq:LightTime2}) are solved using the one-way light time algorithm described in Sec. \ref{Sec:OneWayLightTime}.  The coordinate system, $\mcF_{\mathcal{C}}$, in which the light time is solved is described in \ref{Sec:OneWayLightTime}.
+
+
+%We can generalize the two-participant model above to involve any number of signal legs, $n$.  In this case, the total measurement time duration is given by
+%%
+%\begin{equation}
+%   \Delta t = \tau_n + \sum_{i = 1}^{n-1} \left( \tau_i + \frac{r_{i,i+1}}{c} \right)  \label{Eq:GeneralTwoWayRange}
+%\end{equation}
+%%
+%where we assume participant 1 and participant $n$ are the same and the same clock is used at both the initial and final measurement times.
+%%
+%\begin{eqnarray}
+%    r_{i,i+1} &=& || \mathbf{r}_2(t_{i+1}) - \mathbf{r}_1(t_i + \tau_i) ||  \label{Eq:TwoWayLightTime1} \\
+%    r_{i,i+1} &=& || \mathbf{r}_2(t_{n} - t_{n-1}) - \mathbf{r}_1(t_{n-1} + \tau_{n-1}) || \label{Eq:TwoWayLightTime2}
+%\end{eqnarray}
+%
+%\begin{center}
+%\begin{minipage}{6 in}
+%\begin{small}
+%\begin{algorithm}[H]
+%   %
+%    \SetLine \KwIn{$t_n,\mathbf{r}_k(t_n),\mathbf{v}_k(t_n)$}
+%    %
+%    \KwOut{$t_k, \mathbf{r}_k(t_k+\tau_k)$}
+%    %
+%    Backprop $r_n(t_n)$ to $t_n - \tau_n$\;
+%    Save $\mathbf{r}_n(t_n - \tau_n)$\;
+%    %
+%    \For{$ i = n-1 $ to {1}}
+%        {
+%        Solve Eq.~(\ref{Eq:TwoWayLightTime1}) or (\ref{Eq:TwoWayLightTime2})  for $t_i' = t_{i-1} + \tau_{i-1}$\;
+%        Save $\mathbf{r}_i(t_i + \tau_i)$\;
+%        Calculate $t_i = t_i' - \tau_i$\;
+%        Backprop $\mathbf{r}_i(t_i')$ to $t_i$\;
+%        Save to $\mathbf{r}_{i}(t_{i})$\;
+%        Calculate $r_{i,i+1} = \mathbf{r}_{i+1}(t_i) - \mathbf{r}_{i-1}(t_{i-1} + \tau_i)$
+%    }
+%    \hspace{.2 in}
+%    %
+%    \label{alg:TwoWayRange}\caption{General Two-Way Range Algorithm}
+%    %
+%\end{algorithm}
+%\end{small}
+%\end{minipage}
+%\end{center}
+
+
+%Inputs : r_1(t_3), r_2(t_3), t_3
+%
+%1) Backprop to t_3 - tau3 and save  r_1(t_3 - tua3), r_2(t_3 - tau3)
+%2) Solve light time 6.19 for (t_2 + tua2) and save r_1(t_2 + tua2), r_2(t_2 + tua2)
+%3) Evaluate 6.17 for r_23
+%4) Backprop through  tau2 and save  r_1(t_2 ), r_2(t_2)
+%2) Solve light time 6.18 for (t_1 + tua1) and save r_1(t_1 + tua1), r_2(t_1 + tua1)
+
+\subsection{NASA Ground Network (STDN) and Universal Space Network (USN) }
+
+The time tag for two-way range measurements provided by STDN or USN is $t_{3_E}$, the time the downlink signal is processed by the electronics at the ground station.  The NASA ground network performs system calibration to determine $\tau_1$ and $\tau_3$ and subtracts these values from the observed quantity before writing to the tracking data file.  $\tau_1$ and $\tau_3$ values are not provided to the user and therefore cannot be used in the light time correction. Typical values for $\tau_1$ and $\tau_3$ are on the order of microseconds, which for LEO results in about 1 cm of position error in the light time solution.  The transponder delay
+is converted to a distance by multiplying by the speed of light to yield the two-way range measurement, $R_2$.
+%
+\begin{equation}
+   R_2 =  \frac{1}{2} \left( \rho_{u} + c\tau_2 + \rho_{d}  \right)
+\end{equation}
+%
+The partial derivatives are shown below:
+%
+\begin{eqnarray}
+    \frac{\partial R_2}{\partial  \tau_1} & = & \mbox{(not a supported solve-for)}\\
+    %
+    \frac{\partial R_2}{\partial  \tau_3} & = & \mbox{(not a supported solve-for)}\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{3_e})} & = & \frac{1}{2}\left(\frac{\partial \rho_{u}}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{3_e})} \right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{3_e})} & = & \frac{1}{2}\left(\frac{\partial \rho_{u}}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{3_e})}\right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{3_e})} & = & \frac{1}{2}\left(\frac{\partial \rho_{u}}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{3_e})}\right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{3_e})} & = & \frac{1}{2}\left(\frac{\partial \rho_{u}}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{3_e})}\right)\\
+    %
+\end{eqnarray}
+
+The total range correction, $\Delta R_2$, due to atmospheric effects at the Earth from the troposphere and ionosphere is calculated using
+%
+\begin{equation}
+    \Delta R_2 = \frac{1}{2} \left( \Delta \rho_u + \Delta \rho_d \right)
+\end{equation}
+%
+where $\Delta \rho_u$ and $\Delta \rho_d$  are the uplink and downlink range corrections respectively.  Both $\Delta \rho_u$ and $\Delta \rho_d$ have contributions from the troposphere and ionosphere given by equations (x) and (x) respectively
+
+\subsection{NASA Space Network (TDRSS)}
+
+The geometry for the TDRSS two-way range model is shown in Fig.~\ref{Fig:TDRSSTwoWayRange}.  TDRSS provides two-way range observations by using a single relay spacecraft to perform the forward and return link to the user spacecraft.
+There are four one-way light time transits resulting in four ranges:  the uplink range $\rho_u$, the forward link range, $\rho_f$, the return link range, $\rho_r$, and the downlink range,  $\rho_d$.  Define the following variables for the time sequence of events. $t_{1_{E}}$ is the time the signal is generated by the electronics of the initiating ground terminal.  Time $t_{1_{T}} = t_{1_{E}}+\tau_1$ is the time the signal is transmitted from the antenna at the ground station.  At time $t_{2_{R}}$, the signal is received at the antenna on the TDRS.  At time $t_{2_{T}} = t_{2_{R}} + \tau_2$ the signal is broadcast from the forward link antenna to the antenna on the user spacecraft.  At $t_{3_{R}}$ the signal is received at the antenna on the user spacecraft.  At time $t_{3_{T}} = t_{3_{R}} + \tau_3$ the signal is broadcast from the antenna on the user spacecraft back to the TDRS. At time $t_{4_{R}}$ the signal is received at the antenna on the TDRS.  At time $t_{4_{T}} = t_{4_{R}}+ \tau_4$ the signal is broadcast from the antenna on the TDRS to the the ground terminal.  At time $t_{5_{R}}$ the signal is received at the antenna on the ground terminal. Finally, at time $t_{5_{E}} = t_{5_{R}} + \tau_5$ the signal is processed by the electronics at the ground terminal.
+
+ %
+\begin{figure}[h!]
+    \begin{center}
+        \begin{picture}(370,200)
+            \special{psfile= ./Images/TDRSSTwoWayRange.eps hscale= 100 vscale= 100 hoffset = -100 voffset = -440}
+             \makebox(245,85){$\rho_u$}
+             \makebox(-200,270){$\rho_f$}
+             \makebox(-100,270){$\rho_r$}
+             \makebox(-5,90){$\rho_d$}
+        \end{picture}
+    \end{center}
+    \vspace{.1 in}
+    \caption{ TDRSS Two-Way Range Geometry}
+    \label{Fig:TDRSSTwoWayRange}
+\end{figure}
+%
+
+The TDRSS network performs system calibration to determine  the uplink delay, $\tau_1$, the TDRSS forward delay, $\tau_2$,  the TDRSS return link delay,$\tau_4$, and the down-link delay, $\tau_5$.  These values are subtracted from the observed quantity before writing to the tracking data file (Phung \cite{Phung:80} \emph{et. al.}, pg. 4-9).  The transponder delay values are not provided to the user and therefore cannot be used in the light time correction.  Typical values for those delays are on the order of 0.1 microseconds, which for LEO results in a few mm of position error in the light time solution.
+
+The computed two-way range model for TDRSS is given by ( see Long\cite{GTDS} \emph{et. al.} Eq. 7-54):
+%
+\begin{equation}
+   R_2 =   \frac{1}{2}\left( \rho_u + \rho_f + \rho_r + \rho_d + c \tau_3 \right) \label{Eq:TDRSSTwoWayRange}
+\end{equation}
+%
+
+Eq.~(\ref{Eq:TDRSSTwoWayRange}) is solved by backwards signal propagation beginning at the measurement time tag,  $T_{5_E}$.    Given these definitions, the four light-time transits in Eq.~(\ref{Eq:TDRSSTwoWayRange}) are given below and solved in the order shown.  For the purposes of the light-time solutions, we assume that the electronics delays are all zero and drop the subscripts ``$R$", ``$T$", and ``$E$" from the time variables.
+%
+ \begin{equation}
+     \rho_{d} = || \mathbf{r}_{5_{a}}^C(t_{5}) - \mathbf{r}_{4_{a}}^C(t_{4}) ||
+\end{equation}
+%
+\begin{equation}
+     \rho_r = || \mathbf{r}_{4_{a}}^C(t_{4}) - \mathbf{r}_{3_{a}}^C(t_{3}) ||
+\end{equation}
+%
+\begin{equation}
+     \rho_{f} = || \mathbf{r}_{3_{a}}^C(t_{3}) - \mathbf{r}_{2_{a}}^C(t_{2}) ||
+\end{equation}
+%
+\begin{equation}
+     \rho_u = || \mathbf{r}_{2_{a}}^C(t_{2}) - \mathbf{r}_{1_{a}}^C(t_{1}) ||
+\end{equation}
+%
+The above equations are solved using the one-way light time algorithm discussed in Sec.~\ref{Sec:OneWayLightTime}.
+
+%The  observed value of the TDRSS two-way range measurement is computed using PN code ranging.  The ranging PN code is composed of $(2^{10} -1)2^8$ chips and the observed range value provided by the network is ambiguous by an integer number of PN code lengths.  Define the ambiguous observed range value as $R_a$.  When simulating data, GMAT simulates the unambiguous range measurement.  When estimating, the range ambiguity is determined before evaluating the observed minus computed value.  The algorithm for determining the range ambiguity is given by Phung \cite{Phung:80} \emph{et. al.}, pg. 4-17. First the PN code period is calculated using
+%%
+%\begin{equation}
+%    A = \frac{(2^{10} -1)2^8}{PNR}
+%\end{equation}
+%%
+%where $PNR$ is given by
+%%
+%\begin{equation}
+%    PRN = \frac{31}{36 M}
+%\end{equation}
+%%
+%and $M = 240$ for S-Band service and $M=1600$ for K-band service. The one-way range ambiguity interval, $R_{amb}$, is calculated using
+%%
+%\begin{equation}
+%     R_{amb} = \frac{1}{2} c A
+%\end{equation}
+%%
+%Finally, the unambiguous observed range value, $R_o$, is computed using using
+%%
+%\begin{equation}
+%     R_o = R_a + \mbox{round} \left( \frac{R_2 - R_a}{R_{amb}} \right)R_{amb}
+%\end{equation}
+%%
+%and the observed minus computed value is given by
+%%
+%\begin{equation}
+%      (O-C) = R_o - R_2
+%\end{equation}
+
+The partial derivatives of the two way range, $R_2$, are given below.
+%  First, partials with respect to the hardware delays are:
+%\begin{eqnarray}
+%    \frac{\partial R_2}{\partial  \tau_1} & = & \mbox{(not a supported solve-for)}\\
+%    %
+%    \frac{\partial R_2}{\partial  \tau_2} & = & \mbox{(not a supported solve-for)}\\
+%    %
+%    \frac{\partial R_2}{\partial  \tau_3} & = & \frac{c}{2} \\
+%    %
+%    \frac{\partial R_2}{\partial  \tau_4} & = & \mbox{(not a supported solve-for)}\\
+%    %
+%    \frac{\partial R_2}{\partial  \tau_5} & = & \mbox{(not a supported solve-for)}\\
+%\end{eqnarray}
+%%
+Partials with respect to the user spacecraft state are:
+%
+\begin{eqnarray}
+    \frac{\partial R_2}{\partial \mathbf{r}^{\mcR_3}_{p_3}(t_{5_e})} & = & \frac{1}{2}\left(\frac{\partial \rho_{f}}{\partial \mathbf{r}^{\mcR_3}_{p_3}(t_{5_e})} + \frac{\partial \rho_{r}}{\partial \mathbf{r}^{\mcR_3}_{p_3}(t_{5_e})} \right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{v}^{\mcR_3}_{p_3}(t_{5_e})} & = & \frac{1}{2}\left(\frac{\partial \rho_{f}}{\partial \mathbf{v}^{\mcR_3}_{p_3}(t_{5_e})} + \frac{\partial \rho_{r}}{\partial \mathbf{v}^{\mcR_3}_{p_3}(t_{5_e})} \right)\\
+    %
+\end{eqnarray}
+%
+Partials with respect to the ground terminal state are (note: $p_1$ and $p_5$ are the same participant):
+%
+\begin{eqnarray}
+    \frac{\partial R_2}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{5_e})} & = & \frac{1}{2}\left(\frac{\partial \rho_{u}}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{5_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{r}^{\mcR_5}_{p_5}(t_{5_e})}\right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{5_e})} & = & \frac{1}{2}\left(\frac{\partial \rho_{u}}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{v}^{\mcR_5}_{p_5}(t_{5_e})}\right)\\
+    %
+\end{eqnarray}
+%
+Partials with respect to the TDRS state are (note: $p_2$ and $p_4$ are the same participant):
+%
+\begin{eqnarray}
+    \frac{\partial R_2}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{5_e})} & = & \frac{1}{2}\left(
+    \frac{\partial \rho_{u}}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{5_e})} +
+    \frac{\partial \rho_{f}}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{5_e})} +
+    \frac{\partial \rho_{r}}{\partial \mathbf{r}^{\mcR_4}_{p_4}(t_{5_e})} +
+    \frac{\partial \rho_{d}}{\partial \mathbf{r}^{\mcR_4}_{p_4}(t_{5_e})}\right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{5_e})} & = & \frac{1}{2}\left(
+    \frac{\partial \rho_{u}}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{5_e})} +
+    \frac{\partial \rho_{f}}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{5_e})} +
+    \frac{\partial \rho_{r}}{\partial \mathbf{v}^{\mcR_4}_{p_4}(t_{5_e})} +
+    \frac{\partial \rho_{d}}{\partial \mathbf{v}^{\mcR_4}_{p_4}(t_{5_e})}\right)\\
+    %
+\end{eqnarray}
+\subsection{NASA Deep Space Network (DSN)} \label{Sec:DSNTwoWayRange}
+
+The NASA Deep Space Network performs system calibration to determine $\tau_1$ and $\tau_3$ and these values are provided in the records on the tracking data file (Moyer\cite{Moyer},pg. 11-12).  The ideal value for the two-way measurement time duration is given by
+%
+\begin{equation}
+   \Delta t_2 =  \tau_1 + \frac{\rho_{u}}{c} + \tau_2 + \frac{\rho_{d}}{c} + \tau_3 \label{Eq:DSNTwoWayRange}
+\end{equation}
+%
+It is worth at this time comparing the above equation to Eq. 11-7 of Moyer.  In Moyer's formulation $RLT_{12}$ and $RLT_{23}$ are the general relativistic corrections to the light transit time between antennas.  These are treated as media corrections in GMAT, and so do not appear in \ref{Eq:DSNTwoWayRange}.  The terms of the form $(ET - TAI)_{t_3}$ are also treated as corrections that can be optionally applied and when implemented will be discussed in the media corrections section.  The same is true of the sensor corrections terms of the form $\Delta_A$ and $\Delta_{sc}$.  Finally, the term labelled $R_c$ in Moyer is the range bias (in meters).  In GMAT, this term is handled via the measurement error model.
+
+The DSN converts the observed value in units of time to a range unit by integrating a conversion factor, $F$, that is dependent upon the uplink station's carrier frequency (Moyer\cite{Moyer},pg. 13-64).   For an S-band uplink transmitter, the conversion factor $F$ is
+%
+\begin{equation}
+    F = \frac{1}{2}F_T(S)
+\end{equation}
+%
+where $F_T(S)$ may be defined by a frequency ramp table described in section xxx, or could be a constant.  For S-Band, one range unit is equivalent to two cycles of the transmitter frequency.  For X-Band uplink transmitters, the conversion factor is given by
+%
+\begin{equation}
+    F = \frac{11}{75}F_T(\mbox{X,HEV})
+\end{equation}
+%
+for stations prior to conversion to Block 5 exciters (BVE), and for a BVE transmitter $F$ is given by
+%
+\begin{equation}
+    F = \frac{221}{741 \mbox{x} 2}F_T(\mbox{S,BVE})
+\end{equation}
+%
+The measurement time duration, $\Delta t$, is converted to a distance unit by integrating the conversion factor, $F$, over the duration of the precision light time solution (Moyer\cite{Moyer},pg. 13-72).
+%
+\begin{equation}
+   R_2 =  \int_{t_1}^{t_3} F \hspace{.05 in} dt
+\end{equation}
+%
+In the case of constant frequency transmission, the range conversion simplifies to
+%
+\begin{equation}
+   R_2 =   F \Delta t_2
+\end{equation}
+%
+\begin{eqnarray}
+    \frac{\partial R_2}{\partial  \tau_1} & = & \mbox{(not a supported solve-for)}\\
+    %
+    \frac{\partial R_2}{\partial  \tau_2} & = & \mbox{(not a supported solve-for)}\\
+    %
+    \frac{\partial R_2}{\partial  \tau_3} & = & \mbox{(not a supported solve-for)}\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{3_e})} & = & \frac{F}{c}\left(\frac{\partial \rho_{u}}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{3_e})} \right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{3_e})} & = & \frac{F}{c}\left(\frac{\partial \rho_{u}}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{3_e})}\right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{3_e})} & = & \frac{F}{c}\left(\frac{\partial \rho_{u}}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{3_e})}\right)\\
+    %
+    \frac{\partial R_2}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{3_e})} & = & \frac{F}{c}\left(\frac{\partial \rho_{u}}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{3_e})} + \frac{\partial \rho_{d}}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{3_e})}\right)\\
+    %
+\end{eqnarray}
+%
+where the partials of the form $\partial \rho_{u} / \partial \mathbf{v}^{\mcR_2}_{p_2}$ are provided in Sec.~(\ref{Sec:OneWayLightTimePartials}).
+
+The total range correction, $\Delta R_2$, due to atmospheric effects at the Earth from the troposphere and ionosphere is calculated using
+%
+\begin{equation}
+    \Delta R_2 = \frac{1}{2} \left( \Delta \rho_u + \Delta \rho_d \right)
+\end{equation}
+%
+where $\Delta \rho_u$ and $\Delta \rho_d$  are the uplink and downlink range corrections respectively.  Both $\Delta \rho_u$ and $\Delta \rho_d$ have contributions from the troposphere and ionosphere given by equations (x) and (x) respectively.
+
+\section{Computed Value of Averaged Two-Way Doppler }
+
+Computed values of two-way Doppler measurements are measures of the average Doppler shift over some time interval.   The average is used because it is not physically possible to take instantaneous Doppler measurements.  The Doppler shifted received frequency, $F_R$ is 
+%
+\begin{equation}
+   F_R =  F_T\left( 1 -  \frac{\dot{\rho}}{c}\right)
+\end{equation}
+%
+where $F_T$ is the transmitted or reference frequency, $\dot{\rho}$ is the range rate, and $c$ is the speed of light.
+The instantaneous doppler shift, $\Delta F$, is given
+%
+\begin{equation}
+   \Delta F =  -F_T \frac{\dot{\rho}}{c}
+\end{equation}
+%
+Many systems use a constant transmission frequency over the Doppler averaging interval.  In this case, for a two-participant Doppler measurement, the average Doppler shift $\bar{\Delta F}$ is given by
+%
+\begin{equation}
+     \bar{\Delta F} = \frac{1}{\Delta T_a}\int_{t_o}^{t_f} -F_T \frac{\dot{\rho}}{c} dt = -\frac{F_T}{c \Delta T_a}\left(\rho(t_f) - \rho(t_o)\right) \label{Eq:BasicTwoWayDoppler}
+\end{equation}
+%
+where $\Delta T_a$ is the averaging interval given by $t_f - t_o$. 
+ 
+Many tracking systems provide two-way doppler observations.  The primary differences in the observables are how the integration  in Eq.~(\ref{Eq:BasicTwoWayDoppler}) is performed, the frequency used as the reference frequency, and the measurement time tag.   For example, STDN, USN, and TRDSS all uses constant values of $F_T$, while DSN often uses ramped values.  TDRSS uses $T_f$ as the measurement time tag $t_t$, while DSN uses the center of the averaging interval $t_o + \Delta t/2$ as the measurement time tag.
+
+\section{NASA Deep Space Network (DSN)}
+
+ Fig. \ref{Fig:DopplerMeasTimeLine} shows a time-line for an averaged two-way doppler measurement.  $t_{1_E}^s$ is the time the initial signal is generated by the electronics on participant 1 (superscript ``s" is described shortly).  At time $t_{1_E}^s + \tau_1$ the signal is broadcast from the antenna on participant 1.  At time $t_{2_R}^s$ the signal is received at the antenna on participant 2.  At time $t_{2_T}^s$ the signal is rebroadcast by the antenna on participant 2.  At time $t_{3_R}^s$, the signal is received at the antenna at the participant performing the Doppler count.  At time $t_{3_E}^s$, the signal is processed by the electronics on participant 1 and the phase counting begins.   Phase counting continues for an interval $\Delta T_a$ in local station time.
+
+\begin{figure}[h!]
+    \begin{center}
+        \begin{picture}(370,40)
+            \special{psfile= ./Images/DopplerMeasTimeLine.eps hscale= 100 vscale= 100 hoffset = -110 voffset = -490}
+             \makebox(-25,-30){$t_{1_E}^s$}
+             \makebox(5,-30){$t_{1_{T}}^s$}
+             \makebox(415,-90){}
+             \makebox(-786,-30){$t_{2_R}^s$}
+             \makebox(-760,-30){$t_{2_T}^s$  }
+             \makebox(-780,-80){$\Delta t_s$  }
+             \makebox(-710,-30){$t_{3_R}^s$}
+             \makebox(-680,-30){$t_{3_E}^s$}
+             \makebox(-570,55){$t_m - \displaystyle\frac{\Delta T_a}{2}$}
+             \makebox(-280,55){$t_m + \displaystyle\frac{\Delta T_a}{2}$}
+             \makebox(-360,-30){$t_{1_E}^e$}
+             \makebox(-330,-30){$t_{1_T}^e$}
+             \makebox(-280,-30){$t_{2_R}^e$}
+             \makebox(-255,-30){$t_{2_T}^e$}
+             \makebox(-275,-80){$\Delta t_e$}
+             \makebox(-200,-30){$t_{3_R}^e$}
+             \makebox(-170,-30){$t_{3_E}^e$}
+             \makebox(-500,-30){$t_m$}
+        \end{picture}
+    \end{center}
+    \vspace{.4 in}
+    \caption{ Two-Way Doppler Measurement Time Line}
+    \label{Fig:DopplerMeasTimeLine}
+\end{figure}
+
+The computed value of the two-way average Doppler is calculated by differencing two round-trip light times.   Define the starting round trip light time as $\Delta t_s$ which has a time tag of $t_{3_E}^s$ and define the ending round-trip light time as $\Delta t_e$ which has a time tag of $t_{3_E}^e$.  The time tag, $t_m$, for a DSN two-way Doppler measurement is the center of the averaging interval which results in the following:
+%
+\begin{eqnarray}
+   t_{3_E}^e &=& t_m +\frac{\Delta T_a}{2}\\
+   t_{3_E}^s &=& t_m -\frac{\Delta T_a}{2}
+\end{eqnarray}
+%
+$\Delta t_s$ and $\Delta t_e$ are computed as described in Sec. \ref{Sec:DSNTwoWayRange}. The two-way Doppler observable provided by the DSN is the negative of the classical Doppler frequency shift (see discussion in Moyer \cite{Moyer}  pg. 13-26 and Eq. 13-47)
+%
+\begin{equation}
+   \Delta \bar{F} = \frac{M_T F_T}{\Delta T_a} \left(\Delta t_e - \Delta t_s  \right)
+\end{equation}
+%
+where $M_T$ is the transponder turn-around ratio and $F_T$ is the transmitted frequency.
+
+\section{Computed Values of Optical Angles Observables}
+
+The computed values of optical azimuth and elevation are calculated using the one-way transit of
+reflected light from one participant to an optical sensor on the second participant.  The mathematical model shares
+much in common with the one-way range model and the geometry for optical ra/dec is illustrated in
+Fig.~(\ref{Fig:OneWayMeas}).
+
+Again, for the purposes of illustration, we have assumed that both participants
+are spacecraft and that their states are known -- being propagated or estimated -- with respect to different coordinate systems.  The subsequent mathematical development is general and is valid for measurement processes that involve
+different participant types.  Optical angles are calculated using the range vector corrected for light time delays as described in Sec.~(\ref{Sec:OneWayLightTime}).  To determine the angles, we first represent the range vector in the appropriate coordinate system using either Eqs.~(\ref{Eq:RangeVecLocalInertial}) or (\ref{Eq:RangeVecBaryInertial})
+which are repeated below for convenience
+%
+\begin{equation}
+      \boldsymbol{\rho}_{d}^\mcI = \mathbf{r}_{a_{2}}^{\mcI}(t_{2_{a}}) - \mathbf{r}_{a_{1}}^{\mcI}(t_{1_{a}}) \nonumber
+\end{equation}
+%
+\begin{equation}
+     \boldsymbol{\rho}_{d}^\mcS = \mathbf{r}_{a_{2}}^{\mcS}(t_{2_{a}}) - \mathbf{r}_{a_{1}}^{\mcS}(t_{1_{a}}) \nonumber
+\end{equation}
+%
+Eq.~(\ref{Eq:RangeVecLocalInertial}) is used if both participants are referenced to the same celestial body and Eq.~(\ref{Eq:RangeVecBaryInertial}) is used otherwise.  The only difference between $\mcF_\mcS$ and $\mcF_\mcI$ is a translation so $\mathbf{R}^{\mcO/\mcI} = \mathbf{R}^{\mcO/\mcS}$.  As a result, we can write
+%
+\begin{equation}
+      \boldsymbol{\rho}_{d}^{\mcO} = \mathbf{R}^{{\mcO}/{\mcI}}(t_{2_{a}})\boldsymbol{\rho}_{d}^{\mcI} \label{Eq:RangeforAngles}
+\end{equation}
+%
+The rotation matrix $\mathbf{R}^{{\mcO}/{\mcI}}(t_{2_{a}})$ is determined by the sensor type and type of angle measurement. If the receiving participant is a sensor on a ground station, then $\mathbf{R}^{{\mcO}/{\mcI}}(t_{2_{a}})$
+is the rotation from J2000 to station topocentric coordinates at time $t_{2_{a}}$. If the receiving participant is a sensor on a spacecraft, then $\mathbf{R}^{{\mcO}/{\mcI}}(t_{2_{a}})$ is the rotation from inertial to body axes at time $t_{2_{a}}$.
+
+Given the range vector, the elevation is calculated using
+%
+\begin{equation}
+    \sin(\delta) = \frac{\rho_z^{\mcO}}{ \|\boldsymbol{\rho}^{\mcO}\|}
+\end{equation}
+%
+where $\rho_z^{\mcO}$ is the third component of $\boldsymbol{\rho}^{\mcO}$. If
+$\rho_x^{\mcO} \geq 1e-10$ and $\rho_y^{\mcO} \geq 1e-10$ the azimuth is calculated using
+%
+\begin{equation}
+    \tan{\beta} = \frac{ \rho_y^{\mcO}}{- \rho_x^{\mcO}}
+\end{equation}
+%
+otherwise the azimuth is undefined, and the measurement is infeasible.
+
+
+%
+The elevation partial derivatives have the general form
+%
+\begin{equation}
+    \frac{\partial \delta}{\partial \chi} = \frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \hat{ \boldsymbol{\rho} }^{\mcO}
+    \left(\hat{ \boldsymbol{\rho}}^{\mcO}  \right) ^T  \right)\frac{\partial  \boldsymbol{\rho}_d^{\mcO}  }{\partial \chi}
+\end{equation}
+%
+where $\mathbf{z} = [0 \hspace{.1 in} 0 \hspace{0.1 in} 1]^T$ and
+$\chi$ is a dummy variable.  The partial derivatives of elevation
+with respect to the individual solve-for parameters are:
+%
+\begin{eqnarray}
+    \frac{\partial \delta}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{2_e})} & = &
+     \frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \hat{\boldsymbol{\rho}}^{\mcO}
+    (\hat{\boldsymbol{\rho}}^{\mcO} )^T  \right)\mathbf{R}^{{\mcO}/{\mcI}}(t_{2_{a}})\frac{\partial  \boldsymbol{\rho}_d^{\mcI}  }{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{2_e})}\\
+    %
+    \frac{\partial \delta}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{2_e})} & = & \mathbf{0}_{1x3} \\
+    %
+    \frac{\partial \delta}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{2_e})} & = &
+     \frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \hat{\boldsymbol{\rho}}^{\mcO}
+    (\hat{\boldsymbol{\rho}}^{\mcO} )^T  \right)\mathbf{R}^{{\mcO}/{\mcI}}(t_{2_{a}})\frac{\partial  \boldsymbol{\rho}_d^{\mcI}  }{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{2_e})}\\
+    %
+    \frac{\partial \delta}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{2_e})} & = & \mathbf{0}_{1x3} \\
+%    \frac{\partial \delta}{\partial  \mathcal{O}_b } & = & 1
+\end{eqnarray}
+%
+where partials of the form $\partial  \boldsymbol{\rho}_d^{\mcI}  /\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{2_e})$ are given in Sec. \ref{Sec:OneWayLightTimePartials}.
+
+The azimuth partial derivatives have the general form
+%
+\begin{equation}
+    \frac{\partial \beta}{\partial \zeta} = \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\hat{\boldsymbol{\rho}}_d^\mcO}
+    \left( \frac{\hat{\boldsymbol{\rho}}_d^\mcO    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\hat{\boldsymbol{\rho}}_d^\mcO} -\mathbf{I}_{3x3} \right)\frac{\partial \hat{\boldsymbol{\rho}}_d^\mcO}{\partial \zeta}
+\end{equation}
+%
+where $\zeta$ is a dummy variable, $\mathbf{x} = [1 \hspace{.1 in} 0
+\hspace{0.1 in} 0]^T$, and $\mathbf{y} = [0 \hspace{.1 in} 1
+\hspace{0.1 in} 0]^T$.  The partial derivatives of the azimuth with
+respect to the solve-for variables are:
+%
+\begin{eqnarray}
+    \frac{\partial \beta}{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{2_e})} & = & 
+    \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\hat{\boldsymbol{\rho}}_d^\mcO}
+    \left( \frac{\hat{\boldsymbol{\rho}}_d^\mcO    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\hat{\boldsymbol{\rho}}_d^\mcO} -\mathbf{I}_{3x3} \right)\mathbf{R}^{{\mcO}/{\mcI}}(t_{2_{a}})\frac{\partial  \boldsymbol{\rho}_d^{\mcI}  }{\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{2_e})}\\
+    %
+    \frac{\partial \beta}{\partial \mathbf{v}^{\mcR_1}_{p_1}(t_{2_e})} & = & \mathbf{0}_{1x3} \\
+    %
+    \frac{\partial \beta}{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{2_e})} & = &
+      \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\hat{\boldsymbol{\rho}}_d^\mcO}
+    \left( \frac{\hat{\boldsymbol{\rho}}_d^\mcO    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\hat{\boldsymbol{\rho}}_d^\mcO} -\mathbf{I}_{3x3} \right)\mathbf{R}^{{\mcO}/{\mcI}}(t_{2_{a}})\frac{\partial  \boldsymbol{\rho}_d^{\mcI}  }{\partial \mathbf{r}^{\mcR_2}_{p_2}(t_{2_e})}\\
+    %
+    \frac{\partial \beta}{\partial \mathbf{v}^{\mcR_2}_{p_2}(t_{2_e})} & = & \mathbf{0}_{1x3}\\
+    %
+    \frac{\partial \delta}{\partial  \mathcal{O}_b } & = & 1
+\end{eqnarray}
+%
+where partials of the form $\partial  \boldsymbol{\rho}_d^{\mcI}  /\partial \mathbf{r}^{\mcR_1}_{p_1}(t_{2_e})$ are given in Sec. \ref{Sec:OneWayLightTimePartials}.
+
+\section{Geometric Measurements}
+
+GMAT supports several geometric measurement models including range,
+range rate, azimuth/elevation pairs, and right ascension/declination
+pairs.  Geometric measurement models are based purely on kinematics
+and do not model real-world phenomenon such as light time delay,
+sensor delays, or atmospheric effects.  Hence, these models are
+primarily used in error analysis and tracking data scheduling.
+
+The general form of the geometric measurement model is given by
+%
+\begin{equation}
+   \mathcal{O}_c = \mathbf{f}_k\left(\mathbf{r}_1(t), \dot{\mathbf{r}}_1(t),
+   \mathbf{r}_2(t), \dot{\mathbf{r}}_2(t)\right) + \mathcal{O}_b
+\end{equation}
+%
+and illustrated in Fig. \ref{Fig:GeometricMeas} where
+%
+\begin{center}
+    \begin{minipage}[t]{5.0 in}
+        \begin{tabbing}[htbp!]
+            123456 \= dummy line \kill
+            $\mathbf{f}_k$ \> The kinematic model \\
+            $\mathbf{r}_1$ \> Location of participant 1\\
+            $\dot{\mathbf{r}}_1$ \> Velocity of participant 1\\
+            $\mathbf{r}_2$ \> Location of participant 2\\
+            $\dot{\mathbf{r}}_2$    \> Velocity of participant 2\\
+            $\mathbf{r}_{12}$ \> Vector from origin of $\mathcal{F}_2$ to origin of $\mathcal{F}_1$\\
+            $t$                \> Measurement time tag\\
+            $\mathcal{O}_b$    \> Measurement bias\\
+            $\mathcal{F}_1$ \> Coordinate system in which participant 1 is expressed\\
+            $\mathcal{F}_2$ \> Coordinate system in which participant 2 is expressed\\
+            $\mathcal{F}_o$ \> Coordinate system in which the observation is expressed\\
+            $\boldsymbol{\rho}$    \> Range vector\\
+            $\rho$   \>  Range   \\
+            $\dot{\rho}$  \>  Range rate  \\
+            $\beta$ \> Azimuth angle\\
+            $\delta$ \> Elevation angle\\
+            $\alpha$ \> Right ascension \\
+            $\delta$ \> Declination \\
+        \end{tabbing}
+    \end{minipage}
+\end{center}
+%
+\begin{figure}[h!]
+    \begin{center}
+        \begin{picture}(370,150)
+            \special{psfile= ./Images/GeometricMeas1.eps hscale= 85 vscale= 85 hoffset = -75 voffset = -410}
+             \makebox(130,-30){(a) Vehicle to Vehicle Measurement }
+             \makebox(350,-30){(b) Vehicle to Station Measurement }
+             \makebox(-520,45){$\mathcal{F}_1$}
+             \makebox(-330,120){$\mathbf{r}_{12}$}
+             \makebox(-235,165){$\mathcal{F}_{2}$}
+             \makebox(-295,235){$\mathbf{r}_{2}$}
+             \makebox(-490,205){$\boldsymbol{\rho}$}
+             \makebox(-620,145){$\mathcal{F}_o$}
+             \makebox(-560,95){$\mathbf{r}_1$}
+             \makebox(-970,35){$\mathcal{F}_1$}
+             \makebox(-810,120){$\mathbf{r}_{12}$}
+             \makebox(-710,163){$\mathcal{F}_2$}
+             \makebox(-780,235){$\mathbf{r}_{2}$}
+             \makebox(-920,255){$\boldsymbol{\rho}$}
+             \makebox(-976,290){$\mathcal{F}_o$}
+             \makebox(-1030,140){$\mathbf{r}_1$}
+        \end{picture}
+    \end{center}
+    \vspace{.2 in}
+    \caption{ Geometric Measurements }
+    \label{Fig:GeometricMeas}
+\end{figure}
+%
+There are two basic types of geometric measurement illustrated in
+Fig.~\ref{Fig:GeometricMeas}: vehicle to vehicle in figure (a), and
+vehicle to station in figure(b).  The primary difference between
+those two measurement types are the coordinate systems in which the
+measurement values are expressed, and the coordinate systems in
+which the participant's states are commonly represented.  For
+example, tracking station locations are usually expressed in
+body-centered body-fixed systems, while vehicle states are usually
+expressed in body-centered inertial.  \textit{The mathematical
+models presented below for geometric measurements are valid for any
+combination of coordinate systems of the participants and
+measurement values.} The defaults for each measurement type are
+chosen according to the convention most commonly used in practice.
+The models ensure that the proper transformations are performed
+when, for example, a ground station and vehicle are not defined with
+respect to the same central body or axis system.
+
+\subsection{Geometric Range}
+
+The geometric range measurement is simply the geometric distance
+between the two measurement participants.  Referring to
+Fig.~\ref{Fig:GeometricMeas}, assume that the participant labeled
+``2'' is a space vehicle, and the participant numbered ``1'' may be
+either a space vehicle or a ground station.  In general, the range
+vector is
+%
+\begin{equation}
+    \boldsymbol{\rho} = \mathbf{r}_2 - \mathbf{r}_{21} -\mathbf{r}_1 + \mathcal{O}_b
+\end{equation}
+%
+The inertial representation of $ \boldsymbol{\rho}$ is used to evaluate the range measurement.
+%
+\begin{equation}
+   \left[ \boldsymbol{\rho}  \right]_{I} = \mathbf{R}_{I,2}\left[ \mathbf{r}_2 \right]_{2} - \left[\mathbf{r}_{12}\right]_{I}
+    - \mathbf{R}_{I,1}  \left[ \mathbf{r}_1 \right]_{1} + \mathcal{O}_b
+\end{equation}
+%
+In the above equation,  $\mathcal{F}_2$ is always
+the J2000 axes system
+centered at the second spacecraft's reference central body
+ When the first participant is a ground station, $\mathcal{F}_1$ is
+the central-body-fixed system of the ground station's central body.
+When the first participant is a spacecraft,
+$\mathcal{F}_1$ is the J2000 axes system
+centered at the spacecraft's reference central body.  The range measurement is computed using.
+%
+\begin{equation}
+   \rho = \| \left[ \boldsymbol{\rho}  \right]_{I}\|
+\end{equation}\
+%
+The geometric range partial derivatives are provided below.  We
+assume the solve for parameters are expressed in their associated
+reference frame (i.e. $\mathbf{r}_1$ is solved for in
+$\mathcal{F}_1$).  Partial derivatives are provided with respect to
+the position and velocity of both participants as well as the
+measurement bias.
+%
+\begin{eqnarray}
+    \frac{\partial \rho}{\partial \left[ \mathbf{r}_1 \right]_{1}} & = & -\left[\boldsymbol{\hat{\rho}}  \right]_{I}^T \mathbf{R}_{I,1}\\
+    %
+    \frac{\partial \rho}{\partial \left[ \mathbf{v}_1 \right]_{1}} & = & \mathbf{0}_{1x3}\\
+    %
+    \frac{\partial \rho}{\partial \left[ \mathbf{r}_2 \right]_{2}} & = & \left[\boldsymbol{\hat{\rho}}  \right]_{I}^T \mathbf{R}_{I,2}\\
+    %
+    \frac{\partial \rho}{\partial \left[ \mathbf{v}_2 \right]_{2}} & = & \mathbf{0}_{1x3}\\
+    %
+    \frac{\partial \rho}{\partial  \mathcal{O}_b } & = & 1
+\end{eqnarray}
+
+
+
+
+\subsection{Geometric Range Rate}
+
+The geometric range rate measurement is the component of velocity of
+participant 2 with respect to participant 1, expressed in the
+observation coordinate system, along the range vector, also
+expressed in the measurement coordinate system:
+%
+\begin{equation}
+    \dot{\rho} = \left[ \dot{\boldsymbol{\rho}} \right]_o^T \left[ \hat{\boldsymbol{\rho}}  \right]_{o} + \mathcal{O}_b
+\end{equation}
+%
+where $\left[ \boldsymbol{\rho}  \right]_{o}$ is given by
+\ref{Eq:GeometricRange_Obs} and $\left[ \dot{\boldsymbol{\rho}}
+\right]_o$ is given by:
+\begin{equation}
+    \left[ \dot{\boldsymbol{\rho}} \right]_o =  \mathbf{R}_{o,2}\left[ \dot{\mathbf{r}}_2 \right]_{2} + \dot{\mathbf{R}}_{o,2}\left[ \mathbf{r}_2 \right]_{2}
+    %
+    -\mathbf{R}_{o,J_{2k}}\left[ \dot{\mathbf{r}}_{12}\right]_{J_{2k}} - \dot{\mathbf{R}}_{o,J_{2k}}\left[ \mathbf{r}_{12}\right]_{J_{2k}}
+    %
+    - \mathbf{R}_{o1}\left[ \dot{\mathbf{r}}_1\right]_1 - \dot{\mathbf{R}}_{o1}\left[ \mathbf{r}_1\right]_1 + \mathcal{O}_b
+\end{equation}
+%
+%
+The geometric range rate partial derivatives have the general form
+%
+\begin{equation}
+       \frac{\partial \dot{\rho}}{\partial \zeta} =  \frac{ \left[ \dot{\boldsymbol{\rho}} \right]_o^T }{\rho} \left( \mathbf{I}_{3x3} -
+       \left[ \hat{\boldsymbol{\rho}}\right]_o  \left[ \hat{\boldsymbol{\rho}}\right]_o^T \right)\frac{\partial
+        \left[ \boldsymbol{\rho}\right]_o }{\partial \zeta} +  \left[ \hat{\boldsymbol{\rho}}\right]_o^T\frac{ \partial\left[ \dot{\boldsymbol{\rho}}\right]_o }{\partial \zeta} +
+        \frac{\mathcal{O}_b}{\partial \zeta}
+\end{equation}
+%
+where $\zeta$ is a dummy variable.  We assume the solve for
+parameters are expressed in their associated reference frame (i.e.
+$\mathbf{r}_1$ is solved for in $\mathcal{F}_1$).
+%
+\begin{eqnarray}
+    \frac{\partial \dot{\rho}}{\partial \left[ \mathbf{r}_1 \right]_{1}} & = & -\frac{ \left[ \dot{\boldsymbol{\rho}} \right]_o^T }{\rho} \left( \mathbf{I}_{3x3} -
+       \left[ \hat{\boldsymbol{\rho}}\right]_o  \left[ \hat{\boldsymbol{\rho}}\right]_o^T \right)\mathbf{R}_{o,1} -  \left[ \hat{\boldsymbol{\rho}}\right]_o^T \dot{\mathbf{R}}_{o,1} \\
+    %
+    \frac{\partial \dot{\rho}}{\partial \left[ \dot{\mathbf{r}}_1 \right]_{1}} & = &  - \left[ \hat{\boldsymbol{\rho}}\right]_o^T \mathbf{R}_{o,1}\\
+    %
+    \frac{\partial \dot{\rho}}{\partial \left[ \mathbf{r}_2 \right]_{2}} & = & \frac{ \left[ \dot{\boldsymbol{\rho}} \right]_o^T }{\rho} \left( \mathbf{I}_{3x3} -
+       \left[ \hat{\boldsymbol{\rho}}\right]_o  \left[ \hat{\boldsymbol{\rho}}\right]_o^T \right) \mathbf{R}_{o,2} +  \left[ \hat{\boldsymbol{\rho}}\right]_o^T \dot{\mathbf{R}}_{o,2}\\
+    %
+    \frac{\partial \dot{\rho}}{\partial \left[ \mathbf{v}_2 \right]_{2}} & = &  \left[ \hat{\boldsymbol{\rho}}\right]_o^T \mathbf{R}_{o,2}\\
+    %
+    \frac{\partial \dot{\rho}}{\partial  \mathcal{O}_b } & = & 1
+\end{eqnarray}
+
+\subsection{Geometric Az/El}
+
+The azimuth angle is the angle between an observer's local North and
+a line of sight vector to a space object. The elevation angle is a
+measure of the angle between the local horizon plane of the observer
+and the line of sight vector to a space object.   \textit{For Az/El
+measurements, $\mathcal{F}_o$, is the topocentric system ground
+station, and $\mathcal{F}_{J_{2k}}$ for
+inter-spacecraft measurements.} The geometric azimuth and elevation
+model is calculated using vector geometry and ignores signal
+propagation, atmospheric distortion, and other error sources.
+
+Elevation is  calculated using
+%
+\begin{equation}
+\sin(\delta) = \frac{ \left[ \rho_z \right]_o }{ \| \left[\boldsymbol{\rho}\right]_o \|}
+\end{equation}
+%
+where $[\rho]_z$ is the third component of $[\boldsymbol{\rho}]_o$
+which is given by Eq.~\ref{Eq:GeometricRange_Obs}. Provided that
+$|[\rho_x]_o| >= 1e-8$, the azimuth is calculated using
+%
+\begin{equation}
+\tan{\beta} = \frac{\left[ \rho_y \right]_o}{-\left[ \rho_x \right]_o}
+\end{equation}
+%
+When $|[\rho_x]_o| < 1e-8$ the measurement is infeasible.
+%
+The geometric elevation partial derivatives have the general form
+%
+\begin{equation}
+    \frac{\partial \delta}{\partial \zeta} = \frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \left[\hat{ \boldsymbol{\rho} }\right]_o
+    \left[\hat{ \boldsymbol{\rho} }\right]_o^T  \right)\frac{\partial \left[\boldsymbol{\rho}\right]_o }{\partial \zeta}
+\end{equation}
+%
+where $\mathbf{z} = [0 \hspace{.1 in} 0 \hspace{0.1 in} 1]^T$ and
+$\zeta$ is a dummy variable.  The partial derivatives of elevation
+with respect to the individual solve-for parameters are:
+%
+\begin{eqnarray}
+    \frac{\partial \delta}{\partial \left[ \mathbf{r}_1 \right]_{1}} & = &
+     -\frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \left[\hat{ \boldsymbol{\rho} }\right]_o
+    \left[\hat{ \boldsymbol{\rho} }\right]_o^T  \right)\mathbf{R}_{o,1} \\
+    %
+    \frac{\partial \delta}{\partial \left[ \dot{\mathbf{r}}_1 \right]_{1}} & = & \mathbf{0}_{1x3} \\
+    %
+    \frac{\partial \delta}{\partial \left[ \mathbf{r}_2 \right]_{2}} & = &
+    \frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \left[\hat{ \boldsymbol{\rho} }\right]_o
+    \left[\hat{ \boldsymbol{\rho} }\right]_o^T  \right)\mathbf{R}_{o,2}\\
+    %
+    \frac{\partial \delta}{\partial \left[ \mathbf{v}_2 \right]_{2}} & = & \mathbf{0}_{1x3}\\
+    %
+    \frac{\partial \delta}{\partial  \mathcal{O}_b } & = & 1
+\end{eqnarray}
+
+The geometric azimuth partial derivatives have the general form
+%
+\begin{equation}
+    \frac{\partial \beta}{\partial \zeta} = -\frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o }
+    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\rho}\right]_o
+    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o } \right)\frac{\partial \left[\boldsymbol{\rho}\right]_o }{\partial \zeta}
+\end{equation}
+%
+where $\zeta$ is a dummy variable, $\mathbf{x} = [1 \hspace{.1 in} 0
+\hspace{0.1 in} 0]^T$, and $\mathbf{y} = [0 \hspace{.1 in} 1
+\hspace{0.1 in} 0]^T$.  The partial derivatives of the azimuth with
+respect to the solve-for variables are:
+%
+\begin{eqnarray}
+    \frac{\partial \beta}{\partial \left[ \mathbf{r}_1 \right]_{1}} & = &
+    \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o }
+    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\rho}\right]_o
+    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o } \right)\mathbf{R}_{o,1}  \\
+    %
+    \frac{\partial \beta}{\partial \left[ \dot{\mathbf{r}}_1 \right]_{1}} & = & \mathbf{0}_{1x3} \\
+    %
+    \frac{\partial \beta}{\partial \left[ \mathbf{r}_2 \right]_{2}} & = &
+     - \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o }
+    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\rho}\right]_o
+    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o } \right)\mathbf{R}_{o,2}\\
+    %
+    \frac{\partial \beta}{\partial \left[ \mathbf{v}_2 \right]_{2}} & = & \mathbf{0}_{1x3}\\
+    %
+    \frac{\partial \delta}{\partial  \mathcal{O}_b } & = & 1
+\end{eqnarray}
+%
+%For the case $\beta = 90^{\circ}$, the partial derivatives are
+%%
+%\begin{eqnarray}
+%    \frac{\partial \beta}{\partial \left[ \mathbf{r}_1 \right]_{1}} & = &
+%    \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\dot{\rho}}\right]_o }
+%    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\dot{\rho}}\right]_o
+%    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\dot{\rho}}\right]_o } \right)\dot{\mathbf{R}}_{o,1}  \\
+%    %
+%    \frac{\partial \beta}{\partial \left[ \dot{\mathbf{r}}_1 \right]_{1}} & = &
+%    \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\dot{\rho}}\right]_o }
+%    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\dot{\rho}}\right]_o
+%    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\dot{\rho}}\right]_o } \right)\mathbf{R}_{o,1} \\
+%    %
+%    \frac{\partial \beta}{\partial \left[ \mathbf{r}_2 \right]_{2}} & = &-
+%    \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\dot{\rho}}\right]_o }
+%    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\dot{\rho}}\right]_o
+%    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\dot{\rho}}\right]_o } \right)\dot{\mathbf{R}}_{o,2} \\
+%    %
+%    \frac{\partial \beta}{\partial \left[ \mathbf{v}_2 \right]_{2}} & = & -
+%    \frac{1}{\sec^2{\beta}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\dot{\rho}}\right]_o }
+%    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\dot{\rho}}\right]_o
+%    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\dot{\rho}}\right]_o } \right)\mathbf{R}_{o,2} \\
+%    %
+%    \frac{\partial \delta}{\partial  \mathcal{O}_b } & = & 1
+%\end{eqnarray}
+
+\subsection{Geometric RA/Dec}
+
+The declination angle is the angle between the line of site vector
+expressed in $\mathcal{F}_o$, and the $x_y$ plane of
+$\mathcal{F}_o$. The right ascension is the angle between the
+$\hat{\mathbf{x}}$ axis of $\mathcal{F}_o$ and the projection of the
+line of site vector in the $x-y$ plane of $\mathcal{F}_o$.
+\textit{For RA/Dec measurements, $\mathcal{F}_o$, is the celestial
+body's body-fixed frame for ground station, and
+$\mathcal{F}_{J_{2k}}$ for inter-spacecraft measurements.}The
+geometric right ascension and declination are calculated using
+vector geometry and signal propagation, atmospheric distortion, and
+other error sources are not included.
+
+The declination is  calculated using
+%
+\begin{equation}
+\sin(\delta) = \frac{ \left[ \rho_z \right]_o }{ \| \left[\boldsymbol{\rho}\right]_o \|}
+\end{equation}
+%
+where $[\rho]_z$ is the third component of $[\boldsymbol{\rho}]_o$
+which is given by Eq.~\ref{Eq:GeometricRange_Obs}. Provided that
+$\left|[\rho_x]_o \right| >= 1e-8$, the right ascension is calculated using
+%
+\begin{equation}
+\tan{\alpha} = \frac{\left[ \rho_y \right]_o}{-\left[ \rho_x \right]_o}
+\end{equation}
+%
+When $|[\rho_x]_o| < 1e-8$, the measurement is infeasible.
+
+The geometric declination partial derivatives have the general form
+%
+\begin{equation}
+    \frac{\partial \delta}{\partial \zeta} = \frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \left[\hat{ \boldsymbol{\rho} }\right]_o
+    \left[\hat{ \boldsymbol{\rho} }\right]_o^T  \right)\frac{\partial \left[\boldsymbol{\rho}\right]_o }{\partial \zeta}
+\end{equation}
+%
+where $\mathbf{z} = [0 \hspace{.1 in} 0 \hspace{0.1 in} 1]^T$ and
+$\zeta$ is a dummy variable.  The partial derivatives of declination
+with respect to the individual solve-for parameters are:
+%
+\begin{eqnarray}
+    \frac{\partial \delta}{\partial \left[ \mathbf{r}_1 \right]_{1}} & = &
+     -\frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \left[\hat{ \boldsymbol{\rho} }\right]_o
+    \left[\hat{ \boldsymbol{\rho} }\right]_o^T  \right)\mathbf{R}_{o,1} \\
+    %
+    \frac{\partial \delta}{\partial \left[ \dot{\mathbf{r}}_1 \right]_{1}} & = & \mathbf{0}_{1x3} \\
+    %
+    \frac{\partial \delta}{\partial \left[ \mathbf{r}_2 \right]_{2}} & = &
+    \frac{1}{\cos{\delta}}\frac{\hat{\mathbf{z}}^T}{\rho}
+    \left(\mathbf{I}_{3x3} - \left[\hat{ \boldsymbol{\rho} }\right]_o
+    \left[\hat{ \boldsymbol{\rho} }\right]_o^T  \right)\mathbf{R}_{o,2}\\
+    %
+    \frac{\partial \delta}{\partial \left[ \mathbf{v}_2 \right]_{2}} & = & \mathbf{0}_{1x3}\\
+    %
+    \frac{\partial \delta}{\partial  \mathcal{O}_b } & = & 1
+\end{eqnarray}
+
+The geometric right ascension partial derivatives have the general
+form
+%
+\begin{equation}
+    \frac{\partial \alpha}{\partial \zeta} = -\frac{1}{\sec^2{\alpha}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o }
+    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\rho}\right]_o
+    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o } \right)\frac{\partial \left[\boldsymbol{\rho}\right]_o }{\partial \zeta}
+\end{equation}
+%
+where $\zeta$ is a dummy variable, $\mathbf{x} = [1 \hspace{.1 in} 0
+\hspace{0.1 in} 0]^T$, and $\mathbf{y} = [0 \hspace{.1 in} 1
+\hspace{0.1 in} 0]^T$.  The partial derivatives of the right
+ascension with respect to the solve-for variables are:
+%
+\begin{eqnarray}
+    \frac{\partial \alpha}{\partial \left[ \mathbf{r}_1 \right]_{1}} & = &
+    \frac{1}{\sec^2{\alpha}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o }
+    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\rho}\right]_o
+    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o } \right)\mathbf{R}_{o,1}  \\
+    %
+    \frac{\partial \alpha}{\partial \left[ \dot{\mathbf{r}}_1 \right]_{1}} & = & \mathbf{0}_{1x3} \\
+    %
+    \frac{\partial \alpha}{\partial \left[ \mathbf{r}_2 \right]_{2}} & = &
+     - \frac{1}{\sec^2{\alpha}}\frac{\hat{\mathbf{y}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o }
+    \left(\mathbf{I}_{3x3} + \frac{\left[\boldsymbol{\rho}\right]_o
+    \hat{\mathbf{x}}^T}{\hat{\mathbf{x}}^T\left[\boldsymbol{\rho}\right]_o } \right)\mathbf{R}_{o,2}\\
+    %
+    \frac{\partial \alpha}{\partial \left[ \mathbf{v}_2 \right]_{2}} & = & \mathbf{0}_{1x3}\\
+    %
+    \frac{\partial \delta}{\partial  \mathcal{O}_b } & = & 1
+\end{eqnarray}
+
+\include{MediaCorrections}
+
+\include{MeasurementErrorModeling}
+
+\include{FeasiblityChecks}
+
+
+%\section{Computed Value of the One-Way Range}
+%
+%The computed value of one-way range is developed to be consistent with the process used by
+%tracking systems to generate one-way range observables.  One-way range observables require two participants
+%that both have highly accurate and synchronized clocks.  The one-way range observable is generated from
+%the one-way time of signal transit from the transmitting sensor to the receiving sensor.
+%
+%A timeline of events for a one-way range measurement is shown in Fig.~\ref{Fig:OneWayMeasTimeLine}.  The measurement begins when sensor 1 stamps the signal which according to our definition occurs at $t_{1_{s}}$.  After some delay, $\tau_1$, the signal is broadcasted by the antenna on participant 1.  At time $t_r - \tau_2$, the signal is received at the antenna on participant 2.  Finally, the measurement is processed by the sensor on participant 2 at time $t_r$.
+%%
+%\begin{figure}[h!]
+%    \begin{center}
+%        \begin{picture}(370,40)
+%            \special{psfile= ./Images/OneWayMeasTimeLine.eps hscale= 100 vscale= 100 hoffset = -150 voffset = -480}
+%             \makebox(70,-5){$t_t$}
+%             \makebox(10,-5){$t_t+\tau_1$}
+%             \makebox(435,-5){$t_r-\tau_2$   \hspace{.14 in} $t_r$}
+%        \end{picture}
+%    \end{center}
+%    \vspace{.1 in}
+%    \caption{ One Way Measurement Time Line}
+%    \label{Fig:OneWayMeasTimeLine}
+%\end{figure}
+%%
+%
+%Given these definitions, the total elapsed time, $\Delta t$, of the one-way measurement is given by
+%%
+%\begin{equation}
+%  \Delta t= \frac{\mathbf{r}_{12}}{c}+ \tau_1 + \tau_2
+%\end{equation}
+%%
+%where
+%%
+%\begin{equation}
+%   \mathbf{r}_{12} = || \mathbf{r}_2(t_r - \tau_2) - \mathbf{r}_1(t_t + \tau_1) ||
+%\end{equation}
+%The measurement time tag can be either $t_r$ or $t_t$, but is usually the former.  In either case, we determine the signal transit time by solving the following equation for either $t_r$ or $t_t$, whichever is unknown.
+%\begin{equation}
+%  c \left(t_r - t_t + \tau_1 - \tau_2\right) = \| (\mathbf{r}_2(t_r - \tau_2) +
+%  \mathbf{r}_{b_{2}}(t_r - \tau_2) ) - ( \mathbf{r}_1(t_t + \tau_1)+\mathbf{r}_{b_{1}}(t_t+\tau_1)) \|
+%\end{equation}
+%%
+%
+%To formulate the derivatives, we first define the computed one-way range by expressing the solve-for and consider
+%parameters in the coordinate systems in which they are represented:
+%%
+%\begin{equation}
+%%
+% \begin{split}
+%  y_i = \|  \left[\boldsymbol{\rho}\right]_{J_{2k}} \| + c(\tau_1 + \tau_2)
+%\end{split}
+%\end{equation}
+%%
+%where
+%%
+%\begin{equation}\begin{split}
+% \left[\boldsymbol{\rho}\right]_{J_{2k}} = \mathbf{R}_{J_{2k},2}(t_r)\left[ \mathbf{r}_{p{2}}(t_r)\right]_2 + \mathbf{R}_{J_{2k},s_{2}}(t_r)\left[ \mathbf{r}_{s{2}}(t_r)\right]_{s_{2}}
+%   - \mathbf{R}_{J_{2k},1}(t_t)\left[ \mathbf{r}_1(t_t)\right]_1\\
+%   - \mathbf{R}_{J_{2k},s_1}(t_t)\left[ \mathbf{r}_1(t_t)\right]_{s_{1}}  + \left( \left[ \mathbf{r}_{b_{2}}(t_r)\right]_I - \left[ \mathbf{r}_{b_{1}}(t_t)\right]_I \right)
+%\end{split} \label{Eq:RangeVectorLightTime}
+%\end{equation}
+%%
+%\begin{equation}\begin{split}
+%\boldsymbol{\rho}_I= \mathbf{R}_{I/2}(t_r) [\mathbf{r}_{p{2}}]_2(t_r) + \mathbf{R}_{J_{2k},s_{2}}(t_r)\left[ \mathbf{r}_{s{2}}(t_r)\right]_{s_{2}}
+%   - \mathbf{R}_{J_{2k},1}(t_t)\left[ \mathbf{r}_1(t_t)\right]_1\\
+%   - \mathbf{R}_{J_{2k},s_1}(t_t)\left[ \mathbf{r}_1(t_t)\right]_{s_{1}}  + \left( \left[ \mathbf{r}_{b_{2}}(t_r)\right]_I - \left[ \mathbf{r}_{b_{1}}(t_t)\right]_I \right)
+%\end{split} \label{Eq:RangeVectorLightTime}
+%\end{equation}
+%%
+%A comment on the rotations, $\mathbf{R}_{J_{2k},1}$ for example, is in order at this point.  Depending upon the participant type -- spacecraft or tracking station for example --  $\mathbf{R}_{J_{2k},1}$ takes on different values.  If, for example, participant 1 is a spacecraft, $\mathbf{R}_{J_{2k},1}(t_r)$ is simply the identity matrix because GMAT represents all spacecraft cartesian states with respect to the J2000
+%inertial axes.  However, if participant 1 is a tracking station, $\mathbf{R}_{J_{2k},1}(t_r)$ is the rotation matrix from body fixed to J2000 coordinates at time $t_r$ because GMAT represents all tracking station positions in the central body fixed system.
+%
+%Derivatives of the computed one-way range have the general form
+%%
+%\begin{equation}
+%    \frac{\partial y_i}{\partial \chi} = \left[\hat{\boldsymbol{\rho}}\right]^T_{J_{2k}} \frac{\partial \left[\boldsymbol{\rho}\right]_{J_{2k}} }{\partial \chi} + c \left( \frac{\partial \tau_1}{\partial \chi} + \frac{\partial \tau_2}{\partial \chi} \right)
+%\end{equation}
+%%
+%where $\chi$ is a dummy variable.  Then, the partial derivatives with respect to the solve for states are given below.
+%%
+%\begin{eqnarray}
+%   \frac{\partial \rho}{\partial \left[ \mathbf{r}_{p_{1}}(t_m)\right]_1}& = & -\left[\hat{\boldsymbol{\rho}}\right]^T_{J_{2k}} \mathbf{R}_{J_{2k},1}(t_t)\boldsymbol{\Phi}_1(t_m,t_t)\\
+%   %
+%    \frac{\partial \rho}{\partial \left[ \mathbf{v}_{p_{1}}(t_m)\right]_1}& = & \mathbf{0}_{1x3}\\
+%    %
+%   \frac{\partial \rho}{\partial \left[ \mathbf{r}_{p_{2}}(t_m)\right]_2}& = & \left[\hat{\boldsymbol{\rho}}\right]^T_{J_{2k}} \mathbf{R}_{J_{2k},2}(t_r)\boldsymbol{\Phi}_2(t_m,t_r)\\
+%   %
+%    \frac{\partial \rho}{\partial \left[ \mathbf{v}_{p_{2}}(t_m)\right]_2}& = & \mathbf{0}_{1x3}\\
+%    %
+%    \frac{\partial \rho}{\partial \tau_1}& = & c\\
+%    %
+%    \frac{\partial \rho}{\partial \tau_2}& = & c\\
+%\end{eqnarray} 

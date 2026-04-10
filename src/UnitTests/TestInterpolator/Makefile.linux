@@ -1,0 +1,40 @@
+# Makefile for GMAT Interpolator tester
+# Initial Version, DJC, 12/12/2003
+
+
+TARGET = bin/TestInterpolator
+
+all: prep $(TARGET)
+
+CPP = g++
+
+OPTIMIZATIONS = -O9
+
+CPPFLAGS = $(OPTIMIZATIONS)
+
+LINKFLAGS = -L../../base/lib
+
+OBJECTS = driver.o ConsoleAppException.o
+
+LIBRARIES = -lFoundation -lInterpolator -lFoundation
+
+HEADERS = -I../../base/include -I../../base/foundation -I../../base/interpolator 
+
+clean : archclean
+
+archclean :
+	rm -r -f *.o
+	rm -r -f *.a
+	rm -r -f *~
+	rm -r -f core
+	rm -r -f */core
+	rm -r -f bin/*
+
+.cpp.o: 
+	$(CPP) $(CPPFLAGS) $(HEADERS) -c $<
+
+prep:
+	mkdir -p bin
+
+$(TARGET): $(OBJECTS)
+	$(CPP) $(OBJECTS) $(LINKFLAGS) $(LIBRARIES) -o $(TARGET)

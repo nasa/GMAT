@@ -1,0 +1,35 @@
+MAIN = CompilingGMATwithVS2010.tex
+SOURCES = $(MAIN)
+IMAGES = ConfigurationSettings.eps \
+	DataFileLayout.eps \
+	DiskStart.eps \
+	DLLRelease.eps \
+	FolderSettingsForMatlab.eps \
+	FolderStructure.eps \
+	SettingIncludeFolder.eps \
+	SettingLibFolder.eps \
+	VisualCpp.eps
+PDF = $(MAIN:tex=pdf)
+PS = $(MAIN:tex=ps)
+DVI = $(MAIN:tex=dvi)
+
+all: $(PDF)
+
+pdf: $(PDF)
+
+ps: $(PS)
+
+dvi: $(DVI)
+
+clean:
+	del $(MAIN:tex=aux) $(DVI) $(MAIN:tex=log) $(PDF) $(PS)
+
+$(PDF): $(PS)
+	ps2pdf $?
+
+$(PS): $(DVI)
+	dvips $?
+
+$(DVI): $(SOURCES) $(IMAGES)
+	latex $(MAIN)
+	latex $(MAIN) # run it twice to resolve references

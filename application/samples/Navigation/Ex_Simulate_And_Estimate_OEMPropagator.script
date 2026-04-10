@@ -1,0 +1,179 @@
+%
+%   Ex_Simulate_And_Estimate_OEMPropagator
+%
+%   Use an ephem propagator with GN measurements in a one-iteration "observed
+%   minus computed" residuals run. We will also simulate the data using an 
+%   ephemeris propagator.
+%
+%   Released: R2022a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.EphemerisName = '../data/vehicle/ephem/ccsds/SampleOEMEphem.oem';
+SimSat.Id            = 'OEMSat';
+SimSat.AddHardware   = {SatTransponder, SatAntenna};
+
+Create Spacecraft EstSat;
+
+EstSat.EphemerisName = '../data/vehicle/ephem/ccsds/SampleOEMEphem.oem';
+EstSat.Id            = 'OEMSat';
+EstSat.AddHardware   = {SatTransponder, SatAntenna};
+EstSat.SolveFors     = {CartesianState}
+
+
+%----------------------------------------
+%------- Spacecraft electronics
+%----------------------------------------
+
+Create Antenna SatAntenna;
+Create Transponder SatTransponder;
+
+SatTransponder.PrimaryAntenna  = SatAntenna;
+SatTransponder.HardwareDelay   = 1.0e-6;
+SatTransponder.TurnAroundRatio = '240/221' 
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel RangeRate;
+
+RangeRate.Type       = RangeRate;
+RangeRate.NoiseSigma = 0.003;
+RangeRate.Bias       = 0.0;
+RangeRate.SolveFors  = {};
+
+Create ErrorModel Range;
+
+Range.Type           = Range;
+Range.NoiseSigma     = 0.010;
+Range.Bias           = 0.0;
+Range.SolveFors      = {};
+
+%----------------------------------------
+%---------- Ground stations
+%----------------------------------------
+
+Create Antenna GndAntenna;
+Create Transmitter GndTransmitter;
+Create Receiver GndReceiver;
+
+GndTransmitter.PrimaryAntenna = GndAntenna;
+GndTransmitter.Frequency      = 2065.0;
+GndReceiver.PrimaryAntenna    = GndAntenna;
+
+Create GroundStation GS1;
+
+GS1.CentralBody           = Earth;
+GS1.StateType             = Spherical;
+GS1.HorizonReference      = Ellipsoid;
+GS1.Latitude              =   19.796355;
+GS1.Longitude             = -155.619920;
+GS1.Altitude              =   0.500000;
+GS1.Id                    = 'GS1';
+GS1.AddHardware           = {GndTransmitter, GndAntenna, GndReceiver};
+GS1.MinimumElevationAngle = 7.0;
+GS1.TroposphereModel      = 'None';
+GS1.IonosphereModel       = 'None';
+GS1.ErrorModels           = {Range, RangeRate}
+
+Create GroundStation GS2;
+
+GS2.CentralBody           = Earth;
+GS2.StateType             = Spherical;
+GS2.HorizonReference      = Ellipsoid;
+GS2.Latitude              = -10.481657;
+GS2.Longitude             = 105.604032;
+GS2.Altitude              =   0.100000;
+GS2.Id                    = 'GS2';
+GS2.AddHardware           = {GndTransmitter, GndAntenna, GndReceiver};
+GS2.MinimumElevationAngle = 7.0;
+GS2.TroposphereModel      = 'None';
+GS2.IonosphereModel       = 'None';
+GS2.ErrorModels           = {Range, RangeRate}
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet SimData;
+
+SimData.AddTrackingConfig        = {{GS1, SimSat, GS1}, 'Range', 'RangeRate'};
+SimData.AddTrackingConfig        = {{GS2, SimSat, GS2}, 'Range', 'RangeRate'};
+SimData.FileName                 = {'Ex_Simulate_And_Estimate_OEMPropagator.gmd'};
+SimData.RampTable                = {};
+SimData.UseLightTime             = True;
+SimData.UseRelativityCorrection  = False;
+SimData.UseETminusTAI            = False;
+SimData.SimDopplerCountInterval  = 10;  
+SimData.DataFilters              = {};
+
+Create TrackingFileSet EstData;
+
+EstData.AddTrackingConfig        = {{GS1, EstSat, GS1}, 'Range', 'RangeRate'}
+EstData.AddTrackingConfig        = {{GS2, EstSat, GS2}, 'Range', 'RangeRate'}
+EstData.FileName                 = {'Ex_Simulate_And_Estimate_OEMPropagator.gmd'};
+EstData.RampTable                = {};
+EstData.UseLightTime             = True;
+EstData.UseRelativityCorrection  = False;
+EstData.UseETminusTAI            = False;
+EstData.DataFilters              = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator EphProp
+
+EphProp.Type = 'CCSDS-OEM';
+
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create Simulator Sim;
+
+Sim.AddData                     = {SimData};
+Sim.EpochFormat                 = UTCGregorian;
+Sim.InitialEpoch                = '02 Jan 2000 00:00:00.000';
+Sim.FinalEpoch                  = '03 Jan 2000 00:00:00.000';
+Sim.MeasurementTimeStep         = 10;
+Sim.Propagator                  = EphProp
+Sim.AddNoise                    = On;
+
+Create BatchEstimator BLS
+
+BLS.ShowProgress                = True;
+BLS.Measurements                = {EstData};
+BLS.AbsoluteTol                 = 0.0001;
+BLS.RelativeTol                 = 0.001;
+BLS.MaximumIterations           = 10;
+BLS.MaxConsecutiveDivergences   = 10;
+BLS.Propagator                  = EphProp
+BLS.ShowAllResiduals            = On;
+BLS.OLSEInitialRMSSigma         = 1000;
+BLS.OLSEMultiplicativeConstant  = 3;
+BLS.OLSEAdditiveConstant        = 0;
+BLS.ReportFile                  = 'Ex_Simulate_And_Estimate_OEMPropagator.txt';
+
+%
+%   Mission sequence - Run the initial guess only; we cannot compute a state 
+%   estimate when using an ephemeris-based propagator.
+%
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+SetSeed(1)
+RunSimulator Sim;
+
+RunEstimator BLS {SolveMode = RunInitialGuess}

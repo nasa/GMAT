@@ -1,0 +1,494 @@
+%
+%  Ex_LCROSSTrajectory
+%
+%  LCROSS mission trajectory to Lunar impact.
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft LRO;
+LRO.DateFormat = UTCGregorian;
+
+LRO.CoordinateSystem = EarthMJ2000Eq;
+LRO.DisplayStateType = Cartesian;
+
+Create Spacecraft ImpactSat ImpactSatInit CanonImpactSat
+
+ImpactSat.DateFormat       = UTCGregorian
+ImpactSat.CoordinateSystem = EarthMJ2000Eq;
+
+Create Spacecraft ImpactSat_MoonFixed
+
+ImpactSat_MoonFixed.DateFormat       = UTCGregorian
+ImpactSat_MoonFixed.CoordinateSystem = MoonFixed;
+ImpactSat_MoonFixed.DisplayStateType = Cartesian;
+
+
+Create Spacecraft LCROSS LCROSSInit;
+
+LCROSS.DateFormat       = TAIModJulian;
+LCROSS.Epoch            = 21545.000000000;
+LCROSS.CoordinateSystem = EarthMJ2000Eq;
+LCROSS.DisplayStateType = Cartesian;
+LCROSS.DryMass          = 850;
+LCROSS.Cd               = 2.2;
+LCROSS.Cr               = 1.8;
+LCROSS.DragArea         = 15;
+LCROSS.SRPArea          = 1;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+ 
+%% Create a force model for near Lunar propagation
+Create ForceModel NearMoonProp_ForceModel;
+
+NearMoonProp_ForceModel.CentralBody     = Luna;
+NearMoonProp_ForceModel.PointMasses     = {Sun, Earth, Jupiter, Luna};
+NearMoonProp_ForceModel.Drag            = None;
+NearMoonProp_ForceModel.SRP             = On;
+NearMoonProp_ForceModel.ErrorControl    = RSSStep;
+NearMoonProp_ForceModel.SRP.Flux        = 1367;
+NearMoonProp_ForceModel.SRP.Nominal_Sun = 149597870.691;
+
+%% Create a force model for deep space propagation
+Create ForceModel EarthFull_ForceModel;
+
+EarthFull_ForceModel.CentralBody                      = Earth;
+EarthFull_ForceModel.PrimaryBodies                    = {Earth};
+EarthFull_ForceModel.PointMasses                      = {Sun, Luna, Jupiter};
+EarthFull_ForceModel.Drag                             = None;
+EarthFull_ForceModel.SRP                              = On;
+EarthFull_ForceModel.ErrorControl                     = RSSStep;
+EarthFull_ForceModel.GravityField.Earth.Degree        = 4;
+EarthFull_ForceModel.GravityField.Earth.Order         = 0;
+EarthFull_ForceModel.GravityField.Earth.PotentialFile = JGM2.cof;
+EarthFull_ForceModel.SRP.Flux                         = 1367;
+EarthFull_ForceModel.SRP.Nominal_Sun                  = 149597870.691;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator NearMoonProp;
+
+NearMoonProp.FM              = NearMoonProp_ForceModel;
+NearMoonProp.Type            = PrinceDormand78; 
+NearMoonProp.InitialStepSize = 60;
+NearMoonProp.Accuracy        = 1e-9;
+NearMoonProp.MinStep         = 0.001;
+NearMoonProp.MaxStep         = 20000;
+NearMoonProp.MaxStepAttempts = 50;
+
+Create Propagator EarthFull;
+
+EarthFull.FM              = EarthFull_ForceModel;
+EarthFull.Type            = RungeKutta56;  
+EarthFull.InitialStepSize = 60; 
+EarthFull.Accuracy        = 1e-09;
+EarthFull.MinStep         = 0.001;
+EarthFull.MaxStep         = 20000;
+EarthFull.MaxStepAttempts = 50; 
+
+Create ForceModel MoonTwoBody_ForceModel;
+
+MoonTwoBody_ForceModel.CentralBody  = Luna;
+MoonTwoBody_ForceModel.PointMasses  = {Luna};
+MoonTwoBody_ForceModel.Drag         = None;
+MoonTwoBody_ForceModel.SRP          = Off;
+MoonTwoBody_ForceModel.ErrorControl = RSSStep;
+
+Create Propagator MoonTwoBody;
+
+MoonTwoBody.FM              = MoonTwoBody_ForceModel;
+MoonTwoBody.Type            = RungeKutta89;
+MoonTwoBody.InitialStepSize = 60;
+MoonTwoBody.Accuracy        = 9.999999999999999e-12;
+MoonTwoBody.MinStep         = 0.001;
+MoonTwoBody.MaxStep         = 20000;
+MoonTwoBody.MaxStepAttempts = 50;
+
+%----------------------------------------
+%----------- Create Maneuvers
+%----------------------------------------
+Create ImpulsiveBurn EDUSdv;
+
+EDUSdv.Origin   = Earth;
+EDUSdv.Axes     = VNB;
+EDUSdv.Element1 = 0;
+EDUSdv.Element2 = 0;
+EDUSdv.Element3 = 0
+
+Create ImpulsiveBurn LROLOI
+
+LROLOI.CoordinateSystem = Local;
+LROLOI.Origin           = Luna;
+LROLOI.Axes             = VNB;
+LROLOI.Element1         =  -0.294816448336
+
+Create ImpulsiveBurn LROTCM
+
+LROTCM.CoordinateSystem = Local;
+LROTCM.Origin           = Luna;
+LROTCM.Axes             = VNB;
+LROTCM.Element1         = 0.00494673009567
+LROTCM.Element2         = -0.0134520458643
+
+Create ImpulsiveBurn EDUSdv_J2000;
+
+EDUSdv_J2000.Origin   = Earth;
+EDUSdv_J2000.Axes     = MJ2000Eq;
+EDUSdv_J2000.Element1 = 0;
+EDUSdv_J2000.Element2 = 0;
+EDUSdv_J2000.Element3 = 0;
+
+Create ImpulsiveBurn LCM1;
+
+LCM1.Origin   = Earth;
+LCM1.Axes     = VNB;
+LCM1.Element1 = 0;
+LCM1.Element2 = 0;
+LCM1.Element3 = 0;
+
+Create ImpulsiveBurn LCM2;
+
+LCM2.Origin   = Earth;
+LCM2.Axes     = VNB;
+LCM2.Element1 = 0;
+LCM2.Element2 = 0;
+LCM2.Element3 = 0;
+
+Create ImpulsiveBurn dVatMoon;
+
+dVatMoon.Origin   = Luna;
+dVatMoon.Axes     = MJ2000Eq;
+dVatMoon.Element1 = 0;
+dVatMoon.Element2 = 0;
+dVatMoon.Element3 = 0;
+
+%----------------------------------------
+%---------- Variables, Arrays, Strings
+%----------------------------------------
+Create Variable LoopCounter PositionError VelocityError Cost LCM1Mag LCM2Mag EDUSdvMag EDMdvEpoch LCM1Epoch LCM2Epoch;
+Create Variable A1ImpactEpoch LoopCounter2 ConstraintError dx dy dz dVx dVy dVz SF_EDUSx dVatMoonMag;
+Create Variable  Min_Cost UseGMAToutput_Flag RefEpoch PropEpoch ET_EDUSdV ET_LCM1;
+Create Variable ET_LCM2 ET_Coll A1CollEpoch VXdiff VYdiff VZdiff I DeltaVx DeltaVy DeltaVz;
+Create Variable PosError VelError EDUS_J2000_DVx EDUS_J2000_DVy EDUS_J2000_DVz DV1_J2000_DVx DV1_J2000_DVy DV1_J2000_DVz DV2_J2000_DVx DV2_J2000_DVy;
+Create Variable DV2_J2000_DVz SteveReferenceEpoch;
+Create Variable Res LunarSMA DesiredSMA ConError BPlaneAngle PeriselentAlt Error1 Error2 Error3 Loop2;
+Create Variable NumSatRevs NumMoonRevs NumCrossings DotProduct pi DesiredAOP Loop1 TargetUTCModJulian
+Create Variable dVX dVY dVZ UTCGregorian
+Create Array X[15,1];
+
+Create Variable AOP_J2000 LCM2Mag_mps
+
+
+%----- Strings ---------
+Create String EmptyLine NewIterate PostTLI PreEDUS PostEDUS PreLCM1 PostLCM1 PreLCM2 PostLCM2 Periselene;
+Create String EDUSData BPlaneData LCM1Sol LCM2Sol PostLCM2Data ImpactSatData ImpactData
+EmptyLine     = ' '
+NewIterate    = '------ Begin New Iterate Data -------'
+EDUSData      = '------ EDUS Maneuver Data -------'
+BPlaneData    = '------  B-Plane  Data -------'
+LCM1Sol       = '------ LCM1 Maneuver Data -------'
+LCM2Sol       = '------ LCM2 Maneuver Data -------'
+PostLCM2Data  = '------ Post LCM2 State -------'
+ImpactData    = '------ Impact Data -------'
+
+ImpactSatData = '---------- Impact Sat Data --------------'
+
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MoonFixed;
+
+MoonFixed.Origin = Luna;
+MoonFixed.Axes   = BodyFixed;
+
+Create CoordinateSystem MoonFK5;
+
+MoonFK5.Origin = Luna;
+MoonFK5.Axes   = MJ2000Eq;
+
+Create CoordinateSystem MoonEarthRot;
+MoonEarthRot.Origin    = Luna;
+MoonEarthRot.Axes      = ObjectReferenced;
+MoonEarthRot.XAxis     = R;
+MoonEarthRot.ZAxis     = N;
+MoonEarthRot.Primary   = Earth;
+MoonEarthRot.Secondary = Luna;
+
+Create CoordinateSystem EarthMoonRot;
+EarthMoonRot.Origin    = Earth;
+EarthMoonRot.Axes      = ObjectReferenced;
+EarthMoonRot.XAxis     = R;
+EarthMoonRot.ZAxis     = N;
+EarthMoonRot.Primary   = Earth;
+EarthMoonRot.Secondary = Luna;
+
+Create CoordinateSystem LunaFixed;
+
+LunaFixed.Origin = Luna;
+LunaFixed.Axes   = BodyFixed;
+
+Create CoordinateSystem MoonInertial
+
+MoonInertial.Origin = Luna;
+MoonInertial.Axes   = BodyInertial;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC;
+
+DC.ShowProgress      = true;
+DC.ReportStyle       = Normal;
+DC.ReportFile        = DifferentialCorrectorDC.data;
+DC.MaximumIterations = 2500; 
+DC.DerivativeMethod  = ForwardDifference;
+
+Create DifferentialCorrector DC_central;
+
+DC_central.ShowProgress      = true;
+DC_central.ReportStyle       = Normal;
+DC_central.ReportFile        = DifferentialCorrectorDC.data;
+DC_central.MaximumIterations = 2500; 
+DC_central.DerivativeMethod  = ForwardDifference;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View 
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.SolverIterations = All; %Current or None are other options
+OFI_EarthView.UpperLeft        = [ 0 0 ];
+OFI_EarthView.Size             = [ .5 0.45 ];
+OFI_EarthView.Maximized        = false;
+
+OFI_EarthView.Add              = {LCROSS, Luna, Earth, ImpactSat, LRO}; 
+OFI_EarthView.View             = {Earth_View};
+
+OFI_EarthView.CoordinateSystem = EarthMJ2000Eq;
+OFI_EarthView.DrawObject       = [ true true true true true];
+OFI_EarthView.DrawXYPlane      = [ false false false false false];
+OFI_EarthView.DrawLabel        = [ true true true true true];
+OFI_EarthView.DrawGrid         = [ false false false false false];
+
+OFI_EarthView.Axes             = Off;
+OFI_EarthView.XYPlane          = Off;
+OFI_EarthView.EclipticPlane    = Off;
+OFI_EarthView.EnableStars      = On;
+OFI_EarthView.StarCount        = 40000;
+OFI_EarthView.ShowPlot         = true;
+
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame           = CoordinateSystem;
+Earth_View.SetDefaultLocation  = On;
+Earth_View.SetCurrentLocation  = Off;
+							   
+Earth_View.DefaultEye          = [ 625000 625000 625000 ]; 
+Earth_View.DefaultCenter       = [ 0 0 0 ];
+Earth_View.DefaultUp           = [ 0 0 1 ];
+
+
+Create OpenFramesInterface OFI_MoonView;
+
+OFI_MoonView.SolverIterations  = Current;
+OFI_MoonView.UpperLeft         = [ 0 0.45 ];
+OFI_MoonView.Size              = [ .5 0.45 ];
+OFI_MoonView.RelativeZOrder    = 148;
+OFI_MoonView.Maximized         = false;
+							   
+OFI_MoonView.Add               = {LCROSS, Luna, Earth, LRO};
+OFI_MoonView.View              = {Moon_View};
+							   
+OFI_MoonView.CoordinateSystem  = MoonInertial;
+OFI_MoonView.DrawObject        = [ true true true true];
+OFI_MoonView.DrawXYPlane       = [ false false false false];
+OFI_MoonView.DrawLabel         = [ true true true true];
+OFI_MoonView.DrawGrid          = [ false false false false];
+							   
+OFI_MoonView.Axes              = On;
+OFI_MoonView.XYPlane           = Off;
+OFI_MoonView.EclipticPlane     = Off;
+OFI_MoonView.EnableStars       = On;
+OFI_MoonView.StarCount         = 40000;
+OFI_MoonView.ShowPlot          = true;
+
+Create OpenFramesView Moon_View;
+
+Moon_View.ViewFrame            = CoordinateSystem;
+Moon_View.SetDefaultLocation   = On;
+Moon_View.SetCurrentLocation   = Off;
+							   
+Moon_View.DefaultEye           = [ 12000 12000 12000 ]; 
+Moon_View.DefaultCenter        = [ 0 0 0 ];
+Moon_View.DefaultUp            = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+%---- Initializations
+LCROSS   = LRO;
+LunarSMA = 384410.3;
+pi       = 3.14159265358979;
+
+BeginScript 'Initializations'
+      
+   %---- Define LCROSS physical properties
+   LRO.DryMass = 3256.8;
+   LRO.Cr      = 1.4;
+   LRO.SRPArea = 42.354;
+      
+   %---- Define the initial conditions for LRO
+   %LRO.Epoch = '19 Jun 2009 01:31:05.920 ';
+   LRO.UTCGregorian = '19 Jun 2009 01:31:05.920 ';
+   LRO.X            = 20747.68418000;
+   LRO.Y            = 50758.29345000;
+   LRO.Z            = 8229.21836200;
+   LRO.VX           = 0.11610208;
+   LRO.VY           = 3.32267120;
+   LRO.VZ           = 1.05827656;
+   LCROSS           = LRO;
+   RefEpoch         = LRO.A1ModJulian;
+   ImpactSat        = LRO;
+   
+   LRO.UTCGregorian = '18 Jun 2009 23:58:54.680 ';
+   LRO.X            = 18997.18364;
+   LRO.Y            = 30057.69679;
+   LRO.Z            = 2054.89630;
+   LRO.VX           = 0.61569;
+   LRO.VY           = 4.29276;
+   LRO.VZ           = 1.17090;
+                        
+   %---- Define the MoonFixed impact location and Epoch
+   ImpactSat_MoonFixed.UTCGregorian = '9 Oct 2009 11:30:00.000';
+   ImpactSat_MoonFixed.X            = 125.734;       
+   ImpactSat_MoonFixed.Y            = -89.636; 
+   ImpactSat_MoonFixed.Z            = -1730.522; 
+
+   %---- Define the initial conditions for ImpactSat
+   ImpactSat.UTCGregorian = ImpactSat_MoonFixed.UTCGregorian
+   ImpactSat.X            = ImpactSat_MoonFixed.EarthMJ2000Eq.X;
+   ImpactSat.Y            = ImpactSat_MoonFixed.EarthMJ2000Eq.Y;
+   ImpactSat.Z            = ImpactSat_MoonFixed.EarthMJ2000Eq.Z;
+
+   %---- Define the desired Resonance condition
+   NumSatRevs    = 3;
+   NumMoonRevs   = 4;
+   Res           = NumSatRevs/NumMoonRevs;  
+   DesiredSMA    = 473722.2056;%((398600.4415)^(1/3)*(NumMoonRevs/NumSatRevs/2/pi*2360551.68)^(2/3))*1.00;  
+   DesiredAOP    = 35.4553172712919;         
+   AOP_J2000     = 35.4553172712919; 
+   BPlaneAngle   = 79.5592 ;             
+   PeriselentAlt = 3318.092;                
+                            
+   %---- Define intial guess for EDUSdv  
+   ET_EDUSdV       = (0/86400);
+   EDUSdv.Element1 = 0.00001; 
+   EDUSdv.Element2 = 0.00001;  
+   EDUSdv.Element3 = 0.00001;
+                                 
+   %---- Define intial guess for LCM1 
+   ET_LCM1       = 0.905018439982086 + ET_EDUSdV; 
+   LCM1.Element1 =  0.001704940 ;  
+   LCM1.Element2 =  0.005791633 ;  
+   LCM1.Element3 = -0.000661562;        
+ 
+   %---- Define intial guess for LCM2 
+   ET_LCM2       = 33.770;
+   LCM2.Element1 = 0.013391482; 
+   LCM2.Element2 =  -0.007895569 ;  
+   LCM2.Element3 =  0.013918756;  
+     
+   %---- Define initial guess for Collocation Elapsed Time
+   ET_Coll           = 100; 
+   ImpactSat.X       = 54580.02594841291;
+   ImpactSat.Y       = 331618.2005005924;
+   ImpactSat.Z       = 162362.268059963;
+   ImpactSat.VX      = -0.6416435343925693
+   ImpactSat.VY      = -0.4568696547646986 
+   ImpactSat.VZ      = 2.402724393937031;
+
+   LCM1.Element1     = 0.00306139288909
+   LCM1.Element2     = -0.00154568531603
+   LCM1.Element3     = 0.00308387318091
+   ET_LCM2           = 33.8898378781
+   LCM2.Element1     = -0.00150770654724
+   LCM2.Element2     = 0.0229441083419
+   LCM2.Element3     = 0.00277315503137
+   ET_Coll           = 100.068369408
+   
+   dVatMoon.Element1 = -0.014073821735
+   dVatMoon.Element2 = -0.3936966287
+   dVatMoon.Element3 = -0.231610121973
+   
+   LCROSSInit        = LCROSS;
+   ImpactSat         = ImpactSatInit;
+   LCROSS            = LCROSSInit;
+
+EndScript
+
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%---- Prop to where EDUS performs maneuver
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+%----- Propagate LCROSS to EDUS Maneuver and Perform Maneuver
+Propagate EarthFull(LRO) {LRO.A1ModJulian = LCROSS.A1ModJulian};
+PropEpoch = RefEpoch + ET_EDUSdV;
+LRO.UTCGregorian = LCROSS.UTCGregorian
+Propagate EarthFull(LCROSS,LRO) {LCROSS.A1ModJulian = PropEpoch};
+
+%---- Perform the maneuver
+Maneuver EDUSdv(LCROSS);
+
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%---- Prop to LCM1 and perform manevuer
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+%----- Propagate LCROSS to Epoch of LCM1
+PropEpoch = RefEpoch + ET_LCM1;
+Propagate EarthFull(LCROSS,LRO) {LCROSS.A1ModJulian = PropEpoch};
+
+%---- Apply maneuver LCM1
+Maneuver LCM1(LCROSS);
+Maneuver LROTCM(LRO);
+
+
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%---- Prop to periselene
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+%----- Propagate LCROSS to Periselene
+Propagate NearMoonProp(LCROSS,LRO) {LRO.Luna.Periapsis};
+Maneuver LROLOI(LRO);
+
+%----- Propagate LCROSS to Periselene
+Propagate NearMoonProp(LCROSS,LRO) {LRO.Luna.Periapsis};
+LROLOI.Element1 = -.500;
+Maneuver LROLOI(LRO);
+
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%---- Prop to LCM2 and perform manevuer
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+PropEpoch = RefEpoch + ET_LCM2;
+Propagate NearMoonProp(LCROSS,LRO) {LCROSS.A1ModJulian = PropEpoch};
+Maneuver LCM2(LCROSS);
+Propagate NearMoonProp(LCROSS,LRO) {LCROSS.Luna.RMAG = 1700,StopTolerance = 1e-005};
+
+
+ 

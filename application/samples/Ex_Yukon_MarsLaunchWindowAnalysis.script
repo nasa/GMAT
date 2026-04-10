@@ -1,0 +1,333 @@
+%
+%  Ex_Yukon_MarsLaunchWindowAnalysis
+%
+%  Plan a trajectory to Mars
+%
+%  Released: R2018a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft satForward;
+
+satForward.DateFormat       = TAIModJulian;
+satForward.Epoch            = '21545';
+satForward.CoordinateSystem = EarthSunRot;
+satForward.DisplayStateType = Cartesian;
+satForward.X                = 0;
+satForward.Y                = 0;
+satForward.Z                = 0;
+satForward.VX               = 2;
+satForward.VY               = 0;
+satForward.VZ               = 0;
+
+Create Spacecraft satBackward;
+
+satBackward.DateFormat       = TAIModJulian;
+satBackward.Epoch            = '21545';
+satBackward.CoordinateSystem = MarsSunRot;
+satBackward.DisplayStateType = Cartesian;
+satBackward.X                = 0;
+satBackward.Y                = 0;
+satBackward.Z                = 0;
+satBackward.VX               = -5;
+satBackward.VY               = 0;
+satBackward.VZ               = 0;
+
+
+% Spacecraft objects used for intermediate buffering
+Create Spacecraft satBackwardInit satForwardInit;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel sunProp_ForceModel;
+
+sunProp_ForceModel.CentralBody            = Sun;
+sunProp_ForceModel.PointMasses            = {Sun};
+sunProp_ForceModel.Drag                   = None;
+sunProp_ForceModel.SRP                    = Off;
+sunProp_ForceModel.RelativisticCorrection = Off;
+sunProp_ForceModel.ErrorControl           = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator sunProp;
+
+sunProp.FM                       = sunProp_ForceModel;
+sunProp.Type                     = PrinceDormand78;
+sunProp.InitialStepSize          = 60;
+sunProp.Accuracy                 = 9.999999999999999e-012;
+sunProp.MinStep                  = 0;
+sunProp.MaxStep                  = 300000;
+sunProp.MaxStepAttempts          = 50;
+sunProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+Create ImpulsiveBurn aDeltaV;
+
+aDeltaV.CoordinateSystem   = Local;
+aDeltaV.Origin             = Earth;
+aDeltaV.Axes               = VNB;
+aDeltaV.Element1           = 0;
+aDeltaV.Element2           = 0;
+aDeltaV.Element3           = 0;
+aDeltaV.DecrementMass      = false;
+aDeltaV.Isp                = 300;
+aDeltaV.GravitationalAccel = 9.810000000000001;
+
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem EarthSunRot;
+
+EarthSunRot.Origin    = Earth;
+EarthSunRot.Axes      = ObjectReferenced;
+EarthSunRot.XAxis     = V;
+EarthSunRot.YAxis     = N;
+EarthSunRot.Primary   = Sun;
+EarthSunRot.Secondary = Earth;
+
+
+Create CoordinateSystem MarsSunRot;
+
+MarsSunRot.Origin    = Mars;
+MarsSunRot.Axes      = ObjectReferenced;
+MarsSunRot.XAxis     = V;
+MarsSunRot.YAxis     = N;
+MarsSunRot.Primary   = Sun;
+MarsSunRot.Secondary = Mars;
+
+
+Create CoordinateSystem SunMJ2000Ec;
+
+SunMJ2000Ec.Origin = Sun;
+SunMJ2000Ec.Axes   = MJ2000Ec;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create Yukon Yukon1;
+
+Yukon1.ShowProgress          = true;
+Yukon1.ReportStyle           = Normal;
+Yukon1.ReportFile            = 'MinNLPadYukon1.data';
+Yukon1.MaximumIterations     = 500;
+Yukon1.UseCentralDifferences = false;
+Yukon1.FeasibilityTolerance  = 1;
+Yukon1.HessianUpdateMethod   = SelfScaledBFGS;
+Yukon1.MaximumFunctionEvals  = 1000;
+Yukon1.OptimalityTolerance   = 0.001;
+Yukon1.FunctionTolerance     = 0.0001;
+Yukon1.MaximumElasticWeight  = 10000;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_SunInertialView;
+
+OFI_SunInertialView.SolverIterations = Current;
+OFI_SunInertialView.UpperLeft        = [ 0.02 0.01 ];
+OFI_SunInertialView.Size             = [ 0.56 0.58 ];
+OFI_SunInertialView.RelativeZOrder   = 5;
+OFI_SunInertialView.Maximized        = false;
+
+OFI_SunInertialView.Add              = {satForward, satBackward, Earth, Sun, Mars};
+OFI_SunInertialView.View             = {SunInertial_View};
+
+OFI_SunInertialView.CoordinateSystem = SunMJ2000Ec;
+OFI_SunInertialView.DrawObject       = [ true true true true true ];
+OFI_SunInertialView.DrawXYPlane      = [ false false false false false ];
+OFI_SunInertialView.DrawLabel        = [ true true true true true ];
+OFI_SunInertialView.DrawGrid         = [ false false false false false ];
+
+OFI_SunInertialView.Axes             = Off;
+OFI_SunInertialView.XYPlane          = On;
+OFI_SunInertialView.EclipticPlane    = Off;
+OFI_SunInertialView.EnableStars      = On;
+OFI_SunInertialView.StarCount        = 40000;
+OFI_SunInertialView.ShowPlot         = true;
+
+Create OpenFramesView SunInertial_View;
+
+SunInertial_View.ViewFrame           = CoordinateSystem;
+SunInertial_View.SetDefaultLocation  = On;
+SunInertial_View.SetCurrentLocation  = Off;
+
+SunInertial_View.DefaultEye          = [ 0 0 900000000 ];
+SunInertial_View.DefaultCenter       = [ 0 0 0 ];
+SunInertial_View.DefaultUp           = [ 1 0 0 ];
+
+
+Create OpenFramesInterface OFI_EarthSunRotView;
+
+OFI_EarthSunRotView.SolverIterations = Current;
+OFI_EarthSunRotView.UpperLeft        = [ 0.6 0.01 ];
+OFI_EarthSunRotView.Size             = [ 0.38 0.58 ];
+OFI_EarthSunRotView.RelativeZOrder   = 796;
+OFI_EarthSunRotView.Maximized        = false;
+
+OFI_EarthSunRotView.Add              = {satForward, satBackward, Earth, Sun, Mars};
+OFI_EarthSunRotView.View             = {EarthSunRot_View};
+
+OFI_EarthSunRotView.CoordinateSystem = EarthSunRot;
+OFI_EarthSunRotView.DrawObject       = [ true true true true true ];
+OFI_EarthSunRotView.DrawXYPlane      = [ false false false false false ];
+OFI_EarthSunRotView.DrawLabel        = [ true true true true true ];
+OFI_EarthSunRotView.DrawGrid         = [ false false false false false ];
+
+OFI_EarthSunRotView.Axes             = Off;
+OFI_EarthSunRotView.XYPlane          = Off;
+OFI_EarthSunRotView.EclipticPlane    = Off;
+OFI_EarthSunRotView.EnableStars      = On;
+OFI_EarthSunRotView.StarCount        = 40000;
+OFI_EarthSunRotView.ShowPlot         = true;
+
+Create OpenFramesView EarthSunRot_View;
+
+EarthSunRot_View.ViewFrame           = CoordinateSystem;
+EarthSunRot_View.SetDefaultLocation  = On;
+EarthSunRot_View.SetCurrentLocation  = Off;
+
+EarthSunRot_View.DefaultEye          = [ 0 900000000 0 ];
+EarthSunRot_View.DefaultCenter       = [ 0 0 0 ];
+EarthSunRot_View.DefaultUp           = [ 1 0 0 ];
+
+
+Create XYPlot XYPlot1;
+
+XYPlot1.SolverIterations = All;
+XYPlot1.UpperLeft        = [ 0.02 0.6 ];
+XYPlot1.Size             = [ 0.46 0.38 ];
+XYPlot1.RelativeZOrder   = 15;
+XYPlot1.Maximized        = false;
+XYPlot1.XVariable        = loopCount;
+XYPlot1.YVariables       = {cost};
+XYPlot1.ShowGrid         = true;
+XYPlot1.ShowPlot         = true;
+
+Create XYPlot XYPlot2;
+
+XYPlot2.SolverIterations = All;
+XYPlot2.UpperLeft        = [ 0.5 0.6 ];
+XYPlot2.Size             = [ 0.48 0.38 ];
+XYPlot2.RelativeZOrder   = 10;
+XYPlot2.Maximized        = false;
+XYPlot2.XVariable        = loopCount;
+XYPlot2.YVariables       = {launchEpoch, arrivalEpoch};
+XYPlot2.ShowGrid         = true;
+XYPlot2.ShowPlot         = true;
+
+Create ReportFile rf;
+
+rf.SolverIterations = Current;
+rf.Filename         = 'MarsLaunchData.txt';
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable launchEpoch arrivalEpoch patchEpoch cost loopCount tofConstraint tofValue I;
+loopCount     = 1;
+tofConstraint = 270;
+tofValue      = 1;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+BeginScript
+   
+   satForward.DateFormat    = 'TAIModJulian';   % remove this line
+   satBackward.DateFormat   = 'TAIModJulian';   % remove this line
+   launchEpoch              = 29087;
+   arrivalEpoch             = launchEpoch +  258.9234;  % Add hohmann transfer TOF to launchEpoch
+   patchEpoch               = launchEpoch + (arrivalEpoch - launchEpoch)/2;
+   satForward.TAIModJulian  = launchEpoch;
+   satBackward.TAIModJulian = arrivalEpoch;
+   
+   tofConstraint            = 291;
+   
+   
+   arrivalEpoch    = launchEpoch +  258.9234;  % Add hohmann transfer TOF to launchEpoch
+   patchEpoch      = launchEpoch + (arrivalEpoch - launchEpoch)/2;
+   launchEpoch     = 27357.0637387;
+   arrivalEpoch    = 27722.2678134;
+   satForward.VX   = 1.24242326859;
+   satForward.VY   = 0.857493964283;
+   satForward.VZ   = -7.31156188552;
+   satBackward.VX  = -4.24323514703;
+   satBackward.VY  = -0.238185150576;
+   satBackward.VZ  = -5.58416575838;
+   
+   satForwardInit  = satForward;
+   satBackwardInit = satBackward;
+   
+EndScript;
+
+For I = 1:1:20;
+   
+   launchEpoch = 27357.0637387 - 11 + I*2;
+   satForward  = satForwardInit;
+   satBackward = satBackwardInit;
+   
+   Optimize Yukon1 {SolveMode = Solve, ExitMode = SaveAndContinue, ShowProgressWindow = true};
+      loopCount = loopCount + 1;
+      
+      %Vary NLP(launchEpoch = launchEpoch, {Perturbation = 1e-4, MaxStep = 125, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      %Vary NLP(patchEpoch  = patchEpoch,  {Perturbation = 1e-4, MaxStep = 125, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      Vary Yukon1(arrivalEpoch = arrivalEpoch, {Perturbation = 1e-4, MaxStep = 125, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      tofValue = arrivalEpoch - launchEpoch;
+      
+      satForward.TAIModJulian  = launchEpoch;
+      satBackward.TAIModJulian = arrivalEpoch;
+      patchEpoch               = launchEpoch + (arrivalEpoch - launchEpoch)/2;
+      
+      Vary Yukon1(satForward.VX = satForward.EarthSunRot.VX, {Perturbation = 1e-6, MaxStep = 1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      Vary Yukon1(satForward.VY = satForward.EarthSunRot.VY, {Perturbation = 1e-6, MaxStep = 1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      Vary Yukon1(satForward.VZ = satForward.EarthSunRot.VZ, {Perturbation = 1e-6, MaxStep = 1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      
+      Vary Yukon1(satBackward.VX = satBackward.MarsSunRot.VX, {Perturbation = 1e-6, MaxStep = 1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      Vary Yukon1(satBackward.VY = satBackward.MarsSunRot.VY, {Perturbation = 1e-6, MaxStep = 1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      Vary Yukon1(satBackward.VZ = satBackward.MarsSunRot.VZ, {Perturbation = 1e-6, MaxStep = 1, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+      
+      PenUp OFI_SunInertialView OFI_EarthSunRotView;
+      Propagate sunProp(satForward) {satForward.ElapsedSecs = 5};
+      PenDown OFI_SunInertialView OFI_EarthSunRotView;
+      Propagate sunProp(satForward) {satForward.TAIModJulian = patchEpoch};
+      PenUp OFI_SunInertialView OFI_EarthSunRotView;
+      Propagate BackProp sunProp(satBackward) {satBackward.ElapsedSecs = -5};
+      PenDown OFI_SunInertialView OFI_EarthSunRotView;
+      Propagate BackProp sunProp(satBackward) {satBackward.TAIModJulian = patchEpoch};
+      
+      NonlinearConstraint Yukon1(satForward.SunMJ2000Ec.X=satBackward.SunMJ2000Ec.X);
+      NonlinearConstraint Yukon1(satForward.SunMJ2000Ec.Y=satBackward.SunMJ2000Ec.Y);
+      NonlinearConstraint Yukon1(satForward.SunMJ2000Ec.Z=satBackward.SunMJ2000Ec.Z);
+      NonlinearConstraint Yukon1(satForward.SunMJ2000Ec.VX=satBackward.SunMJ2000Ec.VX);
+      NonlinearConstraint Yukon1(satForward.SunMJ2000Ec.VY=satBackward.SunMJ2000Ec.VY);
+      NonlinearConstraint Yukon1(satForward.SunMJ2000Ec.VZ=satBackward.SunMJ2000Ec.VZ);
+      
+      cost = sqrt(satForward.EarthSunRot.VX^2 + satForward.EarthSunRot.VY^2 + satForward.EarthSunRot.VZ^2) + sqrt(satBackward.MarsSunRot.VX^2 + satBackward.MarsSunRot.VY^2 + satBackward.MarsSunRot.VZ^2);
+      
+      % Report rf cost satForward.EarthSunRot.VX satForward.EarthSunRot.VY satForward.EarthSunRot.VZ satBackward.MarsSunRot.VX satBackward.MarsSunRot.VY satBackward.MarsSunRot.VZ;
+      Minimize Yukon1(cost);
+   
+   
+   EndOptimize;  % For optimizer NLP
+   Report rf launchEpoch cost;
+EndFor;

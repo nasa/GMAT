@@ -1,0 +1,277 @@
+% General Mission Analysis Tool(GMAT) Script
+% Design a mission to rendezvous an electric 
+% propulsion spacecraft to Mars, starting 
+% with a patched conic launch from Earth.
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft emsat;
+GMAT emsat.DateFormat = A1ModJulian;
+GMAT emsat.Epoch = '21545';
+GMAT emsat.CoordinateSystem = EarthMJ2000Eq;
+GMAT emsat.DisplayStateType = Cartesian;
+GMAT emsat.X = 7100;
+GMAT emsat.Y = 0;
+GMAT emsat.Z = 1300;
+GMAT emsat.VX = 0;
+GMAT emsat.VY = 7.35;
+GMAT emsat.VZ = 1;
+GMAT emsat.DryMass = 850;
+GMAT emsat.Cd = 2.2;
+GMAT emsat.Cr = 1.8;
+GMAT emsat.DragArea = 15;
+GMAT emsat.SRPArea = 1;
+GMAT emsat.SPADDragScaleFactor = 1;
+GMAT emsat.SPADSRPScaleFactor = 1;
+GMAT emsat.NAIFId = -10024001;
+GMAT emsat.NAIFIdReferenceFrame = -9024001;
+GMAT emsat.OrbitColor = Red;
+GMAT emsat.TargetColor = Teal;
+GMAT emsat.OrbitErrorCovariance = [ 1e+70 0 0 0 0 0 ; 0 1e+70 0 0 0 0 ; 0 0 1e+70 0 0 0 ; 0 0 0 1e+70 0 0 ; 0 0 0 0 1e+70 0 ; 0 0 0 0 0 1e+70 ];
+GMAT emsat.CdSigma = 1e+70;
+GMAT emsat.CrSigma = 1e+70;
+GMAT emsat.Id = 'EMSat';
+GMAT emsat.Attitude = CoordinateSystemFixed;
+GMAT emsat.SPADSRPInterpolationMethod = Bilinear;
+GMAT emsat.SPADSRPScaleFactorSigma = 1e+70;
+GMAT emsat.SPADDragInterpolationMethod = Bilinear;
+GMAT emsat.SPADDragScaleFactorSigma = 1e+70;
+GMAT emsat.ModelFile = 'aura.3ds';
+GMAT emsat.ModelOffsetX = 0;
+GMAT emsat.ModelOffsetY = 0;
+GMAT emsat.ModelOffsetZ = 0;
+GMAT emsat.ModelRotationX = 0;
+GMAT emsat.ModelRotationY = 0;
+GMAT emsat.ModelRotationZ = 0;
+GMAT emsat.ModelScale = 1;
+GMAT emsat.AttitudeDisplayStateType = 'Quaternion';
+GMAT emsat.AttitudeRateDisplayStateType = 'AngularVelocity';
+GMAT emsat.AttitudeCoordinateSystem = EarthMJ2000Eq;
+GMAT emsat.EulerAngleSequence = '321';
+
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+
+
+% Force model for patched conic launch
+Create ForceModel PCForceModel;
+GMAT PCForceModel.CentralBody = Earth;
+GMAT PCForceModel.PointMasses = {Earth, Sun};
+GMAT PCForceModel.Drag = None;
+GMAT PCForceModel.SRP = Off;
+GMAT PCForceModel.RelativisticCorrection = Off;
+GMAT PCForceModel.ErrorControl = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator SunProp;
+GMAT SunProp.FM = PCForceModel;%SunProp_ForceModel;
+GMAT SunProp.Type = RungeKutta89;
+GMAT SunProp.InitialStepSize = 60;
+GMAT SunProp.Accuracy = 9.999999999999999e-12;
+GMAT SunProp.MinStep = 0.001;
+GMAT SunProp.MaxStep = 100000;
+GMAT SunProp.MaxStepAttempts = 50;
+GMAT SunProp.StopIfAccuracyIsViolated = true;
+%GMAT PCForceModel.SRP.Flux = 1367;
+%GMAT PCForceModel.SRP.SRPModel = Spherical;
+%GMAT PCForceModel.SRP.Nominal_Sun = 149597870.691;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+Create CoordinateSystem EarthJ2000Eq;
+GMAT EarthJ2000Eq.Origin = Earth;
+GMAT EarthJ2000Eq.Axes = MJ2000Eq;
+
+Create CoordinateSystem SunMJ2000Ec;
+GMAT SunMJ2000Ec.Origin = Sun;
+GMAT SunMJ2000Ec.Axes = MJ2000Ec;
+
+Create CoordinateSystem MarsMJ2000Ec;
+GMAT MarsMJ2000Ec.Origin = Mars;
+GMAT MarsMJ2000Ec.Axes = MJ2000Ec;
+
+%----------------------------------------
+%---------- Subscribers (Plot windows, report files,...)
+%----------------------------------------
+Create OrbitView OrbitView1;
+GMAT OrbitView1.SolverIterations = All;
+GMAT OrbitView1.UpperLeft = [ 0 0 ];
+GMAT OrbitView1.Size = [ 0.4363480497213887 1.040329218106996 ];
+GMAT OrbitView1.RelativeZOrder = 312;
+GMAT OrbitView1.Maximized = false;
+GMAT OrbitView1.Add = {emsat, Earth};
+GMAT OrbitView1.CoordinateSystem = EarthJ2000Eq;
+GMAT OrbitView1.DrawObject = [ true true ];
+GMAT OrbitView1.DataCollectFrequency = 1;
+GMAT OrbitView1.UpdatePlotFrequency = 50;
+GMAT OrbitView1.NumPointsToRedraw = 0;
+GMAT OrbitView1.ShowPlot = true;
+GMAT OrbitView1.MaxPlotPoints = 20000;
+GMAT OrbitView1.ShowLabels = true;
+GMAT OrbitView1.ViewPointReference = Earth;
+GMAT OrbitView1.ViewPointVector = [ 0 0 596000000 ];
+GMAT OrbitView1.ViewDirection = Sun;
+GMAT OrbitView1.ViewScaleFactor = 2;
+GMAT OrbitView1.ViewUpCoordinateSystem = EarthJ2000Eq;
+GMAT OrbitView1.ViewUpAxis = Y;
+GMAT OrbitView1.EclipticPlane = Off;
+GMAT OrbitView1.XYPlane = On;
+GMAT OrbitView1.WireFrame = Off;
+GMAT OrbitView1.Axes = On;
+GMAT OrbitView1.Grid = Off;
+GMAT OrbitView1.SunLine = Off;
+GMAT OrbitView1.UseInitialView = On;
+GMAT OrbitView1.StarCount = 7000;
+GMAT OrbitView1.EnableStars = On;
+GMAT OrbitView1.EnableConstellations = On;
+
+% Check that spacecraft makes rendezvous with Mars.
+Create ReportFile check_MarsRendezvous;
+GMAT check_MarsRendezvous.SolverIterations = Current;
+GMAT check_MarsRendezvous.UpperLeft = [ 0 0 ];
+GMAT check_MarsRendezvous.Size = [ 0 0 ];
+GMAT check_MarsRendezvous.RelativeZOrder = 0;
+GMAT check_MarsRendezvous.Maximized = false;
+GMAT check_MarsRendezvous.Filename = 'check_LISAprop.txt';
+GMAT check_MarsRendezvous.Precision = 16;
+GMAT check_MarsRendezvous.WriteHeaders = true;
+GMAT check_MarsRendezvous.LeftJustify = On;
+GMAT check_MarsRendezvous.ZeroFill = Off;
+GMAT check_MarsRendezvous.FixedWidth = true;
+GMAT check_MarsRendezvous.Delimiter = ' ';
+GMAT check_MarsRendezvous.ColumnWidth = 23;
+GMAT check_MarsRendezvous.WriteReport = true;
+
+%----------------------------------------
+%---------- User Objects
+%----------------------------------------
+
+%
+% Create an EMTGSpacecraft
+%
+Create EMTGSpacecraft emtgThrustModel;
+GMAT emtgThrustModel.SpacecraftFile = '../data/emtg/EarthToMars.emtg_spacecraftopt';
+GMAT emtgThrustModel.DutyCycle = 1;
+GMAT emtgThrustModel.SpacecraftStage = [ 1 ];
+
+%
+% Create a DynamicsConfiguration object and add spacecraft
+% ForceModel and Thrust model
+%
+Create DynamicsConfiguration PCDynConfig;
+GMAT PCDynConfig.ForceModels = {PCForceModel};
+GMAT PCDynConfig.Spacecraft = {emsat};
+GMAT PCDynConfig.FiniteBurns = {emtgThrustModel};
+
+%
+% Create a guess object for a Patched Conic Launch
+%
+Create OptimalControlGuess PCLaunchGuess;
+GMAT PCLaunchGuess.Type = 'CollocationGuessFile';
+GMAT PCLaunchGuess.TimeSystem = 'A1ModJulian';
+GMAT PCLaunchGuess.CoordinateSystem = EarthMJ2000Eq;
+GMAT PCLaunchGuess.FileName = '../data/misc/LISA_matlabCSALT_proptest.och';
+
+%
+% Create a Phase for the Patched Conic Launch Initial Condition, where the launch may be optimized
+% as a segment along the overall transfer trajectory
+%
+Create Phase phase_LAUNCH;
+GMAT phase_LAUNCH.Type = 'RadauPseudospectral';
+GMAT phase_LAUNCH.ThrustMode = 'Coast';
+GMAT phase_LAUNCH.SubPhaseBoundaries = [ -1 0 1 ];
+GMAT phase_LAUNCH.PointsPerSubPhase = [ 7 7 ];
+GMAT phase_LAUNCH.GuessSource = PCLaunchGuess;
+GMAT phase_LAUNCH.EpochFormat = 'A1ModJulian';
+GMAT phase_LAUNCH.StateLowerBound = [ -1495980000 -1495980000 -1495980000 -100 -100 -100 1e-05 ];
+GMAT phase_LAUNCH.StateUpperBound = [ 1495980000 1495980000 1495980000 100 100 100 5000 ];
+GMAT phase_LAUNCH.ControlLowerBound = [ 0 0 0 ];
+GMAT phase_LAUNCH.ControlUpperBound = [ 0 0 0 ];
+GMAT phase_LAUNCH.EpochLowerBound = '34110'; %  Set bounds huge +/- your launch and make identical for all phases
+GMAT phase_LAUNCH.EpochUpperBound = '34200';
+GMAT phase_LAUNCH.InitialEpoch = '34114.99962963';
+GMAT phase_LAUNCH.FinalEpoch = '34134.99962963';
+GMAT phase_LAUNCH.DynamicsConfiguration = PCDynConfig;
+GMAT phase_LAUNCH.BuiltInCost = 'None';
+GMAT phase_LAUNCH.MinControlMagnitude = 0;
+GMAT phase_LAUNCH.MaxControlMagnitude = 1;
+GMAT phase_LAUNCH.MaxRelativeErrorTolerance = 1e-05;
+GMAT phase_LAUNCH.OverrideColorInGraphics = false;
+GMAT phase_LAUNCH.OrbitColor = Red;
+
+Create OptimalControlFunction MarsRendezvous;
+GMAT MarsRendezvous.Function = 'CelestialBodyRendezvous';
+GMAT MarsRendezvous.Type = 'AlgebraicConstraint';
+GMAT MarsRendezvous.PhaseList = {'thrustToArrival.Final'};
+GMAT MarsRendezvous.SetModelParameter(CelestialBody, Mars);
+
+%
+% CREATE CUSTOM LINKAGE CONSTRAINT ON LAUNCH PHASE: DURATION = 5 Days
+% 
+Create CustomLinkageConstraint duration_LAUNCH;
+GMAT duration_LAUNCH.ConstraintMode = 'Difference';
+GMAT duration_LAUNCH.InitialPhase = phase_LAUNCH;
+GMAT duration_LAUNCH.InitialPhaseBoundaryType = 'Start';
+GMAT duration_LAUNCH.FinalPhase = phase_LAUNCH;
+GMAT duration_LAUNCH.FinalPhaseBoundaryType = 'End';
+GMAT duration_LAUNCH.SetModelParameter('TimeLowerBound', 'ElapsedDays', 18.2625);
+GMAT duration_LAUNCH.SetModelParameter('TimeUpperBound', 'ElapsedDays', 18.2625);
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+
+
+BeginMissionSequence;
+
+GMAT emsat.Epoch = 34114.99962963; %29087; %36005.5449656415 %
+
+% Good LISA
+GMAT emsat.EarthJ2000Eq.X = -47045064.0675757; %XX0;
+GMAT emsat.EarthJ2000Eq.Y = 27933028.5164259; %YY0;
+GMAT emsat.EarthJ2000Eq.Z = 13453108.6234168; %ZZ0;
+GMAT emsat.EarthJ2000Eq.VX = -4.97265605671344; %VX0;
+GMAT emsat.EarthJ2000Eq.VY = -8.87273204961476; %VY0;
+GMAT emsat.EarthJ2000Eq.VZ = -3.84733791506668; %VZ0;
+
+% Bad LISA @t0
+%GMAT emsat.EarthJ2000Eq.X = -49276742.48374;
+%GMAT emsat.EarthJ2000Eq.Y = -1246472.43123302;
+%GMAT emsat.EarthJ2000Eq.Z = -251384.481889548;
+%GMAT emsat.EarthJ2000Eq.VX = 0.12216467217033;
+%GMAT emsat.EarthJ2000Eq.VY = 0.137358770738437;
+%GMAT emsat.EarthJ2000Eq.VZ = 0.0490915859467611;
+
+% Bad LISA element #100
+%GMAT emsat.EarthJ2000Eq.X = -29321984.1402911
+%GMAT emsat.EarthJ2000Eq.Y =  21190137.3327417
+%GMAT emsat.EarthJ2000Eq.Z =  7767388.18665133
+%GMAT emsat.EarthJ2000Eq.VX = 0.122164672170755
+%GMAT emsat.EarthJ2000Eq.VY = 0.137358770738028
+%GMAT emsat.EarthJ2000Eq.VZ = 0.0490915859465928
+
+While emsat.ElapsedDays < 365.25 %27.0 %.0171639885084 %18.265
+   Propagate SunProp(emsat);
+   Report check_MarsRendezvous emsat.A1ModJulian emsat.EarthMJ2000Eq.X emsat.EarthMJ2000Eq.Y emsat.EarthMJ2000Eq.Z emsat.EarthMJ2000Eq.VX emsat.EarthMJ2000Eq.VY emsat.EarthMJ2000Eq.VZ;% totalMass uX uY uZ;
+EndWhile;
+Stop;
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+%BeginMissionSequence;
+
+%Collocate traj
+%Report check_MarsRendezvous emsat.A1ModJulian emsat.MarsMJ2000Ec.X emsat.MarsMJ2000Ec.Y emsat.MarsMJ2000Ec.Z emsat.MarsMJ2000Ec.VX emsat.MarsMJ2000Ec.VY emsat.MarsMJ2000Ec.VZ;
+
+
+

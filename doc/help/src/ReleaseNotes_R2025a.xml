@@ -1,0 +1,591 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="ReleaseNotesR2025a"
+         xmlns="http://docbook.org/ns/docbook">
+  <title>GMAT R2025a Release Notes</title>
+
+  <para>The General Mission Analysis Tool (GMAT) version R2025a was released
+  in April 2025. This is the first public release since January 2023 and is
+  the 15th release for the project. This is a major project release that
+  includes numerous major improvements and enhancements in general
+  capabilities and models, navigation and orbit determination, scripting and
+  API interfaces, and visualization. Below, we give a summary of key changes
+  in this release.</para>
+
+  <section>
+    <title>Milestones and Accomplishments</title>
+
+    <para>We are excited that GMAT continues to see significant adoption for
+    operational mission support.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>GMAT is being used as the primary operational tool for maneuver
+        planning by the Space Weather Follow On (SWFO) flight dynamics
+        team.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT is being used as the primary operational tool for maneuver
+        planning by the Roman Space Telescope (RST) flight dynamics
+        team.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT orbit determination is being used by the NASA GSFC Flight
+        Dynamics Facility (FDF) to support various missions.</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>GMAT was featured in the Spark Volume 22 | Number 4 | Fall 2024 GMAT
+    Article that can be accessed <link
+    xlink:href="https://partnerships.gsfc.nasa.gov/wp-content/uploads/The_Spark_Fall_2024_DIGITAL-S.pdf#page=10"
+    xmlns:xlink="http://www.w3.org/1999/xlink">here</link>.</para>
+  </section>
+
+  <section>
+    <title>Major Improvements and Enhancements</title>
+
+    <section>
+      <title>General Capabilities and Models</title>
+
+      <para>The following general capabilities are new to R2025a:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Support for Moon Mean Earth (ME) frame (GMT-8201/GMT-7604).
+          GMAT now allows the user to assign the Lunar Mean Earth (ME) frame
+          as the Moon (Luna) body-fixed frame. The Moon ME frame will then be
+          used when computing Lunar latitude and longitude or when assigning
+          the BodyFixed axes for a user-defined CoordinateSystem with Luna as
+          the origin. See the code snippet provided in the CelestialBody
+          resource chapter of the User’s Guide for an example of configuring
+          and using the Moon ME frame.</para>
+        </listitem>
+
+        <listitem>
+          <para>Addition of Lunar fixed frame from user-supplied BPC kernel
+          (GMT-8000). The definition of the lunar-fixed frame for computing
+          selenodetic coordinates and the Luna BodyFixed axes can be specified
+          using SPICE kernels and an appropriate SPICE frame name on the Luna
+          body in GMAT. See the code snippet provided in the CelestialBody
+          resource chapter of the User’s Guide for an example of using a
+          binary SPICE orientation kernel to provide the lunar orientation
+          model.</para>
+        </listitem>
+
+        <listitem>
+          <para>Addition of True Equator Mean Earth (TEME) axes to the
+          CoordinateSystem resource (GMT-8166). True Equator Mean Earth (TEME)
+          axes are now available in the CoordinateSystem resource.</para>
+        </listitem>
+
+        <listitem>
+          <para>Expansion of CSSI space weather file option for drag
+          prediction (GMT-7777/GMT-7772). The user may now specify
+          ‘CSSISpaceWeatherFile’ on the propagator Drag.PredictedWeatherSource
+          parameter. This allows the user to model predicted drag using the
+          latest available solar activity predictions. See the example
+          provided in the “CSSI Space Weather Data” section of the Force Model
+          chapter of the User’s Guide.</para>
+        </listitem>
+
+        <listitem>
+          <para>Addition of multi-body harmonic gravity for mission design in
+          production mode (GMT-8254). GMAT now accepts and models full field
+          gravity for multiple bodies simultaneously. This capability is
+          available for mission design and maneuver planning tasks. See the
+          script Ex_MultibodySphericalHarmonicGravity in the application
+          samples folder for an example of this capability.</para>
+        </listitem>
+
+        <listitem>
+          <para>Allow users to set a negative Cd and Cr (GMT-8181). GMAT now
+          allows negative values of Cd and Cr on the Spacecraft resource.
+          While it is not typical or physical for these values to be negative,
+          it may be useful for them to be negative to alias other unmodeled
+          forces, or they may sometimes be negative if used as optimization
+          parameters.</para>
+        </listitem>
+
+        <listitem>
+          <para>Additional optimizer monitoring and controls (GMT-8151).
+          GMAT’s VF13ad and SNOPT optimizers now provide optional monitoring
+          of the optimization process iteration by iteration. This enables
+          user defined physical tolerances on constraint values outside of the
+          scaling performed by the optimizers. See also the sample script
+          Ex_MonitoredLunarTransfer.script in the samples/NeedVF13ad
+          folder.</para>
+        </listitem>
+
+        <listitem>
+          <para>Additional AzimuthElevationRangeRangeRate output added to
+          Contact Locator Report (GMT-7810). The new
+          AzimuthElevationRangeRangeRate ContactLocator report type provides
+          an output format that reports pass number, station name, azimuth,
+          elevation, range, and range-rate on each line for a specified time
+          step within each computed pass.</para>
+        </listitem>
+
+        <listitem>
+          <para>Analytic mass property modeling (GMT-7983). GMAT now includes
+          analytic modeling of the center of mass and moments of inertia for
+          spacecraft objects. Mass properties are calculated dynamically
+          during mass-loss events like finite maneuvers and available for
+          reporting. See the script Ex_AnalyticMassProperties in the
+          application samples folder for an example of this capability.</para>
+        </listitem>
+
+        <listitem>
+          <para>Updates to External force model plugin (GMT-8022). Use of this
+          capability requires proper configuration of the GMAT Python
+          interface. This adds the capability to define and use an
+          acceleration in an external user-created python file. The python
+          code providing the acceleration model must follow certain
+          conventions. See the details provided in the External Force Model
+          remarks in the ForceModel chapter of the User’s Guide. For examples
+          of this capability, see the Ex_ExternalForceModel and
+          Ex_ExternalForceModel_NoAPI scripts in the samples folder.</para>
+        </listitem>
+
+        <listitem>
+          <para>GMAT’s factory management system now allows the replacement of
+          internal components with customized replacement objects provided in
+          GMAT plugins (GMT-8265). Users of this capability are responsible
+          for testing of any plugin-based replacements that use the new
+          support.</para>
+        </listitem>
+      </itemizedlist>
+
+      <section>
+        <title>Beta- and Alpha-level Capabilities</title>
+
+        <para>These are new features that have not yet undergone full testing
+        and may have bugs. To access some of these features, you may need to
+        edit the <filename>bin/gmat_startup_file.txt</filename> file to load
+        the desired alpha plug-in and/or activate features only available in
+        testing mode (set RUN_MODE = TESTING in the file). These features
+        should be used with caution.</para>
+
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>Inclusion of GMD formatting tools for binary UTDF and CCSDS
+            TDM tracking data formats (GMT-7992). Python scripts are available
+            in the utilities/python/navigation folder for the conversion of a
+            limited selection of UTDF and CCSDS TDM data types to GMD format.
+            The utdf_to_gmd.py script supports conversion of UTDF three-way
+            RangeRate, TDRS one-way return Doppler, and TDRS DOWD to GMD. The
+            tdm_to_gmd.py script supports conversion of CCSDS TDM
+            DOPPLER_INTEGRATED to GMAT RangeRate, TRANSMIT_FREQUENCY to GMAT
+            ramp records, RECEIVE_FREQUENCY to GMAT DSN_TCP, and RANGE to GMAT
+            Range or DSN_SeqRange records.</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+    </section>
+
+    <section>
+      <title>Navigation and Orbit Determination (OD)</title>
+
+      <para>The following navigation and orbit determination capabilities are
+      new to R2025a:</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>New operational data types for orbit determination
+          (navigation)</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Addition of GN/DTE three-way range-rate measurements
+              (GMT-8222). This provides support for ground-based tracking
+              measurements in km/sec using the RangeRate data type for which
+              the transmit and receive stations are different. See the sample
+              script Ex_Estimate_RangeRangeRate in the application
+              samples/Navigation folder.</para>
+            </listitem>
+
+            <listitem>
+              <para>Addition of DSN Pseudo-Noise (PN) range measurements
+              (GMT-8218). This provides support for DSN PN range measurements
+              (DSN data type 14) in range units.</para>
+            </listitem>
+
+            <listitem>
+              <para>Addition of DSN Three-way Total Count Phase (TCP) Doppler
+              measurements (GMT-8136). This provides support for averaged
+              phase difference measurements (derived from DSN data type 17) in
+              Hz for which the receive and transmit stations are
+              different.</para>
+            </listitem>
+
+            <listitem>
+              <para>Addition of TDRS User Doppler One-way Return Doppler
+              measurements (GMT-8068). This provides support for Tracking and
+              Data Relay Satellite (TDRS) user one-way return Doppler
+              measurements. See also the script
+              Ex_Estimate_TDRSOneWayReturnDoppler in the application
+              samples/Navigation folder.</para>
+            </listitem>
+
+            <listitem>
+              <para>Addition of TDRS user Range and Doppler measurements
+              (GMT-7549). This provides support for Tracking and Data Relay
+              Satellite (TDRS) user two-way return range and Doppler
+              measurements. See also the scripts Ex_Estimate_TDRSUserTracking
+              and Ex_Estimate_TDRSAndUser in the application
+              samples/Navigation folder.</para>
+            </listitem>
+
+            <listitem>
+              <para>Addition of TDRS Differenced One-Way Doppler (GMT-7467).
+              This provides support for Tracking and Data Relay Satellite
+              (TDRS) user differenced one-way return Doppler (DOWD)
+              measurements. DOWD measurements are formulated by differencing
+              the measurements from simultaneous one-way return Doppler
+              tracking events.</para>
+            </listitem>
+
+            <listitem>
+              <para>Addition of TDRS Bilateration Transponder Ranging System
+              (BRTS) range and Doppler (GMT-7327). This provides support for
+              Tracking and Data Relay Satellite (TDRS) BRTS range and Doppler
+              tracking. BRTS tracking is similar to TDRS user range and
+              Doppler tracking. The BRTS transponder acts like a TDRS user
+              fixed to a known location on the Earth. BRTS tracking is used to
+              precisely determine the orbit of the TDRS spacecraft. See the
+              script Ex_Estimate_BRTSTracking in the application
+              samples/Navigation folder.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Addition of a JSON output option for the BLS estimator data
+          file containing observation and residual data records (GMT-7899).
+          This adds a JSON format data file that contains the batch estimator
+          measurements, residuals, and other data to full numerical precision.
+          This new capability replaces the batch estimator MatlabFile option
+          and makes this capability freely available without MATLAB license
+          restrictions. With this update, the MatlabFile option is deprecated,
+          but is still currently available. See the sample script
+          Ex_Estimate_RangeRangeRate in the application samples/Navigation
+          folder.</para>
+        </listitem>
+
+        <listitem>
+          <para>K-band frequency support (GMT-6339). K-band frequencies are
+          now supported for computation of the ionosphere correction on the
+          ground-to-space or space-to-ground tracking legs.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>The following navigation and orbit determination capabilities have
+      changed in R2025a:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Use of DSN_SeqRange and DSN_TCP as cross-link tracking types
+          is only allowed in testing mode.</para>
+        </listitem>
+
+        <listitem>
+          <para>To provide support for three-way tracking paths, the GMD
+          tracking data record format has changed for the RangeRate and
+          DSN_TCP measurement types. The old format will still currently work.
+          Please see the User’s Guide Reference Guide &gt; Orbit Determination
+          &gt; System &gt; Tracking Data Types for Orbit Determination for
+          details on the changes.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>The following navigation and orbit determination capabilities are
+      deprecated beginning with R2025a:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>The BatchEstimator MatlabFile output option is deprecated and
+          replaced by the new JSON-format DataFile option. See the sample
+          script Ex_Estimate_RangeRangeRate in the application
+          samples/Navigation folder for an example demonstrating generation of
+          the JSON batch estimator data file.</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Scripting and API Interface</title>
+
+      <para>The following Scripting and API Interface improvements were
+      implemented in R2025a:</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>Addition of the API Cookbook (GMT-8268). GMAT now provides use
+          cases and examples of the Python API in a new document, the GMAT API
+          Cookbook. See also the sample API use cases in the GMAT “api”
+          folder.</para>
+        </listitem>
+
+        <listitem>
+          <para>Support for commands in the API (GMT-7003). The GMAT API now
+          provides access to the mission control sequence using the API. See
+          the sample scripts Ex_R2025a_BasicTarget and Ex_MarsBPlane in the
+          GMAT "api" folder.</para>
+        </listitem>
+
+        <listitem>
+          <para>Expansion of Python access to vector and matrix data using
+          GetNumber (GMT-8083). GMAT fields and variables were accessible as
+          floating-point values in the GMAT API in R2020a and R2022a. This
+          capability is also available for vectors and matrices in R2025a. See
+          also the examples in the GMAT “api” folder.</para>
+        </listitem>
+
+        <listitem>
+          <para>Enforcement of required “three-component” syntax for the force
+          model object (GMT-7685). Force models in GMAT releases prior to
+          R2025a ignored the inner delimiter for fields of the form
+          “ForceModel.InnerDelimiter.FieldName.” The inner delimiters are now
+          parsed correctly, so that the settings for multiple gravitational
+          fields (e.g. the degree and order of the harmonics) can be assigned
+          to the correct forces. See the script
+          Ex_MultibodySphericalHarmonicGravity in the application samples
+          folder for an example of this capability.</para>
+        </listitem>
+
+        <listitem>
+          <para>Expansion of Include command to allow a string as a path
+          (GMT-8075). Users can now script the names of include files into
+          GMAT strings and later use those strings to specify the included
+          file.</para>
+        </listitem>
+
+        <listitem>
+          <para>Change in script creation to not include the “GMAT” prefix by
+          default (GMT-8034). The optional “GMAT” prefix for field
+          specification and assignment is no longer the default setting in
+          GMAT scripts. See the R2025a sample scripts for examples of the new
+          default scripting.</para>
+        </listitem>
+
+        <listitem>
+          <para>Enhancement of Python script interface to support
+          multi-dimensional arrays (GMT-7965). GMAT can now exchange
+          multidimensional arrays with external Python code through the script
+          Python interface.</para>
+        </listitem>
+
+        <listitem>
+          <para>Expansion of Write/Report commands to be able to append to an
+          existing file (GMT-7813). A new ReportFile parameter
+          AppendToExistingFile is available. This parameter may be set to True
+          to allow GMAT to write to a report file in append mode instead of
+          overwriting the file each time.</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Optimal Control</title>
+
+      <section>
+        <title>Beta Capabilities</title>
+
+        <para>The GMAT Optimal Control capability remains a Beta feature for
+        R2025a.</para>
+      </section>
+    </section>
+
+    <section>
+      <title>OpenFramesInterface Visualizations</title>
+
+      <note>
+        <para>The OFI continues to be the primary 3D visualization component
+        in GMAT. <guilabel>OrbitView</guilabel> will continue to be supported
+        for backward compatibility purposes but will only be modified for
+        critical bug fixes.</para>
+      </note>
+
+      <para>The complete set of documentation for OFI is available at <link
+      xlink:href="https://gitlab.com/EmergentSpaceTechnologies/OpenFramesInterface/-/wikis/home"
+      xmlns:xlink="http://www.w3.org/1999/xlink">the OFI Wiki</link></para>
+    </section>
+  </section>
+
+  <section>
+    <title>Other Improvements</title>
+
+    <itemizedlist spacing="compact">
+      <listitem>
+        <para>Removed restriction of the Array dimensions limit (GMT-8108).
+        GMAT vectors and arrays previously had an upper size restriction of
+        1000 elements (for vectors) and 1000 rows and columns (for arrays).
+        That restriction has been removed.</para>
+      </listitem>
+
+      <listitem>
+        <para>Improvement to error message output (GMT-8104).</para>
+      </listitem>
+
+      <listitem>
+        <para>The GMAT users guide, previously called help-letter, was moved
+        to &lt;GMAT-top-level-folder&gt;/docs/ and renamed to GMAT_UsersGuide
+        to match other users guides.</para>
+      </listitem>
+
+      <listitem>
+        <para>The Help drop-down menu has been changed (GMT-8067). Previously,
+        Help-&gt;Online Help would take you to an online user guide. This has
+        been renamed to Help-&gt;User Guide and now links to a local HTML copy
+        of the users guide that is packaged with GMAT.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Compatibility Changes</title>
+
+    <itemizedlist>
+      <listitem>
+        <para>Support for wxWidgets 3.2.6 (GMT-5612) and Apple Silicon
+        workstations. GMAT R2022a was built using wxWidgets 3.0.4. The GUI
+        components have been updated to build with wxWidgets 3.2.6. This
+        update to the toolkit adds support for Apple Silicon based
+        workstations running recent releases of MacOS.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT R2025a is compatible with Python 3.10, 3.11, and 3.12
+        (GMT-8277). The GMAT build packages now include bindings for Python
+        3.6 through 3.12.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Fixed &amp; Known Issues</title>
+
+    <section>
+      <title>Fixed Issues</title>
+
+      <para>Over 50 high priority bugs were closed in this release. See the
+      "<link xlink:href="https://gmat.atlassian.net/issues/?filter=15153"
+      xmlns:xlink="http://www.w3.org/1999/xlink">Critical Issues Fixed in
+      R2025a</link>" report for details. Some significant fixes in R2025a
+      include:</para>
+
+      <informaltable frame="topbot">
+        <tgroup cols="2">
+          <colspec colwidth="0.2*"/>
+
+          <thead>
+            <row>
+              <entry align="left">ID</entry>
+
+              <entry align="left">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry align="left"><link
+              xlink:href="https://gmat.atlassian.net/browse/GMT-8153"
+              xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8153</link></entry>
+
+              <entry align="left">Optimizers Falsely Claim Convergence</entry>
+            </row>
+
+            <row>
+              <entry align="left"><link
+              xlink:href="https://gmat.atlassian.net/browse/GMT-8023"
+              xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8023</link></entry>
+
+              <entry align="left">Incorrect Application of Hardware Delay
+              During Crosslink Measurement</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section>
+      <title>Known Issues</title>
+
+      <para>See the "<link
+      xlink:href="https://gmat.atlassian.net/issues/?filter=15155"
+      xmlns:xlink="http://www.w3.org/1999/xlink">All Known Critical Issues for
+      R2025a</link>" report for a list of all known major issues in R2025a.
+      There are several known issues in this release that we consider to be
+      significant:</para>
+
+      <para><informaltable frame="topbot">
+          <tgroup cols="2">
+            <colspec colwidth="0.2*"/>
+
+            <thead>
+              <row>
+                <entry align="left">ID</entry>
+
+                <entry align="left">Description</entry>
+              </row>
+            </thead>
+
+            <tbody>
+              <row>
+                <entry align="left"><link
+                xlink:href="https://gmat.atlassian.net/browse/GMT-8024"
+                xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8024</link></entry>
+
+                <entry align="left">Windows Defender pop-up may appear
+                preventing users from initially opening the GMAT application
+                and require additional user actions.</entry>
+              </row>
+
+              <row>
+                <entry align="left"><link
+                xlink:href="https://gmat.atlassian.net/browse/GMT-8243"
+                xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8243</link></entry>
+
+                <entry align="left">Windows help contents may appear blank and
+                require additional user actions.</entry>
+              </row>
+
+              <row>
+                <entry align="left"><link
+                xlink:href="https://gmat.atlassian.net/browse/GMT-8322"
+                xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8322</link></entry>
+
+                <entry align="left">Replace OrbitView with OFI by mapping the
+                OV scripting to an OFI window, and rework the ground track
+                (The OrbitView and Groundtrack plot components do not work
+                correctly on MacOS 14 and later.)</entry>
+              </row>
+
+              <row>
+                <entry align="left"><link
+                xlink:href="https://gmat.atlassian.net/browse/GMT-8339"
+                xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8339</link></entry>
+
+                <entry align="left">R2025a is not notarized on Mac. Some users
+                may have trouble opening the r2025a GMAT GUI on Mac. Scripts
+                can be run on the GMAT console through a terminal window
+                without issue.</entry>
+              </row>
+
+              <row>
+                <entry align="left"><link
+                xlink:href="https://gmat.atlassian.net/browse/GMT-8340"
+                xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8340</link></entry>
+
+                <entry align="left">Support the Mac Intel machines. The Mac
+                systems at the moment can either be using an Intel based
+                chipset or a Silcon (Apple) based chipset. Currently the GMAT
+                development team is supporting Silcon based chipset
+                builds.</entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable></para>
+    </section>
+  </section>
+</section>

@@ -1,0 +1,104 @@
+%
+%  Ex_Attitude_ModifiedRodriguezParameters
+%
+%  Report the spacecraft Modified Rodrigues attitude parameters.
+%
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft DMSP;
+
+DMSP.DateFormat                   = UTCGregorian;
+DMSP.Epoch                        = '01 Jul 2000 11:59:28.000';
+DMSP.SMA                          = 9000.938817629014;
+DMSP.ECC                          = 0.02454974900598012;
+DMSP.INC                          = 100.850080056581;
+DMSP.RAAN                         = 306.6148021947984;
+DMSP.AOP                          = 314.1905515359924;
+DMSP.TA                           = 99.88774933204847;
+DMSP.Attitude                     = CoordinateSystemFixed;
+DMSP.AttitudeRateDisplayStateType = 'AngularVelocity';
+DMSP.AttitudeCoordinateSystem     = LVLH;
+DMSP.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+Create Propagator DefaultProp;
+
+DefaultProp.FM      = DefaultProp_ForceModel;
+DefaultProp.MaxStep = 3;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem LVLH;
+
+LVLH.Origin    = DMSP;
+LVLH.Axes      = ObjectReferenced;
+LVLH.YAxis     = -N;
+LVLH.ZAxis     = -R;
+LVLH.Primary   = Earth;
+LVLH.Secondary = DMSP;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.SolverIterations     = Current;
+OFI_EarthView.UpperLeft            = [ 0.002352941176470588 0 ];
+OFI_EarthView.Size                 = [ 0.5 0.4496021220159151 ];
+OFI_EarthView.RelativeZOrder       = 34;
+OFI_EarthView.Maximized            = true;
+OFI_EarthView.Add                  = {DMSP, Earth};
+OFI_EarthView.View                 = {Earth_View};
+
+OFI_EarthView.DrawObject           = [ true true];
+OFI_EarthView.DrawXYPlane          = [ false false];
+OFI_EarthView.DrawLabel            = [ true true];
+OFI_EarthView.DrawGrid             = [ false false];
+
+OFI_EarthView.Axes                 = On;
+OFI_EarthView.XYPlane              = On;
+OFI_EarthView.EclipticPlane        = Off;
+OFI_EarthView.EnableStars          = On;
+OFI_EarthView.StarCount            = 40000;
+OFI_EarthView.ShowPlot             = true;
+
+Create OpenFramesView Earth_View;
+
+Earth_View.ViewFrame          = CoordinateSystem;
+Earth_View.SetDefaultLocation = On;
+Earth_View.SetCurrentLocation = Off;
+
+Earth_View.DefaultEye         = [ 20000 20000 20000]; 
+Earth_View.DefaultCenter      = [ 0 0 0 ];
+Earth_View.DefaultUp          = [ 0 0 1 ];
+
+
+Create XYPlot XYPlot1;
+
+XYPlot1.SolverIterations = Current;
+XYPlot1.UpperLeft        = [ 0.002352941176470588 0.4535809018567639 ];
+XYPlot1.Size             = [ 0.5 0.4496021220159151 ];
+XYPlot1.RelativeZOrder   = 26;
+XYPlot1.XVariable        = DMSP.A1ModJulian;
+XYPlot1.YVariables       = {DMSP.MRP1, DMSP.MRP2, DMSP.MRP3};
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+Propagate 'Prop 10000 s' DefaultProp(DMSP) {DMSP.ElapsedSecs = 20000.0};
+
+
+

@@ -1,0 +1,67 @@
+%
+%  Ex_SolverConvergenceParameters
+%
+%  Report the targeter convergence status parameters after a targeting loop.
+%
+%  Released: R2014a
+% 
+
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft aSat
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+Create Propagator aPropagator
+
+
+Create ImpulsiveBurn aBurn
+
+Create DifferentialCorrector aDC
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_EarthView;
+
+OFI_EarthView.Add              = {Earth,aSat};
+OFI_EarthView.View             = {TheView};
+
+OFI_EarthView.CoordinateSystem = EarthMJ2000Eq;
+OFI_EarthView.ShowPlot         = true;
+
+Create OpenFramesView TheView;
+
+TheView.ViewFrame              = CoordinateSystem;
+TheView.SetDefaultLocation     = On;
+TheView.SetCurrentLocation     = Off;
+
+TheView.DefaultEye             = [ 0 0 150000];
+TheView.DefaultCenter          = [ 0 0 0 ];
+TheView.DefaultUp              = [ 1 0 0 ];
+
+
+
+Create ReportFile aReport
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Report aReport aDC.SolverStatus aDC.SolverState
+Target aDC
+
+Vary aDC(aBurn.Element1 = 1.0, {Upper = 3})
+Maneuver aBurn(aSat)
+Propagate aPropagator(aSat,{aSat.Apoapsis})
+Achieve aDC(aSat.RMAG = 42164)
+EndTarget
+
+Report aReport aDC.SolverStatus aDC.SolverState

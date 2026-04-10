@@ -1,0 +1,304 @@
+%
+%   Ex_MultiSpacecraft_Simultaneous_BatchEstimation
+%
+%   Use the batch estimator to estimate two spacecraft simultaneously. This 
+%   script also demonstrates use of inter-spacecraft tracking.
+%
+%   In this script, SatTrkr acts as a tracking spacecraft orbiting the Moon
+%   and tracks SatTarg. SatTrkr is also tracked by Earth-based ground stations.
+%   SatTarg is only tracked by SatTrkr.
+%
+%   Note that the error models for the inter-spacecraft tracking are assigned on
+%   the Receiver object of the tracking spacecraft (SatTrkr).
+%
+%   Released: R2022a
+%
+
+
+
+Create CoordinateSystem MoonMJ2000Eq
+
+MoonMJ2000Eq.Origin = Luna;
+MoonMJ2000Eq.Axes   = MJ2000Eq;
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------    
+
+Create Spacecraft SimSatTrkr;
+
+SimSatTrkr.DateFormat       = 'UTCGregorian';
+SimSatTrkr.Epoch            = '2 Aug 2022 00:00:00.000';
+SimSatTrkr.CoordinateSystem = MoonMJ2000Eq;
+SimSatTrkr.DisplayStateType = Cartesian;
+SimSatTrkr.X                = -15705.546589    
+SimSatTrkr.Y                =  38778.718203    
+SimSatTrkr.Z                = -51554.117823      
+SimSatTrkr.VX               =  0.021363     
+SimSatTrkr.VY               = -0.002429      
+SimSatTrkr.VZ               =  0.137900
+SimSatTrkr.DryMass          = 850;
+SimSatTrkr.Cd               = 2.2;
+SimSatTrkr.Cr               = 1.8;
+SimSatTrkr.DragArea         = 15;
+SimSatTrkr.SRPArea          = 15;
+SimSatTrkr.Id               = 'SatTrkr';
+SimSatTrkr.AddHardware      = {TrkrAnt, TrkrXmtr, TrkrRcvr, TrkrXpndr};
+
+Create Antenna TrkrAnt
+Create Transmitter TrkrXmtr
+Create Receiver TrkrRcvr
+Create Transponder TrkrXpndr
+
+TrkrXmtr.PrimaryAntenna  = TrkrAnt;
+TrkrXmtr.Frequency       = 2067.5;
+
+TrkrRcvr.PrimaryAntenna  = TrkrAnt;
+TrkrRcvr.ErrorModels     = {Range, RangeRate}
+TrkrXpndr.PrimaryAntenna = TrkrAnt;
+
+Create Spacecraft SimSatTarg;
+
+SimSatTarg.DateFormat       = 'UTCGregorian';
+SimSatTarg.Epoch            = '2 Aug 2022 00:00:00.000';
+SimSatTarg.CoordinateSystem = MoonMJ2000Eq;
+SimSatTarg.DisplayStateType = Cartesian;
+SimSatTarg.X                = -1346.796195     
+SimSatTarg.Y                =  1140.665877     
+SimSatTarg.Z                =  -313.779123      
+SimSatTarg.VX               =  0.583772      
+SimSatTarg.VY               =  0.187944     
+SimSatTarg.VZ               = -1.553913
+SimSatTarg.DryMass          = 850;
+SimSatTarg.Cd               = 2.2;
+SimSatTarg.Cr               = 1.8;
+SimSatTarg.DragArea         = 15;
+SimSatTarg.SRPArea          = 15;
+SimSatTarg.Id               = 'SatTarg';
+SimSatTarg.AddHardware      = {TargXpndr, TargAnt};
+
+Create Antenna TargAnt
+Create Transponder TargXpndr;
+
+TargXpndr.PrimaryAntenna  = TargAnt;
+TargXpndr.HardwareDelay   = 0.0;
+TargXpndr.TurnAroundRatio = '240/221' 
+
+ 
+%----------------------------------------
+%----- Spacecraft for estimation run
+%----------------------------------------
+
+Create Spacecraft EstSatTrkr;
+
+EstSatTrkr.DateFormat       = 'UTCGregorian';
+EstSatTrkr.Epoch            = '2 Aug 2022 00:00:00.000';
+EstSatTrkr.CoordinateSystem = MoonMJ2000Eq;
+EstSatTrkr.DisplayStateType = Cartesian;
+EstSatTrkr.X                = -15705.5
+EstSatTrkr.Y                =  38778.7
+EstSatTrkr.Z                = -51554.1
+EstSatTrkr.VX               =  0.021363     
+EstSatTrkr.VY               = -0.002429     
+EstSatTrkr.VZ               =  0.137900
+EstSatTrkr.DryMass          = 850;
+EstSatTrkr.Cd               = 2.2;
+EstSatTrkr.Cr               = 1.8;
+EstSatTrkr.DragArea         = 15;
+EstSatTrkr.SRPArea          = 15;
+EstSatTrkr.Id               = 'SatTrkr';
+EstSatTrkr.AddHardware      = {TrkrAnt, TrkrXmtr, TrkrRcvr, TrkrXpndr};
+EstSatTrkr.SolveFors        = {CartesianState}
+
+Create Spacecraft EstSatTarg;
+
+EstSatTarg.DateFormat       = 'UTCGregorian';
+EstSatTarg.Epoch            = '2 Aug 2022 00:00:00.000';
+EstSatTarg.CoordinateSystem = MoonMJ2000Eq;
+EstSatTarg.DisplayStateType = Cartesian;
+EstSatTarg.X                = -1346.7
+EstSatTarg.Y                =  1140.6
+EstSatTarg.Z                =  -313.7
+EstSatTarg.VX               =  0.58377
+EstSatTarg.VY               =  0.18794
+EstSatTarg.VZ               = -1.55391
+EstSatTarg.DryMass          = 850;
+EstSatTarg.Cd               = 2.2;
+EstSatTarg.Cr               = 1.8;
+EstSatTarg.DragArea         = 15;
+EstSatTarg.SRPArea          = 15;
+EstSatTarg.Id               = 'SatTarg';
+EstSatTarg.AddHardware      = {TargXpndr, TargAnt};
+EstSatTarg.SolveFors        = {CartesianState}
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel Range;
+
+Range.Type           = 'Range';
+Range.NoiseSigma     = 0.020;
+Range.Bias           = 0.0;
+Range.SolveFors      = {};
+
+Create ErrorModel RangeRate;
+
+RangeRate.Type       = 'RangeRate';
+RangeRate.NoiseSigma = 0.000001;
+RangeRate.Bias       = 0.0;
+RangeRate.SolveFors  = {};
+
+
+%----------------------------------------
+%------- Ground electronics
+%----------------------------------------
+
+Create Antenna UplinkAntenna;
+Create Transmitter UplinkTransmitter;
+Create Receiver GroundReceiver;
+
+UplinkTransmitter.PrimaryAntenna = UplinkAntenna;
+UplinkTransmitter.Frequency      = 2267.5;
+GroundReceiver.PrimaryAntenna    = UplinkAntenna;
+
+%----------------------------------------
+%---------- Ground stations
+%----------------------------------------
+
+Create GroundStation WS1;
+
+WS1.CentralBody           = Earth;
+WS1.StateType             = Cartesian;
+WS1.HorizonReference      = Ellipsoid;
+WS1.Location1             = -1538.0;
+WS1.Location2             = -5158.0;
+WS1.Location3             =  3418.0;
+WS1.Id                    = 'WS1';
+WS1.AddHardware           = {UplinkTransmitter, GroundReceiver, UplinkAntenna};
+WS1.MinimumElevationAngle = 7.0;
+WS1.ErrorModels           = {Range, RangeRate};
+
+Create GroundStation CAN;
+
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4469.0;
+CAN.Location2             =  2689.0;
+CAN.Location3             = -3679.0;
+CAN.Id                    = 'CAN';
+CAN.AddHardware           = {UplinkTransmitter, GroundReceiver, UplinkAntenna};
+CAN.MinimumElevationAngle = 10;
+CAN.ErrorModels           = {Range, RangeRate};
+
+Create GroundStation MAD;
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             =  4845.0;
+MAD.Location2             =  -365.0;
+MAD.Location3             =  4115.0;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {UplinkTransmitter, GroundReceiver, UplinkAntenna};
+MAD.MinimumElevationAngle = 10;
+MAD.ErrorModels           = {Range, RangeRate};
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet SimData;
+
+SimData.AddTrackingConfig       = {{SimSatTrkr, SimSatTarg, SimSatTrkr}, 'Range', 'RangeRate'};
+SimData.AddTrackingConfig       = {{WS1, SimSatTrkr, WS1}, 'Range', 'RangeRate'}
+SimData.AddTrackingConfig       = {{CAN, SimSatTrkr, CAN}, 'Range', 'RangeRate'}
+SimData.AddTrackingConfig       = {{MAD, SimSatTrkr, MAD}, 'Range', 'RangeRate'}
+SimData.FileName                = {'Ex_MultiSpacecraft_Simultaneous_BatchEstimation.gmd'};
+SimData.UseLightTime            = True;
+SimData.UseRelativityCorrection = False;
+SimData.UseETminusTAI           = True;
+SimData.SimRangeModuloConstant  = 67108864;
+SimData.SimDopplerCountInterval = 10.;  
+SimData.DataFilters             = {};
+
+Create TrackingFileSet EstData;
+
+EstData.AddTrackingConfig       = {{EstSatTrkr, EstSatTarg, EstSatTrkr}, 'Range', 'RangeRate'};
+EstData.AddTrackingConfig       = {{WS1, EstSatTrkr, WS1}, 'Range', 'RangeRate'}
+EstData.AddTrackingConfig       = {{CAN, EstSatTrkr, CAN}, 'Range', 'RangeRate'}
+EstData.AddTrackingConfig       = {{MAD, EstSatTrkr, MAD}, 'Range', 'RangeRate'}
+EstData.FileName                = {'Ex_MultiSpacecraft_Simultaneous_BatchEstimation.gmd'};
+EstData.UseLightTime            = True;
+EstData.UseRelativityCorrection = False;
+EstData.UseETminusTAI           = True;
+EstData.DataFilters             = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+
+FM.CentralBody       = Luna;
+FM.PointMasses       = {Luna, Earth, Sun};
+FM.Drag              = None;
+FM.SRP               = Off;
+FM.ErrorControl      = None;
+
+Create Propagator Prop;
+
+Prop.FM              = FM;
+Prop.Type            = 'RungeKutta89';
+Prop.InitialStepSize = 60;
+Prop.Accuracy        = 1e-13;
+Prop.MinStep         = 0;
+Prop.MaxStep         = 60;
+Prop.MaxStepAttempts = 50;
+
+
+%----------------------------------------
+%------- Configure the simulator
+%----------------------------------------
+
+Create Simulator Sim;
+
+Sim.AddData             = {SimData};
+Sim.EpochFormat         = UTCGregorian;
+Sim.InitialEpoch        = '1 Aug 2022 00:00:00.000';
+Sim.FinalEpoch          = '3 Aug 2022 00:00:00.000';
+Sim.MeasurementTimeStep = 300;
+Sim.Propagator          = Prop;
+Sim.AddNoise            = On;
+
+%
+%   Configure BLS
+%----------------------------------------
+%--------- Configure BLS
+%----------------------------------------
+
+Create BatchEstimator BLS
+
+BLS.ShowProgress               = True;
+BLS.Measurements               = {EstData} 
+BLS.AbsoluteTol                = 0.0001;
+BLS.RelativeTol                = 0.005;
+BLS.MaximumIterations          = 10;
+BLS.MaxConsecutiveDivergences  = 3;
+BLS.Propagator                 = Prop;
+BLS.ShowAllResiduals           = On;
+BLS.OLSEInitialRMSSigma        = 10000;
+BLS.OLSEMultiplicativeConstant = 3;
+BLS.OLSEAdditiveConstant       = 0;
+BLS.UseInitialCovariance       = False
+BLS.OLSEUseRMSP                = False
+BLS.ReportFile                 = 'Ex_MultiSpacecraft_Simultaneous_BatchEstimation.txt';
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+RunSimulator Sim;
+RunEstimator BLS

@@ -1,0 +1,311 @@
+%
+%  Ex_TargetFiniteBurn_CenterPeriapsisDuration
+%
+%  Script Mission - Finite Burn Examples  
+%
+%  This script demonstrates how to set up tanks and thrusters, and use them
+%  in a finite maneuver sequence.  
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+%  Create a default spacecraft
+Create Spacecraft Sc;
+
+Sc.DateFormat                   = TAIModJulian;
+Sc.Epoch                        = '21545';
+Sc.CoordinateSystem             = EarthMJ2000Eq;
+Sc.DisplayStateType             = Keplerian;
+Sc.SMA                          = 7191.938817629013;
+Sc.ECC                          = 0.1000000000000002;
+Sc.INC                          = 12.850080056581;
+Sc.RAAN                         = 306.6148021947984;
+Sc.AOP                          = 314.1905515359921;
+Sc.TA                           = 99.88774933204881;
+Sc.DryMass                      = 850;
+Sc.Cd                           = 2.2;
+Sc.Cr                           = 1.8;
+Sc.DragArea                     = 15;
+Sc.SRPArea                      = 1;
+Sc.Tanks                        = {tank1};
+Sc.Thrusters                    = {engine1};
+Sc.NAIFId                       = -123456789;
+Sc.NAIFIdReferenceFrame         = -123456789;
+Sc.OrbitColor                   = Green;
+Sc.TargetColor                  = Teal;
+Sc.Id                           = 'SatId';
+Sc.Attitude                     = CoordinateSystemFixed;
+Sc.SPADSRPScaleFactor           = 1;
+Sc.ModelFile                    = '../data/vehicle/models/aura.3ds';
+Sc.ModelOffsetX                 = 0;
+Sc.ModelOffsetY                 = 0;
+Sc.ModelOffsetZ                 = 0;
+Sc.ModelRotationX               = 0;
+Sc.ModelRotationY               = 0;
+Sc.ModelRotationZ               = 0;
+Sc.ModelScale                   = 3;
+Sc.AttitudeDisplayStateType     = 'Quaternion';
+Sc.AttitudeRateDisplayStateType = 'AngularVelocity';
+Sc.AttitudeCoordinateSystem     = EarthMJ2000Eq;
+Sc.EulerAngleSequence           = '321';
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+%  Create a fuel tank and name it tank1
+%          Here we create a fuel tank and set up its physical properties
+%          including Temperature, Fuel Mass, Fuel Density etc.
+Create ChemicalTank tank1;
+
+tank1.AllowNegativeFuelMass = false;
+tank1.FuelMass              = 725;
+tank1.Pressure              = 1200;
+tank1.Temperature           = 20;
+tank1.RefTemperature        = 12;
+tank1.Volume                = 0.8;
+tank1.FuelDensity           = 1029;
+tank1.PressureModel         = PressureRegulated;
+
+
+%  Create a thruster
+%         Here we create a thruster and tell the thruster which tank to
+%         draw fuel from.  We also set up the direction of the thruster.
+%         Currently, you specify the thruster orientation with respect to
+%         the spacecraft VNB or EarthMJ2000Eq systems.  This will change
+%         when attitude capabilities are added to GMAT.
+Create ChemicalThruster engine1;
+
+engine1.CoordinateSystem   = Local;
+engine1.Origin             = Earth;
+engine1.Axes               = VNB;
+engine1.ThrustDirection1   = 1;
+engine1.ThrustDirection2   = 0;
+engine1.ThrustDirection3   = 0;
+engine1.DutyCycle          = 1;
+engine1.ThrustScaleFactor  = 1;
+engine1.DecrementMass      = false;
+engine1.Tank               = {tank1};
+engine1.MixRatio           = [1];
+engine1.GravitationalAccel = 9.810000000000001;
+engine1.C1                 = 500;
+engine1.C2                 = 0;
+engine1.C3                 = 0;
+engine1.C4                 = 0;
+engine1.C5                 = 0;
+engine1.C6                 = 0;
+engine1.C7                 = 0;
+engine1.C8                 = 0;
+engine1.C9                 = 0;
+engine1.C10                = 0;
+engine1.C11                = 0;
+engine1.C12                = 0;
+engine1.C13                = 0;
+engine1.C14                = 0;
+engine1.C15                = 0;
+engine1.C16                = 0;
+engine1.K1                 = 300;
+engine1.K2                 = 0;
+engine1.K3                 = 0;
+engine1.K4                 = 0;
+engine1.K5                 = 0;
+engine1.K6                 = 0;
+engine1.K7                 = 0;
+engine1.K8                 = 0;
+engine1.K9                 = 0;
+engine1.K10                = 0;
+engine1.K11                = 0;
+engine1.K12                = 0;
+engine1.K13                = 0;
+engine1.K14                = 0;
+engine1.K15                = 0;
+engine1.K16                = 0;
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+%  Create a force model
+Create ForceModel fm;
+
+fm.CentralBody            = Earth;
+fm.PointMasses            = {Earth};
+fm.Drag                   = None;
+fm.SRP                    = Off;
+fm.RelativisticCorrection = Off;
+fm.ErrorControl           = RSSStep;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+%  Create a propagator
+Create Propagator prop;
+
+prop.FM                       = fm;
+prop.Type                     = RungeKutta89;
+prop.InitialStepSize          = 60;
+prop.Accuracy                 = 9.999999999999999e-012;
+prop.MinStep                  = 0.001;
+prop.MaxStep                  = 2700;
+prop.MaxStepAttempts          = 50;
+prop.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Burns
+%----------------------------------------
+
+%  Create a thruster
+%         Here we create a finite maneuver.  We create the maneuver and
+%         give it a name first.  We need to tell the maneuver which
+%         thrusters to use, and which tank to draw from.  Currently you can
+%         have multiple thrusters, but only one tank, from which both
+%         thrusters draw fuel.  We can also apply a burn scale factor.  The
+%         thrust from each thruster is added together, and the sum is
+%         multiplied by BurnScaleFactor.
+Create FiniteBurn fb;
+
+fb.Thrusters              = {engine1};
+fb.ThrottleLogicAlgorithm = 'MaxNumberOfThrusters';
+
+Create ImpulsiveBurn DefaultIB;
+
+DefaultIB.CoordinateSystem   = Local;
+DefaultIB.Origin             = Earth;
+DefaultIB.Axes               = VNB;
+DefaultIB.Element1           = 0;
+DefaultIB.Element2           = 0;
+DefaultIB.Element3           = 0;
+DefaultIB.DecrementMass      = false;
+DefaultIB.Isp                = 300;
+DefaultIB.GravitationalAccel = 9.810000000000001;
+
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create DifferentialCorrector DC1;
+
+DC1.ShowProgress      = true;
+DC1.ReportStyle       = Normal;
+DC1.ReportFile        = 'DifferentialCorrectorDC1.data';
+DC1.MaximumIterations = 25;
+DC1.DerivativeMethod  = ForwardDifference;
+DC1.Algorithm         = NewtonRaphson;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+% Create an OpenFrameInterface View  
+
+Create OpenFramesInterface OFI_SatEarthView;
+
+OFI_SatEarthView.SolverIterations = Current;
+OFI_SatEarthView.UpperLeft        = [ 0.3528301886792453 0.05289672544080604 ];
+OFI_SatEarthView.Size             = [ 0.5254716981132076 0.4874055415617128 ];
+OFI_SatEarthView.RelativeZOrder   = 140;
+OFI_SatEarthView.Maximized        = false;
+
+OFI_SatEarthView.Add              = {Sc, Earth};
+OFI_SatEarthView.View             = {SatEarth_View};
+
+OFI_SatEarthView.CoordinateSystem = EarthMJ2000Eq;
+OFI_SatEarthView.DrawObject       = [ true true];
+OFI_SatEarthView.DrawXYPlane      = [ false false];
+OFI_SatEarthView.DrawLabel        = [ true true];
+OFI_SatEarthView.DrawGrid         = [ false false];
+
+OFI_SatEarthView.Axes             = On;
+OFI_SatEarthView.XYPlane          = On;
+OFI_SatEarthView.EclipticPlane    = Off;
+OFI_SatEarthView.EnableStars      = On;
+OFI_SatEarthView.StarCount        = 40000;
+OFI_SatEarthView.ShowPlot         = true;
+
+
+Create OpenFramesView SatEarth_View;
+
+SatEarth_View.ViewFrame           = CoordinateSystem;
+SatEarth_View.SetDefaultLocation  = On;
+SatEarth_View.SetCurrentLocation  = Off;
+
+SatEarth_View.DefaultEye          = [ 50000 50000 50000 ];
+SatEarth_View.DefaultCenter       = [ 0 0 0 ];
+SatEarth_View.DefaultUp           = [ 0 0 1 ];
+
+
+Create XYPlot SMAvsTime;
+
+SMAvsTime.SolverIterations = Current;
+SMAvsTime.UpperLeft        = [ 0.3443396226415094 0.5654911838790933 ];
+SMAvsTime.Size             = [ 0.5632075471698114 0.4080604534005038 ];
+SMAvsTime.RelativeZOrder   = 135;
+SMAvsTime.Maximized        = false;
+SMAvsTime.XVariable        = Sc.A1ModJulian;
+SMAvsTime.YVariables       = {Sc.SMA};
+SMAvsTime.ShowGrid         = true;
+SMAvsTime.ShowPlot         = true;
+
+
+Create ReportFile DefaultReportFile;
+
+DefaultReportFile.SolverIterations = Current;
+DefaultReportFile.UpperLeft        = [ 0.3433962264150943 0.01259445843828715 ];
+DefaultReportFile.Size             = [ 0.5962264150943396 0.7947103274559194 ];
+DefaultReportFile.RelativeZOrder   = 146;
+DefaultReportFile.Maximized        = false;
+DefaultReportFile.Filename         = 'DefaultReportFile.txt';
+DefaultReportFile.Precision        = 16;
+DefaultReportFile.WriteHeaders     = true;
+DefaultReportFile.LeftJustify      = On;
+DefaultReportFile.ZeroFill         = Off;
+DefaultReportFile.FixedWidth       = true;
+DefaultReportFile.Delimiter        = ' ';
+DefaultReportFile.ColumnWidth      = 20;
+DefaultReportFile.WriteReport      = true;
+
+
+%----------------------------------------
+%---------- Arrays, Variables, Strings
+%----------------------------------------
+Create Variable halfBurnDuration timeToWait backPropDuration;
+
+halfBurnDuration = 500;
+timeToWait       = 600;
+backPropDuration = 0;
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+%  Propagate for 1/10 of a day, without thrusters on.
+Propagate 'Prop to Periapsis' prop(Sc) {Sc.Earth.Periapsis};
+Target 'Center The Burn' DC1 {SolveMode = Solve, ExitMode = DiscardAndContinue, ShowProgressWindow = true};
+   Vary 'Vary Burn Duration' DC1(halfBurnDuration = 300, {Perturbation = 0.0001, Lower = 0.0, Upper = 3000, MaxStep = 100, AdditiveScaleFactor = 0.0, MultiplicativeScaleFactor = 1.0});
+   BeginScript 'Compute Prop Time'
+      backPropDuration = - halfBurnDuration;
+   EndScript;
+   Propagate 'Back prop for Duration' BackProp prop(Sc) {Sc.ElapsedSecs = backPropDuration};
+   BeginFiniteBurn 'Turn On Thrusters' fb(Sc);
+   Propagate 'Prop Half Duration' prop(Sc) {Sc.ElapsedSecs = halfBurnDuration, OrbitColor = Red};
+   Propagate 'Prop Half Duration' prop(Sc) {Sc.ElapsedSecs = halfBurnDuration, OrbitColor = Red};
+   EndFiniteBurn 'Turn Off Thrusters' fb(Sc);
+   Propagate 'Prop to Apogee' prop(Sc) {Sc.Earth.Apoapsis};
+   Achieve 'Achieve RadApo' DC1(Sc.Earth.RMAG = 12000, {Tolerance = 0.1});
+EndTarget;  % For targeter DC1
+
+%  Propagate for 5 days
+Propagate 'Prop 1 Day' prop(Sc) {Sc.ElapsedDays = 1};
+Report DefaultReportFile halfBurnDuration;
+
+
+
+
+
+

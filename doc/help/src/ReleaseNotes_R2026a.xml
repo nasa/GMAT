@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="ReleaseNotesR2026a"
+         xmlns="http://docbook.org/ns/docbook">
+  <title>GMAT R2026a Release Notes</title>
+
+  <para>The General Mission Analysis Tool (GMAT) version R2026a was released
+  in April 2026 and is the 16th release for the project. The previous public
+  release was in April 2025. This is a major project release that includes
+  numerous improvements and enhancements in general capabilities and models, 
+  mission design and orbit determination functionality, visualization, and 
+  improved cross-platform compatibility.</para>
+  <para>Below, we give a summary of key changes in this release.</para>
+
+  <section>
+    <title>Milestones and Accomplishments</title>
+
+    <para>We are excited that GMAT continues to see significant adoption for
+    operational mission support.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>GMAT is being used as the primary operational tool for maneuver
+        planning by the Space weather Observations at L1 to Advance 
+		Readiness – 1 (SOLAR-1) flight dynamics team.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT is being used as the primary operational tool for maneuver
+        planning by the Roman Space Telescope (RST) flight dynamics
+        team.</para>
+      </listitem>
+
+      <listitem>
+        <para>GMAT orbit determination is the primary tool used by the NASA
+        GSFC Flight Dynamics Facility (FDF) to support various missions in
+        LEO, GEO, Lunar, Lagrange point, and other orbit regimes.</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>For the first time in GMAT release history, the <link
+    xlink:href="https://github.com/nasa/GMAT"
+    xmlns:xlink="http://www.w3.org/1999/xlink">https://github.com/nasa/GMAT</link>
+    GitHub repo will soon be used to disseminate select code updates to prior
+    to the next public release.</para>
+  </section>
+
+  <section>
+    <title>Major Improvements and Enhancements</title>
+
+    <section>
+      <title>General Capabilities and Models</title>
+
+      <para>The following general capabilities are new to R2026a:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Enable exponential atmospheres at all solar system bodies
+          (GMT-8449, GMT-8160). GMAT’s drag modeling can now model atmospheres
+          at any solar system body, using an exponential model based on the
+          exponential drag model found in Fundamentals of Astrodynamics and
+          Applications by David Vallado. Users need to supply a file
+          containing the coefficients for the model. Examples of this file for
+          the Earth and Mars can be found in the data/atmosphere folders in
+          the release. See the <filename>Ex_ForceModels.script</filename> in 
+		  the application samples directory for an example of this capability.
+		  </para>
+        </listitem>
+
+        <listitem>
+          <para>Upgrade the ground track component to be extendable and work
+          on macOS (GMT-8451, GMT-8507). The GMAT GroundTrackPlot component
+          has been replaced by a custom GroundTrack component. The new
+          component is scripted identically to the older component and is
+          identified by the object name GroundTrack in script. Scripts that
+          use GroundTrackPlot as the object type being created now create the
+          replacement component rather than the older type. GroundTrack
+          objects fill their windows completely, rather than preserving a 2:1
+          aspect ratio.</para>
+        </listitem>
+
+        <listitem>
+          <para>Add the MSISE-00 Atmospheric Model to the public release
+          (GMT-8487). GMAT now includes the 2001 United States Naval Research
+          Laboratory Mass Spectrometer and Incoherent Scatter Radar Exosphere
+          (NRLMSISE00) atmospheric model for use in drag modeling. See the
+          <filename>Ex_ForceModels</filename> script in the application 
+		  samples directory for an example of this capability.</para>
+        </listitem>
+
+        <listitem>
+          <para>Replace OrbitView with OpenFramesInterface (OFI) by mapping
+          the OV scripting to an OFI window (GMT-8322). GMAT, using a new
+          default libOVtoOFI plugin, automatically maps OrbitView 3d
+          visualization objects to an OpenFramesInterface window. OrbitView is
+          deprecated and subject to removal in a future release, but users can
+          for now disable the libOVtoOFI plugin in the startup file if they
+          want to use the deprecated OrbitView.</para>
+        </listitem>
+
+        <listitem>
+          <para>Update SPICE inputs readers and writers to treat MJ2000Eq and
+          ICRF coordinate systems correctly (GMT-5211, GMT-8468, GMT-8300).
+          GMAT will now properly interpret SPICE planetary ephemeris files and
+          other SPICE ephemeris files as ICRF. GMAT will also transform states
+          to ICRF when writing SPICE files. As a result of this, users may
+          notice slight differences in the results of computations, including
+          propagation using multiple point-masses, orbit determination, and
+          coordinate transformations involving translations to other
+          bodies.</para>
+        </listitem>
+
+        <listitem>
+          <para>Fix Lagrange Interpolator for intermediate points and
+          ascending/descending data (GMT-8443). Updated the embedded Lagrange
+          interpolator to properly interpolate data where the independent
+          variable (e.g., time for an ephem or mass for a center of mass file)
+          is either ascending or descending.</para>
+        </listitem>
+
+        <listitem>
+          <para>Error and exit when a user specifies a non-existing startup
+          file (GMT-7802). GMAT issues an error and exits when using
+          –startup_file command line argument if the specified startup file
+          does not exist.</para>
+        </listitem>
+
+        <listitem>
+          <para>Enable third bodies for SRP shadow calculations (GMT-6543,
+          GMT-8403). A new ForceModel parameter, SRP.ExtraShadowBodies is now
+          available. This can be used to model SRP shadow effects due to
+          bodies in addition to the force model central body, which is always
+          considered for shadow modeling. See the
+          <filename>Ex_ForceModel_ExtraShadowBodies</filename> script in the 
+		  application samples directory.</para>
+        </listitem>
+
+        <listitem>
+          <para>Refactor the ShadowState code (GMT-8077). The GMAT code
+          associated with performing percent shadow calculations was
+          refactored to be more maintainable.</para>
+        </listitem>
+
+        <listitem>
+          <para>Increase the parameters a user can "Get" in the
+          MissionSequence (GMT-8111, GMT-8363). Even though GMAT has the
+          ability for users to configure resource object (e.g. Spacecraft,
+          Propagator, DC, Optimizers, Impulsive or FiniteBurns) parameters
+          before the mission sequence starts, a user cannot get all of those
+          object parameters in the mission sequence. This work expands the
+          parameters a user can retrieve during the mission sequence run.
+          GMT-8111 and GMT-8363 details the impacted parameters.</para>
+        </listitem>
+
+        <listitem>
+          <para>Generalizing the use of the Intrusion Locator (GMT-7572,
+          GMT-8332, GMT-8482). The intrusion locator introduced in GMAT R2022a
+          has been enhanced to allow sensor intrusion calculations for bodies
+          that are not the central body of the model. This capability enables
+          the calculation of transits and occultations as seen by a
+          spacecraft. See the 
+		  <filename>Ex_IntrusionLocator_Mercury_Sun_Transit</filename> script
+          in the application samples directory.</para>
+        </listitem>
+
+        <listitem>
+          <para>Fix ground station mask file issue with conflicting NAIF Ids
+          (GMT-8416). Internal NAIF ID generation for FOV frames used by
+          ground stations in a ContactLocator have been updated to ensure
+          unique values when numerous ground stations are used. This prevents
+          one FOV being overwritten by another within SPICE from matching
+          IDs.</para>
+        </listitem>
+
+        <listitem>
+          <para>Add logic for ephemeris generation when steps in the segment
+          are less than the interpolation order (GMT-8238). The ephemeris
+          propagation code in GMAT now reduces that the order of the state
+          interpolator to match the number of points available in each
+          ephemeris segment, so that interpolated states can be generated for
+          segments that do not have enough points for the scripted
+          interpolation. When the interpolation uses fewer points than needed
+          for the scripted interpolation, GMAT posts a message in the message
+          window identifying the segment and the interpolation order used in
+          that segment.</para>
+        </listitem>
+
+        <listitem>
+          <para>Update CSALT interface scripts and add tutorials (GMT-8298).
+          Additional guidance have been added to show users how to create a
+          CSALT project in Visual Studio, describe the main CSALT C++ base
+          classes that must be inherited to use the tool, and six example
+          tutorials. Each tutorial sequentially adds additional CSALT features
+          available to create and solve optimal control problems.</para>
+        </listitem>
+
+        <listitem>
+          <para>Add built-In quaternion functions (GMT-8110, GMT-8371). Three
+          new quaternion functions are now available in GMAT:
+          QuaternionRotation, QuaternionProduct, and QuaternionToDCM. The use
+          of these functions can be found in the Users Guide.</para>
+        </listitem>
+
+        <listitem>
+          <para>Enhance ability to use SPICE for coordinate system
+          transformations (GMT-8255, GMT-8300). Reference frames defined in
+          the SPICE toolkit may now be used in GMAT by creating a coordinate
+          system using the SPICE Axes type. Useful examples of this are Moon
+          Principal Axes (PA) and Mean Earth (ME) frames, but the IAU frames
+          for other bodies can also be defined and employed through assignment
+          of the appropriate kernels. See the <filename>Ex_SPICECoordinateAxes
+		  </filename> script in the application samples directory.</para>
+        </listitem>
+
+        <listitem>
+          <para>Update help system by replacing the .chm file with .html
+          (Tutorial/User Guide) (GMT-8500). Previous versions of GMAT utilized
+          Compiled HTML Help (CHM) files but this file format is obsolete and
+          not supported, so GMAT releases moving forward will point to the
+          HTML files provided.</para>
+        </listitem>
+      </itemizedlist>
+
+      <section>
+        <title>Beta- and Alpha-level Capabilities</title>
+
+        <para>These are new features that have not yet undergone full testing
+        and may have bugs. To access some of these features, you may need to
+        edit the <filename>bin/gmat_startup_file.txt</filename> file to load
+        the desired alpha plug-in and/or activate features only available in
+        testing mode (set RUN_MODE = TESTING in the file). These features
+        should be used with caution.</para>
+
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>Python GMD writer for UTDF one-way downlink range-rate
+            tracking (GMT-8228, GMT-8229). The python utility located in
+            "\utilities\python\navigation\utdf_to_gmd.py" has been updated to
+            add support for one-way downlink range-rate tracking. This utility
+            reads a raw UTDF tracking data and converts it to the GMD format
+            that GMAT can ingest.</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+    </section>
+
+    <section>
+      <title>Navigation and Orbit Determination (OD)</title>
+
+      <para>The following navigation and orbit determination capabilities are
+      new to R2026a:</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>New operational data types for orbit determination
+          (navigation)</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>GN/DTE one-way downlink range-rate tracking (GMT-8226,
+              GMT-8227). GMAT now supports one-way downlink range-rate
+              measurements in km/sec for orbit determination. This extends the
+              existing RangeRate data type to one-way downlink RangeRate in
+              addition to the existing two-way, and three-way RangeRate
+              measurements. See the <filename>Ex_Estimate_RangeRangeRate
+			  </filename> script in the application samples/Navigation 
+			  directory.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>Batch estimator report hostname value unrecognizable
+          (GMT-8275). Under certain circumstances the GMAT hostname was not
+          properly displayed in the estimator report file. Text associated
+          with the computer hostname is now properly printed out in the
+          estimator report file.</para>
+        </listitem>
+
+        <listitem>
+          <para>Improve navigation ionosphere modeling performance (GMT-8459,
+          GMT-8168). Refactor of the previous FORTRAN to C (f2c) ionosphere
+          code to improve the speed of the ionosphere correction computation
+          when in use.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>The following navigation and orbit determination capabilities have
+      changed in R2026a:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Corrected a bug in the inner-loop data editing scheme
+          (GMT-7281). A bug affecting the batch estimator inner-loop editing
+          scheme has been corrected. The BatchEstimator inner-loop now
+          functions properly. Users may find the inner-loop editor helps
+          shorten estimation run time by reducing the number of iterations
+          required to converge.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>The following navigation and orbit determination capabilities are
+      deprecated beginning with R2026a:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>None.</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Scripting and API Interface</title>
+
+      <para>The following Scripting and API Interface changes were implemented
+      in R2026a:</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>The following parameters have been prevented from being set in
+          the MissionSequence:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>NAIFIdReferenceFrame, SPADSRPInterpolationMethod,
+              SPADDragInterpolationMethod, ModelFile, ModelOffsetX,
+              ModelOffsetY, ModelOffsetZ, ModelRotationX, ModelRotationY,
+              ModelRotationZ, ModelScale, NAIFId, Id</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Optimal Control</title>
+
+      <section>
+        <title>Beta Capabilities</title>
+
+        <para>The GMAT Optimal Control capability remains a Beta feature for
+        R2026a.</para>
+      </section>
+    </section>
+
+    <section>
+      <title>OpenFramesInterface Visualizations</title>
+
+      <note>
+        <para>The OFI continues to be the primary 3D visualization component
+        in GMAT. <guilabel>OrbitView</guilabel> is deprecated and will no
+        longer be supported. Users are encouraged to migrate their scripts
+        from <guilabel>OrbitView</guilabel> to
+        <guilabel>OpenFramesInterface</guilabel>.</para>
+      </note>
+
+      <para>The complete set of documentation for OFI is available at <link
+      xlink:href="https://gitlab.com/EmergentSpaceTechnologies/OpenFramesInterface/-/wikis/home"
+      xmlns:xlink="http://www.w3.org/1999/xlink">the OFI Wiki</link></para>
+    </section>
+  </section>
+
+  <section>
+    <title>Other Improvements</title>
+
+    <itemizedlist spacing="compact">
+      <listitem>
+        <para>Corrected issue GMT-8427, OpenFramesInterface New Vector view
+        panel does not resize properly.</para>
+      </listitem>
+
+      <listitem>
+        <para>Corrected issue GMT-8355, OpenFramesView panel does not display
+        correctly.</para>
+      </listitem>
+
+      <listitem>
+        <para>Enable OpenFramesInterface font options (GMT-8536).</para>
+      </listitem>
+
+      <listitem>
+        <para>Corrected issue GMT-6571, SystemTime() fails on rerun when first
+        run was interrupted.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Compatibility Changes</title>
+
+    <itemizedlist>
+      <listitem>
+        <para>Enabled support for Mac Intel Machines (GMT-8340). On macOS,
+        GMAT is now distributed as a universal application. Future versions of
+        the GMAT Mac application may not fully support the Intel chipset due
+        to third party dependency limitations (e.g., MATLAB interface).</para>
+      </listitem>
+
+      <listitem>
+        <para>Fixed notarization of the Mac application (GMT-8339).</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI items don't scale on high DPI displays due to WxWidgets
+        limitation (workaround) (GMT-6125).</para>
+      </listitem>
+
+      <listitem>
+        <para>Update SWIG to the current release (GMT-8299).</para>
+      </listitem>
+
+      <listitem>
+        <para>Update the build system to use CMake 4 (GMT-8434).</para>
+      </listitem>
+
+      <listitem>
+        <para>Resolve missing OSG plugins (GMT-8242/GMT-8523).</para>
+      </listitem>
+
+      <listitem>
+        <para>Remove or reconfigure PCRE in the dependency configuration
+        (GMT-8530).</para>
+      </listitem>
+
+      <listitem>
+        <para>Support for Python 3.6 through 3.8 has been discontinued.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Fixed &amp; Known Issues</title>
+
+    <section>
+      <title>Fixed Issues</title>
+
+      <para>29 high priority bugs were closed in this release. See the "<link
+      xlink:href="https://gmat.atlassian.net/issues/?filter=15286"
+      xmlns:xlink="http://www.w3.org/1999/xlink">Critical Issues Fixed in
+      R2026a</link>" report for details. Some significant fixes in R2026a
+      include:</para>
+
+      <informaltable frame="topbot">
+        <tgroup cols="2">
+          <colspec colwidth="0.2*"/>
+
+          <thead>
+            <row>
+              <entry align="left">ID</entry>
+
+              <entry align="left">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry align="left"><link
+              xlink:href="https://gmat.atlassian.net/browse/GMT-8357"
+              xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8357</link></entry>
+
+              <entry align="left">GMAT on Linux crashes and report generation
+              fails for external force model script.</entry>
+            </row>
+
+            <row>
+              <entry align="left"><link
+              xlink:href="https://gmat.atlassian.net/browse/GMT-8160"
+              xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8160</link></entry>
+
+              <entry align="left">Mars exponential atmosphere has no effect.</entry>
+            </row>
+
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section>
+      <title>Known Issues</title>
+
+      <para>See the "<link
+      xlink:href="https://gmat.atlassian.net/issues/?filter=15285"
+      xmlns:xlink="http://www.w3.org/1999/xlink">All Known Critical Issues for
+      R2026a</link>" report for a list of all known major issues in R2026a.
+      There are several known issues in this release that we consider to be
+      significant:</para>
+
+      <para><informaltable frame="topbot">
+          <tgroup cols="2">
+            <colspec colwidth="0.2*"/>
+
+            <thead>
+              <row>
+                <entry align="left">ID</entry>
+
+                <entry align="left">Description</entry>
+              </row>
+            </thead>
+
+            <tbody>
+              <row>
+                <entry align="left"><link
+                xlink:href="https://gmat.atlassian.net/browse/GMT-8024"
+                xmlns:xlink="http://www.w3.org/1999/xlink">GMT-8024</link></entry>
+
+                <entry align="left">Windows Defender pop-up may appear
+                preventing users from initially opening the GMAT application
+                and require additional user actions.</entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable></para>
+    </section>
+  </section>
+</section>

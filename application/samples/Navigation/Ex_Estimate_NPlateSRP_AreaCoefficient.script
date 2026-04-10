@@ -1,0 +1,270 @@
+%
+%   Ex_Estimate_NPlateSRP_AreaCoefficient
+%
+%   Solve for N-Plate area coefficient. Note that estimation of the N-Plate
+%   AreaCoefficient is specified on the Plate resource (EstPlate1) attached to 
+%   the estimated spacecraft.
+%
+%   Released: R2022a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat             = UTCGregorian;
+SimSat.Epoch                  = '10 Jun 2012 00:00:00.000';
+SimSat.CoordinateSystem       = EarthMJ2000Eq;
+SimSat.DisplayStateType       = Cartesian;
+SimSat.X                      = -4009.814
+SimSat.Y                      = -41239.052
+SimSat.Z                      = -7779.138
+SimSat.VX                     =  3.038104
+SimSat.VY                     = -0.215458
+SimSat.VZ                     = -0.423910
+SimSat.DryMass                = 10;
+SimSat.Cd                     = 2.2;
+SimSat.Cr                     = 1.0;
+SimSat.DragArea               = 50;
+SimSat.SRPArea                = 50;
+SimSat.Attitude               = NadirPointing;
+SimSat.AttitudeReferenceBody  = Earth;
+SimSat.AttitudeConstraintType = 'OrbitNormal';
+SimSat.BodyAlignmentVectorX   = 1;
+SimSat.BodyAlignmentVectorY   = 0;
+SimSat.BodyAlignmentVectorZ   = 0;
+SimSat.BodyConstraintVectorX  = 0;
+SimSat.BodyConstraintVectorY  = 0;
+SimSat.BodyConstraintVectorZ  = 1;
+SimSat.Id                     = 'GEOSAT';
+SimSat.AddHardware            = {Transponder1, SpacecraftAntenna};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat             = UTCGregorian;
+EstSat.Epoch                  = '10 Jun 2012 00:00:00.000';
+EstSat.CoordinateSystem       = EarthMJ2000Eq;
+EstSat.DisplayStateType       = Cartesian;
+EstSat.X                      = -4009.0
+EstSat.Y                      = -41239.0
+EstSat.Z                      = -7779.0
+EstSat.VX                     =  3.0381
+EstSat.VY                     = -0.2154
+EstSat.VZ                     = -0.4239
+EstSat.DryMass                = 10;
+EstSat.Cd                     = 2.2;
+EstSat.Cr                     = 0.8;
+EstSat.DragArea               = 50;
+EstSat.SRPArea                = 50;
+EstSat.Attitude               = NadirPointing;
+EstSat.AttitudeReferenceBody  = Earth;
+EstSat.AttitudeConstraintType = 'OrbitNormal';
+EstSat.BodyAlignmentVectorX   = 1;
+EstSat.BodyAlignmentVectorY   = 0;
+EstSat.BodyAlignmentVectorZ   = 0;
+EstSat.BodyConstraintVectorX  = 0;
+EstSat.BodyConstraintVectorY  = 0;
+EstSat.BodyConstraintVectorZ  = 1;
+EstSat.Id                     = 'GEOSAT';
+EstSat.AddHardware            = {Transponder1, SpacecraftAntenna};
+EstSat.SolveFors              = {CartesianState};     
+
+%
+%   N-Plate models
+%
+%   Here we will simulate using an applied AreaCoefficient of 0.9,
+%   indicating that the plate area is actually smaller than we
+%   think it is.
+%
+
+Create Plate SimPlate1 SimPlate2 
+
+SimPlate1.Type             = FixedInBody
+SimPlate1.PlateNormal      = [1.0, 0.0, 0.0] 					
+SimPlate1.LitFraction      = 1.0                          				
+SimPlate1.AreaCoefficient  = 0.9
+SimPlate1.Area             = 50
+SimPlate1.SpecularFraction = 0.9
+SimPlate1.DiffuseFraction  = 0.1
+
+SimPlate2.Type             = FixedInBody
+SimPlate2.PlateNormal      = [-1.0, 0.0, 0.0] 					
+SimPlate2.LitFraction      = 1.0                          				
+SimPlate2.AreaCoefficient  = 1.0			
+SimPlate2.Area             = 100
+SimPlate2.SpecularFraction = 0.9
+SimPlate2.DiffuseFraction  = 0.1
+
+SimSat.AddPlates  = {SimPlate1, SimPlate2}; 
+
+%
+%   Here we will begin estimation with an AreaCoefficient of 1.0
+%   and attempt to solve for the simulated value.
+%
+
+Create Plate EstPlate1 EstPlate2 
+
+EstPlate1.Type             = FixedInBody
+EstPlate1.PlateNormal      = [1.0, 0.0, 0.0] 					
+EstPlate1.LitFraction      = 1.0                          				
+EstPlate1.AreaCoefficient  = 1.0
+EstPlate1.Area             = 50
+EstPlate1.SpecularFraction = 0.9
+EstPlate1.DiffuseFraction  = 0.1
+EstPlate1.SolveFors        = {AreaCoefficient};
+
+EstPlate2.Type             = FixedInBody
+EstPlate2.PlateNormal      = [-1.0, 0.0, 0.0] 					
+EstPlate2.LitFraction      = 1.0                          				
+EstPlate2.AreaCoefficient  = 1.0			
+EstPlate2.Area             = 100
+EstPlate2.SpecularFraction = 0.9
+EstPlate2.DiffuseFraction  = 0.1
+EstPlate2.SolveFors        = {};
+
+EstSat.AddPlates  = {EstPlate1, EstPlate2}; 
+
+%----------------------------------------
+%---------- Spacecraft hardware
+%----------------------------------------
+Create Antenna SpacecraftAntenna;
+Create Transponder Transponder1;
+
+Transponder1.PrimaryAntenna  = SpacecraftAntenna;
+Transponder1.HardwareDelay   = 0.00005;
+Transponder1.TurnAroundRatio = '240/221' 
+
+
+%----------------------------------------
+%---------- GroundStation hardware
+%----------------------------------------
+
+Create Transmitter Transmitter1;
+Create Antenna Antenna1;
+Create Receiver Receiver1;
+
+Transmitter1.PrimaryAntenna = Antenna1;
+Transmitter1.Frequency      = 2067.5;
+Receiver1.PrimaryAntenna    = Antenna1;
+
+%----------------------------------------
+%---------- GroundStation hardware
+%----------------------------------------
+Create GroundStation MAD;
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4840.0;
+MAD.Location2             = -360.0;
+MAD.Location3             = 4110.0;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+MAD.MinimumElevationAngle = 10.;
+MAD.ErrorModels           = {RangeModel};
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel RangeModel;
+
+RangeModel.Type           = 'Range';
+RangeModel.NoiseSigma     = 0.001;
+RangeModel.Bias           = 0.0;
+RangeModel.SolveFors      = {};
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet SimData;
+
+SimData.AddTrackingConfig       = {{MAD, SimSat, MAD}, 'Range'};
+SimData.FileName                = {'Ex_Estimate_NPlateSRP_AreaCoefficient.gmd'};
+SimData.RampTable               = {};
+SimData.UseLightTime            = True;
+SimData.UseRelativityCorrection = False;
+SimData.UseETminusTAI           = False;
+SimData.SimRangeModuloConstant  = 67108864;
+SimData.SimDopplerCountInterval = 10.;  
+SimData.DataFilters             = {};
+
+Create TrackingFileSet EstData;
+
+EstData.AddTrackingConfig       = {{MAD, EstSat, MAD}, 'Range'};
+EstData.FileName                = {'Ex_Estimate_NPlateSRP_AreaCoefficient.gmd'};
+EstData.RampTable               = {};
+EstData.UseLightTime            = True;
+EstData.UseRelativityCorrection = False;
+EstData.UseETminusTAI           = False;
+EstData.DataFilters             = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+
+FM.CentralBody       = Earth;
+FM.PointMasses       = {Earth};
+FM.Drag              = None;
+FM.SRP               = On;
+FM.SRPModel          = NPlate;
+% FM.SRPModel          = Spherical;
+FM.ErrorControl      = None;
+
+Create Propagator Prop;
+
+Prop.FM              = FM;
+Prop.Type            = 'RungeKutta89';
+Prop.InitialStepSize = 60;
+Prop.Accuracy        = 1e-13;
+Prop.MinStep         = 0;
+Prop.MaxStep         = 60;
+Prop.MaxStepAttempts = 50;
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator Sim;
+
+Sim.AddData                    = {SimData};
+Sim.EpochFormat                = 'UTCGregorian';
+Sim.InitialEpoch               = '10 Jun 2012 00:00:00.000';
+Sim.FinalEpoch                 = '12 Jun 2012 00:00:00.000';
+Sim.MeasurementTimeStep        = 60;
+Sim.Propagator                 = Prop;
+Sim.AddNoise                   = On;
+
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create BatchEstimator BLS
+
+BLS.ShowProgress               = True;
+BLS.Measurements               = {EstData} 
+BLS.AbsoluteTol                = 0.0001;
+BLS.RelativeTol                = 0.005;
+BLS.MaximumIterations          = 10;
+BLS.MaxConsecutiveDivergences  = 3;
+BLS.Propagator                 = Prop;
+BLS.ShowAllResiduals           = On;
+BLS.OLSEInitialRMSSigma        = 10000;
+BLS.OLSEMultiplicativeConstant = 3;
+BLS.OLSEAdditiveConstant       = 0;
+BLS.ReportFile                 = 'Ex_Estimate_NPlateSRP_AreaCoefficient.txt';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+RunSimulator Sim;
+RunEstimator BLS;

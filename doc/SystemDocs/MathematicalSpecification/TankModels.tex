@@ -1,0 +1,1106 @@
+
+
+\subsection{Tank Models}
+
+Accurately modelling tank pressure changes is essential for accurate
+maneuver modelling and reconstruction.  The following sections
+discuss three types of tank models:  pressurant tank, regulated fuel
+tank, and blowdown fuel tank.  For each tank there are three models:
+isothermal, heat transfer, and adiabatic.
+
+The models used in GMAT are based on work by Estey\cite{Estey:83} ,
+Hearn\cite{Hearn:01} and Moran\cite{Moran}.  For each tank, we
+select a set of state variables that when defined, allow us to
+determine all remaining properties of the tank.  For the state
+variables, we provide differential equations that describe how the
+state variables change with respect to time.  The number of state
+variables varies between different tanks, and with the model type
+such as isothermal and heat transfer.
+
+For each of the three tanks, we develop a heat transfer model, an
+adiabatic model, and an isothermal model.  The heat transfer model
+is derived using the laws of conservation of energy and the
+conservation of mass. An adiabatic model is provided by setting the
+heat transfer rates to zero in the heat transfer model. The
+isothermal model for each tank is developed separately. Each ot
+these models is useful for certain classes of maneuvers.  Isothermal
+models are useful for maneuvers with low mass flow rates, adiabatic
+models are useful for short maneuvers with high mass flow rates.
+Heat transfer models are useful for long maneuvers with large mass
+flow rates.
+
+When developing heat transfer models, we'll assume that specific
+internal energy is given by
+%
+\begin{equation}
+    u = c T
+\end{equation}
+%
+specific enthalpy for a liquid is given by
+%
+\begin{equation}
+    h_\ell = c_\ell T_\ell
+\end{equation}
+%
+and specific enthalpy  for a gas is given by
+%
+\begin{equation}
+    h_g = T_g( c_g + R_g)
+\end{equation}
+%
+The notation used in tank model development is shown below.  After
+presenting notation, we present the dynamics model for a pressurant
+tank.
+
+ \noindent\textit{Nomenclature}\vspace{-.1 in}
+\begin{tabbing}
+    -----------------------     \= Reynolds number based on length $s$ \kill
+    $A_g,A_\ell,A_w$    \> = Heat transfer area     \\
+    $c_v, c_g$        \>  = Specific heat at constant volume     \\
+    $D$        \>  = Tank diameter     \\
+    $d$        \>  = Liquid surface diameter    \\
+    $Gr$        \>  = Grashof number  \\
+    $h_\ell, h_v$        \>  = Enthalpy     \\
+    $m_g,m_\ell,m_w,m_v$    \> = Mass   \\
+    $P_g,P_v,P_t$    \> = Pressure   \\
+    $R_v,R_g$    \> = Gas constant   \\
+    $T_g,T_\ell,T_w,T_v,T_a$    \> = Temperature   \\
+    $u_g,u_\ell,u_w,u_v$    \> = Specific internal energy   \\
+    $V_g,V_\ell,V_t$    \> = Volume   \\
+    $\dot{W}$    \> = Work rate   \\
+    $\dot{Q}_g,\dot{Q}_v,\dot{Q}_l,\dot{Q}_w$    \> = Heat transfer rate     \\
+    $\nu_l,\nu_g,\nu_v$    \> = Specific volume  \\
+\end{tabbing}
+%
+\noindent\textit{Subscripts}\vspace{-.1 in}
+\begin{tabbing}
+    -----------------------     \= Reynolds number based on length $s$ \kill
+    $a$    \> = Ambient    \\
+    $g$    \> = Pressurant gas    \\
+    $\ell$    \> = Propellant liquid  \\
+    $t$    \> = Total    \\
+    $v$    \> = Propellant vapor \\
+    $w$    \> = Tank wall      \\
+    $e$    \> = Exit-flow      \\
+    $i$    \> = In-flow
+\end{tabbing}
+
+
+\subsubsection{Pressurant Tank}
+
+The pressurant tank model is the simplest of the tank models
+primarily due to the fact that there is only one substance, the
+pressurant gas, contained in the tank.  In this section, we develop
+a state space model for pressurant tank dynamics.  We choose the
+state variables to be pressurant gas mass and temperature, $m_g$ and
+$T_g$ respectively, and tank wall temperature $T_w$.
+
+
+In Fig.\ref{fig:PressurantTank} we see an illustration of a
+pressurant tank.  We divide the tank into two control volumes: the
+gas region and the tank wall region.  The only mass flow in the
+system occurs where pressurant gas exits the tank.  Heat transfer
+occurs between the gas and the wall, and the wall and the ambient
+surroundings.
+%
+\begin{figure}[ht]
+\centerline{
+    \begin{picture}(110,440)
+    \special{psfile= ./Images/PressurantTank.eps hoffset= -120 voffset= 115
+    hscale=55 vscale=55}
+    \makebox(90,525){$\dot{m}_e$,$h_g$}
+    \makebox(-105,790){1.Gas}
+    \makebox(-105,765){$m_g$, $P_g$, $T_g$}
+    \makebox(-165,680){$\dot{Q}_g$}
+    \makebox(-295,760){$\dot{Q}_w$}
+    \makebox(-260,865){2.Tank Wall}
+    \makebox(-270,840){$m_w$,  $T_w$}
+    \end{picture}}\vskip -3.65 in  \caption{ Pressurant Tank Diagram} \label{fig:PressurantTank}
+\end{figure}
+%
+
+Knowing the volume of the tank and the state variables  $m_g$,
+$T_g$, and $T_w$, we calculate pressure from one of the following
+two equations of state:
+%
+\begin{equation}
+   P_g = \frac{m_g R_g T_g}{V_g}
+\end{equation}
+%
+or from the Beattie-Bridgeman Eq.
+%
+\begin{equation}
+   P_g = \frac{R_g T_g}{V_g} + \frac{a_g}{V_g^2} + \frac{b_g}{V_g^3}
+\end{equation}
+%
+
+The state variables $m_g$, $T_g$, and $T_w$ are described by
+ordinary differential equations found by applying the first law of
+thermodynamics and the conservation of mass.  The 1st Law applied to
+the gas control volume yields
+%
+\begin{equation}
+   \frac{d}{dt}\left(m_g u_g \right) =  \dot{Q}_g - \dot{m}_e h_g
+  \label{Eq:PressurantGas1stLaw}
+\end{equation}
+%
+The 1st Law applied to the wall control volume  yields
+%
+\begin{equation}
+     \frac{d}{dt}\left( m_w u_w \right) = \dot{Q}_w -  \dot{Q}_g \label{Eq:PressurantWall1stLaw}
+\end{equation}
+%
+and finally from conservation of mass we obtain
+%
+\begin{equation}
+    \dot{m}_g = -\dot{m}_e \label{Eq:PressurantMassCon}
+\end{equation}
+%
+For these equations to be useful for numerical integration, we need
+to expand the derivatives, and if necessary, decouple the equations
+(as we'll see, for the pressurant tank, the equations are not
+coupled).
+
+Expanding the terms in Eq.~(\ref{Eq:PressurantGas1stLaw}) we have
+%
+\begin{equation}
+    \dot{m}_g c_g T_g + m_g c_g \dot{T}_g = \dot{Q}_g - \dot{m}_e T_g \left( c_g + R_g\right)
+\end{equation}
+%
+Similarly, expanding Eq.~(\ref{Eq:PressurantWall1stLaw}) we obtain
+%
+\begin{equation}
+    m_w c_w \dot{T}_w = \dot{Q}_w -  \dot{Q}_g
+\end{equation}
+%
+Solving the system of equations yields the following differential
+equations of state for the pressurant tank heat transfer model.
+%
+\begin{eqnarray}
+    \dot{m}_g &=& -\dot{m}_e\\
+    %
+    \dot{T}_g &=& \frac{1}{m_g c_g} \left( \dot{Q}_g - T_g R_g  \dot{m}_e  \right)\\
+    %
+    \dot{T}_w &=& \frac{1}{m_w c_w} \left( \dot{Q}_w - \dot{Q}_g  \right)
+\end{eqnarray}
+%
+The adiabatic model is obtained by setting the terms $\dot{Q}_g$ and
+$\dot{Q}_w$ to zero in the above equations.  (Note for the adiabatic
+model there are only two state variables, $m_g$ and $T_g$, as the
+wall temperature $T_w$ is removed from the system of equations.)
+Similarly, the isothermal model is obtained by setting $\dot{T}_g$
+and $\dot{T}_w$ to zero.  So, for the isothermal model there is only
+one state variable $m_g$.
+
+In summary, for the pressurant tank, all models calculate the tank
+pressure using
+%
+\[
+   P_g = \frac{m_g R_g T_g}{V_g}
+\]
+%
+ then the specific equations for the heat transfer, adiabatic, and
+isothermal models, are as follows
+
+\noindent\textit{Pressurant Tank:  Heat Transfer}
+
+\noindent State Variables:  $m_g$, $T_g$, $T_w$
+%
+\begin{eqnarray}
+    \dot{m}_g &=& -\dot{m}_e \nonumber\\
+    %
+    \dot{T}_g &=& \frac{1}{m_g c_g} \left( \dot{Q}_g - T_g R_g  \dot{m}_e  \right)\nonumber\\
+    %
+    \dot{T}_w &=& \frac{1}{m_w c_w} \left( \dot{Q}_w - \dot{Q}_w  \right)\nonumber
+\end{eqnarray}
+%
+\textit{Pressurant Tank:  Adiabtic}
+
+\noindent State Variables:  $m_g$, $T_g$
+%
+\begin{eqnarray}
+    \dot{m}_g &=& -\dot{m}_e \nonumber\\
+    %
+    \dot{T}_g &=& \dot{m}_e\frac{T_g R_g   }{m_g c_g} \nonumber
+\end{eqnarray}
+%
+\noindent\textit{Pressurant Tank:  Isothermal}
+
+\noindent State Variables:  $m_g$
+%
+\begin{equation}
+    \dot{m}_g = -\dot{m}_e
+\end{equation}
+
+Now let's look at a model for a fuel tank operating in blow down
+mode.
+
+%\subsubsection{Blow-Down Tank w/o Vapor Pressure}
+%
+%
+%\begin{figure}[ht]
+%\centerline{
+%    \begin{picture}(100,510)
+%    \special{psfile= ./Images/BlowDownTank.eps hoffset= -120 voffset= 170
+%    hscale=55 vscale=55}
+%    \makebox(80,525){$\dot{m}_e$,$h_l$}
+%    \makebox(-80,970){1.Gas}
+%    \makebox(-90,940){$m_g, P_g, T_g$}
+%    \makebox(-190,905){$\dot{Q}_v$}
+%    %\makebox(-140,905){$\dot{m}_v, h_v$}
+%    \makebox(10,905){$\dot{Q}_g$}
+%    \makebox(-135,820){2.Liquid}
+%    \makebox(-145,790){$m_\ell, T_\ell$}
+%    \makebox(-235,740){$\dot{Q}_\ell$}
+%    \makebox(-335,990){3.Tank Wall}
+%    \makebox(-335,970){$m_w, T_w$}
+%    \makebox(-277,1020){$\dot{Q}_w$}
+%    \end{picture}}\vskip -3.65 in  \caption{ Bi-Prop Thruster Diagram} \label{fig:BlowDownTankWOVap}
+%\end{figure}
+%
+%\textit{Assumptions}
+%\begin{itemize}
+%    \item Vapor pressure is zero.
+%    \item Liquid density is constant.
+%    \item Gas mass is constant.
+%\end{itemize}
+%%
+%Assume we are given $m_g$, the tank diameter $D$, and hence know the
+%total tank volume $V_t$, and we know the physical constants
+%associated with the liquid and gas ($R_g$,$c_g$,$\nu_g$,$c_\ell$,
+%$\nu_\ell$). We choose the state variables $m_\ell$, $T_\ell$,
+%$T_g$, and $T_w$, all other tank properties can be calculated from
+%these state variables using the following equations:
+%%
+%\begin{eqnarray}
+%    V_\ell & = &  \nu_\ell m_\ell\\
+%   %
+%    V_g & = &  V_t - V_\ell\\
+%   %
+%   P_g & = &  \frac{m_g R_g T_g}{V_g}\\
+%\end{eqnarray}
+%%
+%
+%We require differential equations that describe the time rate of
+%change of the state variables $m_\ell$, $T_\ell$, $T_g$, and $T_w$.
+%The differential equations are found by applying the 1st law of
+%thermodynamics and conservation of mass to the three control volumes
+%illustrated in Fig. \ref{fig:BlowDownTankWOVap}. The 1st Law applied
+%to the gas control volume yields
+%%
+%\begin{equation}
+%   \frac{d}{dt}\left(m_g u_g \right) = \dot{Q}_v + \dot{Q}_g - P_g \dot{V}_g
+%  \label{Eq:Blowdown1stLawWOVap}
+%\end{equation}
+%%
+%The 1st Law applied to the liquid control volume yields
+%%
+%\begin{equation}
+%   \frac{d}{dt}\left( m_\ell u_\ell \right) = \dot{Q}_\ell - \dot{Q}_v +
+%   P_g \dot{V}_g   - \dot{m}_e h_\ell \label{Eq:BlowdownLiquid1stLawWOVap}
+%\end{equation}
+%%
+%The 1st Law applied to the wall control volume  yields
+%%
+%\begin{equation}
+%     \frac{d}{dt}\left( m_w u_w \right) = \dot{Q}_w - \dot{Q}_\ell - \dot{Q}_g
+%\end{equation}
+%%
+%and finally from conservation of mass we obtain
+%%
+%\begin{equation}
+%    \dot{m}_\ell = -\dot{m}_e \label{Eq:BlowdownMassConWOVap}
+%\end{equation}
+%
+%
+%The equations above give us four ordinary differential equations
+%that allow us to solve for the tank states as a function of time.
+%For numerical integration, we need to decouple these equations.
+%
+%Let's continue with Eq.~(\ref{Eq:Blowdown1stLawWOVap}).   Taking the
+%derivative assuming $\dot{m}_g = 0$ and noting that $\dot{V}_g = -
+%\nu_\ell \dot{m}_\ell $ yields
+%%
+%\begin{equation}
+%     m_g c_g \dot{T}_g = \dot{Q}_v + \dot{Q}_g + P_g\nu_\ell \dot{m}_\ell
+%\end{equation}
+%%
+%Gathering all state terms on the left hand side yields
+%%
+%\begin{equation}
+%       -P_g\nu_\ell \dot{m}_\ell  + m_g c_g \dot{T}_g = \dot{Q}_v + \dot{Q}_g \label{Eq:CV1}
+%\end{equation}
+%
+%
+%Continuing with Eq.~(\ref{Eq:BlowdownLiquid1stLawWOVap}), we take
+%the derivative and group terms to obtain
+%%
+%\begin{equation}
+%   \left( c_\ell T_\ell  + P_g \nu_\ell\right)\dot{m}_\ell +
+%    m_\ell c_\ell \dot{T}_\ell  =  \dot{Q}_\ell - \dot{Q}_v -  c_\ell T_\ell \dot{m}_e\label{Eq:CV2}
+%\end{equation}
+%%
+%Similarly for the wall region, we arrive at
+%%
+%\begin{equation}
+%     m_w c_w \dot{T}_w = \dot{Q}_w - \dot{Q}_\ell - \dot{Q}_g \label{Eq:CV3}
+%\end{equation}
+%
+%Equations \ref{Eq:CV1} -\ref{Eq:CV3} and
+%Eq.\ref{Eq:BlowdownMassConWOVap} can be written in matrix form as
+%follows.
+%%
+%\begin{equation}
+%   \left(\begin{array}{ccccccc}
+%   A_{11} & 0 & A_{13} & 0 \\
+%    A_{21} & A_{22} & 0  & 0 \\
+%    0 & 0 & 0  & A_{34} \\
+%    A_{41} &  & 0  & 0 \\
+%   \end{array}\right)
+%   %
+%   \left(\begin{array}{c}
+%    \dot{m}_\ell \\
+%    \dot{T}_\ell  \\
+%    \dot{T}_g \\
+%   \dot{T}_w  \\
+%   \end{array}\right) =
+%   %
+%   \left(\begin{array}{c}
+%    b_1\\
+%    b_2  \\
+%    b_3 \\
+%    b_4  \\
+%   \end{array}\right)
+%\end{equation}
+%%
+%where
+%%
+%\begin{eqnarray}
+%   A_{11}& = &  - P_g \nu_\ell \\
+%   %
+%   A_{13}& = &  m_g c_g\\
+%   %
+%   A_{21} & = & c_\ell T_\ell + P_g \nu_\ell \\
+%   %
+%   A_{22} & = & m_\ell c_\ell\\
+%   %
+%   A_{34} & = & m_w c_w\\
+%   %
+%   A_{41} & = & 1\\
+%   %
+%   b_1 & = & \dot{Q}_v + \dot{Q}_g \\
+%   %
+%   b_2 & = & \dot{Q}_\ell - \dot{Q}_v -  c_\ell T_\ell\dot{m}_e\\
+%   %
+%   b_3 & = & \dot{Q}_w -\dot{Q}_\ell - \dot{Q}_g\\
+%   %
+%   b_4 & = & -\dot{m}_e\\
+%\end{eqnarray}
+%%
+%
+%Solving the system of equations yields
+%%
+%\begin{eqnarray}
+%    \dot{m}_\ell &=& -\dot{m}_e\\
+%    %
+%    \dot{T}_\ell &=& \frac{1}{m_\ell c_\ell}\left( \dot{Q}_\ell - \dot{Q}_v  + P_g \nu_\ell \dot{m}_e\right)\\
+%    %
+%    \dot{T}_g &=&  \frac{1}{m_g c_g}\left( \dot{Q}_v + \dot{Q}_g - P_g \nu_\ell \dot{m}_e\right)\\
+%    %
+%    \dot{T}_w &=&  \frac{1}{m_w c_w}\left(\dot{Q}_w - \dot{Q}_\ell - \dot{Q}_g \right)\\
+%\end{eqnarray}
+
+\subsubsection{Blowdown Tank}
+
+The blowdown tank model is significantly more complex than the
+pressurant tank model due to the presence of liquid fuel and fuel
+vapor contained in the tank ullage.   In this section, we develop a
+state space model for a blow down tank.  We choose the state
+variables to be the liquid mass and temperature, $m_\ell$ and
+$T_\ell$, the gas temperature $T_g$, and tank wall temperature
+$T_w$.
+
+
+In Fig.\ref{fig:BlowDownTank} we see an illustration of a blow down
+tank. We divide the tank into three control volumes: the gas region,
+the liquid region, and the tank wall region. Mass flow occurs where
+the pressurant gas exits the tank and at the boundary between the
+liquid and gas in the form of evaporation. Heat transfer occurs
+between all three control volumes as well as with the surroundings.
+In summary, the physical processes modelled for a blow down tank are
+%
+\begin{compactenum}
+    \item Vapor pressure is a function of liquid temperature.
+    \item Liquid density is a function of liquid temperature.
+    \item Heat transfer between the liquid and gas.
+    \item Heat transfer between the tank wall and gas.
+    \item Heat transfer between the tank wall and liquid.
+    \item Heat transfer between the surroundings and tank.
+    wall.
+\end{compactenum}
+%
+The assumptions made in the tank model are
+%
+\begin{compactenum}
+    \item Pressurant does not dissolve in liquid ($m_g = C$).
+    \item Vapor and gas temperatures are equal.
+    \item Vapor and gas volumes are equal.
+\end{compactenum}
+%
+\begin{figure}[ht]
+\centerline{
+    \begin{picture}(100,510)
+    \special{psfile= ./Images/BlowDownTankWVap.eps hoffset= -120 voffset= 170
+    hscale=55 vscale=55}
+    \makebox(80,525){$\dot{m}_e$,$h_l$}
+    \makebox(-80,970){1.Gas/Vapor}
+    \makebox(-90,940){$m_g, m_v, P_g, P_v, T_g$}
+    \makebox(-190,905){$\dot{Q}_v$}
+    \makebox(-140,905){$\dot{m}_v, h_{v}$}
+    \makebox(10,905){$\dot{Q}_g$}
+    \makebox(-135,820){2.Liquid}
+    \makebox(-145,790){$m_\ell, T_\ell$}
+    \makebox(-235,740){$\dot{Q}_\ell$}
+    \makebox(-335,990){3.Tank Wall}
+    \makebox(-335,970){$m_w, T_w$}
+    \makebox(-265,1030){$\dot{Q}_w$}
+    \end{picture}}\vskip -3.65 in  \caption{ Blow Down Tank Diagram} \label{fig:BlowDownTank}
+\end{figure}
+
+Assume we are given $m_g$, the tank diameter $D$, and hence know the
+total tank volume $V_t$, and we know the physical constants
+associated with the liquid and gas ($R_g$, $c_g$, $\nu_g$, $c_\ell$,
+$\nu_\ell(T_\ell)$ and $P_v(T_\ell))$. We choose the state variables
+$m_\ell$, $T_\ell$, $T_g$, and $T_w$, all other tank properties can
+be calculated from these state variables using the following
+equations:
+%
+\begin{eqnarray}
+    V_\ell & = &  \nu_\ell(T_\ell)m_\ell \label{Eq:BlowDownVell}\\
+   %
+    V_g & = &  V_t - V_\ell\\
+   %
+   P_g & = &  \frac{m_g R_g T_g}{V_g}\\
+   %
+   P_v & = &  P_v(T_\ell)\\
+   %
+   m_v & = & \frac{P_v V_g}{R_v T_g}\\
+   %
+   P_t & = &  P_v + P_g \label{Eq:BlowDownPt}
+\end{eqnarray}
+
+%
+To determine the state equations governing $m_\ell$, $T_\ell$,
+$T_g$, and $T_w$ we apply the 1st law of thermodynamics and the law
+of conservation of mass. The 1st Law applied to the gas control
+volume is
+%
+\begin{equation}
+   \frac{d}{dt}\left( m_v u_v + m_g u_g \right) = \dot{Q}_v + \dot{Q}_g - P_t \dot{V}_g +
+    \dot{m}_v h_{v} \label{Eq:BlowdownGas1stLaw}
+\end{equation}
+%
+The 1st Law applied to the liquid control volume is
+%
+\begin{equation}
+   \frac{d}{dt}\left( m_\ell u_\ell \right) = \dot{Q}_\ell - \dot{Q}_v +
+   P_t \dot{V}_g - \dot{m}_v h_{lg} - \dot{m}_e h_\ell \label{Eq:BlowdownLiquid1stLaw}
+\end{equation}
+%
+The 1st Law applied to the wall control volume yields
+%
+\begin{equation}
+     \frac{d}{dt}\left( m_w u_w \right) = \dot{Q}_w - \dot{Q}_\ell - \dot{Q}_g \label{Eq:BlowdownWall1stLaw}
+\end{equation}
+%
+and finally from conservation of mass:
+%
+\begin{equation}
+    \dot{m}_\ell = -\dot{m}_e - \dot{m}_v \label{Eq:BlowdownMassCon}
+\end{equation}
+%
+we also know that
+%
+\begin{equation}
+    \dot{m}_v = \frac{P_v \dot{V}_g}{R_v T_g} - \frac{P_v V_g \dot{T}_g}{R_v T_g^2} \label{Eq:BlowDownGasLaw}
+\end{equation}
+%
+where we assume that
+%
+\begin{equation}
+   \dot{P}_v \approx 0
+\end{equation}
+
+Equations (\ref{Eq:BlowdownGas1stLaw}) - (\ref{Eq:BlowDownGasLaw})
+are five equations in five unknowns ($m_v$, $m_\ell$, $T_\ell$,
+$T_g$, and $T_w$). Our approach is to use
+Eq.~(\ref{Eq:BlowdownMassCon}) to eliminate $\dot{m}_v$ terms.  The
+result is a system of four equations in four unknowns using
+Eqs.~(\ref{Eq:BlowdownGas1stLaw}), (\ref{Eq:BlowdownLiquid1stLaw}),
+(\ref{Eq:BlowdownWall1stLaw}), and (\ref{Eq:BlowDownGasLaw}).  The
+result we seek is four decoupled ordinary differential equations for
+$m_\ell$, $T_\ell$, $T_g$, and $T_w$.
+
+
+Let's continue with Eq.~(\ref{Eq:BlowdownGas1stLaw}).  We need to
+rewrite the equation in terms of $\dot{m}_\ell$ and $\dot{T}_g$
+($\dot{T_w}$ and $\dot{T}_\ell$ don't appear explicitly).  Expanding
+the derivatives assuming $\dot{m}_g = 0$ yields
+%
+\begin{equation}
+   \dot{m}_v c_v T_g + m_v c_v \dot{T}_g +  m_g c_g \dot{T}_g = \dot{Q}_v + \dot{Q}_g - P_t \dot{V}_g + \dot{m}_v h_{v}
+\end{equation}
+%
+Now, substituting $\dot{m}_v = -\dot{m}_\ell - \dot{m}_e$ and noting
+that $\dot{V}_g = -\nu_l \dot{m}_\ell$ if we assume
+%
+ \[\dot{\nu}_\ell = \frac{d \nu_\ell}{dT_\ell }\dot{T}_\ell
+\approx 0
+\]
+%
+we arrive at
+%
+\begin{equation}
+   \begin{split}
+      \left( T_g R_v - P_t \nu_\ell  \right) \dot{m}_\ell + \left( m_v c_v + m_g c_g\right)\dot{T}_g = \\
+      \dot{Q}_v + \dot{Q}_g - \dot{m}_e T_g R_v   \label{Eq:BlowdownWVaporEq1}
+   \end{split}
+\end{equation}
+%
+
+Now continuing with Eq.~(\ref{Eq:BlowdownLiquid1stLaw}) expanding
+the derivatives and making similar substitutions as we made
+previously we obtain
+%
+\begin{equation}
+\begin{split}
+    \dot{m}_\ell c_\ell T_\ell + m_\ell c_\ell \dot{T}_\ell = \dot{Q}_\ell - \dot{Q}_v +
+    P_t(-\nu_\ell \dot{m}_\ell) - \\ (-\dot{m}_\ell - \dot{m}_e)h_{v} - \dot{m}_e c_\ell T_\ell
+\end{split}
+\end{equation}
+%
+Grouping terms we obtain
+%
+\begin{equation}
+\begin{split}
+    ( c_\ell T_\ell  + P_t v_l - h_{v})\dot{m}_\ell + ( m_\ell c_\ell )\dot{T}_\ell = \\
+    \dot{Q}_\ell - \dot{Q}_v + \dot{m}_e (h_v - c_\ell T_\ell) \label{Eq:BlowdownWVaporEq2}
+\end{split}
+\end{equation}
+
+For the wall region, described by Eq.~(\ref{Eq:BlowdownWall1stLaw}),
+we arrive at
+\begin{equation}
+     (m_w c_w) \dot{T}_w = \dot{Q}_w - \dot{Q}_\ell - \dot{Q}_g \label{Eq:BlowdownWVaporEq3}
+\end{equation}
+
+Finally, by eliminating $\dot{m}_v$ in the Gas Law shown in
+Eq.~(\ref{Eq:BlowDownGasLaw}) we obtain
+%
+\begin{equation}
+    -\dot{m}_\ell - \dot{m}_e =   \frac{P_v (-\nu_\ell \dot{m}_\ell)}{R_v T_g} - \frac{P_v V_g \dot{T}_g}{R_v T_g^2}
+\end{equation}
+%
+Grouping terms yields the result
+\begin{equation}
+    \left(  1 - \frac{P_v\nu_\ell }{R_v T_g}  \right) \dot{m}_\ell - \frac{P_v V_g }{R_v T_g^2}\dot{T}_g  =  - \dot{m}_e \label{Eq:BlowdownWVaporEq4}
+\end{equation}
+
+Equations (\ref{Eq:BlowdownWVaporEq1}),
+(\ref{Eq:BlowdownWVaporEq2}), (\ref{Eq:BlowdownWVaporEq3}), and
+(\ref{Eq:BlowdownWVaporEq4}) are four coupled ordinary differential
+equations that can be decoupled by casting them in matrix form as
+follows:
+%
+\begin{equation}
+   \left(\begin{array}{ccccccc}
+   A_{11} & 0 & A_{13}  & 0 \\
+    A_{21} & A_{22} & 0  & 0 \\
+    0 & 0 & 0  & A_{34} \\
+    A_{41} &  & A_{43}  & 0 \\
+   \end{array}\right)
+   %
+   \left(\begin{array}{c}
+    \dot{m}_\ell \\
+    \dot{T}_\ell  \\
+    \dot{T}_g \\
+   \dot{T}_w  \\
+   \end{array}\right) =
+   %
+   \left(\begin{array}{c}
+    b_1\\
+    b_2  \\
+    b_3 \\
+    b_4  \\
+   \end{array}\right)
+\end{equation}
+%
+where
+%
+\begin{eqnarray}
+   A_{11}& = & T_g R_v - P_t \nu_\ell \label{Eq:BlowDownA11}\\
+   %
+   A_{13}& = & m_v c_v + m_g c_g\\
+   %
+   A_{21} & = & c_\ell T_\ell + P_t v_l - h_{v}\\
+   %
+   A_{22} & = & m_\ell c_\ell\\
+   %
+   A_{34} & = & m_w c_w\\
+   %
+   A_{41} & = & 1  - \nu_\ell/\nu_v\\
+   %
+   A_{43} & = & - m_v/T_g\\
+   %
+   b_1 & = & \dot{Q}_v + \dot{Q}_g - \dot{m}_e T_g R_v \label{Eq:BlowDownb1}\\
+   %
+   b_2 & = & \dot{Q}_\ell - \dot{Q}_v + \dot{m}_e (h_v - c_\ell T_\ell) \\
+   %
+   b_3 & = & \dot{Q}_w -\dot{Q}_\ell - \dot{Q}_g\\
+   %
+   b_4 & = & -\dot{m}_e \label{Eq:BlowDownb4}
+\end{eqnarray}
+%
+
+
+The solution to the equations is
+%
+\begin{eqnarray}
+  \dot{m}_\ell &=& \frac{A_{43} b_{1}-A_{13} b_{4}}{A_{11} A_{43}-A_{41} A_{13}} \label{Eq:BlowDownmdotDiffEq}\\
+  %
+  %\dot{T}_\ell &=& \frac{-A_{21}A_{43}b_1+ (A_{11}A_{43}-A_{41}A_{13})b_2+A_{21}A_{13}b_4}{A_{22}\left( A_{11}A_{43}-A_{41}A_{13}\right)}\\
+  \dot{T}_\ell &=& \frac{1}{A_{22}}\left( b_2 -  A_{21} \frac{A_{43} b_{1}-A_{13} b_{4}}{A_{11} A_{43}-A_{41} A_{13}}\right)\\
+  %
+  \dot{T}_g &=& \frac{A_{11} b_{4} - A_{41} b_{1}}{A_{11} A_{43}-A_{41} A_{13}}\\
+  %
+  \dot{T}_w &=& \frac{b_3}{A_{34}} \label{Eq:BlowDownTwdotDiffEq}
+\end{eqnarray}
+%
+For the adiabatic model we set all heat transfer rates, $\dot{Q}$,
+to zero in Eqs.~(\ref{Eq:BlowDownb1})-(\ref{Eq:BlowDownb4}) and so
+there are only two state variables as $\dot{T}_w = 0$ and so $T_w =$
+constant.
+
+Now let's develop equations for an isothermal model of a blow down
+tank.  In the isothermal model, we assume $T_\ell = T_g = T_w = T$.
+The only state variable that requires a differential equation is
+$m_\ell$.  Because $T_g$, $T_\ell$, and hence, $P_v$ are constant,
+we know that
+%
+\begin{equation}
+    \dot{m}_v = \frac{P_v \dot{V}_g}{R_v T_g}
+\end{equation}
+%
+Subtituting this result into Eq.(\ref{Eq:BlowdownMassCon}) and
+solving for $\dot{m}_\ell$ we obtain.
+%
+\begin{equation}
+    \dot{m}_\ell = -\frac{\dot{m}_e}{\left( 1 - \displaystyle\frac{P_v \nu_\ell}{R_v T}\right)}
+\end{equation}
+
+
+In summary for the heat transfer model for a blow down tank, we
+choose $m_\ell$, $T_\ell$, $T_g$, and $T_w$ are state variables.
+Eqs.~(\ref{Eq:BlowDownVell})-(\ref{Eq:BlowDownPt}) are used to
+calculate the remaining tank properties, and
+Eqs.~(\ref{Eq:BlowDownmdotDiffEq})-(\ref{Eq:BlowDownTwdotDiffEq})
+are used to model the tank states as functions of time.
+
+For the all three models, heat transfer, adiabatic, and isothermal,
+knowing the state variables $m_\ell$, $T_\ell$, $T_g$, and $T_w$ we
+compute the remaining tank properties using
+%
+\begin{eqnarray}
+    V_\ell & = &  \nu_\ell(T_\ell)m_\ell  \nonumber \\
+   %
+    V_g & = &  V_t - V_\ell\nonumber \\
+   %
+   P_g & = &  \frac{m_g R_g T_g}{V_g}\nonumber \\
+   %
+   P_v & = &  P_v(T_\ell)\nonumber \\
+   %
+   m_v & = & \frac{P_v V_g}{R_v T_g}\nonumber \\
+   %
+   P_t & = &  P_v + P_g \nonumber
+\end{eqnarray}
+
+%
+The models differ in the number of state variables and in the state
+rate equations.  A summary is presented below.
+
+\noindent\textit{Blow Down Tank: Heat Transfer}
+
+\noindent State Variables:  $m_\ell$, $T_\ell$, $T_g$, $T_w$
+%
+\begin{eqnarray}
+  \dot{m}_\ell &=& \frac{A_{43} b_{1}-A_{13} b_{4}}{A_{11} A_{43}-A_{41} A_{13}}\nonumber \\
+  %
+  %\dot{T}_\ell &=& \frac{-A_{21}A_{43}b_1+ (A_{11}A_{43}-A_{41}A_{13})b_2+A_{21}A_{13}b_4}{A_{22}\left( A_{11}A_{43}-A_{41}A_{13}\right)}\\
+  \dot{T}_\ell &=& \frac{1}{A_{22}}\left( b_2 -  A_{21} \frac{A_{43} b_{1}-A_{13} b_{4}}{A_{11} A_{43}-A_{41}
+  A_{13}}\right) \nonumber \\
+  %
+  \dot{T}_g &=& \frac{A_{11} b_{4} - A_{41} b_{1}}{A_{11} A_{43}-A_{41}
+  A_{13}} \nonumber \\
+  %
+  \dot{T}_w &=& \frac{b_3}{A_{34}} \nonumber
+\end{eqnarray}
+%
+where $A_{ij}$ and $b_i$ are given by
+Eqs.~(\ref{Eq:BlowDownA11})-(\ref{Eq:BlowDownb4}).
+
+\noindent\textit{Blow Down Tank:  Adiabtic}
+
+\noindent State Variables:  $m_\ell$, $T_\ell$, $T_g$
+
+%
+\begin{eqnarray}
+  \dot{m}_\ell &=& \frac{A_{43} b_{1}-A_{13} b_{4}}{A_{11} A_{43}-A_{41} A_{13}}\nonumber \\
+  %
+  %\dot{T}_\ell &=& \frac{-A_{21}A_{43}b_1+ (A_{11}A_{43}-A_{41}A_{13})b_2+A_{21}A_{13}b_4}{A_{22}\left( A_{11}A_{43}-A_{41}A_{13}\right)}\\
+  \dot{T}_\ell &=& \frac{1}{A_{22}}\left( b_2 -  A_{21} \frac{A_{43} b_{1}-A_{13} b_{4}}{A_{11} A_{43}-A_{41}
+  A_{13}}\right) \nonumber \\
+  %
+  \dot{T}_g &=& \frac{A_{11} b_{4} - A_{41} b_{1}}{A_{11} A_{43}-A_{41}
+  A_{13}} \nonumber
+\end{eqnarray}
+%
+where $A_{ij}$ and $b_i$ are given by
+Eqs.~(\ref{Eq:BlowDownA11})-(\ref{Eq:BlowDownb4}).  Note that all
+heat flow rates, $\dot{Q}$, are set to zero.
+
+\noindent\textit{Blow Down Tank:  Isothermal}
+
+\noindent State Variables:  $m_\ell$
+%
+\begin{equation}
+    \dot{m}_\ell = -\frac{\dot{m}_e}{\left( 1 - \displaystyle\frac{P_v \nu_\ell}{R_v
+    T}\right)} \nonumber
+\end{equation}
+
+\subsubsection{Pressure Regulated Tank}
+
+The pressure regulated fuel tank model is the most complex tank
+model supported in GMAT.  The model complexity is due to the
+presence of liquid fuel and fuel vapor contained in the tank ullage,
+and due to mass and energy transfer from the pressurant tank to the
+ullage of the regulated fuel tank. In this section, we develop a
+state space model for a pressure regulated tank. Note, to model a
+pressure regulated tank using a heat transfer or adiabitic model, we
+must simultaneously solve the equations associated with the
+pressurant tank.  For the regulated tank model, we choose the state
+variables to be the liquid mass and temperature, $m_\ell$ and
+$T_\ell$, the gas temperature $T_g$,  tank wall temperature $T_w$,
+and the incoming pressurant gas mass $m_i$.
+
+
+In Fig.\ref{fig:PressureRegulatedTank} we see an illustration of a
+pressure regulated tank. Like the blow down tank model, we divide
+the tank into three control volumes: the gas region, the liquid
+region, and the tank wall region. Mass flow occurs where the
+pressurant gas exits the tank, at the boundary between the liquid
+and gas in the form of evaporation, and from the pressurant tank to
+the ullage of the regulated tank.  Heat transfer occurs between all
+three control volumes as well as with the surroundings. Hence, the
+physical processes modelled for a blow down tank are the same as
+those listed for the blow down tank, with the added process of mass
+flow from the pressurant tank.
+%
+\begin{figure}[ht]
+\centerline{
+    \begin{picture}(100,510)
+    \special{psfile= ./Images/PressureRegulatedTank.eps hoffset= -120 voffset= 170
+    hscale=55 vscale=55}
+    \makebox(80,525){$\dot{m}_e$,$h_l$}
+    \makebox(-80,970){1.Gas/Vapor}
+    \makebox(-90,940){$m_g, m_v, P_g, P_v, T_g$}
+    \makebox(-190,905){$\dot{Q}_v$}
+    \makebox(-140,905){$\dot{m}_v, h_{lg}$}
+    \makebox(10,905){$\dot{Q}_g$}
+    \makebox(-135,820){2.Liquid}
+    \makebox(-145,790){$m_\ell, T_\ell$}
+    \makebox(-235,740){$\dot{Q}_\ell$}
+    \makebox(-335,990){3.Tank Wall}
+    \makebox(-335,970){$m_w, T_w$}
+    \makebox(-265,1030){$\dot{Q}_w$}
+    \makebox(-045,1030){$\dot{m}_i$, $h_i$}
+    \end{picture}}\vskip -3.65 in  \caption{ Pressure Regulated Tank Diagram} \label{fig:PressureRegulatedTank}
+\end{figure}
+
+The derivation of the state equations for a pressure regulated tank
+follows naturally from the derivation of the blow down tank.  The
+only control volume that differs between the two models is the
+gas/vapor control volume.  Applying the 1st Law of thermodynamics to
+the gas/vapor control volume of the pressure regulated tank gives us
+%
+\begin{equation}
+   \frac{d}{dt}\left( m_v u_v + m_g u_g \right) = \dot{Q}_v + \dot{Q}_g - P_t \dot{V}_g +
+    \dot{m}_v h_v + \dot{m}_p h_p\label{Eq:RegulatedGas1stLaw}
+\end{equation}
+%
+Taking the time derivative of the gas law for the gas contained in
+the tank ullage yields
+%
+\begin{equation}
+   \dot{m}_g = \frac{P_g \dot{V}_g}{R_g
+   T} - \frac{P_g V_g \dot{T}_g}{R_g T_g^2} \label{Eq:RegulatedGasLawDeriv}
+\end{equation}
+%
+
+Equations (\ref{Eq:RegulatedGas1stLaw}) and
+(\ref{Eq:RegulatedGasLawDeriv}), together with equations
+(\ref{Eq:BlowdownWVaporEq2}), (\ref{Eq:BlowdownWVaporEq3}), and
+(\ref{Eq:BlowdownWVaporEq4}) are a system of 5 equations in 5
+unknowns which can be decoupled using simple linear algebra.
+However, first we must expand Eqs.~(\ref{Eq:RegulatedGas1stLaw}) and
+(\ref{Eq:RegulatedGasLawDeriv}) and write them in terms of the state
+rate derivatives.  Expanding Eq.~(\ref{Eq:RegulatedGas1stLaw}) we
+arrive at
+\begin{equation}
+   \begin{split}
+   \left( R_v T_g - P_t \nu_\ell \right)\dot{m}_\ell + \left( m_v c_v + m_g c_g \right)
+   \dot{T}_g + \\ \left(c_g Tg - h_p \right)\dot{m}_g = \dot{Q}_v +
+   \dot{Q}_g - \dot{m}_e R_v T_g
+   \end{split}
+\end{equation}
+%
+Similarly, for Eq.~(\ref{Eq:RegulatedGasLawDeriv}) we obtain
+%
+\begin{equation}
+    \frac{\nu_\ell}{\nu_g}\dot{m}_\ell + \frac{m_g}{T_g}\dot{T}_g + \dot{m}_g = 0
+\end{equation}
+%
+
+To integrate the state equations we must decouple the equations and
+this is easily done by casting the equations in matrix form and
+solving the system of equations.  We can write the equations is
+state space for as follows
+%
+\begin{equation}
+   \left(\begin{array}{ccccccc}
+   A_{11} & 0 & A_{13}  & 0 & A_{15}\\
+    A_{21} & A_{22} & 0  & 0 & 0 \\
+    0 & 0 & 0  & A_{34} & 0\\
+    A_{41} & 0 & A_{43}  & 0 & 0\\
+    A_{51} & 0 & A_{43}  & 0 &  A_{55}\\
+   \end{array}\right)
+   %
+   \left(\begin{array}{c}
+    \dot{m}_\ell \\
+    \dot{T}_\ell  \\
+    \dot{T}_g \\
+   \dot{T}_w  \\
+   \dot{m}_g
+   \end{array}\right) =
+   %
+   \left(\begin{array}{c}
+    b_1\\
+    b_2  \\
+    b_3 \\
+    b_4  \\
+    0
+   \end{array}\right)
+\end{equation}
+%
+where the coefficients $A_{ij}$ and $b_i$ are given by
+%
+\begin{eqnarray}
+   A_{11}& = & T_g R_v - P_t \nu_\ell \label{Eq:RegulatedA11}\\
+   %
+   A_{13}& = & m_v c_v + m_g c_g\\
+   %
+   A_{15} & = & c_g T_g - h_p\\
+   %
+   A_{21} & = & c_\ell T_\ell + P_t v_l - h_{lg}\\
+   %
+   A_{22} & = & m_\ell c_\ell\\
+   %
+   A_{34} & = & m_w c_w\\
+   %
+   A_{41} & = & 1  - \nu_\ell/\nu_v\\
+   %
+   A_{43} & = & - m_v/T_g\\
+   %
+   A_{51} & = & \nu_\ell/\nu_g\\
+   %
+   A_{53} & = & m_g/T_g \\
+   %
+   A_{55} & = & 1 \\
+   %
+   b_1 & = & \dot{Q}_v + \dot{Q}_g - \dot{m}_e R_v T_g \label{Eq:Regulatedb1}\\
+   %
+   b_2 & = & \dot{Q}_\ell - \dot{Q}_v + \dot{m}_e (h_{lg} - c_\ell T_\ell)\\
+   %
+   b_3 & = & \dot{Q}_w -\dot{Q}_\ell - \dot{Q}_g\\
+   %
+   b_4 & = & -\dot{m}_e \label{Eq:Regulatedb4}
+\end{eqnarray}
+
+\begin{eqnarray}
+   \dot{m}_\ell &=& \frac{A_{55} A_{43} b_1 - b_4 A_{13} A_{55} + b_4 A_{15} A_{53}}{D}\\
+   \dot{T}_\ell &=& \frac{b_2 - A_{21}\dot{m}_\ell}{A_{22}}\\
+   %
+   \dot{T}_g  &=& \frac{-A_{41} A_{55} b_1 + b_4 A_{11} A_{55} - b_4 A_{51}
+    A_{15}}{D}\\
+   %
+   \dot{T}_w &=& \frac{b_3}{A_{34}}\\
+   %
+   \dot{m}_g &=& \frac{-b_1 A_{51} A_{43} + b_1 A_{41} A_{53} - b_4 A_{11} A_{53} + b_4 A_{51} A_{13}}{D}
+\end{eqnarray}
+%
+where
+%
+\begin{equation}
+      D = A_{55} A_{43} A_{11} - A_{43} A_{51} A_{15} + A_{41} A_{15} A_{53} - A_{41} A_{13} A_{55}
+\end{equation}
+
+For the adiabatic model we set all heat transfer rates, $\dot{Q}$,
+to zero in  Eqs.~(\ref{Eq:Regulatedb1})-(\ref{Eq:Regulatedb4}). For
+the adiabatic model there is only four state variables as $\dot{T}_w
+= 0$ and so $T_w =$ constant.
+
+Now let's develop equations for an isothermal model of a pressure
+regulated tank. In the isothermal model, we assume $T_\ell = T_g =
+T_w = T$. The only state variables that require differential
+equations are $m_\ell$ and $m_g$. Because $T_g =$ constant, and
+hence, $P_v =$ constant, we know that
+%
+\begin{equation}
+    \dot{m}_\ell = -\frac{\dot{m}_e}{\left( 1 - \displaystyle\frac{P_v \nu_\ell}{R_v
+    T}\right)}
+\end{equation}
+%
+Similarly, for $m_g$ we obtain
+%
+\begin{equation}
+   \dot{m}_g = \frac{\nu_\ell}{\nu_g}\frac{\dot{m}_e}{\left( 1 - \displaystyle\frac{P_v \nu_\ell}{R_v
+    T}\right)}
+\end{equation}
+
+\subsubsection{Heat Transfer}
+
+Heat transfer models are from Ring\cite{Ring:64} and
+Incropera\cite{Incropera:06} and Pitts\cite{Pitts:98}
+
+\begin{equation}
+    \dot{Q} = h A \Delta T
+\end{equation}
+
+\begin{equation}
+    \frac{h L}{k} = Nu = c(Gr_L Pr)^a
+\end{equation}
+%
+so
+%
+\begin{equation}
+       h = \frac{k c}{L}(Gr_L Pr)^a
+\end{equation}
+\begin{table}[ht]
+\centering \caption{ Dimensionless Heat Transfer Terms
+\cite{Incropera:06}}
+\begin{tabular}{p{.65 in} p{.950 in} p{1.4 in}}
+  \hline\hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  Parameter & Definition & Interpretation \\
+  \hline
+  Grashof number ($Gr_L$) & \hspace{ 1 in} $\displaystyle\frac{g \beta(T_s - T_\infty)L^3}{\nu^2}$  & Measure of the ratio of buoyancy forces to viscous forces.\\
+  %
+  & \\
+  %
+  Prandtl number ($Pr$) & \hspace{ 1 in} $\displaystyle\frac{c \mu}{k} = \frac{\mu}{\alpha}$  & Ratio of the momentum and thermal diffusivities.\\
+  %
+  & \\
+  %
+  Nusselt number ($Nu_L$) & \hspace{ 1 in} $\displaystyle\frac{h L}{k_f}$ & Ratio of convection to pure conduction heat transfer.  \\
+  %
+  & \\
+  %
+  Reynolds number ($Re_L$) & \hspace{ 1 in} $\displaystyle\frac{V L}{\nu}$ & Ratio of inertia and viscous forces.  \\
+  \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{ Physiochemical Properties }
+
+Hydrazine Properties \cite{HydraBook}
+\[
+c = 3084 \mbox{J/kg/K}
+\]
+\[
+\rho \mbox{ (kg/m}^3) = 1025.6 - 0.87415 \mbox{ }T \mbox{ }(^o\mbox{C})- 0.45283e^{-3}\mbox{ }T^2 \mbox{ }(^o\mbox{C})
+\]
+%
+\[
+\rho \mbox{ (kg/m}^3) = 1230.6 - 0.62677 \mbox{ }T \mbox{ }(^o\mbox{K})- 0.45283e^{-3}\mbox{ }T^2 \mbox{ }(^o\mbox{K})
+\]
+
+
+Some models are from \cite{Ricciardi:87}
+
+\begin{eqnarray}
+  \rho_\ell(T_\ell) & = &K_1 + K_2 T_\ell + K_3 T_\ell^2
+  \mbox{  (kg/m$^3$)}\\
+  %
+  \frac{d \rho_\ell}{dT_\ell } &  = & K_2 + 2K_3 T_\ell
+  \mbox{  (kg/m$^3$)}
+\end{eqnarray}
+%
+\begin{eqnarray}
+  P_v & =  &\displaystyle C_1 e^{(C_2 + C_3 T_\ell + C_4 T_\ell^2)} \mbox{
+  (N/m$^2$)}\\
+  %
+  \frac{d P_v}{d T_\ell}& = &\displaystyle C_1 ln{(C_2 + C_3 T_\ell C_4 T_\ell^2)}\left(C_3 + 2C_4T_\ell\right)
+\end{eqnarray}
+%
+\begin{equation}
+    m_d = P_g m_\ell^\alpha\left( \frac{T_\ell}{294}\right)^2
+\end{equation}
+%
+\begin{equation}\begin{split}
+    \frac{d m_d}{dt} =  m_\ell^\alpha\left(
+    \frac{T_\ell}{294}\right)^2\dot{P}_g + \alpha P_g m_\ell^{(\alpha - 1)}\left(
+    \frac{T_\ell}{294}\right)^2 \dot{m}_\ell \\ + 2 P_g m_\ell^\alpha\left(
+    \frac{T_\ell}{294}\right)\dot{T}_\ell
+    \end{split}
+\end{equation}
+%
+
+\begin{table} \centering
+\caption{Constants for Density Equations}
+\begin{tabular}{lcc}
+  \hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  Const. & \mbox{N}$_2$\mbox{0}$_4$ & CH$_3$N$_2$H$_3$ \\
+  \hline \hline
+  $K_1$ (kg/m$^3$) & 2066 & 1105.3 \\
+  $K_2$ (kg/m$^3$/K )& -1.979 & -0.9395 \\
+  $K_3$ (kg/m$^3$/K$^2) $ & -4.826e-4 & 0 \\
+  \hline
+\end{tabular}
+\end{table}
+
+\begin{table} \centering
+\caption{Constants for Vapor Pressure Equations}
+\begin{tabular}{lcc}
+  \hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  Const. & \mbox{N}$_2$\mbox{0}$_4$ & CH$_3$N$_2$H$_3$ \\
+  \hline \hline
+  $C_1$ (kg/m$^3$) & 6895 & 6895\\
+  $C_2$ (kg/m$^3$/K )& 18.6742 & 12.4293 \\
+  $C_3$ (kg/m$^3$/K$^2) $ & -5369.57 & 2543.37 \\
+  $C_4$ (kg/m$^3$/K$^2) $ & 194721 & 0 \\
+  \hline
+\end{tabular}
+\end{table}
+
+\begin{table} \centering
+\caption{Constants for Dissolved Pressurant Equations}
+\begin{tabular}{lcc}
+  \hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  Const. & \mbox{N}$_2$\mbox{0}$_4$ & CH$_3$N$_2$H$_3$ \\
+  \hline \hline
+  $\alpha$ & 3.335e-11 & 2.059e-11 \\
+  \hline
+\end{tabular}
+\end{table}

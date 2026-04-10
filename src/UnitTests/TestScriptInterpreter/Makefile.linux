@@ -1,0 +1,108 @@
+# Makefile for GMAT Script Interpreter tester
+# Initial Version, DJC, 11/18/2003
+
+all: TestScriptInterpreter
+
+CPP = g++
+
+OPTIMIZATIONS = -O9
+
+CPPFLAGS = $(OPTIMIZATIONS) -D__USE_MATLAB__=1
+
+#CPPFLAGS = $(OPTIMIZATIONS) 
+
+LINKFLAGS = -L../../base/lib
+
+OBJECTS = driver.o ConsoleAppException.o
+
+# LIBRARIES = ../../base/lib/libGMATBaseConsole.a
+
+MATLAB_DIRECTORY = -L/usr/local/matlab704/bin/glnx86
+
+MATLAB_LIBRARIES = -leng -lmx -lut -lmat -lpthread \
+                   -lstdc++ -lgcc_s -licudata -licui18n \
+                   -licuuc -lustdio -lz
+
+# Currently using the ugly form to link the libraries -- this way cyclic 
+# dependencies are resolved
+LIBRARIES = -lGmatConsole
+
+OldLIBRARIES = -lFoundation \
+            -lUtilities \
+            -lSolarSystem \
+            -lCoordinateSystem \
+            -lSpacecraft \
+            -lForceModel \
+            -lPropagator \
+            -lParameter \
+            -lFunction \
+            -lBurn \
+            -lInterpolator \
+            -lSolver \
+            -lStopCondition \
+            -lSubscriber \
+            -lCommand \
+            -lInterface \
+            -lFactory \
+            -lConfiguration \
+            -lInterpreter \
+            -lExecutiveConsole \
+            -lInterpreter \
+            -lConfiguration \
+            -lFactory \
+            -lInterface \
+            -lCommand \
+            -lSubscriber \
+            -lStopCondition \
+            -lSolver \
+            -lInterpolator \
+            -lBurn \
+            -lFunction \
+            -lParameter \
+            -lPropagator \
+            -lForceModel \
+            -lSpacecraft \
+            -lCoordinateSystem \
+            -lSolarSystem \
+            -lUtilities \
+            -lFoundation \
+            -lExecutiveConsole \
+            -lInterface
+
+            
+
+HEADERS = -I../../base/include -I../../base/foundation \
+          -I../../base/executive -I../../base/factory \
+          -I../../base/forcemodel -I../../base/subscriber \
+          -I../../base/command -I../../base/spacecraft \
+          -I../../base/solarsys -I../../base/propagator \
+          -I../../base/interpreter -I../../base/parameter \
+          -I../../base/interpolator -I../../base/util \
+          -I../../base/stopcond -I../../base/refframe \
+          -I../../base/configs -I../../base/burn \
+          -I../../base/solver -I../../base/function \
+          -I../../base/coordsystem
+
+clean : archclean
+
+archclean :
+	rm -r -f *.o
+	rm -r -f *.a
+	rm -r -f *~
+	rm -r -f core
+	rm -r -f */core
+	rm -rf TestScriptInterpreter
+
+.cpp.o: 
+	$(CPP) $(CPPFLAGS) $(HEADERS) -c $<
+
+#TestScriptInterpreter: $(OBJECTS)
+#	$(CPP) $(OBJECTS) $(LINKFLAGS) $(LIBRARIES) -lg2c \
+#          -o TestScriptInterpreter
+
+TestScriptInterpreter: $(OBJECTS)
+	$(CPP) $(OBJECTS) $(LINKFLAGS) $(LIBRARIES) -lg2c \
+          $(MATLAB_DIRECTORY) $(MATLAB_LIBRARIES) \
+          -o TestScriptInterpreter
+	mkdir -p ../../bin
+	cp TestScriptInterpreter ../../bin/gmatConsole

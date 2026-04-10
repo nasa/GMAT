@@ -1,0 +1,60 @@
+#BeginSpacecraftBlock
+#note to Steve and Don - I turned off the propellant tank constraints here.
+name Shady_Thing
+EnableGlobalElectricPropellantTankConstraint 0
+EnableGlobalChemicalPropellantTankConstraint 0
+GlobalElectricPropellantTankCapacity 1000.0
+GlobalFuelTankCapacity 100.0
+GlobalOxidizerTankCapacity 0
+
+
+#BeginStageBlock
+#note to Steve and Don - in EMTG a spacecraft is composed of stages. You only have one stage in this mission.
+#I turned off the propellant tank constraints here.
+#I also turned off everything related to dry mass computation, because you don't need that for this project.
+name Shady_Thing
+BaseDryMass 0
+AdapterMass 0
+EnableElectricPropellantTankConstraint 0
+EnableChemicalPropellantTankConstraint 0
+EnableDryMassConstraint 0
+ElectricPropellantTankCapacity 1000.0
+ChemicalFuelTankCapacity 100.0
+ChemicalOxidizerTankCapacity 0
+#note to Steve and Don - you only have one "thruster" in this problem, so the throttle logic and sharpness settings don't do anything and can be ignored.
+ThrottleLogic 1
+ThrottleSharpness 10000
+#note to Steve and Don - this is where you tell your stage what propulsion and power systems to use from the libraries below
+PowerSystem Big_Darn_Solar_Arrays
+ElectricPropulsionSystem HERMeSx3
+ChemicalPropulsionSystem RCS
+
+#BeginStagePowerLibraryBlock
+#EMTG power system specification (space or comma delimited)
+#Spacecraft_Power_Supply_Type choices are (0: Constant, 1: Solar)
+#Spacecraft_Power_Supply_Curve_Type choices are (0: Sauer, 1: Polynomial)
+#Spacecraft_Bus_Power_Type choices are (0: TypeA_Quadratic, 1: TypeB_Conditional)
+#name Spacecraft_Power_Supply_Type Spacecraft_Power_Supply_Curve_Type Spacecraft_Bus_Power_Type P0 mass_per_kW(kg) decay_rate gamma[0:6] BusPower[0:2]
+#
+#note to Steve and Don - since you are at 1 AU the power system model doesn't matter, but just in case I gave you the ARRM power system.
+#I did not model the bus power because at 1 AU you can just subtract it off the max array capacity. So your arrays are actually bigger than the 40 kW shown here
+Big_Darn_Solar_Arrays 1 0 0 40.0 10 0 1 0 0 0 0 0 0 0 0 0
+#EndHardwareBlock
+
+#BeginStagePropulsionLibraryBlock
+#EMTG propulsion system specification (space or comma delimited)
+#SpacecraftThrusterMode choices are (0: ConstantThrustIsp, 1: FixedEfficiencyCSI, 2: FixedEfficiencyVSI, 3: Poly1D, 4: SteppedHThrust1D, 5: SteppedLMdot1D, 6: Stepped2D, 7: Poly2D)
+#name ThrusterMode ThrottleTableFile MassPerString(kg) NumberOfStrings Pmin(kW) Pmax(kW) ConstantThrust(N) ConstantIsp(s) MinimumIsp/MonopropIsp(s) FixedEfficiency MixtureRatio ThrustScaleFactor ThrustCoefficients(mN)[0:6] MassFlowCoefficients(mg/s)[0:6]
+#polynomial coefficients are in order from P^0 to P^5
+#
+#note to Steve and Don - I modeled this as 3 HERMeS thrusters in "fixed thrust and Isp" mode. This is appropriate for the ARRM system at 1 AU.
+#don't take 150 kg for the system mass as any sort of endorsed number - I just made it up. Since you're not asking the spacecraft model to compute dry mass, you won't use it anyway
+#Thrust and mass flow rate values from Table 1 in Peterson et al., provided by Don
+#I computed Isp from thrust and mass flow rate
+HERMeSx3 0 none 150 1 37.5 37.5 1.839 2831 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+RCS 0 none 30 1 0 100000 0.10000000000000000555 227 227 0.69999999999999995559 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+#EndHardwareBlock
+
+
+#EndStageBlock
+#EndSpacecraftBlock

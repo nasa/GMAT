@@ -1,0 +1,115 @@
+# File: BuildLunarTransferOrbit.mpy
+#
+# Steps 1 and 2 of the Ephemeris Sharing Example 
+
+# Load a basic set of libraries to use 
+import Monte as M
+import mpy.io.data as defaultData
+import mpy.traj.force.grav.basic as basicGrav
+from mpy.units import *
+
+from ShowTrajectories import *
+from load_gmat import *
+
+import cristo
+
+#################################################
+# Monte In Control
+#################################################
+
+scName1 = "LunarExpedition"
+scNAIFId1 = -421
+
+# Load planetary ephemeris de405 from default data
+boa = defaultData.load( "ephem/planet/de405" )
+
+# Build the gravity nodes connecting the spacecraft to the gravitational
+# bodies we want active.
+# basicGrav.add( boa, scName1, [ "Sun", "Earth", "Moon" ], harmonics = [ "Earth" ] )
+basicGrav.add( boa, scName1, [ "Sun", "Earth", "Moon" ] )
+
+# Define an initial state of a spacecraft using Cartesian elements
+state = M.State(
+   boa, scName1, 'Earth',
+   M.Cartesian.x( 7482.854 * km ), 
+   M.Cartesian.y( -4114.938 * km ),
+   M.Cartesian.z( -1171.258 * km ),
+   M.Cartesian.dx( 4.436047 * km/sec ), 
+   M.Cartesian.dy( 8.268591 * km/sec ),
+   M.Cartesian.dz( -1.569608 * km/sec )
+   )
+
+# Define which forces will act on the spacecraft during propagation.
+forces = [
+   M.GravityForce( boa, scName1 ),
+   ]
+
+# Set up the beginning and end times for our scenario.
+beginTime = M.Epoch( "23-JUL-2014 20:48:50 UTC" )
+endTime = M.Epoch( "03-AUG-2014 20:48:50 UTC" )
+
+# Add the initial state to the "IntegState"
+integState = M.IntegState(
+   boa,         # Model database used in integration
+   beginTime,   # Start time
+   endTime,     # End time
+   [],          # Events to trigger integration end (none)
+   scName1,      # Spacecraft name
+   'Earth',     # Center body
+   'EME2000',   # Input frame
+   'EME2000',   # Integration frame
+   state,       # State initial conditions
+   forces,      # Forces which act on state
+   False,       # Integrate only partial derivatives (false)
+   [],          # Parameters to be used in partial derivative calculations (none)
+   []           # Partials tolerance scale factors (allows different partial
+                # derivatives to have different integration tolerances, none)
+   )
+
+# Add state to our propagation manager "IntegSetup"
+integ = M.IntegSetup( boa )
+integ.add( integState )
+
+# Set up the propagator.
+prop = M.DivaPropagator( boa, "DIVA", integ )
+
+prop.create( boa, beginTime, endTime )
+
+# -------------------------------
+# Display the starting trajectory
+# -------------------------------
+theSats = [scName1]
+ShowTrajectory(boa, theSats, beginTime, endTime, False)
+
+# -------------------------------
+# Write SPK
+# -------------------------------
+SpiceName.bodyInsert( scNAIFId1, scName1 )
+EphemName1 = scName1 + ".bsp"
+cristo.convert( boa, EphemName1 )
+
+#################################################
+# GMAT Takes Over
+#################################################
+ScriptName = "EnterLunarOrbit.script"
+EphemName2 = "./LunarExpeditionAfterManeuver.bsp"
+
+gmat.LoadScript(ScriptName)
+ephem = gmat.GetObject("EphemWithLOI")
+ephem.SetField("Filename", EphemName2)
+gmat.RunScript()
+
+#################################################
+# Monte Takes Over
+#################################################
+  
+boa.load( EphemName2 )
+ 
+# -------------------------------
+# Display the final trajectory
+# -------------------------------
+theSats = [scName1]
+# Set up the beginning and end times for our scenario.
+beginTime = M.Epoch( "24-JUL-2014 01:00:00 UTC" )
+endTime = M.Epoch( "02-AUG-2014 12:00:00 UTC" )
+ShowTrajectory(boa, theSats, beginTime, endTime, True)

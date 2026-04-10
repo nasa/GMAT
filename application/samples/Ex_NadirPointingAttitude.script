@@ -1,0 +1,73 @@
+%
+%  Ex_NadirPointingAttitude
+%
+%  Use a NadirPointing spacecraft attitude.
+%
+%  Released: R2014a
+% 
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft aSat;
+
+aSat.Attitude               = NadirPointing;
+aSat.AttitudeReferenceBody  = Earth
+aSat.AttitudeConstraintType = OrbitNormal
+aSat.BodyAlignmentVectorX   = 0
+aSat.BodyAlignmentVectorY   = 1
+aSat.BodyAlignmentVectorZ   = 0
+aSat.BodyConstraintVectorX  = 1
+aSat.BodyConstraintVectorX  = 0
+aSat.BodyConstraintVectorX  = 0
+
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+Create ForceModel Propagator1_ForceModel
+
+Create Propagator Propagator1
+
+Propagator1.FM      = Propagator1_ForceModel
+Propagator1.MaxStep = 10
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_OrbitView1;
+
+OFI_OrbitView1.Add                = {aSat, Earth}
+OFI_OrbitView1.View               = {Orbit_View};
+
+OFI_OrbitView1.DrawObject         = [ true true true];
+OFI_OrbitView1.DrawXYPlane        = [ false false false];
+OFI_OrbitView1.DrawLabel          = [ true true true ];
+OFI_OrbitView1.DrawGrid           = [ false false false];
+
+OFI_OrbitView1.Axes               = On;
+OFI_OrbitView1.XYPlane            = On;
+OFI_OrbitView1.EclipticPlane      = Off;
+OFI_OrbitView1.EnableStars        = On;
+OFI_OrbitView1.StarCount          = 40000;
+OFI_OrbitView1.ShowPlot           = true;
+
+Create OpenFramesView Orbit_View;
+
+Orbit_View.ViewFrame              = CoordinateSystem;
+Orbit_View.SetDefaultLocation     = On;
+Orbit_View.SetCurrentLocation     = Off;
+
+Orbit_View.DefaultEye             = [ 30000 0 0 ]
+Orbit_View.DefaultCenter          = [ 0 0 0 ];
+Orbit_View.DefaultUp              = [ 0 0 1 ];
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+Propagate Propagator1(aSat) {aSat.ElapsedSecs = 12000.0}

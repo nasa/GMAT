@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section version="5.0" xml:id="ReleaseNotesR2022a"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+  <title>GMAT R2022a Release Notes</title>
+
+  <para>The General Mission Analysis Tool (GMAT) version R2022a was released
+  in December 2022. This is the first public release since May 2020 and is the
+  14<superscript>th</superscript> release for the project. This is a major
+  project release that includes numerous major improvements and enhancements
+  in general capabilities and models, navigation and orbit determination,
+  scripting and API interfaces, optimal control, and visualization.</para>
+
+  <para>Below, we give a summary of key changes in this release.</para>
+
+  <section>
+    <title>Milestones and Accomplishments</title>
+
+    <para>We are excited that GMAT continues to see significant adoption for
+    operational mission support.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>The Fermi low Earth NASA mission, which uses the GPS point
+        solution data type for ground based orbit determination, started using
+        GMAT's Extended Kalman Filter Smoother (EKFS) for operations in July
+        2021.</para>
+      </listitem>
+      
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Major Improvements and Enhancements</title>
+
+    <section>
+      <title>General Capabilities and Models</title>
+
+      <para>The following general capabilities were added in release
+      R2022a:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Full support for Solar Radiation Pressure (SRP) N-Plate force
+          modeling (No longer alpha/beta level). See the <xref
+          linkend="ForceModel" xrefstyle="select:title"/> section
+          for details.</para>
+        </listitem>
+
+        <listitem>
+          <para>Ability to generate Ground Station (G/S) to spacecraft
+          visibility reports with an optional ability to specify G/S station
+          masks. See the <guilabel>HorizonMaskFileName</guilabel> parameter
+          description as well as the <remark>Ground Station Masking
+          File</remark> remarks in the <link
+          linkend="GroundStation">GroundStation</link> section for details.
+          See also</para>
+
+          <para><filename>samples/Ex_Contact_Location_Station_Mask.script</filename></para>
+
+          <para/>
+        </listitem>
+
+        <listitem>
+          <para>Support for reading/writing Version 1 CCSDS Orbit Ephemeris
+          Message (OEM) data. To use the OEM propagators, see the <link
+          linkend="Propagator_OEMPropagator">CCSDS OEM Ephemeris-Configured
+          Propagator</link> section of the <guilabel>Propagator</guilabel>
+          resource for details. See also</para>
+
+          <para><filename>samples/Ex_OEMPropagation.script</filename></para>
+
+          <para/>
+        </listitem>
+
+        <listitem>
+          <para>Computation of generalized planetographic region entry and
+          exit times to include South Atlantic Anomaly (SAA) detection and
+          reporting. See the <link
+          linkend="PlanetographicRegion">PlanetographicRegion</link> Resource
+          section for details. See also</para>
+
+          <para><filename>samples/Ex_PlanetographicRegion.script</filename></para>
+
+          <para/>
+        </listitem>
+
+        <listitem>
+          <para>Updated library usage to the new CSPICE 067 release from
+          JPL</para>
+        </listitem>
+
+        <listitem>
+          <para>Two Line Element (TLE) modeling using the SPICE implementation
+          of the SGP4 propagator in SPICE version 67. See</para>
+
+          <para><filename>samples/Ex_TLE_Propagation.script</filename></para>
+        </listitem>
+      </itemizedlist>
+
+      <section>
+        <title>Beta- and Alpha-level Capabilities</title>
+
+        <para>These are new features that have not yet undergone full testing
+        and may have bugs. To access these features, you may need to edit the
+        <filename>bin/gmat_startup_file.txt</filename> file to load the
+        desired alpha plug-in and/or activate features only available in
+        testing mode (set RUN_MODE = TESTING in the file). These features
+        should be used with caution.</para>
+
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>Beta-level: Force modeling for multiple full field gravity
+            perturbations during propagation and force reporting. (Multi-body
+            spherical harmonics). See</para>
+
+            <para><filename>samples/Ex_MultibodySphericalHarmonicGravity.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>Beta-level support for selected torque modeling and
+            intrusion detection capabilities, focussed on geosynchronous
+            orbits. <itemizedlist>
+                <listitem>
+                  <para>Beta-level: Modeling of thruster, gravity gradient,
+                  and plate based solar radiation pressure torques. See the
+                  <link linkend="CalculationParameters">Calculation
+                  Parameters</link> section for details.</para>
+                </listitem>
+
+                <listitem>
+                  <para>Beta-level: Addition of center of mass and moment of
+                  inertia to spacecraft models. See the <link
+                  linkend="SpacecraftBallisticMass">Spacecraft Ballistic/Mass
+                  Properties</link> section for details.</para>
+                </listitem>
+
+                <listitem>
+                  <para>Beta-level: Intrusion detection models, used to
+                  determine when the Sun or Moon enters a sensor's field of
+                  view. See the <link linkend="IntrusionLocator">Intrusion
+                  Locator</link> section for more details.</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+
+          <listitem>
+            <para>Alpha Level Capability: GMAT's
+            <guilabel>ForceModel</guilabel> for a given
+            <guilabel>Spacecraft</guilabel> can be either replaced or
+            augmented using a python function. See</para>
+
+            <para><filename>samples/Ex_ExternalForceModel.script</filename></para>
+
+            <para/>
+          </listitem>
+        </itemizedlist>
+      </section>
+    </section>
+
+    <section>
+      <title>Navigation and Orbit Determination (OD)</title>
+
+      <para>The following navigation and orbit determination capabilities were
+      developed for R2022a:</para>
+
+      <para><itemizedlist>
+          <listitem>
+            <para>The <xref linkend="ExtendedKalmanFilter"
+            xrefstyle="select:title"/> and <xref linkend="Smoother"
+            xrefstyle="select:title"/> (EKFS) resources are now operational
+            (no longer alpha/beta level). For an example of using the EKFS on
+            the GPS point solution data type, see</para>
+
+            <para><filename>samples/Navigation/Ex_FilterSmoother_GpsPosVec.script</filename></para>
+
+            <para/>
+
+            <para>As with all new releases, missions that use GMAT’s Batch
+            and/or Extended Kalman Filter Smoother (EKFS) capability should
+            perform a baseline set of regression/performance tests prior to
+            using it for operational purposes.</para>
+          </listitem>
+
+          <listitem>
+            <para>The estimation subsystem now supports a (no longer Beta)
+            N-Plate area model for solar radiation pressure (SRP). The user
+            may configure a detailed multi-plate area model for SRP modeling
+            for both prediction and estimation. The model includes specular
+            and diffuse reflectivity, support for moving panels, like solar
+            arrays, and estimation of one or more SRP correction scale
+            factors. See the <xref linkend="Plate" xrefstyle="select:title"/>
+            resource for more details on activating and configuring this
+            model. See also</para>
+
+            <para><filename>samples/Navigation/Ex_Estimate_NPlateSRP_AreaCoefficient.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>A new covariance propagation capability, with optional State
+            Noise Compensation (SNC) process noise, using the
+            <guilabel>Covariance</guilabel> parameter of the <link
+            linkend="Propagate">Propagate</link> command. See</para>
+
+            <para><filename>samples/Ex_Propagate_Covariance.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>Sample scripts, implementing an Initial Orbit Determination
+            (IOD) routine from Vallado using GMAT's python interface.
+            See</para>
+
+            <para><filename>samples/Ex_IOD.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>The Range, Doppler, DSN_SeqRange, and DSN_TCP measurement
+            types have been enhanced to support inter-spacecraft (sometimes
+            called "crosslink") tracking. These measurement types may now be
+            used to model range and Doppler measurements between on-orbit
+            spacecraft. See <xref
+            linkend="TrackingDataTypes_InterSpacecraftTracking"/> and</para>
+
+            <para><filename>samples/Tut_Inter_Spacecraft_Tracking.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>Multiple simultaneous spacecraft estimation in the
+            <guilabel>BatchEstimator</guilabel>. A single batch estimator
+            instance may be used to estimate multiple spacecraft in a single
+            estimation run. This capability is appropriate for spacecraft that
+            are coupled in some fashion, either through use of
+            inter-spacecraft tracking or estimation of biases on shared
+            tracking resources. See</para>
+
+            <para><filename>samples/Navigation/Ex_MultiSpacecraft_Simultaneous_BatchEstimation.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>Use of DSN TRK-2-23 ionosphere and troposphere media
+            corrections for DSN tracking data. See <xref
+            linkend="GroundStation_TRK-2-23"/>.</para>
+          </listitem>
+
+          <listitem>
+            <para>Batch Estimator estimation of measurement biases "by pass."
+            This capability allows the user to estimate multiple segmented
+            measurement biases for a single station across the batch estimator
+            arc. This feature is not implemented for the Extended Kalman
+            Filter. See <xref linkend="ErrorModel_Remarks_PassBiases"/></para>
+          </listitem>
+
+          <listitem>
+            <para>Polynomial thrust angle estimation for finite maneuvers.
+            Errors in the nominal direction of finite thrust provided by a
+            <guilabel>ThrustHistoryFile</guilabel> can be estimated as a pair
+            of angles. These angles can be modeled as constant or as a
+            polynomial in time. See <xref
+            linkend="ThrustSegment_Remarks_ThrustAngleEstimation"/>. See
+            also</para>
+
+            <para><filename>samples/Navigation/Ex_Estimate_ThrustAngles.script</filename></para>
+
+            <para/>
+          </listitem>
+
+          <listitem>
+            <para>Use of ephemeris propagators in the
+            <guilabel>Simulator</guilabel> and
+            <guilabel>BatchEstimator</guilabel>. An ephemeris file may be used
+            as the orbit source for simulating measurement data or in a
+            single-iteration "observed minus computed" batch estimator run.
+            State estimation is not possible for spacecraft using an ephemeris
+            propagator. Use of an ephemeris propagator is not yet implemented
+            for the Extended Kalman Filter. For details on configuring
+            ephemeris files for use as propagators, see <xref
+            linkend="Propagator"/></para>
+          </listitem>
+
+          <listitem>
+            <para>Ability to run the <guilabel>BatchEstimator</guilabel> in a
+            single-iteration "observed minus computed" configuration. In this
+            mode, the batch estimator runs a single iteration, computing and
+            reporting residuals with respect to the initial state and does not
+            attempt state estimation. See the SolveMode option to the <xref
+            linkend="RunEstimator"/> command.</para>
+          </listitem>
+        </itemizedlist></para>
+    </section>
+
+    <section>
+      <title>Scripting and API Interface</title>
+
+      <para>The following Scripting and API Interface improvements were
+      implemented in R2022a.</para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>The API capability is no longer a Beta feature and is now
+          operational. For sample scripts, see the <filename>api</filename>
+          directory. For a complete description of the API capability, see the
+          API UG below.</para>
+
+          <para><filename>docs/GMAT_API_UsersGuide.pdf</filename></para>
+
+          <para/>
+        </listitem>
+
+        <listitem>
+          <para>The python API, which allows the user to call GMAT from a
+          python routine, now supports multiple versions of Python 3.</para>
+        </listitem>
+
+        <listitem>
+          <para>The python interface plugin, which allows a user to call a
+          python routine from within a GMAT script, now supports multiple
+          versions of Python 3.</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+
+    <section>
+      <title>Optimal Control</title>
+
+      <section>
+        <title>Beta Capabilities</title>
+
+        <para>The GMAT Optimal Control capability remains a Beta feature for
+        R2022a. The Optimal Control improvements for R2022a include the
+        following items.</para>
+
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>Beta-level: Additional metadata describing optimizer
+            performance in CSALT output optimal control history files</para>
+          </listitem>
+
+          <listitem>
+            <para>Beta-level: Improved wrapper around CSALT nonlinear
+            programming (NLP) solver to save feasible-but-not-optimal
+            solutions</para>
+          </listitem>
+
+          <listitem>
+            <para>Beta-level: Added new initial guess types to CSALT based on
+            feasible-but-not-optimal solutions from previous mesh refinement
+            iterations</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+    </section>
+    
+    <section>
+      <title>OpenFramesInterface Visualizations</title>
+
+      <note>
+        <para>The OFI continues to be the primary 3D visualization component in GMAT.
+        <guilabel>OrbitView</guilabel> will continue to be supported for
+        backward compatibility purposes but will only be modified for critical
+        bug fixes.</para>
+      </note>
+      
+      <para>The following visualization improvements were implemented in the
+      OpenFramesInterface plugin in R2022a. The complete set of documentation for OFI
+      is available at
+      <link xlink:href="https://gitlab.com/EmergentSpaceTechnologies/OpenFramesInterface/-/wikis/home">the OFI Wiki</link>
+      </para>
+
+      <itemizedlist spacing="compact">
+        <listitem>
+          <para>Added support for high-fidelity celestial body terrain and imagery using
+          onling sources on Windows and Linux (not yet supported on macOS). See
+          <filename>samples/NeedOpenFramesInterface/Ex_OFI_HiFiEarthMoon.script</filename>
+          for an example of using online sources for high-fidelity Earth terrain and
+          imagery, and high-fidelity Moon imagery.</para>
+        </listitem>
+
+        <listitem>
+          <para>Added support for using the DXF 3D format for spacecraft and celestial bodies.</para>
+        </listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+  <section>
+    <title>Other Improvements</title>
+
+    <itemizedlist spacing="compact">
+      <listitem>
+        <para>GMAT R2022a includes a basic script-level debugger accessible in
+        the GMAT GUI. This new feature lets the user set a <xref
+        linkend="Breakpoint"/> in their mission control sequence. When the
+        script is run, GMAT pauses at the Breakpoint and opens a panel showing
+        all of the objects defined in the run. The user can then examine each
+        object, step to the next command in the sequence and see that
+        command's effect on the objects, continue execution of the run, or end
+        the run.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Compatibility Changes</title>
+
+    <itemizedlist>
+      <listitem>
+        <para>The <guilabel>ExtendedKalmanFilter</guilabel>
+        <guilabel>ProcessNoiseTimeStep</guilabel> option has been moved to the
+        <guilabel>ProcessNoise</guilabel> resource and renamed to
+        <guilabel>UpdateTimeStep</guilabel>. The ProcessNoiseTimeStep option
+        on the ExtendedKalmanFilter resource will continue to function in the
+        current release. When both
+        <guilabel>ProcessNoiseModel.UpdateTimeStep</guilabel> and
+        <guilabel>ExtendedKalmanFilter.ProcessNoiseTimeStep</guilabel> have a
+        non-zero value, the
+        <guilabel>ExtendedKalmanFilter.ProcessNoiseTimeStep</guilabel>
+        parameter will be used.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Fixed &amp; Known Issues</title>
+
+    <section>
+      <title>Fixed Issues</title>
+
+      <para>Over 100 high priority bugs were closed in this release. See the
+      <link
+      xlink:href="https://gmat.atlassian.net/issues/?filter=14939">"Critical
+      Issues Fixed in R2022a" report</link> for details. Some significant
+      fixes in R2022a include:</para>
+
+      <informaltable frame="topbot">
+        <tgroup cols="2">
+          <colspec colnum="1" colwidth="0.2*"/>
+
+          <thead>
+            <row>
+              <entry align="left">ID</entry>
+
+              <entry align="left">Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry>GMT-7742</entry>
+
+              <entry>Incorrect handling of DSN_SeqRange transmit frequency
+              when not using a ramp table</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section>
+      <title>Known Issues</title>
+
+      <para>See the <link
+      xlink:href="https://gmat.atlassian.net/issues/?filter=14941">"All Known
+      Critical Issues for R2022a" report</link> for a list of all known major
+      issues in R2022a.</para>
+
+      <para>There are several known issues in this release that we consider to
+      be significant:<informaltable frame="topbot">
+          <tgroup cols="2">
+            <colspec colnum="1" colwidth="0.2*"/>
+
+            <thead>
+              <row>
+                <entry align="left">ID</entry>
+
+                <entry align="left">Description</entry>
+              </row>
+            </thead>
+
+            <tbody>
+              <row>
+                <entry>GMT-7768</entry>
+
+                <entry>When using an ephem propagator for Moon-centered OD,
+                lunar occultations, in the Simulator resource, are not
+                accounted for properly</entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable></para>
+    </section>
+  </section>
+</section>

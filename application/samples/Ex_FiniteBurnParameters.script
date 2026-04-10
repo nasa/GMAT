@@ -1,0 +1,92 @@
+%
+%  Ex_FiniteBurnParameters
+%
+%  Reporting of finite burn parameters during a burn.
+%
+%  Released: R2016a
+% 
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+Create Spacecraft DefaultSC;
+
+DefaultSC.Tanks     = {ChemicalTank1, ChemicalTank2};
+DefaultSC.Thrusters = {ChemicalThruster1};
+
+%----------------------------------------
+%---------- Hardware Components
+%----------------------------------------
+
+Create ChemicalTank ChemicalTank1;
+Create ChemicalTank ChemicalTank2;
+
+Create ChemicalThruster ChemicalThruster1;
+ChemicalThruster1.DecrementMass = true;
+%  Attach the thruster to two different tanks
+ChemicalThruster1.Tank = {ChemicalTank1, ChemicalTank2};
+
+%  Specify to draw twice as much fuel from Tank 1. 
+ChemicalThruster1.MixRatio = [ 2 1 ];
+
+Create FiniteBurn FiniteBurn1;
+FiniteBurn1.Thrusters = {ChemicalThruster1};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel DefaultProp_ForceModel;
+
+Create Propagator DefaultProp;
+DefaultProp.FM = DefaultProp_ForceModel;
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+Create OpenFramesInterface OFI_DefaultOrbitView;
+
+OFI_DefaultOrbitView.Add              = {DefaultSC, Earth};
+OFI_DefaultOrbitView.View             = {DefaultOrbit_View};
+
+OFI_DefaultOrbitView.DrawObject       = [ true true ];
+OFI_DefaultOrbitView.DrawXYPlane      = [ false false ];
+OFI_DefaultOrbitView.DrawLabel        = [ true true ];
+OFI_DefaultOrbitView.DrawGrid         = [ false false ];
+
+OFI_DefaultOrbitView.Axes             = On;
+OFI_DefaultOrbitView.XYPlane          = On;
+OFI_DefaultOrbitView.EclipticPlane    = Off;
+OFI_DefaultOrbitView.EnableStars      = On;
+OFI_DefaultOrbitView.StarCount        = 40000;
+OFI_DefaultOrbitView.ShowPlot         = true;
+
+Create OpenFramesView DefaultOrbit_View;
+
+DefaultOrbit_View.ViewFrame           = CoordinateSystem;
+DefaultOrbit_View.SetDefaultLocation  = On;
+DefaultOrbit_View.SetCurrentLocation  = Off;
+
+DefaultOrbit_View.DefaultEye          = [ 0 0 30000 ];
+DefaultOrbit_View.DefaultCenter       = [ 0 0 0 ];
+DefaultOrbit_View.DefaultUp           = [ 1 0 0 ];  
+
+
+
+Create ReportFile ReportFile1;
+
+%  Report data on mass flow rate and thrust magnitude on per thruster basis, and total acceleration and thrust from all thrusters
+ReportFile1.Add = {DefaultSC.A1ModJulian, DefaultSC.ChemicalThruster1.MassFlowRate, DefaultSC.ChemicalThruster1.Isp,...
+ DefaultSC.ChemicalThruster1.ThrustMagnitude, FiniteBurn1.TotalAcceleration1, FiniteBurn1.TotalAcceleration2,...
+ FiniteBurn1.TotalAcceleration3, FiniteBurn1.TotalMassFlowRate, FiniteBurn1.TotalThrust1, ...
+ FiniteBurn1.TotalThrust2, FiniteBurn1.TotalThrust3};
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence;
+
+BeginFiniteBurn FiniteBurn1(DefaultSC)
+Propagate DefaultProp(DefaultSC) {DefaultSC.ElapsedSecs = 12000.0};

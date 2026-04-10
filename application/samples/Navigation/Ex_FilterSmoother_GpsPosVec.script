@@ -1,0 +1,216 @@
+%
+%   Ex_FilterSmoother_GpsPosVec
+%
+%   Run the Extended Kalman Filter and Fraser-Potter smoother in cold-start mode. 
+%   Estimate a first-order Gauss-Markov coefficient of drag correction.
+%
+%   Released: R2022a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat        = UTCGregorian;
+SimSat.Epoch             = '10 Jun 2010 00:00:00.000';
+SimSat.CoordinateSystem  = EarthMJ2000Eq;
+SimSat.DisplayStateType  = Cartesian;
+SimSat.X                 =   576.869556
+SimSat.Y                 = -5701.142761
+SimSat.Z                 = -4170.593691
+SimSat.VX                =    -1.76450794
+SimSat.VY                =     4.18128798
+SimSat.VZ                =    -5.96578986
+SimSat.DryMass           = 50;
+SimSat.Cd                = 2.2;
+SimSat.Cr                = 1.8;
+SimSat.DragArea          = 10;
+SimSat.SRPArea           = 10;
+SimSat.Id                = 'LEOSat';
+SimSat.AddHardware       = {GpsReceiver, GpsAntenna};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat        = UTCGregorian;
+EstSat.Epoch             = '10 Jun 2010 00:00:00.000';
+EstSat.CoordinateSystem  = EarthMJ2000Eq;
+EstSat.DisplayStateType  = Cartesian;
+EstSat.X                 =   576.8
+EstSat.Y                 = -5701.1
+EstSat.Z                 = -4170.5
+EstSat.VX                =    -1.7645
+EstSat.VY                =     4.1813
+EstSat.VZ                =    -5.9658
+EstSat.DryMass           = 50;
+EstSat.Cd                = 2.2;
+EstSat.CdSigma           = 0.2;
+EstSat.Cr                = 1.8;
+EstSat.DragArea          = 10;
+EstSat.SRPArea           = 10;
+EstSat.Id                = 'LEOSat';
+EstSat.AddHardware       = {GpsReceiver, GpsAntenna};
+EstSat.SolveFors         = {CartesianState, FogmCd};     
+EstSat.ProcessNoiseModel = SNC;
+
+Create CoordinateSystem EstSatVNB;
+
+EstSatVNB.Origin    = EstSat;
+EstSatVNB.Axes      = ObjectReferenced;
+EstSatVNB.XAxis     = V;
+EstSatVNB.YAxis     = N;
+EstSatVNB.Primary   = Earth;
+EstSatVNB.Secondary = EstSat;
+
+Create ProcessNoiseModel SNC;
+
+SNC.Type             = StateNoiseCompensation;
+SNC.CoordinateSystem = EstSatVNB;
+SNC.AccelNoiseSigma  = [1.0e-9 1.0e-8 1.0e-8];
+SNC.UpdateTimeStep   = 120;
+
+Create EstimatedParameter FogmCd
+
+FogmCd.Model              = 'FirstOrderGaussMarkov'
+FogmCd.SolveFor           = 'Cd';
+FogmCd.SteadyStateValue   = 2.0
+FogmCd.SteadyStateSigma   = 0.2
+FogmCd.HalfLife           = 86400
+
+%----------------------------------------
+%---------- Spacecraft hardware
+%----------------------------------------
+
+Create Antenna GpsAntenna;
+Create Receiver GpsReceiver;
+
+GpsReceiver.PrimaryAntenna = GpsAntenna;
+GpsReceiver.Id             = 800;
+GpsReceiver.ErrorModels    = {PosVecModel}
+
+Create ErrorModel PosVecModel;
+ 
+PosVecModel.Type       = 'GPS_PosVec'
+PosVecModel.NoiseSigma = 0.010;
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet SimData;
+
+SimData.AddTrackingConfig       = {{SimSat.GpsReceiver}, 'GPS_PosVec'};
+SimData.FileName                = {'Ex_FilterSmoother_GpsPosVec.gmd'};
+SimData.RampTable               = {};
+SimData.UseLightTime            = False;
+SimData.UseRelativityCorrection = False;
+SimData.UseETminusTAI           = True;
+SimData.DataFilters             = {};
+
+Create TrackingFileSet EstData;
+
+EstData.AddTrackingConfig       = {{EstSat.GpsReceiver}, 'GPS_PosVec'};
+EstData.FileName                = {'Ex_FilterSmoother_GpsPosVec.gmd'};
+EstData.RampTable               = {};
+EstData.UseLightTime            = False;
+EstData.UseRelativityCorrection = False;
+EstData.UseETminusTAI           = True;
+EstData.DataFilters             = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+
+FM.CentralBody                      = Earth;
+FM.PrimaryBodies                    = {Earth};
+FM.GravityField.Earth.Degree        = 8;
+FM.GravityField.Earth.Order         = 8;
+FM.GravityField.Earth.PotentialFile = 'JGM2.cof';
+FM.SRP                              = On;
+FM.Drag.AtmosphereModel             = 'JacchiaRoberts';
+FM.Drag.HistoricWeatherSource       = 'CSSISpaceWeatherFile';
+FM.Drag.CSSISpaceWeatherFile        = 'SpaceWeather-All-v1.2.txt';
+FM.ErrorControl                     = None;
+
+Create Propagator Prop;
+
+Prop.FM              = FM;
+Prop.Type            = 'RungeKutta89';
+Prop.InitialStepSize = 60;
+Prop.Accuracy        = 1e-13;
+Prop.MinStep         = 0;
+Prop.MaxStep         = 60;
+Prop.MaxStepAttempts = 50;
+
+%----------------------------------------
+%---------- Simulator
+%----------------------------------------
+
+Create Simulator Sim;
+
+Sim.AddData              = {SimData};
+Sim.EpochFormat          = 'UTCGregorian';
+Sim.InitialEpoch         = '10 Jun 2010 00:00:00.000';
+Sim.FinalEpoch           = '11 Jun 2010 00:00:00.000'; 
+Sim.MeasurementTimeStep  = 600;
+Sim.Propagator           = Prop;
+Sim.AddNoise             = On;
+
+%----------------------------------------
+%---------- Estimator
+%----------------------------------------
+
+Create ExtendedKalmanFilter EKF;
+
+EKF.ShowProgress         = True;
+EKF.ReportFile           = 'Ex_FilterSmoother_GpsPosVec_Filter.txt';
+EKF.Measurements         = {EstData};
+EKF.Propagator           = Prop;
+EKF.ShowAllResiduals     = On;
+EKF.DataFilters          = {}
+EKF.OutputWarmStartFile  = 'Ex_FilterSmoother_GpsPosVec.csv'
+
+Create Smoother FPS;
+
+FPS.Filter               = EKF;
+FPS.ShowProgress         = True;
+FPS.ShowAllResiduals     = Off;
+FPS.ReportFile           = 'Ex_FilterSmoother_GpsPosVec_Smoother.txt';
+
+  
+%----------------------------------------
+%------ Estimated value of Cd report
+%----------------------------------------
+
+Create ReportFile FilterCdReport
+
+FilterCdReport.Filename    = 'fogm_cd.csv'
+FilterCdReport.Add         = {EstSat.UTCGregorian, EstSat.Cd}
+FilterCdReport.Delimiter   = ','
+FilterCdReport.WriteReport = False
+FilterCdReport.FixedWidth  = Off
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence
+
+SetSeed(1);
+RunSimulator Sim;
+
+EstSat.OrbitErrorCovariance = diag([1.0e-2 1.0e-2 1.0e-2 2.5e-7 2.5e-7 2.5e-7]);
+
+Toggle FilterCdReport On
+
+RunEstimator EKF;
+Write EstSat {LogFile = True}
+
+Toggle FilterCdReport Off
+
+RunSmoother FPS;
+Write EstSat {LogFile = True}

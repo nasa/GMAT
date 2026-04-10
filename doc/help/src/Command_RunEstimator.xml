@@ -1,0 +1,830 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="RunEstimator"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>RunEstimator</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>RunEstimator</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Commands</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>RunEstimator</refname>
+
+    <refpurpose>Ingests navigation measurements and generates an estimated
+    state vector</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <title>Script Syntax</title>
+
+    <synopsis><emphasis role="bold">RunEstimator</emphasis> BatchEstimator_InstanceName [{<emphasis
+        role="bold">SolveMode</emphasis> = <emphasis>value</emphasis>}]
+<emphasis role="bold">RunEstimator</emphasis> ExtendedKalmanFilter_InstanceName </synopsis>
+  </refsynopsisdiv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The <guilabel>RunEstimator</guilabel> command ingests navigation
+    measurements and generates an estimated state vector according to the
+    specifications of the input <guilabel>BatchEstimator</guilabel> or
+    <guilabel>ExtendedKalmanFilter</guilabel> resource.</para>
+
+    <para><phrase role="ref_seealso">See Also</phrase>: <xref
+    linkend="BatchEstimator"/>, <xref linkend="ExtendedKalmanFilter"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Options</title>
+
+    <informaltable colsep="0" frame="topbot">
+      <tgroup cols="2">
+        <colspec colnum="1" colwidth="1.0*"/>
+
+        <colspec colnum="2" colwidth="3*"/>
+
+        <thead>
+          <row>
+            <entry>Option</entry>
+
+            <entry>Description</entry>
+          </row>
+        </thead>
+
+        <tbody>
+          <row>
+            <entry><guilabel>SolveMode</guilabel></entry>
+
+            <entry><para>Specifies how the <guilabel>BatchEstimator</guilabel>
+            behaves during mission execution. When
+            <guilabel>SolveMode</guilabel> is set to
+            <guilabel>RunInitialGuess</guilabel>, the batch estimator will
+            perform an "observed-minus-computed" run. GMAT will compute and
+            report residuals with respect to the initial state or orbit, but
+            will not attempt a differential correction, and the run will
+            terminate at the end of iteration 0. When
+            <guilabel>SolveMode</guilabel> is set to
+            <guilabel>Solve</guilabel>, the
+            <guilabel>BatchEstimator</guilabel> will perform differential
+            corrections and will iterate until the estimator stopping
+            conditions are met. </para><para>The
+            <guilabel>ExtendedKalmanFilter</guilabel> estimator ignores this
+            parameter.</para><variablelist>
+                <varlistentry>
+                  <term>Accepted Data Types</term>
+
+                  <listitem>
+                    <para>Reference Array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para><guilabel>Solve</guilabel>,
+                    <guilabel>RunInitialGuess</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para><guilabel>Solve</guilabel></para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Required</term>
+
+                  <listitem>
+                    <para>no</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </refsection>
+
+  <refsection>
+    <title>Remarks</title>
+
+    <refsection>
+      <title>How GMAT generates “Computed (C)” DSN data</title>
+
+      <para>As part of the estimation process, GMAT must calculate the
+      so-called observation residual, “O-C,” where “C” is the “Computed”
+      measurement. As discussed in the <guilabel><xref
+      linkend="RunSimulator"/></guilabel> help, GMAT calculates the DSN range
+      “C” measurement as</para>
+
+      <informalequation>
+        <m:math display="block">
+          <m:mrow>
+            <m:mi>C</m:mi>
+
+            <m:mstyle displaystyle="true">
+              <m:mrow>
+                <m:munderover>
+                  <m:mo>∫</m:mo>
+
+                  <m:mrow>
+                    <m:mi>t</m:mi>
+
+                    <m:mn>1</m:mn>
+                  </m:mrow>
+
+                  <m:mrow>
+                    <m:mi>t</m:mi>
+
+                    <m:mn>3</m:mn>
+                  </m:mrow>
+                </m:munderover>
+
+                <m:mrow>
+                  <m:msub>
+                    <m:mi>f</m:mi>
+
+                    <m:mi>T</m:mi>
+                  </m:msub>
+
+                  <m:mo stretchy="false">(</m:mo>
+
+                  <m:mi>t</m:mi>
+
+                  <m:mo stretchy="false">)</m:mo>
+
+                  <m:mi>d</m:mi>
+
+                  <m:mi>t</m:mi>
+                </m:mrow>
+              </m:mrow>
+            </m:mstyle>
+
+            <m:mo>,</m:mo>
+
+            <m:mtext> mod M             (RU)</m:mtext>
+          </m:mrow>
+        </m:math>
+      </informalequation>
+
+      <para>where</para>
+
+      <informalequation>
+        <m:math display="block">
+          <m:msub>
+            <m:mi>t</m:mi>
+
+            <m:mn>1</m:mn>
+          </m:msub>
+
+          <m:mo>,</m:mo>
+
+          <m:msub>
+            <m:mi>t</m:mi>
+
+            <m:mn>3</m:mn>
+          </m:msub>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext>Transmission and Reception epoch, respectively</m:mtext>
+        </m:math>
+      </informalequation>
+
+      <informalequation>
+        <m:math display="block">
+          <m:msub>
+            <m:mi>f</m:mi>
+
+            <m:mi>T</m:mi>
+          </m:msub>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext>Ground Station transmit frequency</m:mtext>
+        </m:math>
+      </informalequation>
+
+      <informalequation>
+        <m:math display="block">
+          <m:mi>C</m:mi>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext>transmitter dependent constant (221/1498 for X-band and 1/2 for S-Band)</m:mtext>
+        </m:math>
+      </informalequation>
+
+      <informalequation>
+        <m:math display="block">
+          <m:mtext>M </m:mtext>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext> length of the ranging code in RU</m:mtext>
+        </m:math>
+      </informalequation>
+
+      <para>and GMAT calculates the DSN Doppler measurement as</para>
+
+      <informalequation>
+        <m:math display="block">
+          <m:mrow>
+            <m:mi>C</m:mi>
+
+            <m:mo>=</m:mo>
+
+            <m:mo>−</m:mo>
+
+            <m:mfrac>
+              <m:mrow>
+                <m:msub>
+                  <m:mi>M</m:mi>
+
+                  <m:mn>2</m:mn>
+                </m:msub>
+              </m:mrow>
+
+              <m:mrow>
+                <m:mrow>
+                  <m:mo>(</m:mo>
+
+                  <m:mrow>
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mrow>
+                        <m:mn>3</m:mn>
+
+                        <m:mi>e</m:mi>
+                      </m:mrow>
+                    </m:msub>
+
+                    <m:mo>−</m:mo>
+
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mrow>
+                        <m:mn>3</m:mn>
+
+                        <m:mi>s</m:mi>
+                      </m:mrow>
+                    </m:msub>
+                  </m:mrow>
+
+                  <m:mo>)</m:mo>
+                </m:mrow>
+              </m:mrow>
+            </m:mfrac>
+
+            <m:mstyle displaystyle="true">
+              <m:mrow>
+                <m:munderover>
+                  <m:mo>∫</m:mo>
+
+                  <m:mrow>
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mn>1</m:mn>
+                    </m:msub>
+
+                    <m:msub>
+                      <m:mrow/>
+
+                      <m:mi>s</m:mi>
+                    </m:msub>
+                  </m:mrow>
+
+                  <m:mrow>
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mn>1</m:mn>
+                    </m:msub>
+
+                    <m:msub>
+                      <m:mrow/>
+
+                      <m:mi>e</m:mi>
+                    </m:msub>
+                  </m:mrow>
+                </m:munderover>
+
+                <m:mrow>
+                  <m:msub>
+                    <m:mi>f</m:mi>
+
+                    <m:mi>T</m:mi>
+                  </m:msub>
+
+                  <m:mo stretchy="false">(</m:mo>
+
+                  <m:msub>
+                    <m:mi>t</m:mi>
+
+                    <m:mn>1</m:mn>
+                  </m:msub>
+
+                  <m:mo stretchy="false">)</m:mo>
+
+                  <m:mi>d</m:mi>
+
+                  <m:msub>
+                    <m:mi>t</m:mi>
+
+                    <m:mn>1</m:mn>
+                  </m:msub>
+                </m:mrow>
+              </m:mrow>
+            </m:mstyle>
+
+            <m:mtext>  =</m:mtext>
+
+            <m:mo>−</m:mo>
+
+            <m:mfrac>
+              <m:mrow>
+                <m:msub>
+                  <m:mi>M</m:mi>
+
+                  <m:mn>2</m:mn>
+                </m:msub>
+
+                <m:mrow>
+                  <m:mo>(</m:mo>
+
+                  <m:mrow>
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mrow>
+                        <m:mn>1</m:mn>
+
+                        <m:mi>e</m:mi>
+                      </m:mrow>
+                    </m:msub>
+
+                    <m:mo>−</m:mo>
+
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mrow>
+                        <m:mn>1</m:mn>
+
+                        <m:mi>s</m:mi>
+                      </m:mrow>
+                    </m:msub>
+                  </m:mrow>
+
+                  <m:mo>)</m:mo>
+                </m:mrow>
+              </m:mrow>
+
+              <m:mrow>
+                <m:mi>D</m:mi>
+
+                <m:mi>C</m:mi>
+
+                <m:mi>I</m:mi>
+              </m:mrow>
+            </m:mfrac>
+
+            <m:msub>
+              <m:mover accent="true">
+                <m:mi>f</m:mi>
+
+                <m:mo>¯</m:mo>
+              </m:mover>
+
+              <m:mi>T</m:mi>
+            </m:msub>
+
+            <m:mtext>    (Hz)</m:mtext>
+          </m:mrow>
+        </m:math>
+      </informalequation>
+
+      <para>where</para>
+
+      <informalequation>
+        <m:math display="block">
+          <m:msub>
+            <m:mi>t</m:mi>
+
+            <m:mrow>
+              <m:mn>1</m:mn>
+
+              <m:mi>s</m:mi>
+            </m:mrow>
+          </m:msub>
+
+          <m:mo>,</m:mo>
+
+          <m:msub>
+            <m:mi>t</m:mi>
+
+            <m:mrow>
+              <m:mn>1</m:mn>
+
+              <m:mi>e</m:mi>
+            </m:mrow>
+          </m:msub>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext>start and end of transmission interval,
+          respectively</m:mtext>
+        </m:math>
+      </informalequation>
+
+      <informalequation>
+        <m:math display="block">
+          <m:msub>
+            <m:mi>f</m:mi>
+
+            <m:mi>T</m:mi>
+          </m:msub>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext>transmit frequency</m:mtext>
+        </m:math>
+      </informalequation>
+
+      <informalequation>
+        <m:math display="block">
+          <m:msub>
+            <m:mi>M</m:mi>
+
+            <m:mn>2</m:mn>
+          </m:msub>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext>Transponder turn around ratio (typically, 240/221 for S-band and 880/749 for X-band)</m:mtext>
+        </m:math>
+      </informalequation>
+
+      <informalequation>
+        <m:math display="block">
+          <m:mtext>DCI = </m:mtext>
+
+          <m:mrow>
+            <m:mo>(</m:mo>
+
+            <m:mrow>
+              <m:msub>
+                <m:mi>t</m:mi>
+
+                <m:mrow>
+                  <m:mn>3</m:mn>
+
+                  <m:mi>e</m:mi>
+                </m:mrow>
+              </m:msub>
+
+              <m:mo>−</m:mo>
+
+              <m:msub>
+                <m:mi>t</m:mi>
+
+                <m:mrow>
+                  <m:mn>3</m:mn>
+
+                  <m:mi>s</m:mi>
+                </m:mrow>
+              </m:msub>
+            </m:mrow>
+
+            <m:mo>)</m:mo>
+          </m:mrow>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext> Doppler Count Interval</m:mtext>
+        </m:math>
+      </informalequation>
+
+      <informalequation>
+        <m:math display="block">
+          <m:msub>
+            <m:mover accent="true">
+              <m:mi>f</m:mi>
+
+              <m:mo>¯</m:mo>
+            </m:mover>
+
+            <m:mi>T</m:mi>
+          </m:msub>
+
+          <m:mo>≡</m:mo>
+
+          <m:mfrac>
+            <m:mrow>
+              <m:mstyle displaystyle="true">
+                <m:mrow>
+                  <m:munderover>
+                    <m:mo>∫</m:mo>
+
+                    <m:mrow>
+                      <m:msub>
+                        <m:mi>t</m:mi>
+
+                        <m:mn>1</m:mn>
+                      </m:msub>
+
+                      <m:msub>
+                        <m:mrow/>
+
+                        <m:mi>s</m:mi>
+                      </m:msub>
+                    </m:mrow>
+
+                    <m:mrow>
+                      <m:msub>
+                        <m:mi>t</m:mi>
+
+                        <m:mn>1</m:mn>
+                      </m:msub>
+
+                      <m:msub>
+                        <m:mrow/>
+
+                        <m:mi>e</m:mi>
+                      </m:msub>
+                    </m:mrow>
+                  </m:munderover>
+
+                  <m:mrow>
+                    <m:msub>
+                      <m:mi>f</m:mi>
+
+                      <m:mi>T</m:mi>
+                    </m:msub>
+
+                    <m:mo stretchy="false">(</m:mo>
+
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mn>1</m:mn>
+                    </m:msub>
+
+                    <m:mo stretchy="false">)</m:mo>
+
+                    <m:mi>d</m:mi>
+
+                    <m:msub>
+                      <m:mi>t</m:mi>
+
+                      <m:mn>1</m:mn>
+                    </m:msub>
+                  </m:mrow>
+                </m:mrow>
+              </m:mstyle>
+            </m:mrow>
+
+            <m:mrow>
+              <m:mrow>
+                <m:mo>(</m:mo>
+
+                <m:mrow>
+                  <m:msub>
+                    <m:mi>t</m:mi>
+
+                    <m:mrow>
+                      <m:mn>1</m:mn>
+
+                      <m:mi>e</m:mi>
+                    </m:mrow>
+                  </m:msub>
+
+                  <m:mo>−</m:mo>
+
+                  <m:msub>
+                    <m:mi>t</m:mi>
+
+                    <m:mrow>
+                      <m:mn>1</m:mn>
+
+                      <m:mi>s</m:mi>
+                    </m:mrow>
+                  </m:msub>
+                </m:mrow>
+
+                <m:mo>)</m:mo>
+              </m:mrow>
+            </m:mrow>
+          </m:mfrac>
+
+          <m:mtext> </m:mtext>
+
+          <m:mo>=</m:mo>
+
+          <m:mtext>average transmit frequency </m:mtext>
+        </m:math>
+      </informalequation>
+
+      <para>The value of C and M2 used to calculate the computed range or
+      Doppler measurement depends upon the data type and whether the data
+      being ingested is ramped or non-ramped according to the table below. The
+      value of the transmit frequency used to calculate the computed
+      measurement depends upon whether or not the data being ingested is
+      ramped or non-ramped.</para>
+
+      <informaltable>
+        <tgroup cols="3">
+          <colspec align="center" colwidth="241*"/>
+
+          <colspec colwidth="426*"/>
+
+          <colspec colwidth="333*"/>
+
+          <thead>
+            <row>
+              <entry align="center">Data Type</entry>
+
+              <entry align="center">Value of C (Range) or M2 (Doppler) used to
+              calculate “Computed” measurement</entry>
+
+              <entry align="center">Value of transmit frequency used to
+              calculate “Computed” measurement</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><emphasis role="bold">Estimate Range without ramp
+              table</emphasis></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Set based upon Uplink Band in input Range
+                    measurement GMD file. C=½ for S-band and 221/1498 for
+                    X-band.</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Use frequency in input range GMD file</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Ground Station transmit frequency set via
+                    Transmitter.Frequency is not used</para>
+                  </listitem>
+                </itemizedlist></entry>
+            </row>
+
+            <row>
+              <entry><emphasis role="bold">Estimate Range with ramp
+              table</emphasis></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Set based upon Uplink Band in input ramp table. C=½
+                    for S-band and 221/1498 for X-band.</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Value of Uplink Band in input Range measurement file
+                    has no effect.</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Use frequency in ramp table</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Frequency in input GMD file is not used</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Ground Station transmit frequency set via
+                    Transmitter.Frequency is not used</para>
+                  </listitem>
+                </itemizedlist></entry>
+            </row>
+
+            <row>
+              <entry><emphasis role="bold">Estimate Doppler without ramp
+              table</emphasis></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>M2=Transponder.TurnAroundRatio</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Value of Uplink Band in input Range measurement file
+                    has no effect.</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Use Ground Station transmit frequency set via
+                    Transmitter.Frequency (Note that for Doppler data, there
+                    is no frequency data in the GMD file)</para>
+                  </listitem>
+                </itemizedlist></entry>
+            </row>
+
+            <row>
+              <entry><emphasis role="bold">Estimate Doppler with ramp
+              table</emphasis></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Set based upon Uplink Band in input ramp table.
+                    M2=240/221 for S-band and 880/749 for X band.</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Value of Uplink Bank in input Doppler GMD
+                    measurement file has no effect.</para>
+                  </listitem>
+                </itemizedlist></entry>
+
+              <entry><itemizedlist>
+                  <listitem>
+                    <para>Use frequency in ramp table. (Note that for Doppler
+                    data, there is no frequency data in the GMD file)</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>Ground Station transmit frequency set via
+                    Transmitter.Frequency is not used</para>
+                  </listitem>
+                </itemizedlist></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsection>
+
+    <refsection>
+      <title>Earth Nutation Update Interval</title>
+
+      <para>If you want the estimator to calculate a Doppler or range rate
+      type of measurement (e.g., DSN_TCP and RangeRate) residual precisely,
+      you will need to set the Earth nutation update interval to 0 as shown
+      below.</para>
+
+      <programlisting><code>Earth.NutationUpdateInterval = 0</code></programlisting>
+
+      <para>It is good general practice to set the Earth nutation update
+      interval to zero for all measurement types.</para>
+    </refsection>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <informalexample>
+      <para>Run batch estimator.</para>
+
+      <programlisting><code>Create BatchEstimator myBatchEstimator
+
+BeginMissionSequence
+RunEstimator myBatchEstimator</code></programlisting>
+    </informalexample>
+
+    <informalexample>
+      <para>For a comprehensive example of reading in measurements and running
+      the estimator, see the <xref
+      linkend="Orbit_Estimation_using_DSN_Range_and_Doppler_Data"/>
+      tutorial.</para>
+    </informalexample>
+  </refsection>
+</refentry>

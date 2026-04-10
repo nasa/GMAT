@@ -1,0 +1,217 @@
+\section{Measurement Models}
+
+\subsection{General Form of Measurement Models}
+
+Measurement models for orbit determination involve modelling of some
+physical property of electromagnetic wave propagation and
+analytically relating the computed measurement value to the
+spacecraft state. \cite{GTDS:89} GMAT supports numerous measurement
+models of varying complexity from simple two-way range, to GPS
+carrier phase measurements.  The sections below contain the
+mathematical specifications for all measurement models including
+measurement corrections.  We start with ground station models
+including one-way and two-way range, angles measurements, and
+doppler measurements including instantaneous and integrated Doppler.
+
+% The general form of the measurement model used by GMAT is
+%%
+%\begin{equation}
+%   \mathcal{O}_c = f_g\left(\mathbf{r}_p^k(t^k), \dot{\mathbf{r}}_p^k(t^k),\mathbf{q}_p^k(t^k),\boldsymbol{\omega}_p^k(t^k)
+%   \right) + \Delta f_{iono} + \Delta f_{tropo} + \Delta f_{rel}+ \Delta f_{abber} + \sigma_n + b
+%\end{equation}
+%%
+%
+%%
+%\begin{tabbing}[htbp!]
+%12345678 \= dummy line \kill
+%$\mathcal{O}_c$  \>  Computed value of the measurement\\
+%$\mathbf{f}_g$ \> The geometric model specific to the measurement type\\
+%$\mathbf{r}_p$ \> Position of $k^{th}$ participant\\
+%$\dot{\mathbf{r}}_v$ \> Velocity of $k^{th}$ participant\\
+%$\mathbf{r}_o$ \> Observer position\\
+%$\dot{\mathbf{r}}_o$    \> Observer velocity\\
+%$t$    \> Measurement time tag\\
+%$b$    \> Measurement bias\\
+%$\delta a$    \> Atmospheric correction\\
+%$\delta r$     \> Relativistic correction\\
+%\end{tabbing}
+
+
+\subsection{Range}
+
+ \cite{DatSim:08} In both cases the range is a
+measure of the distance between an observer and a vehicle.  The
+geometric range is calculated using vector geometry and ignores
+signal propagation times and error sources.  Most, if not all,
+ground trackers provide the user with the round trip signal
+propagation time.  The radiometric range model uses the best
+estimate spacecraft state to determine an expected value for the
+round trip signal propagation time from observer to spacecraft and
+back to the observer.  Hence, the raw radiometric value is a measure
+of round trip range.
+
+
+\begin{equation}
+    \mathcal{R}_2 = \rho^{(m,j)}_2(t_i) +c\left(b_r^{(m)}(t_i) - b_t(t_t)\right)
+     + \Delta \rho_{iono}(t_i) + \Delta \rho_{tropo}(t_i)
+      + \sigma_{SA} + \sigma_n + b_m
+\end{equation}
+
+
+\begin{tabbing}
+12345678912345 \= Reynolds number based on length $s$ \kill
+$\mathcal{R}_1^{(j)}$         \>  One-way pseudorange measurement from transmitting \\
+$$                            \> antenna $k$ on satellite $j$ to receiving antenna $m$ on satellite $n$. \\
+$\rho^{(m,j)}_1(t_i)$         \>  Geometric distance between transmitting and receiveing antenntas.\\
+$b_r^{(m)}(t_i)$               \> Clock bias for receiver \\
+$b_t^{(j)}(t_t)$                   \>  Clock bias for transmitter\\
+$\Delta \rho^{(j)}_{iono}(t_i)$    \> Correction for ionspheric delay \\
+$ \Delta \rho^{(j)}_{tropo}(t_i) $ \> Correction for  Tropospheric delay\\
+$\sigma_{SA}^{(j)}$                \> Error due to selective availability \\
+$\sigma_n^{(j)}$                   \> Measurement noise \\
+$b_m$                              \> Measurement bias \\
+$t_t$                              \> Trasmission time \\
+$t_r$                              \> Receive time
+\end{tabbing}
+
+
+The transmission time $t_t$ and the geometric range are determined
+iteratively by using fixed point iteration on the following equation
+%
+\begin{equation}
+   t_t = t_i - \frac{\rho^{(m,j)}_1(t_i) + \Delta \rho^{(j)}_{iono}(t_i) + \Delta \rho^{(j)}_{tropo}(t_i)}{c}
+\end{equation}
+
+
+
+
+%
+\begin{tabbing}[htbp!]
+12345678 \= dummy line \kill
+$\mathbf{f}_k$ \> The kinematic model specific to a measurement type\\
+$\mathbf{r}_v$ \> Vehicle position\\
+$\dot{\mathbf{r}}_v$ \> Vehicle velocity\\
+$\mathbf{r}_o$ \> Observer position\\
+$\dot{\mathbf{r}}_o$    \> Observer velocity\\
+$t$    \> Measurement time tag\\
+$b$    \> Measurement bias\\
+$\delta a$    \> Atmospheric correction\\
+$\delta r$     \> Relativistic correction\\
+\end{tabbing}
+
+The kinematic model for geometric range is simply
+%
+\begin{equation}
+    \rho_c = \| \mathbf{r}_v(t) - \mathbf{r}_g(t)\|
+\end{equation}
+%
+
+The kinematic model for radiometric two way range is
+%
+\begin{equation}
+     \rho_c= \frac{1}{2}\left(\| \mathbf{r}_v(t_{v}) -  \mathbf{r}_g(t_{gt})  \| +
+      \| \mathbf{r}_v(t_{v}) -  \mathbf{r}_g(t_{gt})  \|\right) \label{Eq:ExpectedTwoWayRange}
+\end{equation}
+%
+where
+%
+\begin{tabbing}[htbp!]
+12345678 \= dummy line \kill
+$t_{gt}$ \> Time the uplink signal is transmitted from ground station\\
+$t_{vr}$ \> Time the uplink signal is received at vehicle\\
+$t_{vt}$ \> Time the downlink signal is transmitted from vehicle\\
+$t_{gr}$ \> Time the downlink signal is received at ground station\\
+$t_u$    \> Uplink propagation time, ( $t_{vr}$ - $t_{gt}$ )\\
+$t_d$    \> Downlink propagation time, ( $t_{vt}$ - $t_{gr}$ )\\
+$\rho_u$    \> Uplink distance\\
+$\rho_d$    \> Downlink distance\\
+$d_T$     \> Distance traveled by vehicle during transponder delay\\
+$\mathbf{r}_v(t)$ \> Position of vehicle at time $t$\\
+$\mathbf{r}_t(t)$ \> Position of transmitter at time $t$\\
+$\mathbf{r}_r(t)$ \> Position of receiver at time $t$\\
+$t$           \>  time of geometric range measurement \\
+$\delta T$  \>  Vehicle's transponder delay time\\
+$\delta t_a$  \>  Atmospheric delays\\
+$\delta t_r$  \>  Relativistic effects\\
+\end{tabbing}
+%
+
+The radiometric model is derived from the measurement geometry shown
+in Fig.~\ref{Fig:RangeMeasurement}. We see that the total signal
+propagation time is the sum of three times, the uplink
+ signal propagation time, $t_u$, the transponder delay time, $\delta T$, and
+ the downlink propagation time, $t_d$.  Hence, the observed value for signal propagation time, $t_o$, is
+%
+\begin{equation}
+     \Delta t_o = t_{gr} - t_{gt} = t_u + \delta T + t_d
+\end{equation}
+%
+\begin{figure}[htbp!]
+    \begin{center}
+    \begin{picture}(270,215)
+    \special{psfile= RangeMeasurement.eps
+    hscale= 75 vscale= 75 hoffset = -85 voffset = -270}
+        \makebox(175,295){ $\mathbf{r}_v(t_{vr})$}
+        \makebox(-25,290){ $\mathbf{r}_v(t_{vt})$}
+        \makebox(85,290){ $\rho_d$}
+        \makebox(-100,90){ $\mathbf{r}_g(t_{gr})$}
+        \makebox(-460,90){ $\mathbf{r}_g(t_{gt})$}
+        \makebox(-485,290){ $\rho_u$}
+        \makebox(-305,390){ $d_T$}
+    \end{picture}
+    \end{center}
+    \vspace{0.2 in}
+    \label{Fig:RangeMeasurement}
+    \caption{ Geometry of Radiometric Range Measurement}
+\end{figure}
+%
+The elapsed time is converted to a measure of the average range
+using
+%
+\begin{equation}
+     \rho_o = \frac{c}{2}\Delta t_o
+\end{equation}
+%
+The computed elapsed time is rigorously expressed as
+%
+\begin{equation}
+    \Delta t_c = \frac{1}{c}\| \mathbf{r}_v(t_{vr}) -  \mathbf{r}_g(t_{gt})  \| +
+    \frac{1}{c}\| \mathbf{r}_v(t_{vt}) -  \mathbf{r}_g(t_{gr})  \| + \delta T
+\end{equation}
+%
+Assuming that the transponder delay is modelled as a measurement
+bias we can write $ t_{vr} = t_{vt} = t_v$ and convert the computed
+round trip time to average range:
+%
+\begin{equation}
+     \rho_c= \frac{1}{2}\left(\| \mathbf{r}_v(t_v) -  \mathbf{r}_g(t_{gt})  \| +
+      \| \mathbf{r}_v(t_v) -  \mathbf{r}_g(t_{gr})  \|\right) \label{Eq:MeasuredTwoWayRange}
+\end{equation}
+%
+To solve Eq.~\ref{Eq:MeasuredTwoWayRange}, we must know  $t_{v}$.
+For applications
+ that do not require high accuracy we can approximate $t_v$ as we describe below.
+  For higher fidelity applications we must solve for the uplink and downlink
+  propagation times using two iterative processes.  The downlink signal propagation
+  time is calculated using the following fixed point iteration on the following equation:
+%
+\begin{equation}
+     \delta t_d^{i+1} = \frac{1}{c}\| \mathbf{r}_v( t - t_d^{i}) - \mathbf{r}_g(t)   \|
+\end{equation}
+%
+The uplink propagation time is calculated using fixed point
+iteration on
+%
+\begin{equation}
+     \delta t_u^{i+1} = \frac{1}{c}\| \mathbf{r}_v( t - t_d) - \mathbf{r}_g(t - t_d - t_u^{i} )   \|
+\end{equation}
+%
+
+\begin{eqnarray}
+     \frac{\partial \rho_c (t)}{\partial \mathbf{r}_v(t_v)} &=& \frac{1}{2\rho_u\rho_d}
+     \left( \rho_d(\mathbf{r}_v^T(t_v) - \mathbf{r}_T^T(t_{gt}) + \rho_u(\mathbf{r}_v^T(t_v) - \mathbf{r}_R^T(t_{gr}  ) \right)\\
+     %
+     \frac{\partial \rho_c (t)}{\partial \dot{\mathbf{r}}_v(t_v)} &=& \mathbf{0}_{1x3}
+\end{eqnarray}
+
+\subsection{Angles}

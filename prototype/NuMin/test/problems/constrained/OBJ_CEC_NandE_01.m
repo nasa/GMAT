@@ -1,0 +1,11 @@
+function [f,g]= OBJ_CEC_NandE_01(x,c)
+	theta  = pi/3;
+%	theta  = varargin{1};
+    cth    = cos(theta);
+    sth    = sin(theta);
+    x1     = cth*x(1) - sth*x(2);
+    x2     = sth*x(1) + cth*x(2);
+    f      = (x1 - 4)^2 + (x2 - 5)^2 + (x(3) - 6)^2;
+    g(1,1) =  2*(x1-4)*cth + 2*(x2-5)*sth;
+    g(2,1) = -2*(x1-4)*sth + 2*(x2-5)*cth;
+    g(3,1) = 2*(x(3)-6);

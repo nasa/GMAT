@@ -1,0 +1,240 @@
+%
+%   Ex_Estimate_With_Initial_OrbitErrorCovariance
+%
+%   This script demonstrates estimating a "constrained" state. The state
+%   is estimated in Keplerian elements, and application of an initial
+%   covariance forces the INC and RAAN to remain close to their initial
+%   values. 
+%
+%   Note that the user must both specify an initial EstSat OrbitErrorCovariance
+%   and set UseInitialCovariance to True on the BatchEstimator.
+%
+%   This techinque is useful when the initial state is trusted and the 
+%   data arc for estimation is short or suffers poor observabilty of some
+%   orbit parameters.
+%
+%   Released: R2018a
+%
+
+
+%----------------------------------------
+%---------- Spacecraft
+%----------------------------------------
+
+Create Spacecraft SimSat;
+
+SimSat.DateFormat           = UTCGregorian;
+SimSat.Epoch                = '01 Mar 2005 00:00:00.000';
+SimSat.CoordinateSystem     = EarthMJ2000Eq;
+SimSat.DisplayStateType     = Keplerian;
+SimSat.SMA                  = 7192.;
+SimSat.ECC                  = 0.0245;
+SimSat.INC                  = 28.5;
+SimSat.RAAN                 = 306.6;
+SimSat.AOP                  = 314.2;
+SimSat.TA                   = 100.;
+SimSat.DryMass              = 850;
+SimSat.Cd                   = 2.2;
+SimSat.Cr                   = 1.8;
+SimSat.DragArea             = 15;
+SimSat.SRPArea              = 15;
+SimSat.Id                   = 'LEOSat';
+SimSat.AddHardware          = {Transponder1, Antenna2};
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat           = UTCGregorian;
+EstSat.Epoch                = '01 Mar 2005 00:00:00.000';
+EstSat.CoordinateSystem     = EarthMJ2000Eq;
+EstSat.DisplayStateType     = Keplerian;
+EstSat.SMA                  = 7192.;
+EstSat.ECC                  = 0.0245;
+EstSat.INC                  = 28.4;
+EstSat.RAAN                 = 306.5;
+EstSat.AOP                  = 314.2;
+EstSat.TA                   = 100.;
+EstSat.DryMass              = 850;
+EstSat.Cd                   = 2.2;
+EstSat.Cr                   = 1.8;
+EstSat.DragArea             = 15;
+EstSat.SRPArea              = 15;
+EstSat.Id                   = 'LEOSat';
+EstSat.AddHardware          = {Transponder1, Antenna2};
+EstSat.SolveFors            = {KeplerianState};     
+EstSat.OrbitErrorCovariance = [1e+30, 0,   0,   0,   0,   0; ...
+                                0,  1e+30, 0,   0,   0,   0; ...
+                                0,   0,  1e-30, 0,   0,   0; ...
+                                0,   0,   0,  1e-30, 0,   0; ...
+                                0,   0,   0,   0,  1e+30, 0; ...
+                                0,   0,   0,   0,   0,  1e+30];
+
+%----------------------------------------
+%---------- Ground stations
+%----------------------------------------
+
+Create GroundStation GDS;
+
+GDS.CentralBody             = Earth;
+GDS.StateType               = Cartesian;
+GDS.HorizonReference        = Ellipsoid;
+GDS.Location1               = -2353.621251;
+GDS.Location2               = -4641.341542;
+GDS.Location3               =  3677.052370;
+GDS.Id                      = 'GDS';
+GDS.AddHardware             = {Transmitter1, Receiver1, Antenna1};
+GDS.MinimumElevationAngle   = 10;
+GDS.ErrorModels             = {RangeModel};
+
+Create GroundStation CAN;
+
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514;
+CAN.Location2             =  2682.281745;
+CAN.Location3             = -3674.570392;
+CAN.Id                    = 'CAN';
+CAN.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+CAN.MinimumElevationAngle = 10.;
+CAN.ErrorModels           = {RangeModel};
+
+Create GroundStation MAD;
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4849.519988;
+MAD.Location2             = -360.641653;
+MAD.Location3             = 4114.504590;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+MAD.MinimumElevationAngle = 10.;
+MAD.ErrorModels           = {RangeModel};
+
+%----------------------------------------
+%---------- Error models
+%----------------------------------------
+
+Create ErrorModel RangeModel;
+
+RangeModel.Type       = 'Range';
+RangeModel.NoiseSigma = 0.010;
+RangeModel.Bias       = 0.0;
+RangeModel.SolveFors  = {};
+
+%----------------------------------------
+%---------- Tracking file sets
+%----------------------------------------
+
+Create TrackingFileSet simData;
+
+simData.AddTrackingConfig       = {{GDS, SimSat, GDS}, 'Range'}
+simData.AddTrackingConfig       = {{MAD, SimSat, MAD}, 'Range'}
+simData.AddTrackingConfig       = {{CAN, SimSat, CAN}, 'Range'}
+simData.FileName                = {'Ex_Estimate_With_Initial_OrbitErrorCovariance.gmd'};
+simData.RampTable               = {};
+simData.UseLightTime            = True;
+simData.UseRelativityCorrection = False;
+simData.UseETminusTAI           = False;
+simData.SimRangeModuloConstant  = 67108864;
+simData.SimDopplerCountInterval = 1;  
+simData.DataFilters             = {};
+
+Create TrackingFileSet estData;
+
+estData.AddTrackingConfig       = {{GDS, EstSat, GDS}, 'Range'}
+estData.AddTrackingConfig       = {{MAD, EstSat, MAD}, 'Range'}
+estData.AddTrackingConfig       = {{CAN, EstSat, CAN}, 'Range'}
+estData.FileName                = {'Ex_Estimate_With_Initial_OrbitErrorCovariance.gmd'};
+estData.RampTable               = {};
+estData.UseLightTime            = True;
+estData.UseRelativityCorrection = False;
+estData.UseETminusTAI           = False;
+estData.SimRangeModuloConstant  = 67108864;
+estData.SimDopplerCountInterval = 1;  
+estData.DataFilters             = {};
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create ForceModel FM;
+
+FM.CentralBody  = Earth;
+FM.PointMasses  = {Earth};
+FM.Drag         = None;
+FM.SRP          = Off;
+FM.ErrorControl = None;
+
+Create Propagator ODProp;
+
+ODProp.FM              = FM;
+ODProp.Type            = PrinceDormand78;
+ODProp.InitialStepSize = 60;
+ODProp.Accuracy        = 1e-13;
+ODProp.MinStep         = 0;
+ODProp.MaxStep         = 60;
+ODProp.MaxStepAttempts = 50;
+
+
+%----------------------------------------
+%-------- Communications Hardware
+%----------------------------------------
+
+Create Antenna Antenna1 Antenna2;
+Create Transmitter Transmitter1;
+Create Receiver Receiver1;
+
+Receiver1.PrimaryAntenna    = Antenna1;
+Transmitter1.PrimaryAntenna = Antenna1;
+Transmitter1.Frequency      = 2067.5;
+
+Create Transponder Transponder1;
+
+Transponder1.PrimaryAntenna  = Antenna2;
+Transponder1.HardwareDelay   = 0.0;
+Transponder1.TurnAroundRatio = '240/221' 
+
+   
+%----------------------------------------
+%---------- Solvers
+%----------------------------------------
+
+Create Simulator sim;
+
+sim.AddData                     = {simData};
+sim.EpochFormat                 = UTCGregorian;
+sim.InitialEpoch                = '01 Mar 2005 00:00:00.000';
+sim.FinalEpoch                  = '04 Mar 2005 00:00:00.000';
+sim.MeasurementTimeStep         = 60;
+sim.Propagator                  = ODProp;
+sim.AddNoise                    = On;
+
+Create BatchEstimator bat
+
+bat.ShowProgress                = True;
+bat.Measurements                = {estData} 
+bat.AbsoluteTol                 = 0.0001;
+bat.RelativeTol                 = 1e-6;
+bat.MaximumIterations           = 5;
+bat.MaxConsecutiveDivergences   = 5;
+bat.Propagator                  = ODProp;
+bat.ShowAllResiduals            = On;
+bat.OLSEInitialRMSSigma         = 1e6;
+bat.OLSEMultiplicativeConstant  = 3;
+bat.OLSEAdditiveConstant        = 0;
+bat.UseInitialCovariance        = True;
+bat.InversionAlgorithm          = 'Internal';
+bat.ReportStyle                 = 'Normal';
+bat.ReportFile                  = 'Ex_Estimate_With_Initial_OrbitErrorCovariance.txt';
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+BeginMissionSequence
+
+SetSeed(1);
+
+RunSimulator sim;
+RunEstimator bat;

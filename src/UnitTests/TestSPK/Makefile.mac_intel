@@ -1,0 +1,95 @@
+# $Id: 
+# Mac Intel make file for the SPK unit test(s)
+# 
+# Author:  Wendy Shoan
+# Date:    2009.12.29
+
+GMAT_Code_Location = ../../../development1/src
+GMAT_Bin_Location = ../../../development1/bin
+GMAT_Lib_Location = $(GMAT_Code_Location)/base/lib
+
+SPICE_DIR = /Applications/CSPICE
+SPICE_INCLUDE = $(SPICE_DIR)/cspice/include
+SPICE_LIB_DIR = $(SPICE_DIR)/cspice/lib
+SPICE_LIBRARIES = $(SPICE_LIB_DIR)/cspice.a
+SPICE_STACKSIZE = ulimit -s 61440
+
+# Set to 1 to link against the GMAT MATLAB version, 0 to not do so
+USE_MATLAB = 0
+
+ifeq ($(USE_MATLAB), 0)
+BASE_LIBRARY = GmatBaseNoMatlab
+else
+BASE_LIBRARY = GmatBase
+endif
+
+# Compiler options
+CPP = g++
+C = gcc
+
+OPTIMIZATIONS = -DSTRICT -Wall -fno-pcc-struct-return -03 \
+		-finline-functions -funroll-loops -DNO_GCC_PRAGMA \
+		-march=pentium -malign-double -fexceptions \
+		-fexpensive-optimizations -fno-strict-aliasing
+                  
+HEADERS =  \
+			-I$(SPICE_INCLUDE) \
+			-I$(GMAT_Code_Location)/base/include \
+			-I$(GMAT_Code_Location)/base/asset \
+         -I$(GMAT_Code_Location)/base/attitude \
+         -I$(GMAT_Code_Location)/base/burn \
+         -I$(GMAT_Code_Location)/base/command \
+         -I$(GMAT_Code_Location)/base/configs \
+         -I$(GMAT_Code_Location)/base/coordsystem \
+         -I$(GMAT_Code_Location)/base/executive \
+         -I$(GMAT_Code_Location)/base/factory \
+         -I$(GMAT_Code_Location)/base/forcemodel \
+         -I$(GMAT_Code_Location)/base/foundation \
+         -I$(GMAT_Code_Location)/base/function \
+         -I$(GMAT_Code_Location)/base/interface \
+         -I$(GMAT_Code_Location)/base/interpolator \
+         -I$(GMAT_Code_Location)/base/interpreter \
+         -I$(GMAT_Code_Location)/base/math \
+         -I$(GMAT_Code_Location)/base/parameter \
+         -I$(GMAT_Code_Location)/base/plugin \
+         -I$(GMAT_Code_Location)/base/propagator \
+         -I$(GMAT_Code_Location)/base/solarsys \
+         -I$(GMAT_Code_Location)/base/solver \
+         -I$(GMAT_Code_Location)/base/spacecraft \
+         -I$(GMAT_Code_Location)/base/stopcond \
+         -I$(GMAT_Code_Location)/base/subscriber \
+         -I$(GMAT_Code_Location)/base/util \
+			-I../Common \
+			-I$(GMAT_Code_Location)/console
+         
+ifeq ($(MAC_CPP_FLAGS),1)
+MAC_CPP_FLAGS=-current_version 0.1 -compatibility_version 0.1 -fvisibility=default
+endif
+
+CPP_BASE = $(OPTIMIZATIONS) -Wall
+CPPFLAGS = $(CPP_BASE) $(MAC_CPP_FLAGS)
+
+SHARED_LIB_FLAGS = -L$(GMAT_Lib_Location) -l$(BASE_LIBRARY) -L$(SPICE_LIBRARIES)
+
+TARGET = TestSpiceKernelWriter
+
+all: $(TARGET)
+   
+clean : 
+	rm -rf */*.o
+	rm -rf $(TARGET)
+	rm -rf */*~
+	rm -rf core
+	rm -rf */core
+   
+OBJECTS = \
+		./TestSpiceKernelWriter.o \
+		../Common/TestOutput.o \
+		$(GMAT_Code_Location)/console/ConsoleMessageReceiver.o
+      
+$(TARGET) : $(OBJECTS)
+	$(CPP) $(OBJECTS) -o $(TARGET) $(SHARED_LIB_FLAGS)
+   
+$(OBJECTS): %.o: %.cpp
+	$(CPP) $(CPPFLAGS) $(HEADERS) -c -o $@ $<
+   

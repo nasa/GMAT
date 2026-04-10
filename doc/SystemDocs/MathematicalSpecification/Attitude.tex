@@ -1,0 +1,1136 @@
+\section{Attitude} \label{Ch:Attitude}
+
+The attitude of a spacecraft can be defined qualitatively as how the
+spacecraft is oriented in inertial space, and how that orientation
+changes in time.  GMAT has the ability to model the orientation and
+rate of rotation of a spacecraft using several different
+mathematical models. Currently, GMAT assumes that a spacecraft is a
+rigid body.
+
+There are many ways to quantitatively describe the orientation and
+rate of rotation of a spacecraft, just like there are many ways we
+can quantitatively describe an orbit state.  Let's define any set of
+numbers that can uniquely define the spacecraft attitude as an
+attitude parameterization. GMAT allows the users to use several
+common attitude parameterizations including quaternions, Euler
+angles, the Direction Cosine Matrix (DCM), Euler angle rates, and
+the angular velocity vector. Given an initial attitude state, GMAT
+can propagate the attitude using one of several kinematic attitude
+propagation models.
+
+In this chapter, we discuss the attitude parameterizations supported
+in GMAT, and how to convert between the different types.  We discuss
+the internal state parameterization that GMAT uses.   Next we
+investigate the types of attitude modes in GMAT and discuss in
+detail how GMAT propagates the spacecraft attitude in all of the
+Kinematic attitude modes.  We conclude the chapter with a discussion
+of how GMAT converts between different attitude parameterizations.
+
+\subsection{Attitude Propagation}
+
+Given a set of initial conditions that define the attitude, GMAT can
+propagate the attitude using several methods.  Currently, GMAT only
+supports kinematic attitude propagation.  In Kinematic mode, the
+attitude is defined by describing the desired orientation with
+respect to other objects such as spacecraft or celestial bodies.
+With this information, GMAT can calculate the required attitude to
+satisfy the desired geometrical configuration.  This section
+presents the different Kinematic attitude modes, and how GMAT
+calculates the attitude state in each mode.  Let's begin by looking
+at the internal attitude state representation and how the user can
+define initial conditions.
+
+\vspace{- .1 in} \subsubsection{Internal State Representation and
+Attitude Initial Conditions}
+
+Certain attitude parameterizations are more useful for attitude
+propagation, while other attitude parameterizations are more
+intuitive for providing attitude initial conditions or output. GMAT
+uses different internal parameterizations of the attitude
+orientation depending upon the attitude mode.  The type of
+parameterization is chosen to make the attitude propagation
+algorithms natural and convenient.  For the kinematic modes, GMAT
+uses the DCM that represents the rotation from the inertial system
+to the body axes as the attitude orientation parameterization. In
+the future, when 6 degree of freedom attitude modelling is
+implemented, GMAT will use the quaternion that represents the
+rotation from the inertial system to the body axes. GMAT uses the
+angular velocity of the body with respect to the inertial frame,
+expressed in the body frame, $\{\boldsymbol\omega_{IB}\}_B$, as the
+rate portion of the state vector.
+
+For convenience, the user can choose a coordinate system in which to
+define the initial attitude state.  Let's call this system
+$\mathcal{F}_i$.  The user can define the initial attitude
+orientation with respect to $\mathcal{F}_i$ using Euler angles, the
+DCM, or quaternions.  The user can define the body rate with respect
+to $\mathcal{F}_i$ by defining the angular velocity in
+$\mathcal{F}_i$, $\{\boldsymbol\omega_{IB}\}_i$, or by defining the
+Euler angle rates.  Note that not all attitude modes require these
+three pieces of information.  The specific inputs for each attitude
+mode are discussed below, along with details about how attitude
+propagation is performed in each mode.
+
+\subsubsection{Kinematic Attitude Propagation}
+
+The Kinematic attitude mode allows a user to define a geometrical
+configuration based on the relative position of a spacecraft with
+respect to other spacecraft or celestial bodies, and with respect to
+different coordinate systems.  In Kinematic mode, GMAT does not
+integrate the attitude equations of motion, but rather calculates
+the attitude based on the geometrical definition provided by the
+user.  There are several Kinematic modes to choose from.  The
+different modes allow the user to conveniently define the spacecraft
+attitude depending on the type of attitude profile needed for a
+specific mission.  To begin, let's look at how GMAT calculates the
+attitude state in the Coordinate System Fixed attitude mode
+(CSFixed).
+
+\subsubsection{Coordinate System Fixed Mode}
+
+In the CSFixed attitude mode, the user supplies two pieces of
+information. They first specify a coordinate  system in which to fix
+the attitude, $\mathcal{F}_i$.  $\mathcal{F}_i$ can be any of the
+default coordinate systems or any user defined coordinate system.
+Secondly, the user specifies how the body axis system,
+$\mathcal{F}_B$ is oriented with respect to $\mathcal{F}_i$ by
+defining $\mathbf{R}_{Bi}$ or an equivalent parameterization. With
+this information, GMAT calculates the rotation from the inertial to
+the body axes and the angular velocity of the body with respect to
+the inertial frame, expressed in the body frame,
+$\{\mathbf{\boldsymbol\omega}_{IB}\}_B$.
+
+GMAT calculates the rotation matrix from $\mathcal{F}_i$  to
+$\mathcal{F}_B$, $\mathbf{R}_{Bi}$, from the initial conditions
+provided by the user.  For CSFixed mode, $\mathbf{R}_{Bi}$ is
+constant and is stored for use in the equations below.  Knowing
+$\mathbf{R}_{Bi}$, we can calculate the rotation matrix from the
+inertial frame to the body frame, $\mathbf{R}_{BI}$, using the
+following equation
+%
+\begin{equation}
+     \mathbf{R}_{BI} = \mathbf{R}_{Bi}\mathbf{R}_{iI}
+     \label{Eq:CSFixedRotationMatrix}
+\end{equation}
+%
+$\mathbf{R}_{iI}$ is the rotation matrix from $\mathcal{F}_I$ to
+$\mathcal{F}_i$ and GMAT knows how to calculate this matrix for all
+allowable $\mathcal{F}_i$.  For details on the calculation of this
+matrix for all coordinate systems in GMAT  see
+Ch.~\ref{Ch:CoordinateSystems}.
+
+To calculate $\{\mathbf{\boldsymbol\omega}_{IB}\}_B$, we start from
+Eulers' equation:
+%
+\begin{equation}
+   \dot{\mathbf{R}}_{BI} =
+   -\{\mathbf{\boldsymbol\omega^\times}_{IB}\}_B\mathbf{R}_{BI}
+   \label{Eq:CSFixedKinematics}
+\end{equation}
+%
+where
+%
+\begin{equation}
+       \{ \mathbf{\boldsymbol\omega^\times}_{IB}\}_B = \begin{pmatrix}
+     0 & -\omega_3 & \omega_2\\
+     \omega_3 & 0 & -\omega_1\\
+     -\omega_2 & \omega_1 & 0\\
+     \end{pmatrix}
+\end{equation}
+%
+and $\{\mathbf{\boldsymbol\omega}_{IB}\}_B$ is the rotation of
+$\mathcal{F_B}$ with respect to $\mathcal{F}_I$, expressed in
+$\mathcal{F}_B$.
+%
+Solving Eq.~\ref{Eq:CSFixedKinematics} for
+$\{\mathbf{\boldsymbol\omega}_{IB}^\times\}_B$ we obtain
+%
+\begin{equation}
+   \{\mathbf{\boldsymbol\omega^\times}_{IB}\}_B =  -\dot{\mathbf{R}}_{BI}
+   \mathbf{R}_{BI}^{T}
+   \label{Eq:CSFixedKinematics2}
+\end{equation}
+%
+Taking the derivative of Eq.~(\ref{Eq:CSFixedRotationMatrix}) with
+respect to time yields
+%
+\begin{equation}
+     {\mathbf{\dot R}_{BI}} = \mathbf{R}_{Bi}{\mathbf{\dot
+     R}_{iI}}\label{Eq:CSFixedTimeDerivative}
+\end{equation}
+%
+because by definition, for the CSFixed mode,  $ \mathbf{\dot R}_{Bi}
+= \mathbf{0}$. Substituting Eq.~(\ref{Eq:CSFixedTimeDerivative})
+into Eq.~(\ref{Eq:CSFixedKinematics2}) we obtain
+%
+%
+\begin{equation}
+   \{\mathbf{\boldsymbol\omega^\times}_{IB}\}_B =  -\mathbf{R}_{Bi}{\mathbf{\dot
+     R}_{iI}} \mathbf{R}_{BI}^{T}
+   \label{Eq:CSFixedKinematics3}
+\end{equation}
+%
+where $\mathbf{R}_{Bi}$ is known from user input, and
+$\mathbf{R}_{BI}$ is known from Eq.~(\ref{Eq:CSFixedRotationMatrix})
+. GMAT knows how to calculate $\mathbf{\dot{R}}_{iI}$ for all
+allowable $\mathcal{F}_i$ and details are contained in
+Ch.~\ref{Ch:CoordinateSystems}.
+
+In summary, in CSFixed mode, Eq.(\ref{Eq:CSFixedRotationMatrix}) is
+used to calculate $\mathbf{R}_{BI}$, and
+Eq.~(\ref{Eq:CSFixedKinematics3}) is used to calculate
+$\{\mathbf{\boldsymbol\omega}_{IB}^x\}_B$.  If another attitude
+parameterization is required, GMAT uses the algorithms in
+Sec.~\ref{Sec:AttitudeParameterizations} to transform from
+$\mathbf{R}_{BI}$ and $\{\mathbf{\boldsymbol\omega}_{IB}\}_B$ to the
+required parameterization.  Now let's look at the spinning
+spacecraft mode.
+
+\subsubsection{Spinning Spacecraft Mode}
+
+In spinning spacecraft mode, GMAT propagates the attitude by
+assuming the spin axis direction is fixed in inertial space.  The
+spacecraft attitude at some time, $t$, is determined from the
+attitude initial conditions, the angular velocity vector, and the
+elapsed time from the initial spacecraft epoch.  Let's take a closer
+look at the calculations.
+
+In the spinning spacecraft mode, the user provides three pieces of
+information.  They first choose a coordinate system,
+$\mathcal{F}_i$, in which to define the initial conditions.
+Secondly, they define the initial orientation with respect to
+$\mathcal{F}_i$ by providing $\mathbf{R}_{Bi}$ or an equivalent
+parameterzation that is then converted to the DCM.   The user also
+provides the angular velocity of the body axes with respect to the
+inertial axes expressed in $\mathcal{F}_i$, $\{
+\boldsymbol\omega_{IB}\}_i$.
+
+To calculate $\mathbf{R}_{BI}(t)$ where $t$ is an arbitrary epoch,
+we begin by calculating $\mathbf{R}_{B_{o}I}$ where
+$\mathbf{R}_{B_{o}I} = \mathbf{R}_{BI}(t_o)$.  We calculate
+$\mathbf{R}_{B_{o}I}$ using
+%
+\begin{equation}
+     \mathbf{R}_{B_{o}I} =  \mathbf{R}_{Bi}\mathbf{R}_{iI}(t_o)
+\end{equation}
+%
+where $\mathbf{R}_{Bi}$ comes from user provided data, and
+$\mathbf{R}_{iI}(t_o)$ is calculated by GMAT and is dependent upon
+$\mathcal{F}_i$.  See Ch.~\ref{Ch:CoordinateSystems} for details on
+how GMAT calculates $\mathbf{R}_{iI}$ for all allowable coordinate
+systems in GMAT.
+
+Before calculating $\mathbf{R}_{BI}(t)$ we must determine the spin
+axis in the body frame, $\{\boldsymbol\omega_{IB}\}_B$.  The user
+provides $\{\boldsymbol\omega_{IB}\}_i$.  In spinning mode we assume
+the spin axis direction is constant in inertial space and in the
+body frame so $\{ \boldsymbol\omega_{IB} \}_B (t)$ $ = \{
+\boldsymbol\omega_{IB} \}_B (t_o) = \{ \boldsymbol\omega_{IB} \}_B
+$.  We can find the spin axis in the body frame using
+$\mathbf{R}_{Bi}$ as follows
+%
+\begin{equation}
+      \{ \boldsymbol\omega_{IB}\}_B = \mathbf{R}_{Bi} \{ \boldsymbol\omega_{IB}\}_i
+\end{equation}
+%
+Once calculated, GMAT saves $\mathbf{R}_{B_{o}I}$ and $\{
+\boldsymbol\omega_{IB}\}_B$ for use in calculating the attitude
+orientation and rate at other epochs.
+
+GMAT calculates $\mathbf{R}_{BI}(t)$ using the Euler axis/angle
+rotation algorithm in Sec. \ref{Sec:AttitudeParameterizations}. The
+Euler axis is simply the unitized angular velocity vector or,
+%
+\begin{equation}
+     \mathbf{a} =   \frac{  \{ \boldsymbol\omega_{IB} \}_B  }{\omega_{IB} }
+\end{equation}
+%
+where
+%
+\begin{equation}
+     \omega_{IB} = \| \{\boldsymbol{\omega}_{IB} \}_B \|
+\end{equation}
+%
+The Euler angle $\phi$ is calculated using
+%
+\begin{equation}
+    \phi(t) = \omega_{IB}(t -t_o)
+\end{equation}
+%
+where $t$ is the current epoch, and $t_o$ is the spacecraft's
+initial epoch.  Let's define the rotation matrix that results from
+the Euler axis/angle rotation using $\mathbf{a}$ and $\phi(t)$, as
+$\mathbf{R}_{BB_{o}}(t)$.  We can calculate $\mathbf{R}_{BI}(t)$
+using
+%
+\begin{equation}
+     \mathbf{R}_{BI}(t) =
+     \mathbf{R}_{BB_{o}}(t)\mathbf{R}_{B_{o}I}
+\end{equation}
+%
+
+To summarize, in spinning mode the user provides $\mathbf{R}_{Bi}$
+and  $\{ \boldsymbol\omega_{IB}\}_i$.  GMAT assumes that that the
+spin axis direction is constant, and uses the Euler axis/angle
+method to propagate the attitude to find $\mathbf{R}_{BI}$.
+
+Now let's look at how GMAT performs conversions between the
+different attitude parameterizations.
+
+\subsection{6 DOF Modelling}
+
+\begin{equation}
+   \dot{\mathbf{X}} = \left[ \hspace{.05 in} \dot{\mathbf{r}}^T \hspace{.1 in} \dot{\mathbf{v}}^T \hspace{.1 in}  \dot{\mathbf{h}}^T \hspace{.1 in}  \dot{\mathbf{q}}^T  \hspace{.05 in} \right]^T
+\end{equation}
+%
+\begin{equation}
+   \dot{\mathbf{h}} = \mathbf{T} - \mathbf{\boldsymbol\omega}\times\mathbf{h}
+\end{equation}
+%
+\begin{equation}
+   \dot{\mathbf{q}} = \frac{1}{2}\mathbf{\Omega}\mathbf{q}
+\end{equation}
+%
+where
+%
+\begin{equation}
+    \mathbf{\Omega} = \left(\begin{array}{ccccc}
+     0 & \omega_z  & -\omega_y & \omega_x\\
+     -\omega_z & 0 & \omega_x & \omega_y\\
+     \omega_y & -\omega_x & 0 & \omega_z\\
+     -\omega_x & -\omega_y & -\omega_z & 0\\
+  \end{array}\right)
+\end{equation}
+%
+\begin{equation}
+    \mathbf{\boldsymbol\omega} = \mathbf{I}^{-1}\mathbf{h}
+\end{equation}
+
+\subsection{Attitude Parameterizations \\ and Conversions}
+\label{Sec:AttitudeParameterizations}
+
+This section details how GMAT converts between different attitude
+parameterizations.  For each conversion type, any singularities that
+may occur are addressed.  The orientation parameterizations in GMAT
+include the DCM, Euler Angles, quaternions, and Euler axis/angle.
+The body rate parameterizations include Euler angle rates and
+angular velocity.  We begin with the algorithm to transform from the
+quaternions to the DCM.
+
+\subsubsection{Conversion:  Quaternions to DCM}\label{sec:AttQuattoR}
+\index{Attitude Parameterization!Quaternions to DCM}
+
+Given:  $\mathbf{q}$, $q_4$
+
+\noindent Find:  $\mathbf{R}$
+
+\noindent Name:  \emph{ToCosineMatrix}
+
+\begin{equation}
+    \mathbf{q} = \left( q_1 \hspace{.1 in} q_2 \hspace{.1 in} q_3 \right)^T
+\end{equation}
+%
+\begin{equation}
+     \mathbf{q}^{\times} = \begin{pmatrix}
+     0 & -q3 & q2\\
+     q3 & 0 & -q1\\
+     -q2 & q1 & 0\\
+     \end{pmatrix}
+\end{equation}
+%
+\begin{equation}
+    c = \frac{1}{q_1^2 + q_2^2 + q_3^2 + q_4^2}
+\end{equation}
+%
+\begin{equation}
+     \mathbf{R} = c\left[ (q_4^2 - \mathbf{q}^T\mathbf{q})\mathbf{I}_3 +
+      2\mathbf{q}\mathbf{q}^T -2q_4\mathbf{q}^{\times}\right]
+\end{equation}
+
+
+\subsubsection{Conversion:  DCM to Quaternions} \label{sec:DCMtoQuat}
+\index{Attitude Parameterization!DCM to Quaternions}
+
+Given:  $\mathbf{R}$
+
+\noindent Find: $\mathbf{q}$, $q_4$
+
+Define following vector
+%
+\begin{equation}
+   \mathbf{v} = [ \hspace{.02 in} R_{11} \hspace{.1 in} R_{22}\hspace{.1 in}
+   R_{33} \hspace{.1 in}  \mbox{trace}(\mathbf{R}) \hspace{.02 in}]
+\end{equation}
+%
+Define $i_m$ as the index of the maximum component of $\mathbf{v}$
+%
+
+\noindent if $i_m = 1$
+%
+\begin{equation}
+     \mathbf{q}''  = \begin{pmatrix}
+     2v_{i_m} + 1 - \mbox{trace}(\mathbf{R})\\
+     R_{12} + R_{21}\\
+     R_{13} + R_{31}\\
+     R_{23} - R_{32}\\
+     \end{pmatrix}
+\end{equation}
+%
+if $i_m = 2$
+%
+\begin{equation}
+     \mathbf{q}''  = \begin{pmatrix}
+     R_{21} + R_{12}\\
+     2v_{i_m} + 1 - \mbox{trace}(\mathbf{R})\\
+     R_{23} + R_{32}\\
+     R_{31} - R_{13}\\
+     \end{pmatrix}
+\end{equation}
+%
+if $i_m = 3$
+%
+\begin{equation}
+     \mathbf{q}''  = \begin{pmatrix}
+     R_{31} + R_{13}\\
+     R_{32} + R_{23}\\
+     2v_{i_m} + 1 - \mbox{trace}(\mathbf{R})\\
+     R_{12} - R_{21}\\
+     \end{pmatrix}
+\end{equation}
+%
+if $i_m = 4$
+%
+\begin{equation}
+     \mathbf{q}''  = \begin{pmatrix}
+     R_{23} - R_{32}\\
+     R_{31} - R_{13}\\
+     R_{12} - R_{21}\\
+     1 + \mbox{trace}(\mathbf{R})\\
+     \end{pmatrix}
+\end{equation}
+%
+We normalize $\mathbf{q}''$ using
+%
+\begin{equation}
+    \mathbf{q}' = \frac{\mathbf{q}''}{\| \mathbf{q}'' \|}
+\end{equation}
+%
+Finally,
+%
+\begin{equation}
+   \mathbf{q} = [\hspace{.05 in} q_{1}' \hspace{.2 in} q_{2}' \hspace{.2 in} q_3'
+   \hspace{.05 in}]^T
+\end{equation}
+%
+and
+%
+\begin{equation}
+     q_4 = q_4'
+\end{equation}
+%Note: There is not a unique quaternion for a given DCM.  GMAT
+%assumes that the ``+" sign is used in Eq.~(\ref{Eq:q_4}).
+
+\subsubsection{Conversion:  DCM to Euler\\ Axis/Angle}
+
+\index{Attitude Parameterization!DCM to Axis/Angle}
+
+Given:  $\mathbf{R}$
+
+\noindent Find: $\mathbf{a}$, $\phi$
+
+\begin{equation}
+     \mathbf{R}  = \begin{pmatrix}
+     R_{11} & R_{12} & R_{13}\\
+     R_{21} & R_{22} & R_{23}\\
+     R_{31} & R_{32} & R_{33}\\
+     \end{pmatrix}
+\end{equation}
+%
+\begin{equation}
+   \phi = \cos^{-1}\left( \frac{1}{2}\left(\mbox{trace}(\mathbf{R}) -
+   1 \right)\right)
+\end{equation}
+%
+\begin{equation}
+    \mathbf{a} = \frac{1}{2\sin{\phi}}\begin{pmatrix}
+     R_{23} - R_{32}\\
+     R_{31} - R_{13}\\
+     R_{12} - R_{21}\\
+     \end{pmatrix}
+\end{equation}
+%
+If $\|\sin{\phi} \| < 10^{-14}$, then we assume
+%
+\begin{equation}
+    \mathbf{a} = \left[\hspace{.05 in} 1 \hspace{.1 in} 0 \hspace{.1 in}
+    0 \hspace{.05 in} \right]^T
+\end{equation}
+%
+Note that if $\|\sin{\phi} \| < 10^{-14}$ then $\cos{\phi} \approx
+1 $ and we arrive at a DCM of $\mathbf{I}_3$.
+
+
+\subsubsection{Conversion:  Euler Axis/Angle to DCM} \index{Attitude
+Parameterization!Axis/Angle to DCM} \label{Sec:EulerAxis/AngletoDCM}
+
+Given:  $\mathbf{a}$, $\phi$
+
+\noindent Find: $\mathbf{R}$
+
+\begin{equation}
+     \mathbf{a}^{\times} = \begin{pmatrix}
+     0 & -a_3 & a_2\\
+     a_3 & 0 & -a_1\\
+     -a_2 & a_1 & 0\\
+     \end{pmatrix}
+\end{equation}
+%
+\begin{equation}
+    \mathbf{R} = \cos{\phi}\mathbf{I}_3 + (1 -
+    \cos{\phi})\mathbf{a}\mathbf{a}^T -
+    \sin{\phi}\mathbf{a}^{\times}
+\end{equation}
+
+\subsubsection{Conversion:  Euler Angles to DCM}
+\label{sec:AttEulerAnglestoDCM}
+
+Given:  Sequence order  ( i.e. 123, 121, .... 313),  $\theta_1$,
+$\theta_2$, $\theta_3$
+
+\noindent Find: $\mathbf{R}$
+
+We'll give an example for a 321 rotation, and then present results
+for the remaining 11 Euler angle sequences.  First, let's define
+$\mathbf{R}_3(\theta_1)$, $\mathbf{R}_2(\theta_2)$, and
+$\mathbf{R}_1(\theta_3)$.
+%
+\begin{equation}
+    \mathbf{R}_3(\theta_1) =  \begin{pmatrix}
+      \cos{\theta_1}  & \sin{\theta_1} & 0    \\
+      -\sin{\theta_1} & \cos{\theta_1} & 0    \\
+      0               & 0              & 1
+     \end{pmatrix}
+\end{equation}
+%
+\begin{equation}
+    \mathbf{R}_2(\theta_2) =  \begin{pmatrix}
+      \cos{\theta_2}  & 0              & -\sin{\theta_2}    \\
+      0               & 1              & 0    \\
+      \sin{\theta_2}  & 0              & \cos{\theta_2}
+     \end{pmatrix}
+\end{equation}
+%
+\begin{equation}
+    \mathbf{R}_1(\theta_3) =  \begin{pmatrix}
+      1               & 0                & 0    \\
+      0               & \cos{\theta_3}   & \sin{\theta_3}    \\
+      0               & -\sin{\theta_3}  & \cos{\theta_3}
+     \end{pmatrix}
+\end{equation}
+%
+Now we can write
+%
+\begin{eqnarray}
+       &\mathbf{R}_{321} =  \mathbf{R}_1(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_3(\theta_1) = \nonumber\\
+      &=         \begin{pmatrix}
+      1               & 0                & 0    \\
+      0               & c_3   & s_3    \\
+      0               & -s_3  & c_3
+     \end{pmatrix}
+     %
+      \begin{pmatrix}
+      c_2  & 0              & -s_2    \\
+      0               & 1              & 0    \\
+      s_2  & 0              & c_2
+     \end{pmatrix}
+     %
+     \begin{pmatrix}
+      c_1   & s_1 & 0    \\
+      -s_1  & c_1 & 0    \\
+      0               & 0              & 1
+     \end{pmatrix}\nonumber\\
+\end{eqnarray}
+%
+where $c_1 =\cos{\theta_1}$, $s_1 = \sin{\theta_1}$ etc.  We can
+rewrite $\mathbf{R}_{321} $ as
+%
+\begin{equation}
+       \mathbf{R}_{321}  =\begin{pmatrix}
+      c_2c_1              &  c_2s_1             & -s_2 \\
+     -c_3s_1 + s_3s_2c_1  &  c_3c_1 + s_3s_2s_1 & s_3c_2 \\
+     s_3s_1 + c_3s_2c_1   &  -s_3c_1 +c_3s_2s_1 & c_3c_2
+     \end{pmatrix} \label{Eq:R321}
+\end{equation}
+%
+
+The approach is similar for the remaining 11 Euler angle sequences.
+Rather than derive the DCM matrices for the remaining 11 sequences,
+we present them in Table \ref{table:EulerAnglestoDCM}.
+
+\subsubsection{Conversion:  DCM to Euler Angles}
+\label{sec:AttDCMtoEulerAngles}
+
+Given:  Sequence order  ( i.e. 123, 121, .... 313), $\mathbf{R}$
+
+\noindent Find:  $\theta_1$, $\theta_2$, $\theta_3$
+
+We'll give an example for a 321 rotation, and then present results
+for the remaining 11 Euler angle sequences.  Examining,
+Eq.~(\ref{Eq:R321}), we see that
+%
+\begin{equation}
+     \frac{ R_{21} }  { R_{11}  } = \frac{  \cos{\theta_2}\sin{\theta_1}     }
+                                 {  \cos{\theta_2}\cos{\theta_1}    }
+\end{equation}
+%
+From this we can see that
+%
+\begin{equation}
+    \theta_1 =  \tan^{-1}{\frac{ R_{21} }  { R_{11}  }}
+\end{equation}
+%
+Further inspection of Eq.~(\ref{Eq:R321}) shows us that
+%
+\begin{equation}
+    \theta_2 = \sin^{-1}{R_{13}}
+\end{equation}
+%
+At first glance, we may choose to calculate $\theta_3$ using
+$\theta_3 = \tan^{-1}{(R_{23}/R_{33})}$.  However, in the case that
+$\theta_2 = 90^\circ$, this would result in the indeterminate case,
+$\theta_3 =$ $\tan^{-1}(R_{23}/R_{33})$ $= \tan^{-1}(0/0)$.  An
+improved method, found in the ADEAS mathematical specifications
+document, is to determine $\theta_3$ using
+%
+\begin{equation}
+    \theta_3 = \tan^{-1} \left(\frac{ R_{31} \sin{\theta_1} - R_{32} \cos{\theta_1} }
+    { -R_{21} \sin{\theta_1} + R_{22} \cos{\theta_1}} \right)
+    \label{Eq:Rtotheta3}
+\end{equation}
+%
+Substituting values from Eq.~(\ref{Eq:R321}) into
+Eq.~(\ref{Eq:Rtotheta3}), and using abbreviated notation, we see
+that
+%
+\begin{equation}
+     \theta_3 = \tan^{-1} \left(  \frac{ s_1( s_3s_1 + c_3s_2c_1) - c_1(-s_3c_1 + c_3s_2s_1 )}
+    { s_1(c_3s_1 - s_3s_2c_1  ) + c_1( c_3c_1 + s_3s_2s_1 ) }  \right)
+\end{equation}
+%
+Now, if $\theta_2 = 90^\circ$, and we substitute $c_2 = 0$ and $s_2
+= 1$ into the above equation, we see we get a determinate form.
+Results for all twelve Euler Sequences are shown in Table
+\ref{table:DCMtoEulerAngles}.
+
+\noindent Note:  All $\tan^{-1}$ use a quadrant check ( equaivalent
+to atan2 ) to make sure the the correct quadrant is chosen.
+
+\subsubsection{Conversion:  Angular Velocity to \\ Euler Angles
+Rates}
+
+Given:  Sequence ( i.e. 123, 121, .... 313), $\theta_2$,
+$\theta_3$ $\boldsymbol\omega$
+
+\noindent Find: $\dot\theta_1$, $\dot\theta_2$, $\dot\theta_3$
+%
+\begin{equation}
+    \begin{pmatrix}
+         \dot\theta_1\\
+         \dot\theta_2\\
+         \dot\theta_3
+    \end{pmatrix}
+    %
+    = \mathbf{S}^{-1}(\theta_2,\theta_3)\boldsymbol\omega
+\end{equation}
+%
+$\mathbf{S}^{-1}(\theta_2,\theta_3)$ is dependent upon the Euler
+sequence.  Table \ref{table:EulerAngleKinematics} contains the
+different expressions for $\mathbf{S}^{-1}(\theta_2,\theta_3)$ for
+each of the 12 unique Euler sequences.
+
+Note:  Each of the forms of $\mathbf{S}^{-1}$ have a possible
+singularity due to the appearance of either $\sin{\theta_2}$ or
+$\cos{\theta_2}$ in the denominator.  If GMAT encounters a
+singularity, an error message is thrown, and the zero vector is
+returned.
+
+\subsubsection{Conversion:  Euler Angles Rates to Angular Velocity}
+
+\noindent Given: Sequence ( i.e. 123, 121, .... 313), $\theta_2$,
+$\theta_3$, $\dot\theta_1$, $\dot\theta_2$, $\dot\theta_3$
+
+\noindent Find: $\boldsymbol\omega$
+%
+\begin{equation}
+    \boldsymbol\omega = \mathbf{S}(\theta_2,\theta_3)
+    %
+        \begin{pmatrix}
+         \dot\theta_1\\
+         \dot\theta_2\\
+         \dot\theta_3
+    \end{pmatrix}
+\end{equation}
+%
+$\mathbf{S}(\theta_2,\theta_3)$ is dependent upon the Euler
+sequence.  Table \ref{table:EulerAngleKinematics} contains the
+different expressions for $\mathbf{S}^{-1}(\theta_2,\theta_3)$ for
+each of the 12 unique Euler sequences.
+
+\subsubsection{Conversion:  Quaternions to Euler Angles}
+
+\noindent Given: $\mathbf{q}$, $q_4$, Euler Sequence
+
+\noindent Find: $\theta_1$, $\theta_2$, and $\theta_3$
+
+There is not a direct transformation to convert from the quaternions
+to the Euler Angles.  GMAT first converts from the quaternion to the
+DCM using the algorithm in Sec. \ref{sec:AttQuattoR}.  The DCM is
+then used to calculate the Euler Angles for the given Euler angle
+sequence using the algorithm in Sec. \ref{sec:AttDCMtoEulerAngles}.
+%\section{Attitude Initial Conditions}
+
+\subsubsection{Conversion:  Euler Angles to Quaternions}
+
+\noindent Given: $\theta_1$, $\theta_2$, and $\theta_3$, Euler
+Sequence
+
+\noindent Find: $\mathbf{q}$, $q_4$
+
+There is not a direct transformation to convert from Euler Angles to
+quaternions.  GMAT first converts from the Euler Angles to the DCM
+using the algorithm in Sec. \ref{sec:AttEulerAnglestoDCM}.  The DCM
+is then used to calculate the quaternions using the algorithm in
+Sec. \ref{sec:DCMtoQuat}.
+%\section{Attitude Initial Conditions}
+
+
+
+\subsubsection{Euler Angles to $\mathbf{R}$ Matrix}
+
+
+
+\onecolumn
+ \begin{table}[h]
+        \centering
+        \vspace{0 pt}
+        \caption{Rotation Matrices for 12 Unique Euler Angle Rotation Sequences}
+        \begin{tabular}{clccccccc}  \hline \hline
+        \\
+     %------------------------------------
+     %------------------------------------
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $=\begin{pmatrix}
+     c_3c_2    & c_3 s_2 s_1 + s_3 c_1  & -c_3 s_2 c_1 + s_1 s_3\\
+     -s_3 c_2  & -s_3 s_2 s_1 + c_3 c_1 & s_3 s_2 c_1 + c_3 s_1\\
+     s_2       & -c_2 s_1               & c_2 c_1\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+     %------------------------------------
+     %------------------------------------
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $=\begin{pmatrix}
+     c_3c_2   &   c_3 s_2 c_1 + s_1 s_3  &  c_3s_2s_1-s_3c_1 \\
+      -s_2    &   c_2c_1                 &  c_2s_1\\
+      s_3c_2  &   s_3s_2c_1 - c_3s_1     &  s_3s_2s_1 + c_3c_1 \\
+     \end{pmatrix}   \vspace{.1 in}$\\
+     %
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $=\begin{pmatrix}
+     c_2c_1               &    s_2     &   -c_2s_1\\
+     -c_3s_2c_1 + s_3 s_1 & c_3c_2     & c_3s_2s_1 + s_3c_1     \\
+     s_3s_2c_1 +c_3s_1    &  -s_3c_2   &  -s_3s_2s_1 + c_3 c_1  \\
+    \end{pmatrix}   \vspace{.1 in}$\\
+     %
+     %------------------------------------
+     %------------------------------------
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $=\begin{pmatrix}
+      c_3c_1 + s_3s_2s_1     &  s_3c_2    & -c_3s_1 + s_3s_2c_1    \\
+      -s_3c_1 + c_3 s_2s_1   &  c_3c_2    & s_3s_1 + c_3s_2c_1    \\
+      c_2s_1                 &  -s_2      & c_2c_1
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $=\begin{pmatrix}
+      c_3c_1 - s_3s_2s_1     & c_3s_1 + s_3s_2c_1 & -s_3c_2 \\
+      -c_2s_1                & c_2c_1             &  s_2  \\
+      s_3c_1 + c_3s_2s_1     & s_3s_1 - c_3s_2c_1 & c_3c_2
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+     %------------------------------------
+     %------------------------------------
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $=\begin{pmatrix}
+      c_2c_1              &  c_2s_1             & -s_2 \\
+     -c_3s_1 + s_3s_2c_1  &  c_3c_1 + s_3s_2s_1 & s_3c_2 \\
+     s_3s_1 + c_3s_2c_1   &  -s_3c_1 +c_3s_2s_1 & c_3c_2
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $=\begin{pmatrix}
+     c_2                  & s_2s_1              & -s_2c_1 \\
+     s_3s_2               & c_3c_1 - s_3c_2s_1  & c_3s_1 + s_3c_2c_1\\
+     c_3s_2               & -s_3c_1 - c_3c_2s_1 & -s_3s_1 +c_3c_2c_1
+     \end{pmatrix}  \vspace{.1 in}$\\
+          %
+     %------------------------------------
+     %------------------------------------
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $=\begin{pmatrix}
+      c_2                  & s_2c_1              & s_2s_1 \\
+     -c_3s_2              & c_3c_2c_1 - s_3s_1  & c_3c_2s_1 + s_3c_1\\
+     s_3s_2               & -s_3c_2c_1 - c_3s_1 & -s_3c_2s_1 +   c_3c_1
+     \end{pmatrix}  \vspace{.1 in}$\\
+               %
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $=\begin{pmatrix}
+     c_3c_1 - s_3c_2s_1   &  s_3s_2    &  -c_3s_1 -s_3c_2c_1\\
+     s_2s_1               &  c_2       &  s_2c_1            \\
+     s_3c_1 + c_3c_2s_1   &  -c_3s_2   &  -s_3s_1 + c_3c_2c_1
+     \end{pmatrix}  \vspace{.1 in}$\\
+                    %
+     %------------------------------------
+     %------------------------------------
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $=\begin{pmatrix}
+     c_3c_2c_1 - s_3s_1   &  c_3s_2  & -c_3c_2s_1 - s_3c_1\\
+     -s_2c_1              &  c_2     & s_2s_1             \\
+     s_3c_2c_1 + c_3s_1   &  s_3s_2  & -s_3c_2s_1 + c_3c_1
+     \end{pmatrix}  \vspace{.1 in}$\\
+                         %
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $=\begin{pmatrix}
+      c_3c_1 - s_3c_2s_1 & c_3s_1 + s_3c_2c_1  &  s_3s_2\\
+     -s_3c_1 - c_3c_2s_1 & -s_3s_1 + c_3c_2c_1 &  c_3s_2\\
+      s_2s_1             &  -s_2c_1            &  c_2
+     \end{pmatrix}  \vspace{.1 in}$\\
+                              %
+     %------------------------------------
+     %------------------------------------
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $=\begin{pmatrix}
+      c_3c_2c_1-s_3s_1     & c_3c_2s_1 + s_3c_1  &  -c_3s_2\\
+      -s_3c_2c_1 - c_3s_1  & -s_3c_2s_1 + c_3c_1 &  s_3s_2\\
+      s_2c_1               & s_2s_1              &  c_2
+     \end{pmatrix}  \vspace{.1 in}$\\
+         \hline \hline
+        \end{tabular}
+        \label{table:EulerAnglestoDCM}
+\end{table}
+\twocolumn
+
+\subsubsection{Euler Rates and Angular Velocity} \onecolumn
+ \begin{table}[h]
+        \centering
+        \vspace{0 pt}
+        \caption{Kinematics of Euler Angle Rotation Sequences}
+        \begin{tabular}{cllcccccc}  \hline \hline
+        Euler Sequence & $\mathbf{S}(\theta_2,\theta_3)$ &
+        $\mathbf{S}^{-1}(\theta_2,\theta_3)$\\
+        \hline
+        \\
+        %------------------
+        %------------------
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $\begin{pmatrix}
+        c3c2&          s3&                0\\
+       -s3c2&          c3&                0\\
+          s2&                0&                1\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+                  c3/c2&         -s3/c2&                        0\\
+                  s3&                  c3&                        0\\
+                  -s2c3/c2&  s3s2/c2& 1\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+        %------------------
+        %------------------
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $\begin{pmatrix}
+         c3c2&        -s3&               0\\
+        -s2&               0&               1\\
+         s3c2&         c3&               0\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+         c3/c2&                       0&         s3/c2\\
+           -s3&                       0&                 c3\\
+          s2c3/c2&                       1& s3s2/c2\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+     %------------------
+     %------------------
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $\begin{pmatrix}
+        s2&                0&                1\\
+       c3c2&          s3&                0\\
+      -s3c2&          c3&                0\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+                        0&          c3/c2&         -s3/c2\\
+                        0&                  s3&                  c3\\
+                        1& -s2c3/c2&  s3s2/c2\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+     %------------------
+     %------------------
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $\begin{pmatrix}
+         s3c2&         c3&               0\\
+         c3c2&        -s3&               0\\
+        -s2&               0&               1\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+         s3/c2&         c3/c2&                       0\\
+                 c3&                -s3&                       0\\
+ s3s2/c2& s2c3/c2&                       1\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+     %------------------
+     %------------------
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $\begin{pmatrix}
+       -s3c2&          c3&                0\\
+          s2&                0&                1\\
+        c3c2&          s3&                0\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+         -s3/c2&                        0&          c3/c2\\
+                  c3&                        0&                  s3\\
+         s3s2/c2&                        1& -s2c3/c2\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %------------------
+     %------------------
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $\begin{pmatrix}
+                -s2&               0&               1\\
+       s3c2&         c3&               0\\
+       c3c2&        -s3&               0\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+                       0&         s3/c2&         c3/c2\\
+                       0&                 c3&                -s3\\
+                       1& s3s2/c2& s2c3/c2\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+          %
+     %------------------
+     %------------------
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $\begin{pmatrix}
+                c2&               0&               1\\
+       s3s2&         c3&               0\\
+      c3s2&        -s3&               0\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+                        0&          s3/s2&          c3/s2\\
+                        0&                  c3&                 -s3\\
+                        1& -s3c2/s2& -c3c2/s2\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+                    %
+     %------------------
+     %------------------
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $\begin{pmatrix}
+          c2&                0&                1\\
+       -c3s2&          s3&                0\\
+        s3s2&          c3&                0\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+                        0&         -c3/s2&          s3/s2\\
+                        0&                  s3&                  c3\\
+                        1&  c3c2/s2& -s3c2/s2\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+                    %
+     %------------------
+     %------------------
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $\begin{pmatrix}
+        s3s2&          c3&                0\\
+          c2&                0&                1\\
+       -c3s2&          s3&                0\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+          s3/s2&                        0&         -c3/s2\\
+                  c3&                        0&                  s3\\
+         -s3c2/s2&                        1&  c3c2/s2\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+                              %
+     %------------------
+     %------------------
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $\begin{pmatrix}
+       c3s2&        -s3&               0\\
+         c2&               0&               1\\
+       s3s2&         c3&               0\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+          c3/s2&                        0&          s3/s2\\
+                 -s3&                        0&                  c3\\
+        -c3c2/s2&                        1& -s3c2/s2\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+                              %
+     %------------------
+     %------------------
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $\begin{pmatrix}
+       s3s2&         c3&               0\\
+       c3s2&        -s3&               0\\
+         c2&               0&               1\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+          s3/s2&          c3/s2&                        0\\
+                  c3&                 -s3&                        0\\
+      -s3c2/s2& -c3c2/s2&                        1\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+     %
+          %------------------
+     %------------------
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $\begin{pmatrix}
+        -c3s2&          s3&                0\\
+         s3s2&          c3&                0\\
+           c2&                0&                1\\
+     \end{pmatrix}  \vspace{.1 in}$
+     &
+     $\begin{pmatrix}
+         -c3/s2&          s3/s2&                        0\\
+                  s3&                  c3&                        0\\
+        c3c2/s2& -s3c2/s2&                        1\\
+     \end{pmatrix}  \vspace{.1 in}$\\
+         \hline \hline
+        \end{tabular}
+        \label{table:EulerAngleKinematics}
+\end{table}
+
+\begin{table}[h]
+        \centering
+        \vspace{0 pt}
+        \caption{ Computation of Euler Angles from DCM}
+        \begin{tabular}{llllllll}  \hline \hline \\
+        Euler Sequence & Euler Angle Computations \\
+        \hline \\
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_1(\theta_1)$
+     \hspace{.1 in}
+     &
+      $\theta_1 =  \tan^{-1}(-R_{32}/R_{33})$ &
+      $\theta_2 =  \sin^{-1}(R_{31})$ &
+      $\theta_3  = \tan^{-1}\left(\displaystyle\frac{R_{13}\sin{\theta_1}+
+      R_{12}\cos{\theta_1}}{R_{23}\sin{\theta_1}+R_{22}\cos{\theta_1}}\right )$\vspace{.15 in}
+     \\
+     %
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_1(\theta_1)$ \hspace{.1 in}
+     &
+     $\theta_1 =  \tan^{-1}(R_{23}/R_{22})$ &
+         $\theta_2 =  \sin^{-1}(-R_{21})$ &
+         $\theta_3  = \tan^{-1}\left(\displaystyle\frac{R_{12}\sin{\theta_1}- R_{13}\cos{\theta_1}}{-R_{32}\sin{\theta_1}+
+         R_{33}\cos{\theta_1}}\right)$ \vspace{.15 in}
+     \\
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+    $\theta_1 =  \tan^{-1}(-R_{13}/R_{11})$ &
+         $\theta_2 =  \sin^{-1}(R_{12})$ &
+         $\theta_3  = \tan^{-1}\left(\displaystyle\frac{R_{21}\sin{\theta_1}+ R_{23}\cos{\theta_1}}{R_{31}\sin{\theta_1}+
+         R_{33}\cos{\theta_1}}\right)$ \vspace{.15 in}
+     \\
+     %
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+         $\theta_1 =  \tan^{-1}(R_{31}/R_{33})$ &
+         $\theta_2 =  \sin^{-1}(-R_{32})$ &
+         $\theta_3  = \tan^{-1}\left(\displaystyle\frac{R_{23}\sin{\theta_1}- R_{21}\cos{\theta_1}}{-R_{13}\sin{\theta_1}+
+         R_{11}\cos{\theta_1}}\right)$ \vspace{.15 in}
+     \\
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $\theta_1 =  \tan^{-1}(-R_{21}/R_{22})$ &
+     $\theta_2 =  \sin^{-1}(R_{23})$ &
+     $\theta_3  = \tan^{-1}\left(\displaystyle\frac{R_{32}\sin{\theta_1}+ R_{31}\cos{\theta_1}}{R_{12}\sin{\theta_1}+
+     R_{11}\cos{\theta_1}}\right)$ \vspace{.15 in}
+     \\
+     %
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $\theta_1 =  \tan^{-1}(R_{12}/R_{11})$ &
+     $\theta_2 =  \sin^{-1}(-R_{13})$ &
+     $\theta_3  = \tan^{-1}\left(\displaystyle\frac{R_{31}\sin{\theta_1}- R_{32}\cos{\theta_1}}{-R_{21}\sin{\theta_1}+
+     R_{22}\cos{\theta_1}}\right)$ \vspace{.15 in}\\
+     %
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $\theta_1 =  \tan^{-1}(R_{12}/(-R_{13}))$ &
+     $\theta_2 =  \cos^{-1}(R_{11})$ &
+     $\theta_3  = \tan^{-1}\left(\displaystyle\frac{-R_{33}\sin{\theta_1}- R_{32}\cos{\theta_1}}{R_{23}\sin{\theta_1}+
+     R_{22}\cos{\theta_1}}\right)$ \vspace{.15 in}\\
+     %
+     $\mathbf{R}_1(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_1(\theta_1)$
+     &
+     $\theta_1 =  \tan^{-1}(R_{13}/(R_{12}))$ &
+     $\theta_2 =  \cos^{-1}(R_{11})$ &
+     $\theta_3  = \tan^{-1}\left(\displaystyle\frac{-R_{22}\sin{\theta_1} + R_{23}\cos{\theta_1}}{-R_{32}\sin{\theta_1}+
+     R_{33}\cos{\theta_1}}\right)$ \vspace{.15 in}\\
+     %
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $\theta_1 =  \tan^{-1}(R_{21}/(R_{23}))$ &
+     $\theta_2 =  \cos^{-1}(R_{22})$ &
+     $\theta_3  = \tan^{-1}\left(\displaystyle\frac{-R_{33}\sin{\theta_1} + R_{31}\cos{\theta_1}}{-R_{13}\sin{\theta_1}+
+     R_{11}\cos{\theta_1}}\right)$ \vspace{.15 in}\\
+     %
+     $\mathbf{R}_2(\theta_3)\mathbf{R}_3(\theta_2)\mathbf{R}_2(\theta_1)$
+     &
+     $\theta_1 =  \tan^{-1}(R_{23}/(-R_{21}))$ &
+     $\theta_2 =  \cos^{-1}(R_{22})$ &
+     $\theta_3  = \tan^{-1}\left(\displaystyle\frac{-R_{11}\sin{\theta_1} - R_{13}\cos{\theta_1}}{R_{31}\sin{\theta_1}+
+     R_{33}\cos{\theta_1}}\right)$ \vspace{.15 in}\\
+     %
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_1(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $\theta_1 =  \tan^{-1}(R_{31}/(-R_{32}))$ &
+     $\theta_2 =  \cos^{-1}(R_{33})$ &
+     $\theta_3  = \tan^{-1}\left(\displaystyle\frac{-R_{22}\sin{\theta_1} - R_{21}\cos{\theta_1}}{R_{12}\sin{\theta_1}+
+     R_{11}\cos{\theta_1}}\right)$ \vspace{.15 in}\\
+     %
+     $\mathbf{R}_3(\theta_3)\mathbf{R}_2(\theta_2)\mathbf{R}_3(\theta_1)$
+     &
+     $\theta_1 =  \tan^{-1}(R_{32}/(R_{31}))$ &
+     $\theta_2 =  \cos^{-1}(R_{33})$ &
+     $\theta_3  = \tan^{-1}\left(\displaystyle\frac{-R_{11}\sin{\theta_1} + R_{12}\cos{\theta_1}}{-R_{21}\sin{\theta_1}+
+     R_{22}\cos{\theta_1}} \right)$ \vspace{.15 in}\\
+         \hline \hline
+        \end{tabular}
+        \label{table:DCMtoEulerAngles}
+\end{table}

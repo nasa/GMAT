@@ -1,0 +1,194 @@
+%
+%   KalmanFilter_WarmStartEpoch
+%
+%   Specify a warm start epoch
+%
+%   02/12/2020 SES Initial version
+%
+
+%
+%   Spacecraft
+%
+
+
+Create Spacecraft EstSat;
+
+EstSat.DateFormat        = UTCGregorian;
+EstSat.Epoch             = '25 Jan 2014 19:00:00';
+%EstSat.CoordinateSystem    = EarthMJ2000Eq;
+EstSat.DisplayStateType    = Cartesian;
+EstSat.X                  = -6429.439955; 
+EstSat.Y                  =  2874.907490;
+EstSat.Z                  = -762.976473;
+EstSat.VX                 = -0.280992;
+EstSat.VY                 =  1.308479;
+EstSat.VZ                 =  7.382127;
+EstSat.Id                =    'LEOSAT';
+EstSat.NAIFId                =    -82;
+EstSat.AddHardware         = {Transponder1, SpacecraftAntenna};
+EstSat.SolveFors           = {CartesianState};     
+
+%
+%   Spacecraft hardware
+%
+
+Create Antenna SpacecraftAntenna;
+Create Transponder Transponder1;
+
+Transponder1.PrimaryAntenna  = SpacecraftAntenna;
+Transponder1.HardwareDelay   = 0.00005;
+Transponder1.TurnAroundRatio = '240/221' 
+
+%
+%   GroundStation hardware
+%
+
+Create Transmitter Transmitter1;
+Create Antenna Antenna1;
+Create Receiver Receiver1;
+
+Transmitter1.PrimaryAntenna = Antenna1;
+Transmitter1.Frequency      = 2067.5;
+Receiver1.PrimaryAntenna    = Antenna1;
+
+Create ErrorModel RangeModel;
+
+RangeModel.Type       = 'Range';
+RangeModel.NoiseSigma = 0.010;
+RangeModel.Bias       = 0.0;
+RangeModel.SolveFors  = {};
+
+%
+%   Ground stations
+%
+
+Create GroundStation GDS;
+
+GDS.CentralBody           = Earth;
+GDS.StateType             = Cartesian;
+GDS.HorizonReference      = Ellipsoid;
+GDS.Location1             = -2353.621251;
+GDS.Location2             = -4641.341542;
+GDS.Location3             =  3677.052370;
+GDS.Id                    = 'GDS';
+GDS.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+GDS.MinimumElevationAngle = 10;
+GDS.ErrorModels           = {RangeModel};
+
+Create GroundStation CAN;
+
+CAN.CentralBody           = Earth;
+CAN.StateType             = Cartesian;
+CAN.HorizonReference      = Ellipsoid;
+CAN.Location1             = -4461.083514;
+CAN.Location2             =  2682.281745;
+CAN.Location3             = -3674.570392;
+CAN.Id                    = 'CAN';
+CAN.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+CAN.MinimumElevationAngle = 10.;
+CAN.ErrorModels           = {RangeModel};
+
+Create GroundStation MAD;
+
+MAD.CentralBody           = Earth;
+MAD.StateType             = Cartesian;
+MAD.HorizonReference      = Ellipsoid;
+MAD.Location1             = 4849.519988;
+MAD.Location2             = -360.641653;
+MAD.Location3             = 4114.504590;
+MAD.Id                    = 'MAD';
+MAD.AddHardware           = {Transmitter1, Receiver1, Antenna1};
+MAD.MinimumElevationAngle = 10.;
+MAD.ErrorModels           = {RangeModel};
+
+%
+%   Tracking file sets
+%
+
+Create TrackingFileSet EstData;
+
+EstData.AddTrackingConfig       = {{GDS, EstSat, GDS}, 'Range'};
+EstData.AddTrackingConfig       = {{CAN, EstSat, CAN}, 'Range'};
+EstData.AddTrackingConfig       = {{MAD, EstSat, MAD}, 'Range'};
+EstData.FileName                = {'../inputs/LEOSATMeasEarth.gmd'};
+EstData.RampTable               = {};
+EstData.UseLightTime            = True;
+EstData.UseRelativityCorrection = False;
+EstData.UseETminusTAI           = False;
+EstData.DataFilters             = {};
+
+%
+%   Propagators
+%
+
+Create ForceModel FM;
+
+FM.CentralBody         = Earth;
+FM.PointMasses         = {Earth,Sun};
+FM.Drag                = None;
+FM.SRP                 = Off;
+FM.ErrorControl        = None;
+
+Create Propagator ODProp;
+
+ODProp.FM              = FM;
+ODProp.Type            = 'RungeKutta89';
+ODProp.InitialStepSize = 60;
+ODProp.Accuracy        = 1e-13;
+ODProp.MinStep         = 0;
+ODProp.MaxStep         = 60;
+ODProp.MaxStepAttempts = 50;
+
+%
+%   Estimator
+%
+
+Create BatchEstimator bat;
+bat.Measurements = {EstData} 
+bat.AbsoluteTol = 0.000001;
+bat.RelativeTol = 0.001;
+bat.MaximumIterations = 10;
+bat.MaxConsecutiveDivergences = 3;
+bat.Propagator = ODProp;
+bat.ShowAllResiduals = On;
+bat.OLSEInitialRMSSigma = 3000;
+bat.OLSEMultiplicativeConstant = 3;
+bat.OLSEAdditiveConstant = 0;
+bat.UseInitialCovariance = true;
+bat.InversionAlgorithm = 'Internal';
+bat.EstimationEpochFormat = 'FromParticipants';
+bat.EstimationEpoch = 'FromParticipants'; 
+bat.ReportStyle = 'Normal';
+bat.ReportFile = '../Output/BatchEstimator_Report.txt';
+ 
+Create ExtendedKalmanFilter EKF;
+
+EKF.ShowProgress         = True;
+EKF.ReportFile           = '../Output/KalmanFilter_WarmStartEpoch.txt';
+EKF.Measurements         = {EstData};
+EKF.Propagator           = ODProp;
+EKF.ShowAllResiduals     = Off;
+EKF.ProcessNoiseTimeStep = 240.;
+EKF.DataFilters          = {};
+EKF.OutputWarmStartFile   = '../Output/KalmanFilter_WarmStartEpoch.csv';
+%EKF.InputWarmStartFile   = '../data/navdata/otherinputfiles/KalmanFilter_InputWarmStartFile_GpsPosVec.csv';
+%EKF.WarmStartEpochFormat = UTCGregorian;
+%EKF.WarmStartEpoch       = '10 Jun 2010 01:23:45.678';
+
+%
+%   Final state report
+%
+
+Create ReportFile StateReport
+
+StateReport.Filename     = '../Output/KalmanFilter_WarmStartEpoch.rpt';
+StateReport.WriteHeaders = True;
+StateReport.SolverIterations     = None;
+
+%
+%   Run mission sequence
+%
+
+BeginMissionSequence
+RunEstimator EKF;
+

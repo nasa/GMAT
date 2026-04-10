@@ -1,0 +1,200 @@
+%  Script Mission - Constellation Propagation Example  
+%
+%  This script demonstrates the orbit state conversion from 
+%  cartesian to keplerian using in line math and GMAT's internal
+%  state conversion methods. Both methods use the GMAT Math specs
+%  and should result in nearly identical solutions.
+%
+%  SPH Comments: I only implemented the conversion for elliptic 
+%  inclined orbits, as described in the math spec. 
+%
+%  REVSION HISTORY
+%  $Id: Ex_Cart2KepMathTest.script,v 1.1 2008/01/31 18:39:34 dconway Exp $
+
+
+%  Create a s/c
+Create Spacecraft Sat;
+GMAT Sat.DateFormat = TAIModJulian;
+GMAT Sat.Epoch = 21545.000000000;
+GMAT Sat.CoordinateSystem = EarthMJ2000Eq;
+GMAT Sat.DisplayStateType = Cartesian;
+GMAT Sat.X = 7100;
+GMAT Sat.Y = 0;
+GMAT Sat.Z = 1300;
+GMAT Sat.VX = 0;
+GMAT Sat.VY = 7.35;
+GMAT Sat.VZ = 1;
+GMAT Sat.DryMass = 850;
+GMAT Sat.Cd = 2.2;
+GMAT Sat.Cr = 1.8;
+GMAT Sat.DragArea = 15;
+GMAT Sat.SRPArea = 1;
+
+Create ForceModel Propagator1_ForceModel;
+GMAT Propagator1_ForceModel.CentralBody = Earth;
+GMAT Propagator1_ForceModel.PrimaryBodies = {Earth};
+GMAT Propagator1_ForceModel.Drag = None;
+GMAT Propagator1_ForceModel.SRP = Off;
+GMAT Propagator1_ForceModel.ErrorControl = RSSStep;
+GMAT Propagator1_ForceModel.Gravity.Earth.Degree = 4;
+GMAT Propagator1_ForceModel.Gravity.Earth.Order = 4;
+GMAT Propagator1_ForceModel.Gravity.Earth.PotentialFile = ./files/gravity/earth/JGM2.cof;
+
+Create Propagator Prop;
+GMAT Prop.FM = Propagator1_ForceModel;
+GMAT Prop.Type = RungeKutta89;
+GMAT Prop.InitialStepSize = 60;
+GMAT Prop.Accuracy = 9.9999999999999994e-012;
+GMAT Prop.MinStep = 0.001;
+GMAT Prop.MaxStep = 2700;
+GMAT Prop.MaxStepAttempts = 50;
+
+%   Create variables and arrays that are needed in calculations
+Create Variable SMA ECC INC AOP RAAN TA h r v n Energy rdotv mu ndote edotr;
+Create Variable x y z vx vy vz r pi2 mu d2r;
+Create Variable SMAError ECCError INCError RAANError AOPError TAError;
+Create Array rv[3,1] vv[3,1] hv[3,1] ev[3,1] nv[3,1];
+
+Create XYPlot SMAvsTimeINT;
+GMAT SMAvsTimeINT.IndVar= Sat.TAIModJulian;
+GMAT SMAvsTimeINT.Add = {Sat.SMA};
+GMAT SMAvsTimeINT.Grid = On;
+
+Create XYPlot SMAvsTimeScript;
+GMAT SMAvsTimeScript.IndVar = Sat.TAIModJulian;
+GMAT SMAvsTimeScript.Add = {SMA};
+GMAT SMAvsTimeScript.Grid = On;
+
+Create XYPlot RAANvsTimeINT;
+GMAT RAANvsTimeINT.IndVar= Sat.TAIModJulian;
+GMAT RAANvsTimeINT.Add = {Sat.RAAN};
+GMAT RAANvsTimeINT.Grid = On;
+
+Create XYPlot RAANvsTimeScript;
+GMAT RAANvsTimeScript.IndVar= Sat.TAIModJulian;
+GMAT RAANvsTimeScript.Add = {RAAN};
+GMAT RAANvsTimeScript.Grid = On;
+
+
+%  Create a report to output error data
+Create ReportFile Cart2KeptConvert;
+GMAT Cart2KeptConvert.Filename = ./output/SampleMissions/Ex_Cart2KepMathTest.report;
+GMAT Cart2KeptConvert.Precision = 16;
+GMAT Cart2KeptConvert.Add = {SMAError, ECCError, INCError, RAANError, AOPError, TAError};
+GMAT Cart2KeptConvert.WriteHeaders = On;
+GMAT Cart2KeptConvert.LeftJustify = On;
+GMAT Cart2KeptConvert.ZeroFill = On;
+GMAT Cart2KeptConvert.ColumnWidth = 20;
+GMAT Cart2KeptConvert.SolverIterations = None;
+
+BeginScript
+
+   %  Define constants
+   GMAT pi2 = 6.283185307179586;
+   GMAT d2r = .017453292519943295770;
+   GMAT mu = 398600.4415;
+   GMAT SMA = 7191.870446001621;
+   GMAT RAAN = 306.614;
+
+EndScript
+
+While Sat.ElapsedDays < 1.0
+
+   Propagate Prop(Sat);
+
+   %  This script event is long!! and calculates all 6 keplerian elements
+   %  according to the algorithm in the GMAT math spec.
+   BeginScript
+
+
+      %  Define individual cartesian states
+      GMAT x = Sat.X;
+      GMAT y = Sat.Y;
+      GMAT z = Sat.Z;
+      GMAT vx = Sat.VX;
+      GMAT vy = Sat.VY;
+      GMAT vz = Sat.VZ;
+
+      GMAT rv(1,1) = x;
+      GMAT rv(2,1) = y;
+      GMAT rv(3,1) = z;
+      GMAT vv(1,1) = vx;
+      GMAT vv(2,1) = vy;
+      GMAT vv(3,1) = vz;
+
+      %  Calculate the angular momentum and its magnitude
+      GMAT hv(1,1) = y*vz-z*vy;
+      GMAT hv(2,1) = z*vx-x*vz;
+      GMAT hv(3,1) = x*vy-y*vx;
+      GMAT h       = sqrt( hv(1,1)^2 +  hv(2,1)^2 +  hv(3,1)^2 );
+
+      %  Calculate the vector in the direction of the line of nodes
+      % THERE'S A BUG THIS WAY:  GMAT nv(1,1) = -z*vx+x*vz;
+      GMAT nv(1,1)  =  x*vz-z*vx;
+      GMAT nv(2,1)  =  y*vz-z*vy;
+      GMAT nv(3,1)  =  0;
+      GMAT n        =  sqrt( nv(1,1)^2 +  nv(2,1)^2 +  nv(3,1)^2 );
+
+      %  Calculate the magnitude of position and velocity
+      GMAT r = sqrt( x^2 +   y^2  + z^2 );
+      GMAT v = sqrt( vx^2 + vy^2 + vz^2 );
+
+      %  Calculate the eccentricity vector
+      GMAT rdotv = x*vx + y*vy + z*vz;
+      GMAT ev    = ( ( v^2 - mu/r )*rv - rdotv*vv  ) / mu;    %  This should make a column vector!!
+      GMAT ECC   = sqrt( ev(1,1)^2 +  ev(2,1)^2 +  ev(3,1)^2 );
+
+      %  Calculate the Energy, SMA and INC
+      GMAT Energy = v^2/2 - mu/r;
+      GMAT SMA    = -mu/2/Energy;
+      GMAT INC    = acos(hv(3,1)/h);
+
+      %  Calculate RAAN
+      GMAT RAAN = acos( nv(1,1)/n );
+      %  Fix quadrant
+      If nv(2,1) < 0;
+          GMAT RAAN = pi2 - RAAN;
+      EndIf;
+           
+
+      %  Calculate AOP
+      GMAT ndote =  nv(1,1)*ev(1,1) + nv(2,1)*ev(2,1) + nv(3,1)*ev(3,1)  ;
+      GMAT AOP = acos(ndote/(n*ECC));
+      %  Fix quadrant
+      If ev(3,1) < 0;
+         GMAT AOP = pi2 - AOP;
+      EndIf;
+
+      %  Calculate TA
+      GMAT edotr = rv(1,1)*ev(1,1) + rv(2,1)*ev(2,1) + rv(3,1)*ev(3,1);
+      GMAT TA = acos(edotr/(ECC*r));   
+      %  Fix quadrant
+      If rdotv < 0;
+          GMAT TA = pi2 - TA;
+      EndIf;  % rdotv < 0
+           
+   EndScript
+
+   %  Compare the elements calculated in the script with those calculated internally by GMAT
+   BeginScript
+
+      %%GMAT Convert Angles to degrees
+      GMAT INC  = INC/d2r;
+      GMAT RAAN = RAAN/d2r;
+      GMAT AOP  = AOP/d2r;
+      GMAT TA   = TA/d2r;
+
+      GMAT SMAError  = SMA - Sat.SMA;
+      GMAT ECCError  = ECC - Sat.ECC;
+      GMAT INCError  = INC - Sat.INC;
+      GMAT RAANError = RAAN - Sat.RAAN;
+      GMAT AOPError  = AOP  - Sat.AOP;
+      GMAT TAError   = TA   - Sat.TA;
+
+      Report Cart2KeptConvert SMAError ECCError INCError RAANError AOPError TAError;
+
+   EndScript
+
+
+EndWhile;
+

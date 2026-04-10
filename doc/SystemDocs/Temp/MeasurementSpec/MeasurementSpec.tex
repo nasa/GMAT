@@ -1,0 +1,139 @@
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{paralist}
+
+
+\geometry{verbose,letterpaper,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+\usepackage{graphicx}
+
+\oddsidemargin  0.0in \evensidemargin 0.0in \textwidth      6.5in
+\headheight     0.25in \topmargin      0.0in \textheight=8.5in
+\makeatletter
+\usepackage{babel}
+\makeatother
+\begin{document}
+
+
+
+
+\section{Overview}
+
+GMAT models measurements as either a primitive measurement type, a
+compound measurement type (sequence of primitives), or a custom
+measurement type that is specific to an individual system or is
+proprietary. Primitive measurements include range, range rate,
+Doppler and angles measurements.  For each primitive type, models
+are provided for different sensor combinations.  For example, an
+angle measurement between a telescope and a target is modelled
+differently than an angles measurement between a Radar and a target.
+
+For compound and custom measurements, solving for the measurement
+value and its partial derivatives involves locating discrete events
+involved in the measurement process.  This in turn requires
+knowledge of the states and STM over portions of the event duration.
+Hence, in general, real-world measurements are complex and involve
+the interaction of several system components to evaluate.  In the
+following pages, we present a detailed example of a how GMAT
+evaluates a real world measurement.
+
+Assume the measurement we wish to evaluate is the average range
+rate.
+
+\section{Mathematical Model}
+
+For compound and custom measurements, solving for the measurement
+value and its partial derivatives involves locating discrete events
+involved in the measurement process.  This in turn requires
+knowledge of the states and STM over portions of the event duration.
+Hence, in general, real-world measurements are complex and involve
+the interaction of several system components to evaluate. In the
+following pages, we present a detailed example of a how GMAT
+evaluates a real world measurement.
+%
+\begin{figure}[h!]
+\centerline{
+\begin{picture}(100,475)
+\special{psfile= RangeRateFig.eps hoffset= -135 voffset= 30
+hscale=65 vscale=65}
+        \makebox(300,590){$\mathbf{r}_{g}(t)$}
+        \makebox(-430,580){$\mathbf{r}_{s}(t - \tau_1)$}
+        \makebox(-590,580){$\mathbf{r}_{s}(t - \tau_2)$}
+        \makebox(-730,590){$\mathbf{r}_{g}(t - \tau_3)$}
+        \makebox(-680,850){$\rho_u$}
+        \makebox(-380,850){$\rho_d$}
+\end{picture}}\vskip -4.0 in
+    \caption{ Illustration of Average Range Rate Measurement}
+    \label{Fig:RangeRate}
+\end{figure}
+
+\begin{itemize}
+   \item $\rho_d$ is the downlink range
+   \item $\rho_u$ is the uplink range
+   \item $t$ is the measurement anchor time
+   \item $\Delta t_j$ is the time offset, from $t$ for the
+   $j^{th}$ subevent in the measurement process.
+   \item $\mathbf{r}_s$ is the spacecraft position vector
+   \item $\mathbf{r}_g$ is the ground station position vector
+   \item $\Delta t_a$ is the known averaging interval
+\end{itemize}
+
+\begin{Large}Suggested steps in measurement process:\end{Large}
+%
+\begin{enumerate}
+    \item Prop all participants to measurement anchor time $t$
+    \item Save state and STM
+    \item Locate epoch of event at $\tau_1$
+    \item Save state and STM
+    \item Locate epoch of event at $\tau_2$
+    \item Save state and STM
+    \item Locate epoch of event at $\tau_3$
+    \item Save state and STM
+    \item Calculate measurements and partials using the following
+    equations.
+\end{enumerate}
+
+\begin{equation}
+    \bar{\dot{\rho}} = \frac{\rho_d - \rho_u}{\tau_2 - \tau_1}
+\end{equation}
+%
+where
+%
+\begin{equation}
+    \rho_d = \|\mathbf{r}_g(t)  - \mathbf{r}_s(t - \tau_1)\|
+\end{equation}
+%
+\begin{equation}
+    \rho_u = \|\mathbf{r}_s(t - \tau_2)  - \mathbf{r}_g(t - \tau_3)\|
+\end{equation}
+%
+The partial derivatives of the measurement w/r/t $\mathbf{r}_s(t)$,
+$\mathbf{v}_s(t)$ and $\mathbf{r}_g(t)$ are
+%
+\begin{eqnarray}
+    \frac{\partial \bar{\dot{\rho}} }{\partial\mathbf{r}_s(t) } &=& \frac{1}{\tau_2 - \tau_1}\left( \hat{\rho}_u^T\mathbf{A}_s(t-\tau_2,t)
+    +  \hat{\rho}_d^T\mathbf{A}_s(t-\tau_1,t) \right)\\
+    %
+    \frac{\partial \bar{\dot{\rho}} }{\partial\mathbf{v}_s(t) } &=& \frac{1}{\tau_2 - \tau_1}\left( \hat{\rho}_u^T\mathbf{B}_s(t-\tau_2,t)
+    +  \hat{\rho}_d^T\mathbf{B}_s(t-\tau_1,t) \right)\\
+    %
+    \frac{\partial \bar{\dot{\rho}} }{\partial\mathbf{r}_g(t) } &=& \frac{1}{\tau_2 - \tau_1}\left( \hat{\rho}_u^T\mathbf{B}_g(t-\tau_3,t)
+    +  \hat{\rho}_d^T \right)
+\end{eqnarray}
+
+The event function for the downlink and uplink legs are
+respectively:
+%
+\begin{equation}
+   \mathcal{E}_d = \| \mathbf{r}_g(t) - \mathbf{r}_s(t - \tau_1)\| - c \tau_1 = 0 \hspace{.25 in} \mbox{(Solve for $\tau_1$)}
+\end{equation}
+%
+\begin{equation}
+   \mathcal{E}_u = \| \mathbf{r}_g(t - \tau_3) - \mathbf{r}_s(t - \tau_2)\| - c (\tau_3 - \tau_2) = 0 \hspace{.25 in} \mbox{(Solve for $\tau_3$)}
+\end{equation}
+%
+where we know that $\tau_2 = \tau_1 - \Delta t_a$.
+
+\end{document}

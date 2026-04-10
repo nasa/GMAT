@@ -1,0 +1,97 @@
+%
+% `smptalk.sty' custom commands and settings used to make slides
+%
+% for use with `smptalk.tex' via \usepackage{smptalk}
+%
+% this is an example of a `package'. in this case, it merely
+% defines some macros which are useful when making slides.
+% one doesn't really need the next three, or the last command
+% in this package, these are just formalities.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{smptalk}[1997/02/20 v0.1a Sample user-developed package (BK)]
+\typeout{Package: smptalk v0.1a <1997/02/20> (Bil Kleb)}
+
+% turn off page numbers:
+
+\pagestyle{empty}
+
+% in general, we don't want filled and hyphenated output on slides:
+
+\raggedright
+
+% make sure we have the graphicx package loaded
+% since it is used to include figures:
+
+\RequirePackage{graphicx}
+
+% define a command to include figures:
+% use: \incfig{epsfigure} or \incfig[2in]{epsfigure}
+
+\newcommand{\incfig}%             - name of command
+           [2]%                   - number of arguments
+           [\linewidth]%          - default value for optional 1st argument
+           {%                     - begin definition
+            \centering%           - center figure
+            \includegraphics%     - graphicx's include command
+               [width=#1,%        - set graphic width
+                keepaspectratio]% - leave aspect ratio alone
+               {#2}%              - name of figure
+           }%                     - end definition
+
+% un-comment one of the following to use Helvetica or Times
+% fonts in place of Computer Modern (requires psfont distribution):
+%\RequirePackage{times}
+%\RequirePackage{helvetic}
+
+% redefine an old command to make titles for each slide:
+% use: \title{This is the Large, Centered Slide Title}
+
+\renewcommand{\title}%     - name of command
+             [1]%          - number of arguments
+             {%            - begin definition
+              \bgroup%     - begin a local group
+              \centering%  - turn on centering
+              \large\bf%   - select font
+              #1%          - insert title text
+              \par%        - end a paragraph (skip \parsep)
+              \egroup%     - terminate local group
+             }%            - complete definition
+
+% define new itemize-like environment
+% to make the vertical spacing tighter:
+
+\newenvironment{items}%                  - define a new environment
+  {%                                     - begin beginning definition
+   \begin{itemize}%                      - revamp the itemize environment
+   \raggedright%                         - don't hyphenate/fill lines
+   \setlength{\itemsep}%                 - space between items
+             {2pt plus 2pt minus 1pt}%     (rubber length)
+   \setlength{\parskip}%                 - space between list and body
+             {4pt plus 2pt minus 2pt}%     (rubber length)
+   \setlength{\parsep}%                  - paragraphs within items
+             {2pt plus 2pt minus 1pt}%     (rubber length)
+  }%                                     - close beginning definition
+  {\end{itemize}}%                       - ending definition
+
+% make a description-like environment which
+% justifies the labels according to an optional
+% parameter and allows hyphenation of the labels
+
+\newenvironment{describe}[1][1.25in]%
+  {\begin{list}{}%
+   {\renewcommand{\makelabel}{\describelabel}%
+       \setlength{\labelwidth}{#1}%
+       \setlength{\leftmargin}{\labelwidth}%
+       \addtolength{\leftmargin}{\labelsep}%
+       \setlength{\itemsep}{2pt plus 2pt minus 1pt}%
+       \setlength{\parskip}{4pt plus 2pt minus 2pt}%
+       \setlength{\parsep}{2pt plus 2pt minus 1pt}}}%
+  {\end{list}}
+\newcommand{\describelabel}[1]%
+  {\raisebox{0pt}[1ex][0pt]{\makebox[\labelwidth][l]%
+      {\parbox[t]{\labelwidth}{\hspace{0pt}\textbf{#1:}}}}}
+
+% tell them we're through messing around, and get on with it:
+
+\endinput

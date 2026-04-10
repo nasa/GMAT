@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry version="5.0" xml:id="PatchedConicLaunch"
+          xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude"
+          xmlns:svg="http://www.w3.org/2000/svg"
+          xmlns:m="http://www.w3.org/1998/Math/MathML"
+          xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:db="http://docbook.org/ns/docbook">
+  <indexterm>
+    <primary>PatchedConicLaunch</primary>
+  </indexterm>
+
+  <refmeta>
+    <refentrytitle>PatchedConicLaunch</refentrytitle>
+
+    <refmiscinfo class="source">GMAT</refmiscinfo>
+
+    <refmiscinfo class="manual">Resources</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>PatchedConicLaunch</refname>
+
+    <refpurpose>A patched conic launch model.</refpurpose>
+  </refnamediv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>The patched conic launch model uses performance polynomials to
+    compute mass to orbit for a launch vehicle and the transfer orbit
+    insertion state. The launch is modeled at the beginning of the phase. To
+    configure a patched conic launch, provide the phase, the central body
+    name, the launch vehicle model file, and the name of the launch vehicle as
+    shown in the example below.</para>
+
+    <note>
+      <para>To constrain the launch epoch, apply a
+      <guilabel>CustomLinkageConstraint</guilabel> in addition to a
+      <guilabel>PatchedConicLaunch</guilabel> constraint.</para>
+    </note>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <para>The example below illustrates how to set up a patched conic launch
+    model where launch is modelled at the beginning of a
+    <guilabel>Phase</guilabel> named <guilabel>phase1</guilabel>, the launch
+    vehicle is the Atlas V (401), and the launch body is
+    <guilabel>Earth.</guilabel></para>
+
+    <informalexample>
+      <programlisting><code>% Create the patched conic launch model
+Create OptimalControlFunction pcLaunch
+pcLaunch.Type = AlgebraicConstraint 
+pcLaunch.Function = PatchedConicLaunch
+pcLaunch.PhaseList = {phase1.Initial}
+pcLaunch.SetModelParameter(VehicleName, Atlas_V_401)
+pcLaunch.SetModelParameter(CentralBody,Earth)
+pcLaunch.SetModelParameter(EMTGLaunchVehicleOptionsFile,...
+           ../data/emtg/MyLaunchFile.emtg_launchvehicleopt)
+
+% Add the patched conic launch model to the trajectory
+% so that it is applied during optimization.
+traj.AddBoundaryFunction = pcLaunch 
+</code></programlisting>
+    </informalexample>
+  </refsection>
+
+  <refsection>
+    <title>Launch Vehicle File</title>
+
+    <para>The launch model file contains data for different launch vehicles by
+    vehicle name. Data distributed with GMAT is located in the data/emtg
+    folder and is derived from publicly available information. The file can be
+    edited to add launch vehicle data that is not available in the public
+    distribution.</para>
+
+    <para>The launch vehicle file uses the extension *.emtg_launchvehicleopt
+    and is formatted as follows. Each data line of the launch vehicle file
+    contains 8 tokens in the order listed below, and all elements are
+    space-delimited. Lines preceded by a "#" symbol are comment lines and are
+    ignored.</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>Launch vehicle name (string)</para>
+      </listitem>
+
+      <listitem>
+        <para>Model type (integer) ; always zero, represents polynomial C3
+        curve</para>
+      </listitem>
+
+      <listitem>
+        <para>DLA lower bound, degrees (double)</para>
+      </listitem>
+
+      <listitem>
+        <para>DLA upper bound, degrees (double)</para>
+      </listitem>
+
+      <listitem>
+        <para>C3 lower bound, km^2/s^2 (double)</para>
+      </listitem>
+
+      <listitem>
+        <para>C3 upper bound, km^2/s^2 (double)</para>
+      </listitem>
+
+      <listitem>
+        <para>Launch vehicle adapter mass (double), not used in GMAT.</para>
+      </listitem>
+
+      <listitem>
+        <para>Coefficients for the polynomial (double). The first coefficient
+        in a line is the 0-th order coefficient, to be multiplied by C3^0,
+        followed by the 1st order coefficient, to be multiplied by C3^1 and so
+        on. At least one coefficient value must be supplied; there is no upper
+        limit on the number of coefficients that may supplied.</para>
+      </listitem>
+    </itemizedlist>
+  </refsection>
+</refentry>
