@@ -959,6 +959,35 @@ SolarFluxReader::FluxData SolarFluxReader::GetInputs(GmatEpoch epoch)
 }
 
 //------------------------------------------------------------------------------
+// void GetHistoricDailyFlux(Integer f107index, Real &obsF107, Real &obsCtrF107a)
+//------------------------------------------------------------------------------
+/**
+ * Selects the daily F10.7 and the 81-day centered F10.7 average from the
+ * historic CSSI data for a resolved record index.
+ *
+ * The daily F10.7 comes from the previous day (the daily measurement is recorded
+ * late in the day, so the value in effect at an epoch belongs to the preceding
+ * record).  The 81-day centered average is associated with the detected day
+ * itself.  PrepareApData and PrepareKpData both use this so their selection is
+ * identical (GitHub issue #4 / GMT-8612).
+ *
+ * @param f107index    Resolved historic record index (>= 0).
+ * @param obsF107      Output: daily observed F10.7 (previous day).
+ * @param obsCtrF107a  Output: 81-day centered observed F10.7 average (detected day).
+ */
+//------------------------------------------------------------------------------
+void SolarFluxReader::GetHistoricDailyFlux(Integer f107index, Real &obsF107,
+                                           Real &obsCtrF107a)
+{
+   // Daily value from the previous day
+   obsF107 = (f107index > 0 ? histFluxData[f107index-1].obsF107 :
+                              histFluxData[f107index].obsF107);
+   // Average value from the detected day
+   obsCtrF107a = histFluxData[f107index].obsCtrF107a;
+}
+
+
+//------------------------------------------------------------------------------
 // PrepareApData(GmatEpoch epoch, Integer index, FluxData &fD)
 //------------------------------------------------------------------------------
 /**
@@ -1082,7 +1111,11 @@ void SolarFluxReader::PrepareApData(SolarFluxReader::FluxData &fD, GmatEpoch epo
          }
       }
 
-      // Update the F10.7 data and (if selected) interpolate
+      // Daily F10.7 (previous day) and 81-day centered average (detected day)
+      GetHistoricDailyFlux(f107index, fD.obsF107, fD.obsCtrF107a);
+
+      // Update the F10.7 data and (if selected) interpolate (overrides the
+      // daily obsF107 set just above; obsCtrF107a is unaffected)
       if (interpolateFlux && (epoch >= historicStart))
       {
          Real vals[2];
@@ -1123,15 +1156,6 @@ void SolarFluxReader::PrepareApData(SolarFluxReader::FluxData &fD, GmatEpoch epo
                   vals[1], epoch, fD.obsF107);
          #endif
       }
-      else
-      {
-         // Daily value from previous day
-         fD.obsF107 = (f107index > 0 ? histFluxData[f107index-1].obsF107 :
-                                       histFluxData[f107index].obsF107);
-      }
-
-      // Average value from detected day
-      fD.obsCtrF107a = histFluxData[f107index].obsCtrF107a;
    }
    else // predict data
    {
@@ -1492,13 +1516,9 @@ void SolarFluxReader::PrepareKpData(SolarFluxReader::FluxData &fD, GmatEpoch epo
          fD.kp[0] = fD_OneBefore.kp[8+subIndex];
       }
 
-      // Daily value from previous day
-      fD.obsF107 = (f107index > 0 ? histFluxData[f107index-1].obsF107 :
-                                    histFluxData[f107index].obsF107);
-
-      // Average value from detected day
-      fD.obsCtrF107a = (f107index > 0 ? histFluxData[f107index-1].obsCtrF107a :
-                                        histFluxData[f107index].obsCtrF107a);
+      // Daily F10.7 (previous day) and 81-day centered average (detected day),
+      // selected identically to PrepareApData (GitHub issue #4 / GMT-8612).
+      GetHistoricDailyFlux(f107index, fD.obsF107, fD.obsCtrF107a);
 
       #ifdef DEBUG_FIRST_CALL
          std::stringstream msg;

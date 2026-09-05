@@ -234,6 +234,12 @@ private:
 
    bool FillRecord(FluxData &fD, GmatEpoch forEpoch);
 
+   /// Select the daily F10.7 and 81-day centered average from historic data
+   /// for a resolved record index (single source of truth for PrepareApData
+   /// and PrepareKpData; see GitHub issue #4 / GMT-8612).
+   void GetHistoricDailyFlux(Integer f107index, Real &obsF107,
+                             Real &obsCtrF107a);
+
 public:
    /// Open CSSI and Schatten files if opened
    bool Open();
