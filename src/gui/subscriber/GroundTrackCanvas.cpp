@@ -573,7 +573,9 @@ void GroundTrackCanvas::OnSize(wxSizeEvent& event)
    if (!SetGLContext("in GroundTrackCanvas::OnSize()"))
       return;
    
-   glViewport(0, 0, (GLint) nWidth, (GLint) nHeight);
+   // OpenGL uses physical pixels; wxWidgets client sizes are logical pixels.
+   const double scale = GetContentScaleFactor();
+   glViewport(0, 0, wxRound(nWidth * scale), wxRound(nHeight * scale));
    mCurrViewDistance = (float)(sqrt((Real)(nWidth*nWidth + nHeight*nHeight)));
    
    Refresh(false);

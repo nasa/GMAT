@@ -1146,7 +1146,9 @@ void ViewCanvas::SetDrawingMode()
    // Set viewport size
    int nWidth, nHeight;
    GetClientSize(&nWidth, &nHeight);
-   glViewport(0, 0, nWidth, nHeight);
+   // OpenGL uses physical pixels; wxWidgets client sizes are logical pixels.
+   const double scale = GetContentScaleFactor();
+   glViewport(0, 0, wxRound(nWidth * scale), wxRound(nHeight * scale));
    
    // Set plygon drawng mode
    if (mDrawWireFrame)
