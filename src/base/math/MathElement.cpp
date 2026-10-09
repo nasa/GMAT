@@ -32,6 +32,9 @@
 #include "MathElement.hpp"
 #include "StringUtil.hpp"  // for ToReal()
 #include "MessageInterface.hpp"
+#include "Rvec3Var.hpp"
+#include "Rvec6Var.hpp"
+#include "RvectorVar.hpp"
 #include <sstream>
 
 //#define DEBUG_MATH_ELEMENT
@@ -255,6 +258,19 @@ void MathElement::GetOutputInfo(Integer &type, Integer &rowCount, Integer &colCo
                colCount = 1;
             }
          }
+         else if (type == Gmat::RVECTOR_TYPE)
+         {
+            type = Gmat::RMATRIX_TYPE;
+            rowCount = 1;
+            if (dynamic_cast<Rvec3Var*>(refObject))
+               colCount = 3;
+            else if (dynamic_cast<Rvec6Var*>(refObject))
+               colCount = 6;
+            else if (RvectorVar* vecVar = dynamic_cast<RvectorVar*>(refObject))
+               colCount = vecVar->GetRvector().GetSize();
+            else
+               throw MathException("Unable to determine size of " + refObjectName);
+         }
          
          #ifdef DEBUG_INPUT_OUTPUT
          MessageInterface::ShowMessage
@@ -403,6 +419,54 @@ Rmatrix MathElement::MatrixEvaluate()
    }
    else
    {
+      if (refObject && refObject->GetReturnType() == Gmat::RVECTOR_TYPE)
+      {
+         if (Rvec3Var* vecVar = dynamic_cast<Rvec3Var*>(refObject))
+         {
+            Rvector3 vec = vecVar->GetRvector3();
+            Rmatrix rmat(1, 3, vec[0], vec[1], vec[2]);
+
+            #ifdef DEBUG_EVALUATE
+            MessageInterface::ShowMessage
+            ("MathElement::MatrixEvaluate() It's a Rvector. val =\n%s\n",
+               rmat.ToString().c_str());
+            #endif
+
+            return rmat;
+         }
+         else if (Rvec6Var* vecVar = dynamic_cast<Rvec6Var*>(refObject))
+         {
+            Rvector6 vec = vecVar->GetRvector6();
+            Rmatrix rmat(1, 6, vec[0], vec[1], vec[2], vec[3], vec[4], vec[5]);
+
+            #ifdef DEBUG_EVALUATE
+            MessageInterface::ShowMessage
+            ("MathElement::MatrixEvaluate() It's a Rvector. val =\n%s\n",
+               rmat.ToString().c_str());
+            #endif
+
+            return rmat;
+         }
+         else if (RvectorVar* vecVar = dynamic_cast<RvectorVar*>(refObject))
+         {
+            Rvector vec = vecVar->GetRvector();
+            Rmatrix rmat(1, vec.GetSize());
+
+            for (Integer c = 0; c < vec.GetSize(); c++)
+               rmat.SetElement(0, c, vec[c]);
+
+            #ifdef DEBUG_EVALUATE
+            MessageInterface::ShowMessage
+            ("MathElement::MatrixEvaluate() It's a Rvector. val =\n%s\n",
+               rmat.ToString().c_str());
+            #endif
+
+            return rmat;
+         }
+         else
+            throw MathException("Unable to determine size of " + refObjectName);
+      }
+
       Real rval = Evaluate();
       
       #ifdef DEBUG_EVALUATE

@@ -3449,9 +3449,10 @@ bool GmatMainFrame::ShowSaveMessage()
       }
       else if (result == wxID_YES)
       {
+         bool scriptSaved = true;
          if (mScriptFilename == mTempScriptName)
          {
-            SaveScriptAs();
+            scriptSaved = SaveScriptAs();
          }
          else
          {
@@ -3459,7 +3460,7 @@ bool GmatMainFrame::ShowSaveMessage()
          }
          
          delete msgDlg;
-         return false;
+         return !scriptSaved;
       }
    }
    else
@@ -6151,7 +6152,7 @@ void GmatMainFrame::UpdateAdvancedGuiMode(int status)
    // Update menu and tools depends on the status
    if (status == 1)
    {
-      const wxColour& back = wxTheColourDatabase->Find(!wxSystemSettings::GetAppearance().IsDark() ? "WHITE" : "BLACK");
+      const wxColour back = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
       gmatAppData->GetResourceTree()->SetBackgroundColour(back);
       gmatAppData->GetMissionTree()->SetBackgroundColour(back);
       gmatAppData->GetOutputTree()->SetBackgroundColour(back);

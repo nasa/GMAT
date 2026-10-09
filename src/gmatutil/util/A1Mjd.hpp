@@ -98,7 +98,6 @@ private:
 
    Real GetA1UtcDiff(const UtcMjd &utcmjd);
    //Real GetA1Ut1Diff(const UtcMjd &utcmjd); //wcs: add later
-   Real GetA1UtcDiffAnalytic(const UtcMjd &utcmjd);
    GmatTimeUtil::CalDate A1MjdToCalDate(const A1Mjd &a1mjd);
    GmatTimeUtil::CalDate UtcMjdToCalDate(const UtcMjd &utcmjd, bool handleLeapSecond = false);
 

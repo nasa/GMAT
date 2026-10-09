@@ -37,6 +37,7 @@
 #include "TimeTypes.hpp"           // for TimeConst::, UtcMjd
 #include "RealUtilities.hpp"       // for Round(), IsEqual(), Floor()
 #include "MessageInterface.hpp"
+#include <TimeSystemConverter.hpp>
 
 //#define DEBUG_LEAP_SECONDS
 //#define DEBUG_TOA1DATE
@@ -484,36 +485,7 @@ std::string* A1Mjd::ToValueStrings()
 //------------------------------------------------------------------------------
 UtcMjd A1Mjd::ToUtcMjd()
 {
-   Real a1mjd = mMjd;
-   UtcMjd utcmjd;
-   Real   a1utc1;
-   Real   a1utc2;
-   Real   a1utc3;
-
-   // Get the A.1-UTC offset at this A.1 time... 
-   a1utc1 = GetA1UtcDiff(a1mjd);
-   
-   utcmjd = a1mjd - a1utc1/SECS_PER_DAY;
-
-   // Test the offset at this new time... 
-   a1utc2 = GetA1UtcDiff(utcmjd);
-
-   // If the offset changed, subtract the new offset... 
-   if (a1utc2 != a1utc1)
-   {
-      utcmjd = a1mjd - a1utc2/SECS_PER_DAY;
-
-      // Test the offset at this new time... 
-      a1utc3 = GetA1UtcDiff(utcmjd); //get_a1_utc_diff(utcmjd, &a1utc3);
-
-      // If the offset changed, subtract the new offset... 
-      if (a1utc3 != a1utc2)
-      {
-         utcmjd = a1mjd - a1utc3/SECS_PER_DAY;
-      }
-   }
-
-   return utcmjd;
+   return mMjd - GetA1UtcDiff(mMjd) / SECS_PER_DAY;
 }
 
 
@@ -527,41 +499,7 @@ UtcMjd A1Mjd::ToUtcMjd()
 //------------------------------------------------------------------------------
 Real A1Mjd::GetA1UtcDiff(const UtcMjd &utcmjd)
 {
-   //loj: analytic for build1
-   
-   return GetA1UtcDiffAnalytic(utcmjd);
-}
-
-//------------------------------------------------------------------------------
-// Real GetA1UtcDiffAnalytic(const UtcMjd &utcmjd)
-//------------------------------------------------------------------------------
-/**
- * Compute the A.1-UTC offset analytically.
- * This function was developed by taking the modified julian dates and the a1utc
- * offset for these dates and fitting a line to the data.  The data was obtained
- * from the Timing Coefficents File by using the PC-RSL routine DIFFUTC
- *
- * @param <utcmjd> input UTC modified julian date
- * @return A1 and UTC offset
- * @note Reused from Swingby get_a1_utc_diff_analytic()
- */
-//------------------------------------------------------------------------------
-Real A1Mjd::GetA1UtcDiffAnalytic(const UtcMjd &utcmjd)
-{
-   Real mjd;    // date used for line fit
-   Real a1utc;  // difference in seconds between A.1 and UTC
-                // (add to UTC to give A.1)
-   Real diff;
-
-   // Round to nearest day...
-   mjd = Round(utcmjd);
-
-   // Calculate integer number of seconds...
-   a1utc = Floor(-9.24696 + 0.001925*mjd);
-
-   // Add TAI minus A.1 offset...
-   diff = a1utc + 0.03437805175781120;
-   return diff;
+   return TimeSystemConverter::Instance()->NumberOfLeapSecondsFrom(utcmjd) + 0.03437805175781120;
 }
 
 //------------------------------------------------------------------------------
