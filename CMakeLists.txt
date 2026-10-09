@@ -174,7 +174,7 @@ if(GMAT_INCLUDE_GUI)
      # On Mac/Linux, FindwxWidgets uses the wx-config utility which must be
      # accessible from the system PATH environment variable. 
      # So first save PATH (just the first time to avoid recursive setting)...
-     if(NOT wxWidgets_ROOT_DIR)
+     if(NOT DEFINED SYS_PATH)
        SET(SYS_PATH "$ENV{PATH}" CACHE INTERNAL "System PATH environment variable")
      endif()
 
