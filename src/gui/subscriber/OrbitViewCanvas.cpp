@@ -977,7 +977,9 @@ void OrbitViewCanvas::OnSize(wxSizeEvent& event)
    
    // Need this to make picture not to stretch to canvas
    ChangeProjection(nWidth, nHeight, mCurrViewDistance);
-   glViewport(0, 0, (GLint) nWidth, (GLint) nHeight);
+   // OpenGL uses physical pixels; wxWidgets client sizes are logical pixels.
+   const double scale = GetContentScaleFactor();
+   glViewport(0, 0, wxRound(nWidth * scale), wxRound(nHeight * scale));
    
    Refresh(false);
    Update();
