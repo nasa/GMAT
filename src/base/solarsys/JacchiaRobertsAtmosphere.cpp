@@ -95,26 +95,6 @@ const Real JacchiaRobertsAtmosphere::M_CON[7] =
          0.00038737586,      // (1/km**5)
         -0.000000697444      // (1/km**6)
 };
-/// Constants for series expansion
-const Real JacchiaRobertsAtmosphere::S_CON[6] =
-{
-   3144902516.672729,               // of S(z) function
-   -123774885.4832917,              // (1/km)
-      1816141.096520398,            // (1/km**2)
-       -11403.31079489267,          // (1/km**3)
-           24.36498612105595,       // (1/km**4)
-            0.008957502869707995    // (1/km**5)
-};
-/// Constants for series expansion
-const Real JacchiaRobertsAtmosphere::S_BETA[6] =
-{
-   -52864482.17910969,       // of S(z) function - temperature part
-      -16632.50847336828,    // (1/km)
-          -1.308252378125,   // (1/km**2)
-           0.0,              // (1/km**3)
-           0.0,              // (1/km**4)
-           0.0               // (1/km**5)
-};
 /// Constants required for attitudes between 100 km and 125 km
 const Real JacchiaRobertsAtmosphere::OMEGA = -0.94585589;
 /// Constants for series expansion
@@ -956,6 +936,7 @@ Real JacchiaRobertsAtmosphere::rho_100(Real height, Real temperature)
 {
    Real m_poly, s_poly, f2, p1, p2, p3, p4, p5, p6, b[6];
    Real x_star, u[2], w[2], v, factor_k, roots_2, log_f1;
+   Real c_poly[5], denominator[7];
    Integer i;
 
    // Compute M(z) polynomial
@@ -964,10 +945,27 @@ Real JacchiaRobertsAtmosphere::rho_100(Real height, Real temperature)
       m_poly = m_poly * height + M_CON[i];
    }
 
-   // Compute temperature dependent coefficients
+   // Compute the coefficients of S(z), the remainder of M(z) over
+   // (z + R)^2 * c*(z) / C4.  They are derived from the polar radius in use
+   // because the partial fractions below amplify any mismatch with it.
+   c_poly[0] = CON_C[0] + 1500625.0 * tx/(tx-TZERO);
+   for (i = 1; i <= 4; i++)
+   {
+      c_poly[i] = CON_C[i];
+   }
+   for (i = 0; i <= 6; i++)
+   {
+      denominator[i] = 0.0;
+   }
+   for (i = 0; i <= 4; i++)
+   {
+      denominator[i]   += c_poly[i] * cbPolarSquared;
+      denominator[i+1] += c_poly[i] * 2.0 * cbPolarRadius;
+      denominator[i+2] += c_poly[i];
+   }
    for (i = 0; i <= 5; i++)
    {
-      b[i] = S_CON[i] + S_BETA[i] * tx/(tx-TZERO);
+      b[i] = M_CON[i] - M_CON[6] * denominator[i] / CON_C[4];
    }
 
    // Compute functions of auxiliary temperature values
@@ -1041,10 +1039,7 @@ Real JacchiaRobertsAtmosphere::rho_100(Real height, Real temperature)
    //       y_root*y_root + (height - x_root)*(90.0 - x_root))) / y_root;
 
    // Compute f1 power
-   // Old code (and GTDS):
-   //   factor_k = -1500625.0*G_ZERO*cbPolarSquared/(GAS_CON*CON_C[4]*(tx-TZERO));
-   // Replaced by Vallado's (3rd Ed, p 951):
-   factor_k = -G_ZERO/(GAS_CON*(tx-TZERO));  // Vallado p 951
+   factor_k = -1500625.0*G_ZERO*cbPolarSquared/(GAS_CON*CON_C[4]*(tx-TZERO));
 
    #ifdef UNIT_TEST
       #ifdef UNIT_TEST_90km
