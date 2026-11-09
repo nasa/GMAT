@@ -88,10 +88,6 @@ private:
    static const Real MZERO;
    /// Constants for series expansion
    static const Real M_CON[7];
-   /// Constants for series expansion
-   static const Real S_CON[6];
-   /// Constants for series expansion
-   static const Real S_BETA[6];
    /// Constants required for attitudes between 100 km and 125 km
    static const Real OMEGA;
    /// Constants for series expansion
