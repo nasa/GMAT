@@ -97,6 +97,7 @@ const std::string  StateConversionUtil::STATE_TYPE_TEXT[StateTypeCount] =
    "Equinoctial",
    "ModifiedEquinoctial",  // Modified by M.H.
    "AlternateEquinoctial", // Alternate Equinoctial by HYKim
+   "MeanEquinoctial",
    "Delaunay",
    "Planetodetic",
    "OutgoingAsymptote",
@@ -115,6 +116,7 @@ const bool         StateConversionUtil::REQUIRES_CB_ORIGIN[StateTypeCount] =
    true,  // "Equinoctial"
    true,  // "ModifiedEquinoctial"
    false, // "AlternateEquinoctial"
+   true,  // "MeanEquinoctial"
    true,  // "Delaunay"
    true,  // "Planetodetic"
    true,  // "OutgoingAsymptote"
@@ -133,6 +135,7 @@ const bool         StateConversionUtil::REQUIRES_FIXED_CS[StateTypeCount] =
    false, // "Equinoctial"
    false, // "ModifiedEquinoctial"
    false, // "AlternateEquinoctial"
+   false, // "MeanEquinoctial"
    false, // "Delaunay"
    true,  // "Planetodetic"
    false, // "OutgoingAsymptote"
@@ -293,6 +296,8 @@ Rvector6 StateConversionUtil::Convert(const Rvector6 &state,
          outState = ConvertFromBrouwerMeanShort(toType, state, mu, anomalyType, flattening, eqRadius);
       else if (fromType == "BrouwerMeanLong")
          outState = ConvertFromBrouwerMeanLong(toType, state, mu, anomalyType, flattening, eqRadius);
+      else if (fromType == "MeanEquinoctial")
+         outState = ConvertFromMeanEquinoctial(toType, state, mu, anomalyType, flattening, eqRadius);
       else
       {
          throw UtilityException
@@ -384,6 +389,10 @@ Rvector6 StateConversionUtil::ConvertFromCartesian(const std::string &toType, co
    {
       outState = CartesianToBrouwerMeanLong(mu, state);
    }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(state, mu);
+   }
    else
    {
       throw UtilityException
@@ -468,6 +477,11 @@ Rvector6 StateConversionUtil::ConvertFromKeplerian(const std::string &toType, co
    {
       Rvector6 cartesian = KeplerianToCartesian(mu, state, anomalyType);
       outState = CartesianToBrouwerMeanLong(mu, cartesian);
+   }
+   else if (toType == "MeanEquinoctial")
+   {
+      Rvector6 cartesian = KeplerianToCartesian(mu, state, anomalyType);
+      outState = CartesianToMeanEquinoctial(cartesian, mu);
    }
    else
    {
@@ -555,6 +569,11 @@ Rvector6 StateConversionUtil::ConvertFromModKeplerian(const std::string &toType,
       Rvector6 cartesian = KeplerianToCartesian(mu, state, anomalyType);
       outState = CartesianToBrouwerMeanLong(mu, cartesian);
    }
+   else if (toType == "MeanEquinoctial")
+   {
+      Rvector6 cartesian = KeplerianToCartesian(mu, keplerian, anomalyType);
+      outState = CartesianToMeanEquinoctial(cartesian, mu);
+   }
    else
    {
       throw UtilityException
@@ -637,6 +656,10 @@ Rvector6 StateConversionUtil::ConvertFromSphericalAZFPA(const std::string &toTyp
       Rvector6 cartesian = KeplerianToCartesian(mu, state, anomalyType);
       outState = CartesianToBrouwerMeanLong(mu, cartesian);
    }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cartesian, mu);
+   }
    else
    {
       throw UtilityException
@@ -713,6 +736,10 @@ Rvector6 StateConversionUtil::ConvertFromSphericalRADEC(const std::string &toTyp
    else if (toType == "BrouwerMeanLong") // YK
    {
       outState = CartesianToBrouwerMeanLong(mu, cartesian);
+   }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cartesian, mu);
    }
    else
    {
@@ -791,6 +818,10 @@ Rvector6 StateConversionUtil::ConvertFromEquinoctial(const std::string &toType, 
    {
       outState = CartesianToBrouwerMeanLong(mu, state);
    }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cartState, mu);
+   }
    else
    {
       throw UtilityException
@@ -852,6 +883,10 @@ Rvector6 StateConversionUtil::ConvertFromModEquinoctial(const std::string &toTyp
    else if (toType == "Planetodetic") // Modified by M.H.
    {
       outState = CartesianToPlanetodetic(cartState, flattening, eqRadius);
+   }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cartState, mu);
    }
    else
    {
@@ -915,6 +950,10 @@ Rvector6 StateConversionUtil::ConvertFromAltEquinoctial(const std::string &toTyp
    {
       outState = CartesianToPlanetodetic(cartState, flattening, eqRadius);
    }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cartState, mu);
+   }
    else
    {
       throw UtilityException
@@ -924,6 +963,102 @@ Rvector6 StateConversionUtil::ConvertFromAltEquinoctial(const std::string &toTyp
    
    return outState;
 } // ConvertFromAltEquinoctial()
+
+
+//------------------------------------------------------------------------------
+// Rvector6 ConvertFromMeanEquinoctial(const std::string &toType, const Rvector6 &state,
+//                                    Real mu, const std::string &anomalyType,
+//                                    Real flattening, Real eqRadius)
+//------------------------------------------------------------------------------
+/**
+ * Converts a Mean Equinoctial state to the requested state type
+ *
+ * @param toType The state type to convert to
+ * @param state The Mean Equinoctial state
+ * @param mu The gravitational constant of the central body
+ * @param anomalyType The type of anomaly to use in the output state, if applicable
+ * @param flattening The flattening coefficient of the central body
+ * @param eqRadius The equatorial radius of the central body
+ *
+ * @return The converted state
+ */
+//------------------------------------------------------------------------------
+Rvector6 StateConversionUtil::ConvertFromMeanEquinoctial(const std::string &toType, const Rvector6 &state,
+                                                          Real mu, const std::string &anomalyType,
+                                                          Real flattening, Real eqRadius)
+{
+   Rvector6 outState;
+   Rvector6 meanKepl = MeanEquinoctialToMeanKeplerian(state);
+   Rvector6 cartState = MeanEquinoctialToCartesian(state, mu);
+
+   if (toType == "Cartesian")
+   {
+      outState = cartState;
+   }
+   else if (toType == "Keplerian" || toType == "ModifiedKeplerian")
+   {
+      Rvector6 kepl = CartesianToKeplerian(mu, cartState, anomalyType);
+
+      if (toType == "ModifiedKeplerian")
+         outState = KeplerianToModKeplerian(kepl);
+      else
+         outState = kepl;
+   }
+   else if (toType == "SphericalAZFPA")
+   {
+      outState = CartesianToSphericalAZFPA(cartState);
+   }
+   else if (toType == "SphericalRADEC")
+   {
+      outState = CartesianToSphericalRADEC(cartState);
+   }
+   else if (toType == "Equinoctial")
+   {
+      outState = CartesianToEquinoctial(cartState, mu);
+   }
+   else if (toType == "ModifiedEquinoctial")
+   {
+      outState = CartesianToModEquinoctial(cartState, mu);
+   }
+   else if (toType == "AlternateEquinoctial")
+   {
+      Rvector6 equinoctial = CartesianToEquinoctial(cartState, mu);
+      outState = EquinoctialToAltEquinoctial(equinoctial);
+   }
+   else if (toType == "Delaunay")
+   {
+      Rvector6 kepl = CartesianToKeplerian(mu, cartState, anomalyType);
+      outState = KeplerianToDelaunay(kepl, mu);
+   }
+   else if (toType == "Planetodetic")
+   {
+      outState = CartesianToPlanetodetic(cartState, flattening, eqRadius);
+   }
+   else if (toType == "OutgoingAsymptote")
+   {
+      outState = CartesianToOutgoingAsymptote(mu, cartState);
+   }
+   else if (toType == "IncomingAsymptote")
+   {
+      outState = CartesianToIncomingAsymptote(mu, cartState);
+   }
+   else if (toType == "BrouwerMeanShort")
+   {
+      outState = meanKepl;
+   }
+   else if (toType == "BrouwerMeanLong")
+   {
+      outState = meanKepl;
+   }
+   else
+   {
+      throw UtilityException
+         ("Cannot convert the state from \"MeanEquinoctial\" to \"" + toType +
+          "\". \"" + toType + " is Unknown State Type\n");
+   }
+
+   return outState;
+}
 
 
 //------------------------------------------------------------------------------
@@ -979,6 +1114,10 @@ Rvector6 StateConversionUtil::ConvertFromDelaunay(const std::string &toType, con
    else if (toType == "Planetodetic") // Modified by M.H.
    {
       outState = CartesianToPlanetodetic(cart, flattening, eqRadius);
+   }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cart, mu);
    }
    else
    {
@@ -1042,6 +1181,10 @@ Rvector6 StateConversionUtil::ConvertFromPlanetodetic(const std::string &toType,
       Rvector6 kepl = CartesianToKeplerian(mu, cart, anomalyType);
       outState = KeplerianToDelaunay(kepl, mu);
    }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cart, mu);
+   }
    else
    {
       throw UtilityException
@@ -1090,6 +1233,10 @@ Rvector6 StateConversionUtil::ConvertFromIncomingAsymptote(const std::string &to
    {
       outState = CartesianToOutgoingAsymptote(mu, cartState);
    }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cartState, mu);
+   }
    else
    {
       throw UtilityException
@@ -1137,6 +1284,10 @@ Rvector6 StateConversionUtil::ConvertFromOutgoingAsymptote(const std::string &to
    else if (toType == "IncomingAsymptote") // YK
    {
       outState = CartesianToIncomingAsymptote(mu, cartState);
+   }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = CartesianToMeanEquinoctial(cartState, mu);
    }
    else
    {
@@ -1194,6 +1345,10 @@ Rvector6 StateConversionUtil::ConvertFromBrouwerMeanShort(const std::string &toT
    {
       outState = CartesianToBrouwerMeanLong(mu, cartState);
    }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = MeanKeplerianToMeanEquinoctial(state);
+   }
    else
    {
       throw UtilityException
@@ -1249,6 +1404,10 @@ Rvector6 StateConversionUtil::ConvertFromBrouwerMeanLong(const std::string &toTy
    else if (toType == "BrouwerMeanShort") // YK
    {
       outState = CartesianToBrouwerMeanShort(mu, cartState);
+   }
+   else if (toType == "MeanEquinoctial")
+   {
+      outState = MeanKeplerianToMeanEquinoctial(state);
    }
    else
    {
@@ -4686,6 +4845,176 @@ Rvector6 StateConversionUtil::AltEquinoctialToEquinoctial(const Rvector6& Altequ
    return Rvector6(Altequinoctial[0], Altequinoctial[1], Altequinoctial[2], p, q, Altequinoctial[5]);
 }
 
+//------------------------------------------------------------------------------
+// Rvector6 CartesianToMeanEquinoctial(const Rvector6& cartesian, const Real& mu)
+//------------------------------------------------------------------------------
+/**
+ * Converts a Cartesian state to Mean Equinoctial elements
+ *
+ * @param cartesian The Cartesian state
+ * @param mu The gravitational constant of the central body
+ *
+ * @return The Mean Equinoctial state
+ */
+//------------------------------------------------------------------------------
+Rvector6 StateConversionUtil::CartesianToMeanEquinoctial(const Rvector6& cartesian, const Real& mu)
+{
+   Rvector6 meanKep = CartesianToBrouwerMeanShort(mu, cartesian);
+   return MeanKeplerianToMeanEquinoctial(meanKep);
+}
+
+//------------------------------------------------------------------------------
+// Rvector6 MeanEquinoctialToCartesian(const Rvector6& meanEquinoctial, const Real& mu)
+//------------------------------------------------------------------------------
+/**
+ * Converts a Mean Equinoctial state to Cartesian
+ *
+ * @param meanEquinoctial The Mean Equinoctial state
+ * @param mu The gravitational constant of the central body
+ *
+ * @return The Cartesian state
+ */
+//------------------------------------------------------------------------------
+Rvector6 StateConversionUtil::MeanEquinoctialToCartesian(const Rvector6& meanEquinoctial, const Real& mu)
+{
+   Rvector6 meanKep = MeanEquinoctialToMeanKeplerian(meanEquinoctial);
+   return BrouwerMeanShortToCartesian(mu, meanKep);
+}
+
+//------------------------------------------------------------------------------
+// Rvector6 MeanKeplerianToMeanEquinoctial(const Rvector6 &meanKeplerian)
+//------------------------------------------------------------------------------
+/**
+ * Converts a mean Keplerian state to Mean Equinoctial elements
+ *
+ * @param meanKeplerian The mean Keplerian state
+ *
+ * @return The Mean Equinoctial state
+ */
+//------------------------------------------------------------------------------
+Rvector6 StateConversionUtil::MeanKeplerianToMeanEquinoctial(const Rvector6 &meanKeplerian)
+{
+   Real a       = meanKeplerian[0];
+   Real ecc     = meanKeplerian[1];
+   Real incRad  = meanKeplerian[2] * RAD_PER_DEG;
+   Real raanRad = meanKeplerian[3] * RAD_PER_DEG;
+   Real aopRad  = meanKeplerian[4] * RAD_PER_DEG;
+   Real maRad   = meanKeplerian[5] * RAD_PER_DEG;
+
+   if (incRad >= PI - GmatOrbitConstants::KEP_TOL)
+      throw UtilityException
+         ("Mean Equinoctial elements are not defined for inclination of 180 degrees.\n");
+
+   Real h = ecc * Sin(aopRad + raanRad);
+   Real k = ecc * Cos(aopRad + raanRad);
+   Real tanHalfInc = Tan(incRad / 2.0);
+   Real p = tanHalfInc * Sin(raanRad);
+   Real q = tanHalfInc * Cos(raanRad);
+
+   Real lambda = Mod((maRad + aopRad + raanRad) * DEG_PER_RAD, 360.0);
+   if (lambda < 0.0)
+      lambda += 360.0;
+
+   return Rvector6(a, h, k, p, q, lambda);
+}
+
+//------------------------------------------------------------------------------
+// Rvector6 MeanEquinoctialToMeanKeplerian(const Rvector6 &meanEquinoctial)
+//------------------------------------------------------------------------------
+/**
+ * Converts a Mean Equinoctial state to mean Keplerian
+ *
+ * @param meanEquinoctial The Mean Equinoctial state
+ *
+ * @return The mean Keplerian state
+ */
+//------------------------------------------------------------------------------
+Rvector6 StateConversionUtil::MeanEquinoctialToMeanKeplerian(const Rvector6 &meanEquinoctial)
+{
+   Real a         = meanEquinoctial[0];
+   Real h         = meanEquinoctial[1];
+   Real k         = meanEquinoctial[2];
+   Real p         = meanEquinoctial[3];
+   Real q         = meanEquinoctial[4];
+   Real lambdaRad = meanEquinoctial[5] * RAD_PER_DEG;
+
+   Real ecc = Sqrt(h*h + k*k);
+   if (ecc > 1.0 - GmatOrbitConstants::KEP_ECC_TOL)
+      throw UtilityException
+         ("Cannot convert Mean Equinoctial to Mean Keplerian for a parabolic or hyperbolic orbit.\n");
+
+   Real aopPlusRaan = ATan2(h, k);
+   Real tanHalfInc  = Sqrt(p*p + q*q);
+   Real incRad      = 2.0 * ATan(tanHalfInc);
+   Real raanRad     = ATan2(p, q);
+   Real aopRad      = aopPlusRaan - raanRad;
+   Real maRad       = lambdaRad - aopPlusRaan;
+
+   Real incDeg  = incRad * DEG_PER_RAD;
+   Real raanDeg = Mod(raanRad * DEG_PER_RAD, 360.0);
+   Real aopDeg  = Mod(aopRad  * DEG_PER_RAD, 360.0);
+   Real maDeg   = Mod(maRad   * DEG_PER_RAD, 360.0);
+   if (raanDeg < 0.0) raanDeg += 360.0;
+   if (aopDeg  < 0.0) aopDeg  += 360.0;
+   if (maDeg   < 0.0) maDeg   += 360.0;
+
+   return Rvector6(a, ecc, incDeg, raanDeg, aopDeg, maDeg);
+}
+
+//------------------------------------------------------------------------------
+// Rvector6 MeanEquinoctialElementRates(const Rvector6 &meanKeplerian,
+//                                    Real mu, Real eqRadius)
+//------------------------------------------------------------------------------
+/**
+ * Computes the secular rates of the Mean Equinoctial elements
+ *
+ * @param meanKeplerian The mean Keplerian state
+ * @param mu The gravitational constant of the central body
+ * @param eqRadius The equatorial radius of the central body
+ *
+ * @return The rates of the Mean Equinoctial elements
+ */
+//------------------------------------------------------------------------------
+Rvector6 StateConversionUtil::MeanEquinoctialElementRates(const Rvector6 &meanKeplerian,
+                                                          Real mu, Real eqRadius)
+{
+   static const Real J2 = 0.0010826267;
+
+   Real a       = meanKeplerian[0];
+   Real ecc     = meanKeplerian[1];
+   Real incRad  = meanKeplerian[2] * RAD_PER_DEG;
+   Real raanRad = meanKeplerian[3] * RAD_PER_DEG;
+   Real aopRad  = meanKeplerian[4] * RAD_PER_DEG;
+
+   if (a <= 0.0)
+      throw UtilityException("Cannot compute Mean Equinoctial rates for a non-positive SMA.\n");
+
+   Real n = Sqrt(mu / (a*a*a));
+   Real p = a * (1.0 - ecc*ecc);
+
+   if (p <= 0.0)
+      throw UtilityException("Cannot compute Mean Equinoctial rates - semi-latus rectum is not positive.\n");
+
+   Real reOverP = eqRadius / p;
+   Real raanDot = -1.5 * n * J2 * reOverP * reOverP * Cos(incRad);
+   Real aopDot  =  0.75 * n * J2 * reOverP * reOverP * (4.0 - 5.0 * Sin(incRad) * Sin(incRad));
+   Real argRateSum = aopDot + raanDot;
+
+   Real h = ecc * Sin(aopRad + raanRad);
+   Real k = ecc * Cos(aopRad + raanRad);
+   Real tanHalfInc = Tan(incRad / 2.0);
+   Real pEq = tanHalfInc * Sin(raanRad);
+   Real qEq = tanHalfInc * Cos(raanRad);
+
+   Real smaDot = 0.0;
+   Real hDot   =  k * argRateSum;
+   Real kDot   = -h * argRateSum;
+   Real pDot   =  qEq * raanDot;
+   Real qDot   = -pEq * raanDot;
+
+   return Rvector6(smaDot, n, hDot, kDot, pDot, qDot);
+}
+
 
 //------------------------------------------------------------------------------
 // anomaly conversion methods
@@ -7254,6 +7583,54 @@ bool StateConversionUtil::ValidateValue(const std::string &label,       Real val
             UtilityException ue;
             ue.SetDetails(errorMsgFmt.c_str(), GmatStringUtil::ToString(value, dataPrecision).c_str(),
                           label.c_str(), "Sqrt(EquinoctialH^2 + EquinoctialK^2) < 0.99999");
+            throw ue;
+         }
+      }
+   }
+   else if (labelUpper == "MEANEQUINOCTIALK")
+   {
+      if ((value < -1.0 + EQUINOCTIAL_TOL) || (value > 1.0 - EQUINOCTIAL_TOL))
+      {
+         std::stringstream rangeMsg;
+         rangeMsg << "-1 < Real Number < 1";
+         if (EQUINOCTIAL_TOL != 0.0)
+            rangeMsg << " (tolerance = " << EQUINOCTIAL_TOL << ")";
+         UtilityException ue;
+         ue.SetDetails(errorMsgFmt.c_str(), GmatStringUtil::ToString(value, dataPrecision).c_str(),
+                       label.c_str(), rangeMsg.str().c_str());
+         throw ue;
+      }
+      if (compareUpper == "MEANEQUINOCTIALH")
+      {
+         if (GmatMathUtil::Sqrt(value * value + compareValue * compareValue) > 1.0 - EQUINOCTIAL_TOL)
+         {
+            UtilityException ue;
+            ue.SetDetails(errorMsgFmt.c_str(), GmatStringUtil::ToString(value, dataPrecision).c_str(),
+                          label.c_str(), "Sqrt(MeanEquinoctialH^2 + MeanEquinoctialK^2) < 0.99999");
+            throw ue;
+         }
+      }
+   }
+   else if (labelUpper == "MEANEQUINOCTIALH")
+   {
+      if ((value < -1.0 + EQUINOCTIAL_TOL) || (value > 1.0 - EQUINOCTIAL_TOL))
+      {
+         std::stringstream rangeMsg;
+         rangeMsg << "-1 < Real Number < 1";
+         if (EQUINOCTIAL_TOL != 0.0)
+            rangeMsg << " (tolerance = " << EQUINOCTIAL_TOL << ")";
+         UtilityException ue;
+         ue.SetDetails(errorMsgFmt.c_str(), GmatStringUtil::ToString(value, dataPrecision).c_str(),
+                       label.c_str(), rangeMsg.str().c_str());
+         throw ue;
+      }
+      if (compareUpper == "MEANEQUINOCTIALK")
+      {
+         if (GmatMathUtil::Sqrt(value * value + compareValue * compareValue) > 1.0 - EQUINOCTIAL_TOL)
+         {
+            UtilityException ue;
+            ue.SetDetails(errorMsgFmt.c_str(), GmatStringUtil::ToString(value, dataPrecision).c_str(),
+                          label.c_str(), "Sqrt(MeanEquinoctialH^2 + MeanEquinoctialK^2) < 0.99999");
             throw ue;
          }
       }

@@ -1346,6 +1346,63 @@
           </row>
 
           <row>
+            <entry><guilabel>OrientationSpiceKernelName</guilabel></entry>
+
+            <entry><para>List of SPICE CK files to load for this body. Used to
+            define the body-fixed axes for user-defined bodies when the
+            <guilabel>RotationDataSource</guilabel> is set to SPICE. See <link
+            linkend="CelestialBody_ConfiguringForEventLocation">Remarks</link>.</para><variablelist>
+                <varlistentry>
+                  <term>Data Type</term>
+
+                  <listitem>
+                    <para>String array</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Allowed Values</term>
+
+                  <listitem>
+                    <para>Paths to valid SPICE CK files</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Access</term>
+
+                  <listitem>
+                    <para>set</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Default Value</term>
+
+                  <listitem>
+                    <para>Empty</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Units</term>
+
+                  <listitem>
+                    <para>N/A</para>
+                  </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term>Interfaces</term>
+
+                  <listitem>
+                    <para>GUI, script</para>
+                  </listitem>
+                </varlistentry>
+              </variablelist></entry>
+          </row>
+
+          <row>
             <entry><guilabel>PlanetarySpiceKernelName </guilabel></entry>
 
             <entry><para>List of SPICE PCK files to load for this body. Used
@@ -1528,9 +1585,10 @@
             <entry><para>Specify a source for the body's body-fixed frame (the
             <guilabel>CoordinateSystem</guilabel>
             <guilabel>BodyFixed</guilabel> axes for the body). This parameter
-            can only be modified for Luna and any user-defined CelestialBody.
-            The <guilabel>RotationDataSource</guilabel> cannot currently be
-            changed for built-in bodies other than Luna.</para><variablelist>
+            can only be modified for Earth, Luna and user-defined bodies. The
+            <guilabel>RotationDataSource</guilabel> cannot currently be
+            changed for built-in bodies other than Earth and
+            Luna.</para><variablelist>
                 <varlistentry>
                   <term>Data Type</term>
 
@@ -1544,8 +1602,8 @@
 
                   <listitem>
                     <para><guilabel>IAUSimplified</guilabel>,
-                    <guilabel>SPICE</guilabel> (Luna and user-defined bodies
-                    only).</para>
+                    <guilabel>SPICE</guilabel> (Earth, Luna, and user-defined
+                    bodies only).</para>
                   </listitem>
                 </varlistentry>
 
@@ -2254,8 +2312,21 @@
       <guilabel>RotationDataSource</guilabel> and assigning the proper
       <guilabel>SpiceFrameId</guilabel>,
       <guilabel>PlanetarySpiceKernelName</guilabel>, and
-      <guilabel>FrameSpiceKernelName</guilabel>.Gravity modeling for custom
-      bodies will be performed using the assigned rotation data source.</para>
+      <guilabel>FrameSpiceKernelName</guilabel>. It is also possible to model
+      the orientation of a user-defined body using a CK-kernel file. When
+      using a CK-file to model a body's orientation, the CK-file must be
+      provided on the <guilabel>OrientationSpiceKernelName</guilabel>
+      parameter. In addition, the <guilabel>FrameSpiceKernelName</guilabel>
+      list must include a frame kernel that defines a SPICE frame (created
+      using SPICE frame class 3) tied to the CK kernel. The frame kernel must
+      also contain the "spacecraft" clock kernel, which is required for
+      reading CK-files. The CK-frame defined in the frame SPICE kernel is then
+      assigned to the user-defined body on the
+      <guilabel>SpiceFrameId</guilabel> parameter. See the SPICE toolkit
+      documentation for details and examples.</para>
+
+      <para>Gravity modeling for custom bodies will be performed using the
+      assigned rotation data source.</para>
 
       <note>
         <para>The spacecraft <guilabel>Latitude</guilabel>,
@@ -2394,8 +2465,8 @@ Ceres.OrbitSpiceKernelName = ...
       ephemeris, and orientation must be configured separately for use with
       the event locators.</para>
 
-      <para>Body shape and orientation are configured via SPICE PCK files,
-      loaded from two sources in the following order:</para>
+      <para>Body shape and orientation are configured via SPICE PCK and CK
+      files, loaded from two sources in the following order:</para>
 
       <orderedlist>
         <listitem>

@@ -547,6 +547,9 @@ Real JacchiaRobertsAtmosphere::JacchiaRoberts(Real height, Real space_craft[3],
             geo.tkp   = fD.kp[0];
             nominalF107 = fD.obsF107;
             nominalF107a = fD.obsCtrF107a;
+            currentF107 = nominalF107;
+            currentF107A = nominalF107a;
+            currentKp = geo.tkp;
          }
             break;
 
@@ -557,6 +560,9 @@ Real JacchiaRobertsAtmosphere::JacchiaRoberts(Real height, Real space_craft[3],
             nominalF107a = fD.obsCtrF107a;
             geo.xtemp = 379.0 + 3.24 * constantF107a + 1.3 * (constantF107 - constantF107a);
             geo.tkp   = constantKp;
+            currentF107 = nominalF107;
+            currentF107A = nominalF107a;
+            currentKp = geo.tkp;
 
             #ifdef DEBUG_CONST_DATA
                MessageInterface::ShowMessage("Using [%lf, %lf, %lf]\n",nominalF107,nominalF107a,geo.tkp);
@@ -585,6 +591,9 @@ Real JacchiaRobertsAtmosphere::JacchiaRoberts(Real height, Real space_craft[3],
             geo.tkp   = fD.kp[0];
             nominalF107 = fD.obsF107;
             nominalF107a = fD.obsCtrF107a;
+            currentF107 = nominalF107;
+            currentF107A = nominalF107a;
+            currentKp = geo.tkp;
          }
             break;
          case 2:
@@ -595,6 +604,9 @@ Real JacchiaRobertsAtmosphere::JacchiaRoberts(Real height, Real space_craft[3],
             geo.tkp   = fD.kp[0];
             nominalF107 = fD.obsF107;
             nominalF107a = fD.obsCtrF107a;
+            currentF107 = nominalF107;
+            currentF107A = nominalF107a;
+            currentKp = geo.tkp;
          }
             break;
 
@@ -604,6 +616,9 @@ Real JacchiaRobertsAtmosphere::JacchiaRoberts(Real height, Real space_craft[3],
             nominalF107a = constantF107a;
             geo.xtemp = 379.0 + 3.24 * constantF107a + 1.3 * (constantF107 - constantF107a);
             geo.tkp   = constantKp;
+            currentF107 = nominalF107;
+            currentF107A = nominalF107a;
+            currentKp = geo.tkp;
 
             #ifdef DEBUG_CONST_DATA
                MessageInterface::ShowMessage("Using [%lf, %lf, %lf]\n",nominalF107,nominalF107a,geo.tkp);
@@ -617,6 +632,9 @@ Real JacchiaRobertsAtmosphere::JacchiaRoberts(Real height, Real space_craft[3],
    {
       geo.xtemp = 379.0 + 3.24 * nominalF107a + 1.3 * (nominalF107 - nominalF107a);
       geo.tkp   = nominalKp;
+      currentF107 = nominalF107;
+      currentF107A = nominalF107a;
+      currentKp = geo.tkp;
    }
 
    #ifdef DUMP_FLUX_DATA

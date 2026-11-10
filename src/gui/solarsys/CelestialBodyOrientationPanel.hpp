@@ -66,6 +66,9 @@ private:
    StringArray    fkFiles;
    StringArray    fkFilesToDelete;
 
+   StringArray    OrientationSpiceKernelFiles;
+   StringArray    OrientationSpiceKernelFilesToDelete;
+
    
    CelestialBody  *theBody;
    GuiInterpreter *guiInterpreter;
@@ -92,6 +95,7 @@ private:
    bool           rotationRateChanged;
    bool           spiceFrameIDChanged;
    bool           fkChanged;
+   bool           OrientationSpiceKernelFileChanged;
 
    bool           isEarth;
    bool           isLuna;
@@ -116,6 +120,9 @@ private:
    void     OnFkFileBrowseButton(wxCommandEvent &event);
    void     OnFkFileRemoveButton(wxCommandEvent &event);
    void     OnFkFileListBoxChange(wxCommandEvent &event);
+   void     OnOrientationSpiceKernelFileBrowseButton(wxCommandEvent &event);
+   void     OnOrientationSpiceKernelFileRemoveButton(wxCommandEvent &event);
+   void     OnOrientationSpiceKernelFileListBoxChange(wxCommandEvent &event);
    
    wxString ToString(Real rval);
    
@@ -131,6 +138,7 @@ private:
    wxStaticText *rotationRateStaticText;
    wxStaticText *spiceFrameIDStaticText;
    wxStaticText *fkStaticText;
+   wxStaticText *OrientationSpiceKernelFileStaticText;
 
    wxStaticText *nutationUpdateIntervalUnitsStaticText;
    wxStaticText *spinAxisRAConstantUnitsStaticText;
@@ -160,6 +168,10 @@ private:
 
    wxString     *fkFileArrayWX;
 
+   // strings for the Orientation kernel names
+   StringArray   OrientationSpiceKernelFileArray;
+   wxString* OrientationSpiceKernelFileArrayWX;
+
    // wxString arrays for the combo box
    wxString     *sourceArrayWX;
    
@@ -176,9 +188,13 @@ private:
 
    
    wxListBox    *fkFileListBox;
+   wxListBox    *OrientationSpiceKernelFileListBox;
 
    wxButton     *fkFileBrowseButton;
    wxButton     *fkFileRemoveButton;
+
+   wxButton     *OrientationSpiceKernelFileBrowseButton;
+   wxButton     *OrientationSpiceKernelFileRemoveButton;
 
    GmatStaticBoxSizer *mainBoxSizer;
    
@@ -198,6 +214,9 @@ private:
       ID_LIST_BOX_FK_FILE,
       ID_BROWSE_BUTTON_FK_FILE,
       ID_REMOVE_BUTTON_FK_FILE,
+      ID_LIST_BOX_ORIENTATIONSPICEKERNEL_FILE,
+      ID_BROWSE_BUTTON_ORIENTATIONSPICEKERNEL_FILE,
+      ID_REMOVE_BUTTON_ORIENTATIONSPICEKERNEL_FILE,
    };
 };
 #endif // CelestialBodyOrientationPanel_hpp

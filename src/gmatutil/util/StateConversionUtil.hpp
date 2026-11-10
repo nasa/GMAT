@@ -63,6 +63,7 @@ enum StateType
    EQUINOCTIAL,
    MOD_EQUINOCTIAL,  // Modifed by M.H.
    ALT_EQUINOCTIAL,  // Alternate Equinoctial by HYKim
+   MEAN_EQUINOCTIAL,
    DELAUNAY,
    PLANETODETIC,
    OUT_ASYM,
@@ -152,6 +153,12 @@ static Rvector6 ConvertFromAltEquinoctial(const std::string &toType, const Rvect
                                           const std::string &anomalyType = "TA",
                                           Real flattening =  EARTH_FLATTENING,
                                           Real eqRadius = EARTH_EQ_RADIUS);
+
+static Rvector6 ConvertFromMeanEquinoctial(const std::string &toType, const Rvector6 &state,
+                                           Real mu = EARTH_MU,
+                                           const std::string &anomalyType = "TA",
+                                           Real flattening =  EARTH_FLATTENING,
+                                           Real eqRadius = EARTH_EQ_RADIUS);
 
 static Rvector6 ConvertFromDelaunay(const std::string &toType, const Rvector6 &state,
                                     Real mu = EARTH_MU,
@@ -245,6 +252,14 @@ static Rvector6 BrouwerMeanLongToCartesian(Real mu, const Rvector6 &blml);
 // Alternate Equinoctial by HYKim 
 static Rvector6 EquinoctialToAltEquinoctial(const Rvector6& equinoctial);
 static Rvector6 AltEquinoctialToEquinoctial(const Rvector6& altequinoctial);
+
+static Rvector6 CartesianToMeanEquinoctial(const Rvector6& cartesian, const Real& mu);
+static Rvector6 MeanEquinoctialToCartesian(const Rvector6& meanEquinoctial, const Real& mu);
+static Rvector6 MeanKeplerianToMeanEquinoctial(const Rvector6 &meanKeplerian);
+static Rvector6 MeanEquinoctialToMeanKeplerian(const Rvector6 &meanEquinoctial);
+
+static Rvector6 MeanEquinoctialElementRates(const Rvector6 &meanKeplerian, Real mu,
+                                            Real eqRadius = EARTH_EQ_RADIUS);
 
 
 //------------------------------------------------------------------------------

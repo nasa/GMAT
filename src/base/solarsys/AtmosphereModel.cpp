@@ -131,7 +131,12 @@ AtmosphereModel::AtmosphereModel(const std::string &typeStr, const std::string &
    sod                  (0.0),
    yd                   (0),
    f107                 (0.0),
-   f107a                (0.0)
+   f107a                (0.0),
+   currentF107          (0.0),
+   currentF107A         (0.0),
+   currentKp            (0.0),
+   currentAp            (0.0),
+   currentApAvg         (0.0)
 {
    objectTypes.push_back(Gmat::ATMOSPHERE);
    objectTypeNames.push_back("AtmosphereModel");
@@ -227,7 +232,12 @@ AtmosphereModel::AtmosphereModel(const AtmosphereModel& am) :
    sod                  (am.sod),
    yd                   (am.yd),
    f107                 (am.f107),
-   f107a                (am.f107a)
+   f107a                (am.f107a),
+   currentF107          (am.currentF107),
+   currentF107A         (am.currentF107A),
+   currentKp            (am.currentKp),
+   currentAp            (am.currentAp),
+   currentApAvg         (am.currentApAvg)
 {
    parameterCount = AtmosphereModelParamCount;
    nominalAp = ConvertKpToAp(nominalKp);
@@ -302,6 +312,11 @@ AtmosphereModel& AtmosphereModel::operator=(const AtmosphereModel& am)
    yd                   = am.yd;
    f107                 = am.f107;
    f107a                = am.f107a;
+   currentF107          = am.currentF107;
+   currentF107A         = am.currentF107A;
+   currentKp            = am.currentKp;
+   currentAp            = am.currentAp;
+   currentApAvg         = am.currentApAvg;
 
    for (Integer i = 0; i < 7; i++)
       ap[i] = am.ap[i];
@@ -1813,6 +1828,10 @@ void AtmosphereModel::GetInputs(GmatEpoch epoch)
             f107a = fDbuffer.obsCtrF107a;
             for (Integer i = 0; i < 7; i++)
                 ap[i] = fDbuffer.ap[i];
+            currentF107 = f107;
+            currentF107A = f107a;
+            currentAp = ap[0];
+            currentApAvg = fDbuffer.apAvg;
             #ifdef DEBUG_FLUX_FILE
                MessageInterface::ShowMessage("%lf Historic flux: CSSI\n", epoch);
             #endif
@@ -1824,6 +1843,10 @@ void AtmosphereModel::GetInputs(GmatEpoch epoch)
             f107a = constantF107a;
             for (Integer i = 0; i < 7; i++)
                ap[i] = constantAp;
+            currentF107 = f107;
+            currentF107A = f107a;
+            currentAp = ap[0];
+            currentApAvg = constantAp;
             #ifdef DEBUG_FLUX_FILE
                MessageInterface::ShowMessage("%lf Historic flux: Constants\n", epoch);
             #endif
@@ -1842,6 +1865,10 @@ void AtmosphereModel::GetInputs(GmatEpoch epoch)
             f107a = fDbuffer.obsCtrF107a;
             for (Integer i = 0; i < 7; i++)
                 ap[i] = fDbuffer.ap[i];
+            currentF107 = f107;
+            currentF107A = f107a;
+            currentAp = ap[0];
+            currentApAvg = fDbuffer.apAvg;
             #ifdef DEBUG_FLUX_FILE
                MessageInterface::ShowMessage("%lf Predict flux: Schatten\n", epoch);
             #endif
@@ -1853,6 +1880,10 @@ void AtmosphereModel::GetInputs(GmatEpoch epoch)
             f107a = constantF107a;
             for (Integer i = 0; i < 7; i++)
                ap[i] = constantAp;
+            currentF107 = f107;
+            currentF107A = f107a;
+            currentAp = ap[0];
+            currentApAvg = constantAp;
             #ifdef DEBUG_FLUX_FILE
                MessageInterface::ShowMessage("%lf Predict flux: Constants\n", epoch);
             #endif
@@ -1866,6 +1897,10 @@ void AtmosphereModel::GetInputs(GmatEpoch epoch)
       f107a = constantF107a;
       for (Integer i = 0; i < 7; i++)
          ap[i] = constantAp;
+      currentF107 = f107;
+      currentF107A = f107a;
+      currentAp = ap[0];
+      currentApAvg = constantAp;
    }
 
    #ifdef DUMP_FLUX_DATA
@@ -1887,4 +1922,76 @@ void AtmosphereModel::GetInputs(GmatEpoch epoch)
 std::string AtmosphereModel::GetCentralBodyName()
 {
    return centralBody;
+}
+
+//------------------------------------------------------------------------------
+// Real GetCurrentF107()
+//------------------------------------------------------------------------------
+/**
+ * Retrieves the F10.7 value used in the most recent density calculation.
+ *
+ * @return The F10.7 value.
+ */
+//------------------------------------------------------------------------------
+Real AtmosphereModel::GetCurrentF107()
+{
+   return currentF107;
+}
+
+//------------------------------------------------------------------------------
+// Real GetCurrentF107A()
+//------------------------------------------------------------------------------
+/**
+ * Retrieves the F10.7 average value used in the most recent density
+ * calculation.
+ *
+ * @return The F10.7 average value.
+ */
+//------------------------------------------------------------------------------
+Real AtmosphereModel::GetCurrentF107A()
+{
+   return currentF107A;
+}
+
+//------------------------------------------------------------------------------
+// Real GetCurrentKp()
+//------------------------------------------------------------------------------
+/**
+ * Retrieves the Kp value used in the most recent density calculation.
+ *
+ * @return The Kp value.
+ */
+//------------------------------------------------------------------------------
+Real AtmosphereModel::GetCurrentKp()
+{
+   return currentKp;
+}
+
+//------------------------------------------------------------------------------
+// Real GetCurrentAp()
+//------------------------------------------------------------------------------
+/**
+ * Retrieves the Ap value used in the most recent density calculation.
+ *
+ * @return The Ap value.
+ */
+//------------------------------------------------------------------------------
+Real AtmosphereModel::GetCurrentAp()
+{
+   return currentAp;
+}
+
+//------------------------------------------------------------------------------
+// Real GetCurrentApAvg()
+//------------------------------------------------------------------------------
+/**
+ * Retrieves the averaged Ap value used in the most recent density
+ * calculation.
+ *
+ * @return The averaged Ap value.
+ */
+//------------------------------------------------------------------------------
+Real AtmosphereModel::GetCurrentApAvg()
+{
+   return currentApAvg;
 }

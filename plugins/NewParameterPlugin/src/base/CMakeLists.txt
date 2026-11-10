@@ -31,6 +31,7 @@ SET(PLUGIN_SRCS
     parameter/OdeData.cpp
     parameter/OdeReal.cpp
     parameter/OdeRvec3.cpp
+    parameter/SpaceWeatherParameters.cpp
     parameter/SolverData.cpp
     parameter/SolverReal.cpp
     parameter/SolverState.cpp

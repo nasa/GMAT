@@ -46,6 +46,7 @@
 #include "EquinoctialParameters.hpp"
 #include "ModEquinoctialParameters.hpp"
 #include "AlternateEquinoctialParameters.hpp"
+#include "MeanEquinoctialParameters.hpp"
 #include "DelaunayParameters.hpp"
 #include "PlanetodeticParameters.hpp"
 #include "IncomingAsymptoteParameters.hpp"
@@ -265,6 +266,32 @@ Parameter* ParameterFactory::CreateParameter(const std::string &ofType,
       return new AltEquinQ(withName);
    if (ofType == "AltEquinoctial")
       return new AltEquinState(withName);
+   
+   // Mean Equinoctial parameters
+   if (ofType == "MeanEquinoctialSMA")
+      return new MeanEquinSma(withName);
+   if (ofType == "MeanEquinoctialMM")
+      return new MeanEquinMM(withName);
+   if (ofType == "MeanEquinoctialH")
+      return new MeanEquinH(withName);
+   if (ofType == "MeanEquinoctialHDot")
+      return new MeanEquinHDot(withName);
+   if (ofType == "MeanEquinoctialK")
+      return new MeanEquinK(withName);
+   if (ofType == "MeanEquinoctialKDot")
+      return new MeanEquinKDot(withName);
+   if (ofType == "MeanEquinoctialP")
+      return new MeanEquinP(withName);
+   if (ofType == "MeanEquinoctialPDot")
+      return new MeanEquinPDot(withName);
+   if (ofType == "MeanEquinoctialQ")
+      return new MeanEquinQ(withName);
+   if (ofType == "MeanEquinoctialQDot")
+      return new MeanEquinQDot(withName);
+   if (ofType == "MeanEquinoctialMLONG")
+      return new MeanEquinMlong(withName);
+   if (ofType == "MeanEquinoctial")
+      return new MeanEquinState(withName);
    
    // Delaunay parameters; Modified by M.H.
    if (ofType == "Delaunayl")
@@ -848,6 +875,20 @@ ParameterFactory::ParameterFactory()
       // Alternate Equinoctial parameters by HYKim
       creatables.push_back("AltEquinoctialP");
       creatables.push_back("AltEquinoctialQ");
+      
+      // Mean Equinoctial parameters
+      creatables.push_back("MeanEquinoctialSMA");
+      creatables.push_back("MeanEquinoctialMM");
+      creatables.push_back("MeanEquinoctialH");
+      creatables.push_back("MeanEquinoctialHDot");
+      creatables.push_back("MeanEquinoctialK");
+      creatables.push_back("MeanEquinoctialKDot");
+      creatables.push_back("MeanEquinoctialP");
+      creatables.push_back("MeanEquinoctialPDot");
+      creatables.push_back("MeanEquinoctialQ");
+      creatables.push_back("MeanEquinoctialQDot");
+      creatables.push_back("MeanEquinoctialMLONG");
+      creatables.push_back("MeanEquinoctial");
       
       // Delaunay parameters ; Modified by M.H.
       creatables.push_back("Delaunayl");

@@ -456,53 +456,58 @@ void GmatToolBar::UpdateGuiScriptSyncStatus(wxToolBar* toolBar, int guiStat,
 #endif
 
    wxColour bgcolor = wxTheColourDatabase->Find("DIM GREY");
+   wxString label;
+   wxColour fgcolor;
    if (guiStatus == 1 && scriptStatus == 1)
    {
-      theSyncStatus->SetLabel(synchronized);
-      theSyncStatus->SetBackgroundColour(bgcolor);
-      theSyncStatus->SetForegroundColour(*wxGREEN);
+      label = synchronized;
+      fgcolor = *wxGREEN;
    }
    else if (guiStatus == 2 && scriptStatus == 1)
    {
-      theSyncStatus->SetLabel(guiModified);
-      wxColour yellow = wxTheColourDatabase->Find("Yellow");
-      theSyncStatus->SetBackgroundColour(bgcolor);
-      theSyncStatus->SetForegroundColour(yellow);
+      label = guiModified;
+      fgcolor = wxTheColourDatabase->Find("Yellow");
    }
    else if (guiStatus == 1 && scriptStatus == 2)
    {
-      theSyncStatus->SetLabel(scriptModified);
-      wxColour yellow = wxTheColourDatabase->Find("Yellow");
-      theSyncStatus->SetBackgroundColour(bgcolor);
-      theSyncStatus->SetForegroundColour(yellow);
+      label = guiModified;
+      fgcolor = wxTheColourDatabase->Find("Yellow");
    }
    else if (guiStatus == 2 && scriptStatus == 2)
    {
-      theSyncStatus->SetLabel(unsynchronized);
-      wxColour bgcolor = wxTheColourDatabase->Find("LIGHT GREY");
-      theSyncStatus->SetBackgroundColour(bgcolor);
-      theSyncStatus->SetForegroundColour(*wxRED);
+      label = unsynchronized;
+      bgcolor = wxTheColourDatabase->Find("LIGHT GREY");
+      fgcolor = *wxRED;
    }
    else if (guiStatus == 3 && scriptStatus == 3)
    {
       // This will never happen, but handle just in case
-      theSyncStatus->SetLabel(guiScriptError);
-      theSyncStatus->SetBackgroundColour(*wxRED);
-      theSyncStatus->SetForegroundColour(*wxWHITE);
+      label = guiScriptError;
+      bgcolor = *wxRED;
+      fgcolor = *wxWHITE;
    }
    else if (guiStatus == 3)
    {
-      theSyncStatus->SetLabel(guiError);
-      theSyncStatus->SetBackgroundColour(*wxRED);
-      theSyncStatus->SetForegroundColour(*wxWHITE);
+      label = guiError;
+      bgcolor = *wxRED;
+      fgcolor = *wxWHITE;
    }
    else if (scriptStatus == 3)
    {
-      theSyncStatus->SetLabel(scriptError);
-      theSyncStatus->SetBackgroundColour(*wxRED);
-      theSyncStatus->SetForegroundColour(*wxWHITE);
+      label = scriptError;
+      bgcolor = *wxRED;
+      fgcolor = *wxWHITE;
    }
-   
+   else 
+   {
+      // Unrecognized status combination, so leave the field as it is
+      return;
+   }
+   theSyncStatus->SetBackgroundColour(bgcolor);
+   theSyncStatus->SetForegroundColour(fgcolor);
+   theSyncStatus->SetLabel(label);
+   theSyncStatus->Refresh();
+   theSyncStatus->Update();
    #ifdef DEBUG_SYNC_STATUS
    MessageInterface::ShowMessage
       ("GmatToolBar::UpdateGuiScriptSyncStatus() leaving\n");

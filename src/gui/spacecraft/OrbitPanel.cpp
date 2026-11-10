@@ -683,6 +683,8 @@ void OrbitPanel::Create()
 void OrbitPanel::AddElements(wxWindow *parent)
 {
    Integer bsize = 2; // border size
+   Integer labelBsize = 1;
+   Integer labelWidth = 200;
 
    elementsPanel = new wxPanel(parent);
    wxGridSizer *item0 = new wxGridSizer( 1, 0, 0 );
@@ -690,7 +692,7 @@ void OrbitPanel::AddElements(wxWindow *parent)
    
    // Element 1
    description1 = new wxStaticText( elementsPanel, ID_TEXT, 
-                      wxT(""), wxDefaultPosition, wxSize(118,-1), 0 );
+                      wxT(""), wxDefaultPosition, wxSize(labelWidth,-1), wxST_ELLIPSIZE_END );
    textCtrl[0] = new wxTextCtrl( elementsPanel, ID_TEXTCTRL, 
                      wxT(""), wxDefaultPosition, wxSize(150,-1), 0, wxTextValidator(wxGMAT_FILTER_NUMERIC) );
    unit1 = new wxStaticText( elementsPanel, ID_TEXT, wxT("Unit1"), 
@@ -698,7 +700,7 @@ void OrbitPanel::AddElements(wxWindow *parent)
    
    // Element 2
    description2 = new wxStaticText( elementsPanel, ID_TEXT, 
-                      wxT(""), wxDefaultPosition, wxSize(118,-1), 0 );
+                      wxT(""), wxDefaultPosition, wxSize(labelWidth,-1), wxST_ELLIPSIZE_END );
    textCtrl[1] = new wxTextCtrl( elementsPanel, ID_TEXTCTRL, wxT(""), 
                      wxDefaultPosition, wxSize(150,-1), 0, wxTextValidator(wxGMAT_FILTER_NUMERIC) );
    unit2 = new wxStaticText( elementsPanel, ID_TEXT, wxT("Unit2"), 
@@ -706,7 +708,7 @@ void OrbitPanel::AddElements(wxWindow *parent)
    
    // Element 3
    description3 = new wxStaticText( elementsPanel, ID_TEXT, 
-                      wxT(""), wxDefaultPosition, wxSize(118,-1), 0 );
+                      wxT(""), wxDefaultPosition, wxSize(labelWidth,-1), wxST_ELLIPSIZE_END );
    textCtrl[2] = new wxTextCtrl( elementsPanel, ID_TEXTCTRL, wxT(""), 
                    wxDefaultPosition, wxSize(150,-1), 0, wxTextValidator(wxGMAT_FILTER_NUMERIC) );
    unit3 = new wxStaticText( elementsPanel, ID_TEXT, wxT("Unit3"), 
@@ -714,7 +716,7 @@ void OrbitPanel::AddElements(wxWindow *parent)
    
    // Element 4
    description4 = new wxStaticText( elementsPanel, ID_TEXT, 
-                      wxT(""), wxDefaultPosition, wxSize(118,-1), 0 );
+                      wxT(""), wxDefaultPosition, wxSize(labelWidth,-1), wxST_ELLIPSIZE_END );
    textCtrl[3] = new wxTextCtrl( elementsPanel, ID_TEXTCTRL, wxT(""), 
                    wxDefaultPosition, wxSize(150,-1), 0, wxTextValidator(wxGMAT_FILTER_NUMERIC) );
    unit4 = new wxStaticText( elementsPanel, ID_TEXT, wxT("Unit4"), 
@@ -722,7 +724,7 @@ void OrbitPanel::AddElements(wxWindow *parent)
    
    // Element 5    
    description5 = new wxStaticText( elementsPanel, ID_TEXT, 
-                      wxT(""), wxDefaultPosition, wxSize(118,-1), 0 );
+                      wxT(""), wxDefaultPosition, wxSize(labelWidth,-1), wxST_ELLIPSIZE_END );
    textCtrl[4] = new wxTextCtrl( elementsPanel, ID_TEXTCTRL, wxT(""), 
                                  wxDefaultPosition, wxSize(150,-1), 0, wxTextValidator(wxGMAT_FILTER_NUMERIC) );
    unit5 = new wxStaticText( elementsPanel, ID_TEXT, wxT("Unit5"), 
@@ -730,35 +732,35 @@ void OrbitPanel::AddElements(wxWindow *parent)
    
    // Element 6
    description6 = new wxStaticText( elementsPanel, ID_TEXT, 
-                      wxT(""), wxDefaultPosition, wxSize(118,-1), 0 );
+                      wxT(""), wxDefaultPosition, wxSize(labelWidth,-1), wxST_ELLIPSIZE_END );
    textCtrl[5] = new wxTextCtrl( elementsPanel, ID_TEXTCTRL, wxT(""),
                                 wxDefaultPosition, wxSize(150,-1), 0, wxTextValidator(wxGMAT_FILTER_NUMERIC) );
    unit6 = new wxStaticText( elementsPanel, ID_TEXT, wxT("Unit6"), 
                 wxDefaultPosition, wxDefaultSize, 0 );
    
    // Add to wx*Sizers 
-   item3->Add( description1, 0, wxALIGN_LEFT|wxALL, bsize );
-   item3->Add( textCtrl[0], 0, wxGROW|wxALIGN_CENTER|wxALL, bsize );
+   item3->Add( description1, 0, wxALIGN_LEFT|wxALL, labelBsize );
+   item3->Add( textCtrl[0], 0, wxGROW|wxALIGN_CENTER|wxALL, labelBsize );
    item3->Add( unit1, 0, wxALIGN_LEFT|wxALL, bsize );
    
-   item3->Add( description2, 0, wxALIGN_LEFT|wxALL, bsize );
-   item3->Add( textCtrl[1], 0, wxGROW|wxALIGN_CENTER|wxALL, bsize );
+   item3->Add( description2, 0, wxALIGN_LEFT|wxALL, labelBsize );
+   item3->Add( textCtrl[1], 0, wxGROW|wxALIGN_CENTER|wxALL, labelBsize );
    item3->Add( unit2, 0, wxALIGN_LEFT|wxALL, bsize );
    
-   item3->Add( description3, 0, wxALIGN_LEFT|wxALL, bsize );
-   item3->Add( textCtrl[2], 0, wxGROW|wxALIGN_CENTER|wxALL, bsize );
+   item3->Add( description3, 0, wxALIGN_LEFT|wxALL, labelBsize );
+   item3->Add( textCtrl[2], 0, wxGROW|wxALIGN_CENTER|wxALL, labelBsize );
    item3->Add( unit3, 0, wxALIGN_LEFT|wxALL, bsize );
    
-   item3->Add( description4, 0, wxALIGN_LEFT|wxALL, bsize );
-   item3->Add( textCtrl[3], 0, wxGROW|wxALIGN_CENTER|wxALL, bsize );
+   item3->Add( description4, 0, wxALIGN_LEFT|wxALL, labelBsize );
+   item3->Add( textCtrl[3], 0, wxGROW|wxALIGN_CENTER|wxALL, labelBsize );
    item3->Add( unit4, 0, wxALIGN_LEFT|wxALL, bsize );
    
-   item3->Add( description5, 0, wxALIGN_LEFT|wxALL, bsize );
-   item3->Add( textCtrl[4], 0, wxGROW|wxALIGN_CENTER|wxALL, bsize );
+   item3->Add( description5, 0, wxALIGN_LEFT|wxALL, labelBsize );
+   item3->Add( textCtrl[4], 0, wxGROW|wxALIGN_CENTER|wxALL, labelBsize );
    item3->Add( unit5, 0, wxALIGN_LEFT|wxALL, bsize );
    
-   item3->Add( description6, 0, wxALIGN_LEFT|wxALL, bsize );
-   item3->Add( textCtrl[5], 0, wxGROW|wxALIGN_CENTER|wxALL, bsize );
+   item3->Add( description6, 0, wxALIGN_LEFT|wxALL, labelBsize );
+   item3->Add( textCtrl[5], 0, wxGROW|wxALIGN_CENTER|wxALL, labelBsize );
    item3->Add( unit6, 0, wxALIGN_LEFT|wxALL, bsize );
 
    item0->Add( item3, 0, wxGROW|wxALL|wxALIGN_CENTER, bsize );
@@ -1926,6 +1928,8 @@ bool OrbitPanel::CheckState(Rvector6 &outState)
       retval = CheckModifiedEquinoctial(outState);
    else if (mFromStateTypeStr == "AlternateEquinoctial")
       retval = CheckAlternateEquinoctial(outState);
+   else if (mFromStateTypeStr == "MeanEquinoctial")
+      retval = CheckMeanEquinoctial(outState);
    else if (mFromStateTypeStr == "Delaunay")
       retval = CheckDelaunay(outState);
    else if (mFromStateTypeStr == "Planetodetic")
@@ -2473,11 +2477,11 @@ bool OrbitPanel::CheckSpherical(Rvector6 &outState, const wxString &stateType)
       MessageInterface::ShowMessage("labels[%d] = %s\n", i, labels[i].c_str());
    #endif
    
-   if (theScPanel->CheckReal(outState[0], mElementStrs[0], "RMagnitude", "Real Number"))
+   if (theScPanel->CheckReal(outState[0], mElementStrs[0], "RMAG", "Real Number"))
    {
       try
       {
-         StateConversionUtil::ValidateValue("RMagnitude", outState[0], errMsgFormat, gg->GetDataPrecision());
+         StateConversionUtil::ValidateValue("RMAG", outState[0], errMsgFormat, gg->GetDataPrecision());
       }
       catch (BaseException &ue)
       {
@@ -2527,11 +2531,11 @@ bool OrbitPanel::CheckSpherical(Rvector6 &outState, const wxString &stateType)
       retval = false;
    }
    
-   if (theScPanel->CheckReal(outState[3], mElementStrs[3], "VMagnitude", "Real Number"))
+   if (theScPanel->CheckReal(outState[3], mElementStrs[3], "VMAG", "Real Number"))
    {
       try
       {
-         StateConversionUtil::ValidateValue("VMagnitude", outState[3], errMsgFormat, gg->GetDataPrecision());
+         StateConversionUtil::ValidateValue("VMAG", outState[3], errMsgFormat, gg->GetDataPrecision());
       }
       catch (BaseException &ue)
       {
@@ -2807,6 +2811,77 @@ bool OrbitPanel::CheckAlternateEquinoctial(Rvector6 &outState)
    
    return retval;
 }
+
+//------------------------------------------------------------------------------
+// bool CheckMeanEquinoctial(Rvector6 &outState)
+//------------------------------------------------------------------------------
+/**
+ * Checks the currently displayed Mean Equinoctial state for validity.
+ *
+ * @param <outState> output state
+ *
+ * @return true if state is valid; false otherwise
+ */
+//------------------------------------------------------------------------------
+bool OrbitPanel::CheckMeanEquinoctial(Rvector6 &outState)
+{
+   bool retval = true;
+   StringArray labels = theSpacecraft->GetStateElementLabels("MeanEquinoctial");
+   
+	#ifdef DEBUG_ORBIT_PANEL_CHECKSTATE
+   MessageInterface::ShowMessage("OrbitPanel::CheckMeanEquinoctial() entered\n");
+   MessageInterface::ShowMessage
+      ("   mElementStrs = %s %s %s %s %s %s\n", mElementStrs[0].c_str(), mElementStrs[1].c_str(),
+       mElementStrs[2].c_str(), mElementStrs[3].c_str(), mElementStrs[4].c_str(), mElementStrs[5].c_str());
+   for (int i = 0; i < 6; i++)
+      MessageInterface::ShowMessage("labels[%d] = %s\n", i, labels[i].c_str());
+   #endif
+   
+   #if 0
+   std::string labels[6];
+   labels[0] = "MeanEquinoctialSMA";
+   labels[1] = "MeanEquinoctialH";
+   labels[2] = "MeanEquinoctialK";
+   labels[3] = "MeanEquinoctialP";
+   labels[4] = "MeanEquinoctialQ";
+   labels[5] = "MeanEquinoctialMLONG";
+   #endif
+   
+   for (unsigned int ii = 0; ii < 6; ii++)
+   {
+      if (theScPanel->CheckReal(outState[ii], mElementStrs[ii], labels[ii], "Real Number"))
+      {
+         try
+         {
+            if (labels[ii] == "MeanEquinoctialH")
+               StateConversionUtil::ValidateValue
+                  (labels[ii], outState[ii], errMsgFormat, gg->GetDataPrecision(), labels[2], outState[2]);
+            else if (labels[ii] == "MeanEquinoctialK")
+               StateConversionUtil::ValidateValue
+                  (labels[ii], outState[ii], errMsgFormat, gg->GetDataPrecision(), labels[1], outState[1]);
+            else
+               StateConversionUtil::ValidateValue
+                  (labels[ii], outState[ii], errMsgFormat, gg->GetDataPrecision());
+         }
+         catch (BaseException &ue)
+         {
+            MessageInterface::PopupMessage(Gmat::ERROR_, ue.GetFullMessage() + "\n");
+            retval   = false;
+            canClose = false;
+         }
+      }
+      else
+         retval = false;
+   }
+   
+   #ifdef DEBUG_ORBIT_PANEL_CHECKSTATE
+   MessageInterface::ShowMessage("   outState = %s", outState.ToString().c_str());
+   MessageInterface::ShowMessage("CheckMeanEquinoctial() returning %d\n", retval);
+   #endif
+   
+   return retval;
+}
+
 
 //------------------------------------------------------------------------------
 // bool CheckDelaunay(Rvector6 &outState)

@@ -189,7 +189,7 @@ public:
                                      const wxArrayString objectTypeList);
    
    wxComboBox* GetODEModelComboBox(wxWindow *parent, wxWindowID id,
-                                                  const wxSize &size);
+                                                  const wxSize &size, bool include_none = false);
 
    wxComboBox* GetSpacecraftComboBox(wxWindow *parent, wxWindowID id,
                                      const wxSize &size);

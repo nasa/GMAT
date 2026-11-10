@@ -41,6 +41,8 @@
 #include "A1Mjd.hpp"
 #include <wx/config.h>
 #include <fstream>
+#include <FileManager.hpp>
+#include <FileUtil.hpp>
 
 //#define DEBUG_CB_ORIENTATION_PANEL
 //#define DEBUG_CB_ORIENT_SAVE
@@ -61,6 +63,9 @@ BEGIN_EVENT_TABLE(CelestialBodyOrientationPanel, wxPanel)
    EVT_LISTBOX(ID_LIST_BOX_FK_FILE, CelestialBodyOrientationPanel::OnFkFileListBoxChange)
    EVT_BUTTON(ID_BROWSE_BUTTON_FK_FILE, CelestialBodyOrientationPanel::OnFkFileBrowseButton)
    EVT_BUTTON(ID_REMOVE_BUTTON_FK_FILE, CelestialBodyOrientationPanel::OnFkFileRemoveButton)
+   EVT_LISTBOX(ID_LIST_BOX_ORIENTATIONSPICEKERNEL_FILE, CelestialBodyOrientationPanel::OnOrientationSpiceKernelFileListBoxChange)
+   EVT_BUTTON(ID_BROWSE_BUTTON_ORIENTATIONSPICEKERNEL_FILE, CelestialBodyOrientationPanel::OnOrientationSpiceKernelFileBrowseButton)
+   EVT_BUTTON(ID_REMOVE_BUTTON_ORIENTATIONSPICEKERNEL_FILE, CelestialBodyOrientationPanel::OnOrientationSpiceKernelFileRemoveButton)
 END_EVENT_TABLE()
 
 //------------------------------------------------------------------------------
@@ -108,6 +113,7 @@ CelestialBodyOrientationPanel::CelestialBodyOrientationPanel(GmatPanel *cbPanel,
    rotationRateChanged           (false),
    spiceFrameIDChanged           (false),
    fkChanged                     (false),
+   OrientationSpiceKernelFileChanged (false),
    isEarth                       (false),
    isLuna                        (false),
    theCBPanel                    (cbPanel)
@@ -295,6 +301,44 @@ void CelestialBodyOrientationPanel::SaveData()
          }
       }
 
+      if (OrientationSpiceKernelFileChanged)
+      {
+         FileManager* fm = FileManager::Instance();
+
+         StringArray OrientationSpiceKernelNames;
+         unsigned int numKernels = OrientationSpiceKernelFileListBox->GetCount();
+         for (unsigned int ii = 0; ii < numKernels; ++ii)
+         {
+            std::string kernel = OrientationSpiceKernelFileListBox->GetString(ii).ToStdString();
+            std::string full_kernel_path;
+            if (!GmatFileUtil::IsPathAbsolute(kernel))
+               full_kernel_path = fm->GetGmatWorkingDirectory() + kernel;
+            else
+               full_kernel_path = kernel;
+
+            std::ifstream file(full_kernel_path.c_str());
+#ifdef DEBUG_CB_ORIENT_SAVE
+            MessageInterface::ShowMessage("full_kernel_path = %s\n", full_kernel_path.c_str());
+            MessageInterface::ShowMessage("numKernels = %d\n", (Integer)numKernels);
+#endif
+
+            if (!file)
+            {
+               std::string errmsg = "File \"" + kernel;
+               errmsg += "\" does not exist.\n";
+               MessageInterface::PopupMessage(Gmat::ERROR_, errmsg);
+               canClose = false;
+            }
+            else
+            {
+               file.close();
+               OrientationSpiceKernelNames.push_back(kernel);
+            }
+         }
+
+         theBody->SetOrientationSpiceKernelNames(OrientationSpiceKernelNames);
+      }
+
       if (realsOK && stringsOK)
       {
          theBody->SetStringParameter(theBody->GetParameterID("RotationDataSource"),
@@ -407,6 +451,18 @@ void CelestialBodyOrientationPanel::LoadData()
          fkFileListBox->InsertItems(fkListSz, fkFileArrayWX, 0);
          fkFileListBox->SetSelection(fkListSz-1); // Select the last item
       }
+
+      OrientationSpiceKernelFileArray = theBody->GetStringArrayParameter(theBody->GetParameterID("OrientationSpiceKernelName"));
+      unsigned int OrientationSpiceKernelFileListSz = OrientationSpiceKernelFileArray.size();
+      OrientationSpiceKernelFileArrayWX = new wxString[OrientationSpiceKernelFileListSz];
+      OrientationSpiceKernelFiles.clear();
+      for (unsigned int jj = 0; jj < OrientationSpiceKernelFileListSz; ++jj)
+      {
+         OrientationSpiceKernelFiles.push_back(OrientationSpiceKernelFileArray[jj]);
+         OrientationSpiceKernelFileArrayWX[jj] = wxString(OrientationSpiceKernelFileArray[jj].c_str());
+      }
+      OrientationSpiceKernelFileListBox->InsertItems(OrientationSpiceKernelFileListSz, OrientationSpiceKernelFileArrayWX, 0);
+      OrientationSpiceKernelFileListBox->SetSelection(OrientationSpiceKernelFileListSz - 1); // Select the last item
 
       // @todo - only make those things visible that should be
       ResetChangeFlags();
@@ -535,10 +591,10 @@ void CelestialBodyOrientationPanel::Create()
    spiceFrameIDTextCtrl->SetToolTip(pConfig->Read(_T("SpiceFrameIdHint")));
 
    wxBoxSizer *fkButtonSizer = NULL;
+   wxArrayString emptyList;
    if ((userDef || allowSpiceForDefaultBodies) && spiceAvailable)
    {
       // fk file(s)
-      wxArrayString emptyList;
       fkStaticText       = new wxStaticText(this, ID_TEXT, wxString(GUI_ACCEL_KEY"FK Files"),
                             wxDefaultPosition, wxSize(-1,-1), 0);
       fkFileListBox      = new wxListBox(this, ID_LIST_BOX_FK_FILE, wxDefaultPosition, wxSize(80, 100),
@@ -555,6 +611,22 @@ void CelestialBodyOrientationPanel::Create()
       fkButtonSizer->Add(fkFileRemoveButton,0, wxGROW|wxALIGN_CENTRE|wxALL, bSize);
    }
 
+   OrientationSpiceKernelFileStaticText = new wxStaticText(this, ID_TEXT, wxString(GUI_ACCEL_KEY"Orientation Spice\nKernel Files"),
+      wxDefaultPosition, wxSize(-1, -1), 0);
+   OrientationSpiceKernelFileListBox = new wxListBox(this, ID_LIST_BOX_FK_FILE, wxDefaultPosition, wxSize(80, 100),
+      emptyList, wxLB_EXTENDED | wxLB_NEEDED_SB | wxLB_HSCROLL);
+   OrientationSpiceKernelFileListBox->SetToolTip(pConfig->Read(_T("OrientationSpiceKernelFileListHint")));
+
+   OrientationSpiceKernelFileBrowseButton = new wxButton(this, ID_BROWSE_BUTTON_ORIENTATIONSPICEKERNEL_FILE, wxString(GUI_ACCEL_KEY"Add"),
+      wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+   OrientationSpiceKernelFileBrowseButton->SetToolTip(pConfig->Read(_T("AddOrientationSpiceKernelFileHint")));
+   OrientationSpiceKernelFileRemoveButton = new wxButton(this, ID_REMOVE_BUTTON_ORIENTATIONSPICEKERNEL_FILE, wxString(GUI_ACCEL_KEY"Remove"),
+      wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+   OrientationSpiceKernelFileRemoveButton->SetToolTip(pConfig->Read(_T("RemoveOrientationSpiceKernelFileHint")));
+
+   wxBoxSizer *OrientationSpiceKernelFileButtonSizer = new wxBoxSizer(wxHORIZONTAL);
+   OrientationSpiceKernelFileButtonSizer->Add(OrientationSpiceKernelFileBrowseButton, 0, wxGROW | wxALIGN_CENTRE | wxALL, bSize);
+   OrientationSpiceKernelFileButtonSizer->Add(OrientationSpiceKernelFileRemoveButton, 0, wxGROW | wxALIGN_CENTRE | wxALL, bSize);
    
    // sizers
    if (theBody->GetName() == GmatSolarSystemDefaults::EARTH_NAME) isEarth = true;
@@ -641,6 +713,14 @@ void CelestialBodyOrientationPanel::Create()
          oneFlexGridSizer->Add(0, 0);
       }
 
+   oneFlexGridSizer->Add(OrientationSpiceKernelFileStaticText, 0, wxGROW | wxALIGN_LEFT | wxALL, bSize);
+   oneFlexGridSizer->Add(OrientationSpiceKernelFileListBox, 0, wxGROW | wxALIGN_LEFT | wxALL, bSize);
+   oneFlexGridSizer->Add(0, 0);
+
+   oneFlexGridSizer->Add(0, 0);
+   oneFlexGridSizer->Add(OrientationSpiceKernelFileButtonSizer, 0, wxALIGN_CENTRE | wxALL, bSize);
+   oneFlexGridSizer->Add(0, 0);
+
    // for now, don't let user modify any values for default bodies
    if (!userDef)
    {
@@ -687,6 +767,7 @@ void CelestialBodyOrientationPanel::ResetChangeFlags(bool discardMods)
    rotationRateChanged           = false;
    spiceFrameIDChanged           = false;
    fkChanged                     = false;
+   OrientationSpiceKernelFileChanged = false;
    
    if (discardMods)
    {
@@ -992,4 +1073,99 @@ void CelestialBodyOrientationPanel::OnFkFileListBoxChange(wxCommandEvent &event)
    theCBPanel->EnableUpdate(true);
 }
 
+//------------------------------------------------------------------------------
+// void OnOrientationSpiceKernelFileBrowseButton(wxCommandEvent &event)
+//------------------------------------------------------------------------------
+/**
+ * Handle the event triggered when the user selects the OrientationSpiceKernelFile browse
+ * button.
+ *
+ * @param <event>    the handled event
+ *
+ */
+ //------------------------------------------------------------------------------
+void CelestialBodyOrientationPanel::OnOrientationSpiceKernelFileBrowseButton(wxCommandEvent& event)
+{
+   wxArrayString oldFiles = fkFileListBox->GetStrings();
+   wxFileDialog dialog(this, _T("Choose a file to add"), _T(""), _T(""), _T("*.*"));
+   Integer foundAt = -99;
+   if (dialog.ShowModal() == wxID_OK)
+   {
+      wxString fileName = (dialog.GetPath()).c_str();
+      std::string fName = fileName.WX_TO_STD_STRING;
+      for (Integer ii = 0; ii < (Integer)oldFiles.GetCount(); ii++)
+      {
+         if (fileName.IsSameAs(oldFiles[ii]))
+         {
+            foundAt = ii;
+            break;
+         }
+      }
+      if (foundAt == -99) // not found, so it's new
+      {
+         // Deselect current selections first
+         wxArrayInt selections;
+         int numSelect = OrientationSpiceKernelFileListBox->GetSelections(selections);
+         for (int i = 0; i < numSelect; i++)
+            OrientationSpiceKernelFileListBox->Deselect(selections[i]);
+
+         OrientationSpiceKernelFileChanged = true;
+         dataChanged = true;
+         OrientationSpiceKernelFileListBox->Append(fileName);
+         OrientationSpiceKernelFileListBox->SetStringSelection(fileName);
+         theCBPanel->EnableUpdate(true);
+      }
+   }
+}
+
+//------------------------------------------------------------------------------
+// void OnOrientationSpiceKernelFileRemoveButton(wxCommandEvent &event)
+//------------------------------------------------------------------------------
+/**
+ * Handle the event triggered when the user selects the OrientationSpiceKernelFile remove
+ * button.
+ *
+ * @param <event>    the handled event
+ *
+ */
+ //------------------------------------------------------------------------------
+void CelestialBodyOrientationPanel::OnOrientationSpiceKernelFileRemoveButton(wxCommandEvent& event)
+{
+   wxArrayInt selections;
+   int numSelect = OrientationSpiceKernelFileListBox->GetSelections(selections);
+   // get the string values and delete the selected names from the list
+   wxString fileSelected;
+   for (int i = numSelect - 1; i >= 0; i--)
+   {
+      fileSelected = OrientationSpiceKernelFileListBox->GetString(selections[i]);
+      OrientationSpiceKernelFilesToDelete.push_back(fileSelected.WX_TO_STD_STRING);
+      OrientationSpiceKernelFileListBox->Delete(selections[i]);
+   }
+   //ckFilesDeleted = true;
+   dataChanged = true;
+   theCBPanel->EnableUpdate(true);
+
+   // Select the last item
+   unsigned int count = OrientationSpiceKernelFileListBox->GetCount();
+   if (count > 0)
+      OrientationSpiceKernelFileListBox->SetSelection(count - 1);
+}
+
+//------------------------------------------------------------------------------
+// void OnOrientationSpiceKernelFileListBoxChange(wxCommandEvent &event)
+//------------------------------------------------------------------------------
+/**
+ * Handle the event triggered when the user modifies the value on the OrientationSpiceKernelFile
+ * file list box.
+ *
+ * @param <event>    the handled event
+ *
+ */
+ //------------------------------------------------------------------------------
+void CelestialBodyOrientationPanel::OnOrientationSpiceKernelFileListBoxChange(wxCommandEvent& event)
+{
+   OrientationSpiceKernelFileChanged = true;
+   dataChanged = true;
+   theCBPanel->EnableUpdate(true);
+}
 

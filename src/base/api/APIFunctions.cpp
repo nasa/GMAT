@@ -633,6 +633,53 @@ GmatBase*   GetRuntimeObject(const std::string &objectname)
 
 
 //------------------------------------------------------------------------------
+// Real   CalculateParameter(const std::string &paramType, GmatBase *owner,
+//                           GmatBase *depObject)
+//------------------------------------------------------------------------------
+/**
+ * Computes the value of a calculation parameter for a given object.
+ *
+ * @param paramType The script identifier for the parameter (e.g. "F107")
+ * @param owner The object the parameter is measured on
+ * @param depObject The secondary dependency object the parameter needs, if any
+ *
+ * @return The computed value of the parameter
+ */
+//------------------------------------------------------------------------------
+Real   CalculateParameter(const std::string &paramType, GmatBase *owner,
+                                    GmatBase *depObject)
+{
+   Moderator *theModerator = Moderator::Instance();
+   if (!theModerator->IsInitialized())
+      Setup();
+
+   if (owner == NULL)
+      throw APIException("CalculateParameter() requires a valid "
+            "owner object for parameter type \"" + paramType + "\"");
+
+   std::string ownerName = owner->GetName();
+   std::string depName = (depObject != NULL) ? depObject->GetName() : "";
+
+   std::string tempName = ownerName + "." +
+         (depName != "" ? depName + "." : "") + paramType;
+
+   Parameter *param = theModerator->CreateParameter(paramType, tempName,
+         ownerName, depName, 0);
+
+   if (param == NULL)
+      throw APIException("Unable to create a calculation parameter of type \"" +
+            paramType + "\"");
+
+   param->Initialize();
+   Real value = param->EvaluateReal();
+
+   delete param;
+
+   return value;
+}
+
+
+//------------------------------------------------------------------------------
 // std::string  GetRunSummary()
 //------------------------------------------------------------------------------
 /**

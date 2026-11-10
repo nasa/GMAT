@@ -408,6 +408,12 @@ const std::string Spacecraft::MULT_REP_STRINGS[EndMultipleReps - CART_X] =
    // Alternate Equnoctial by HYKim
    "AltEquinoctialP",
    "AltEquinoctialQ",
+   "MeanEquinoctialSMA",
+   "MeanEquinoctialH",
+   "MeanEquinoctialK",
+   "MeanEquinoctialP",
+   "MeanEquinoctialQ",
+   "MeanEquinoctialMLONG",
    // Delaunay   by M.H.
    "Delaunayl",
    "Delaunayg",
@@ -652,6 +658,7 @@ Spacecraft::Spacecraft(const std::string &name, const std::string &typeStr) :
    representations.push_back("Equinoctial");
    representations.push_back("ModifiedEquinoctial"); // Modified by M.H.
    representations.push_back("AlternateEquinoctial"); // Modified by HYKim
+   representations.push_back("MeanEquinoctial");
    representations.push_back("Delaunay");
    representations.push_back("Planetodetic");
    representations.push_back("IncomingAsymptote");   // Mod by YK
@@ -6632,6 +6639,7 @@ bool Spacecraft::SetStringParameter(const Integer id, const std::string &value)
       if (value != "Cartesian" && value != "Keplerian" && value != "ModifiedKeplerian" &&
           value != "SphericalAZFPA" && value != "SphericalRADEC" && value != "Equinoctial" &&
           value != "ModifiedEquinoctial" && value != "AlternateEquinoctial" &&
+          value != "MeanEquinoctial" &&
           value != "Delaunay" && value != "Planetodetic" &&
           value != "IncomingAsymptote" && value != "OutgoingAsymptote" &&
           value != "BrouwerMeanShort" && value != "BrouwerMeanLong")
@@ -10942,7 +10950,8 @@ Rvector6 Spacecraft::GetStateInRepresentation(const std::string &rep, bool useDe
       if (!inertialCS || !cbOrigin)
       {
          if ((newRep == "Keplerian")        || (newRep == "ModifiedKeplerian") ||
-             (newRep == "BrouwerMeanShort") || (newRep == "BrouwerMeanLong"))
+             (newRep == "BrouwerMeanShort") || (newRep == "BrouwerMeanLong") ||
+             (newRep == "MeanEquinoctial"))
          {
             std::string warning = "WARNING:  ";
 
@@ -12120,6 +12129,14 @@ bool Spacecraft::ValidateOrbitStateValue(const std::string &forRep, const std::s
    {
       validated = StateConversionUtil::ValidateValue(withLabel, andValue, errorMessageFormat, GetDataPrecision(), "EquinoctialH", state[1]);
    }
+   else if ((forRep == "MeanEquinoctial") && (withLabel == "MeanEquinoctialH") && (state[2] != UNSET_ELEMENT_VALUE))
+   {
+      validated = StateConversionUtil::ValidateValue(withLabel, andValue, errorMessageFormat, GetDataPrecision(), "MeanEquinoctialK", state[2]);
+   }
+   else if ((forRep == "MeanEquinoctial") && (withLabel == "MeanEquinoctialK") && (state[1] != UNSET_ELEMENT_VALUE))
+   {
+      validated = StateConversionUtil::ValidateValue(withLabel, andValue, errorMessageFormat, GetDataPrecision(), "MeanEquinoctialH", state[1]);
+   }
    else if ((forRep == "Delaunay") && (withLabel == "DelaunayH") && (state[4] != UNSET_ELEMENT_VALUE))
    {
       validated = StateConversionUtil::ValidateValue(withLabel, andValue, errorMessageFormat, GetDataPrecision(), "DelaunayG", state[4]);
@@ -12475,6 +12492,30 @@ void Spacecraft::BuildStateElementLabelsAndUnits()
    allElementLabelsMultiMap.insert(std::make_pair("AltEquinoctialQ", "AlternateEquinoctial"));
    allElementLabelsMultiMap.insert(std::make_pair("MLONG",           "AlternateEquinoctial"));
 
+   elementLabels[0] = "MeanEquinoctialSMA";
+   elementLabels[1] = "MeanEquinoctialH";
+   elementLabels[2] = "MeanEquinoctialK";
+   elementLabels[3] = "MeanEquinoctialP";
+   elementLabels[4] = "MeanEquinoctialQ";
+   elementLabels[5] = "MeanEquinoctialMLONG";
+
+   elementUnits[0] = "km";
+   elementUnits[1] = "";
+   elementUnits[2] = "";
+   elementUnits[3] = "";
+   elementUnits[4] = "";
+   elementUnits[5] = "deg";
+
+   stateElementLabelsMap["MeanEquinoctial"] = elementLabels;
+   stateElementUnitsMap["MeanEquinoctial"] = elementUnits;
+
+   allElementLabelsMultiMap.insert(std::make_pair("MeanEquinoctialSMA", "MeanEquinoctial"));
+   allElementLabelsMultiMap.insert(std::make_pair("MeanEquinoctialH",   "MeanEquinoctial"));
+   allElementLabelsMultiMap.insert(std::make_pair("MeanEquinoctialK",   "MeanEquinoctial"));
+   allElementLabelsMultiMap.insert(std::make_pair("MeanEquinoctialP",   "MeanEquinoctial"));
+   allElementLabelsMultiMap.insert(std::make_pair("MeanEquinoctialQ",   "MeanEquinoctial"));
+   allElementLabelsMultiMap.insert(std::make_pair("MeanEquinoctialMLONG", "MeanEquinoctial"));
+
    //-----------------------------------
    // Delaunay
    //-----------------------------------
@@ -12636,6 +12677,7 @@ void Spacecraft::BuildStateElementLabelsAndUnits()
    allElementLabelsMultiMap.insert(std::make_pair("BrouwerLongRAAN", "BrouwerMeanLong"));
    allElementLabelsMultiMap.insert(std::make_pair("BrouwerLongAOP",  "BrouwerMeanLong"));
    allElementLabelsMultiMap.insert(std::make_pair("BrouwerLongMA",   "BrouwerMeanLong"));
+
 
    // Build default state type map for shared labels
    defaultStateTypeMap["AOP"]          = "Keplerian";

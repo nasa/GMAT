@@ -60,6 +60,8 @@ GMAT_API bool           LoadInclude(const std::string &filename);
 GMAT_API bool           RunScript();
 GMAT_API bool           SaveScript(const std::string &filename);
 GMAT_API GmatBase*      GetRuntimeObject(const std::string &objectname);
+GMAT_API Real           CalculateParameter(const std::string &paramType,
+                              GmatBase *owner, GmatBase *depObject = NULL);
 GMAT_API std::string    GetRunSummary();
 
 // Engine access functions

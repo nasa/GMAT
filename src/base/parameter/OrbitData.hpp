@@ -70,6 +70,7 @@ public:
    Rvector6 GetOutAsymState();
    Rvector6 GetBLshortState();
    Rvector6 GetBLlongState();
+   Rvector6 GetMeanEquinState();
    
    void SetReal(Integer item, Real rval);
    void SetRvector6(const Rvector6 &val);
@@ -127,6 +128,9 @@ public:
    
    Real GetBLlongReal(Integer item);
    Real GetBLlongReal(const std::string &str);
+
+   Real GetMeanEquinReal(Integer item);
+   Real GetMeanEquinReal(const std::string &str);
 
    const Rmatrix66& GetStmRmat66(Integer item);
    const Rmatrix33& GetStmRmat33(Integer item);
@@ -244,9 +248,13 @@ protected:
    // AlternateEquinoctial items
    enum {ALT_EQ_SMA = ModEquinCount, ALT_EQ_H, ALT_EQ_K, ALT_EQ_P, ALT_EQ_Q, ALT_EQ_MLONG, AltEquinCount};
    
+   enum {MEQ_SMA = AltEquinCount, MEQ_H, MEQ_K, MEQ_P, MEQ_Q, MEQ_MLONG, MeanEquinCount};
+   
+   enum {MEQ_SMA_DOT = MeanEquinCount, MEQ_MM, MEQ_H_DOT, MEQ_K_DOT, MEQ_P_DOT, MEQ_Q_DOT, MeanEquinRateCount};
+   
    // Modified by M.H.
    // Delaunay items
-   enum {DEL_DELA_SL = AltEquinCount, DEL_DELA_SG, DEL_DELA_SH, DEL_DELA_L, DEL_DELA_G, DEL_DELA_H, DelaCount};
+   enum {DEL_DELA_SL = MeanEquinRateCount, DEL_DELA_SG, DEL_DELA_SH, DEL_DELA_L, DEL_DELA_G, DEL_DELA_H, DelaCount};
 
    // Modified by M.H.
    // Planetodetic items

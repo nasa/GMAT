@@ -2156,14 +2156,14 @@ wxArrayString GuiItemManager::GetCoordSystemWithAxesOf(const std::string &axesTy
 
 
 //------------------------------------------------------------------------------
-//  wxComboBox* GetObjectTypeComboBox(wxWindow *parent, const wxSize &size)
+//  wxComboBox* GetObjectTypeComboBox(wxWindow *parent, const wxSize &size, bool show_none)
 //------------------------------------------------------------------------------
 /**
  * @return object type combo box pointer
  */
 //------------------------------------------------------------------------------
 wxComboBox* GuiItemManager::GetODEModelComboBox(wxWindow *parent, wxWindowID id,
-                                                  const wxSize &size)
+                                                  const wxSize &size, bool show_none)
 {
    #ifdef DEBUG_OBJECT_TYPE_COMBOBOX
    MessageInterface::ShowMessage("GuiItemManager::GetODEModelComboBox() entered\n");
@@ -2174,6 +2174,9 @@ wxComboBox* GuiItemManager::GetODEModelComboBox(wxWindow *parent, wxWindowID id,
       new wxComboBox(parent, id, wxT(""), wxDefaultPosition, size, emptyList,
                      wxCB_READONLY);
    
+   if (show_none)
+      cb->Append("None");
+
    for (UnsignedInt j = 0; j < theForceModelList.size(); ++j)
       cb->Append(theForceModelList[j]);
    

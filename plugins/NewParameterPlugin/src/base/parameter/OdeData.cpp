@@ -160,6 +160,51 @@ Real OdeData::GetOdeReal(const std::string &str)
    if (mSpacecraft == NULL || mSolarSystem == NULL || mModel == NULL)
       InitializeRefObjects();
 
+   if (str == "F107" || str == "F107Avg" || str == "Kp" || str == "Ap" || str == "ApAvg")
+   {
+      Real value = 0.0;
+
+      if ((mModel != NULL) && (mModel->IsOfType(Gmat::ODE_MODEL)))
+      {
+         DragForce *df = (DragForce*)((ODEModel*)mModel)->GetForceOfType("DragForce", "");
+         if (df != NULL)
+         {
+            Real epoch  = mSpacecraft->GetEpoch();
+            GmatTime epochgt = mSpacecraft->GetEpochGT();
+
+            Real *j2kState = mSpacecraft->GetState().GetState();
+            Real state[6];
+
+            if (mSpacecraft->HasPrecisionTime())
+               df->BuildModelStateGT(epochgt, state, j2kState);
+            else
+               df->BuildModelState(epoch, state, j2kState);
+
+            if (df->HasPrecisionTime())
+               df->GetDensity(state, epochgt.GetMjd(), 1);
+            else
+               df->GetDensity(state, epoch, 1);
+
+            AtmosphereModel *atmos = df->GetAtmosphereModel();
+            if (atmos != NULL)
+            {
+               if (str == "F107")
+                  value = atmos->GetCurrentF107();
+               else if (str == "F107Avg")
+                  value = atmos->GetCurrentF107A();
+               else if (str == "Kp")
+                  value = atmos->GetCurrentKp();
+               else if (str == "Ap")
+                  value = atmos->GetCurrentAp();
+               else if (str == "ApAvg")
+                  value = atmos->GetCurrentApAvg();
+            }
+         }
+      }
+
+      return value;
+   }
+
    if (str == "FMDensity")
    {
       Real density = 0.0;

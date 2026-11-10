@@ -36,6 +36,7 @@
 #include "ParameterInfo.hpp"
 
 #include "FMDensity.hpp"
+#include "SpaceWeatherParameters.hpp"
 #include "FMAcceleration.hpp"
 #include "SolverStatus.hpp"
 #include "SolverState.hpp"
@@ -98,6 +99,16 @@ Parameter* NewParameterFactory::CreateParameter(const std::string &ofType,
       retval = new FMAccelerationZ(withName);
    if (ofType == "AtmosDensity")
       retval = new FMDensity(withName);
+   if (ofType == "F107")
+      retval = new F107(withName);
+   if (ofType == "F107Avg")
+      retval = new F107Avg(withName);
+   if (ofType == "Kp")
+      retval = new Kp(withName);
+   if (ofType == "Ap")
+      retval = new Ap(withName);
+   if (ofType == "ApAvg")
+      retval = new ApAvg(withName);
    if (ofType == "SolverStatus")
       retval = new SolverStatus(withName);
    if (ofType == "SolverState")
@@ -138,6 +149,11 @@ NewParameterFactory::NewParameterFactory() :
       creatables.push_back("AccelerationY");
       creatables.push_back("AccelerationZ");
       creatables.push_back("AtmosDensity");
+      creatables.push_back("F107");
+      creatables.push_back("F107Avg");
+      creatables.push_back("Kp");
+      creatables.push_back("Ap");
+      creatables.push_back("ApAvg");
       creatables.push_back("SolverStatus");
       creatables.push_back("SolverState");
       creatables.push_back("BurnTorque");
@@ -183,6 +199,11 @@ NewParameterFactory::NewParameterFactory(const NewParameterFactory& fact) :
       creatables.push_back("AccelerationY");
       creatables.push_back("AccelerationZ");
       creatables.push_back("AtmosDensity");
+      creatables.push_back("F107");
+      creatables.push_back("F107Avg");
+      creatables.push_back("Kp");
+      creatables.push_back("Ap");
+      creatables.push_back("ApAvg");
       creatables.push_back("SolverStatus");
       creatables.push_back("SolverState");
       creatables.push_back("BurnTorque");
@@ -292,6 +313,26 @@ StringArray NewParameterFactory::GetListOfCreatableObjects(
 
       param = CreateParameter("AtmosDensity",
             "DefaultSC.DefaultFM.AtmosDensity");
+      delete param;
+
+      param = CreateParameter("F107",
+            "DefaultSC.DefaultFM.F107");
+      delete param;
+
+      param = CreateParameter("F107Avg",
+            "DefaultSC.DefaultFM.F107Avg");
+      delete param;
+
+      param = CreateParameter("Kp",
+            "DefaultSC.DefaultFM.Kp");
+      delete param;
+
+      param = CreateParameter("Ap",
+            "DefaultSC.DefaultFM.Ap");
+      delete param;
+
+      param = CreateParameter("ApAvg",
+            "DefaultSC.DefaultFM.ApAvg");
       delete param;
 
       param = CreateParameter("SolverStatus",

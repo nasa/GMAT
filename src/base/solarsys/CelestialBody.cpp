@@ -97,6 +97,7 @@
 #ifdef DEBUG_MEMORY
 #include "MemoryTracker.hpp"
 #endif
+#include <CommandException.hpp>
 
 using namespace GmatMathUtil;
 
@@ -156,6 +157,7 @@ CelestialBody::PARAMETER_TEXT[CelestialBodyParamCount - SpacePointParamCount] =
    "3DModelRotationZ",
    "3DModelScale",
    "DSNMediaFileDirectories",
+   "OrientationSpiceKernelName",
 };
 
 const Gmat::ParameterType
@@ -210,6 +212,7 @@ CelestialBody::PARAMETER_TYPE[CelestialBodyParamCount - SpacePointParamCount] =
    Gmat::REAL_TYPE,     //"3DModelRotationZ"
    Gmat::REAL_TYPE,     //"3DModelScale"
    Gmat::STRINGARRAY_TYPE, //"DSNMediaFileDirectories"
+   Gmat::STRINGARRAY_TYPE, //"OrientationSpiceKernelName"
 };
 
 const Real    CelestialBody::dDot                       = 1.0;
@@ -568,7 +571,8 @@ CelestialBody::CelestialBody(const CelestialBody &cBody) :
    userSetFlattening                   (cBody.userSetFlattening),
    userSetEquitorialRadius             (cBody.userSetEquitorialRadius),
    userSetOrientation                  (cBody.userSetOrientation),
-   defaultOrientationWarningMesssageSent (cBody.defaultOrientationWarningMesssageSent)
+   defaultOrientationWarningMesssageSent (cBody.defaultOrientationWarningMesssageSent),
+   OrientationSpiceKernelNames (cBody.OrientationSpiceKernelNames)
 {
    state                  = cBody.state;
    stateTime              = cBody.stateTime;
@@ -744,6 +748,8 @@ CelestialBody& CelestialBody::operator=(const CelestialBody &cBody)
    userSetEquitorialRadius = cBody.userSetEquitorialRadius;
    userSetOrientation = cBody.userSetOrientation;
    defaultOrientationWarningMesssageSent = cBody.defaultOrientationWarningMesssageSent;
+
+   OrientationSpiceKernelNames = cBody.OrientationSpiceKernelNames;
    
    for (Integer i = 0; i < 6; i++) prevState[i] = cBody.prevState[i];
 
@@ -4275,12 +4281,6 @@ bool CelestialBody::SetStringParameter(const Integer id,
          errmsg += instanceName + "\"\n";
          throw SolarSystemException(errmsg);
       }
-//      else if (userDefined && (value == "DE430"))
-//      {
-//         std::string errmsg = "DE430 not allowed as ephemeris source for user-defined body \"";
-//         errmsg += instanceName + "\"\n";
-//         throw SolarSystemException(errmsg);
-//      }
       else if ((!userDefined) && !allowSpice && (value == "SPICE"))
       {
          std::string errmsg = "SPICE not allowed as ephemeris source for default body \"";
@@ -4300,25 +4300,6 @@ bool CelestialBody::SetStringParameter(const Integer id,
       // Disable for now
       MessageInterface::ShowMessage
       ("*** WARNING *** Setting\"PotentialFileName\" on Celestial Bodies is not currently allowed and will be ignored\n");
-//      // Changed to use GmatBase::GetFullPathFileName()
-//      std::string potFile = GmatStringUtil::ToUpper(instanceName) + "_POT_FILE";
-//      potentialFileNameFullPath =
-//         GmatBase::GetFullPathFileName(potentialFileName, GetName(), value, potFile, true,
-//                                       "", false, true);
-//      #ifdef DEBUG_CB_SET_STRING
-//      MessageInterface::ShowMessage
-//         ("   potentialFileNameFullPath = '%s'\n", potentialFileNameFullPath.c_str());
-//      #endif
-//      // if (!(GmatFileUtil::DoesFileExist(value)))
-//      if (potentialFileNameFullPath == "")
-//      {
-//         SolarSystemException sse;
-//         sse.SetDetails(errorMessageFormat.c_str(),
-//                        value.c_str(), "PotentialFileName", "File must exist");
-//         throw sse;
-//      }
-//      
-//      potentialFileName = value;
       return true;
    }
    if (id == ATMOS_MODEL_NAME)
@@ -4338,84 +4319,24 @@ bool CelestialBody::SetStringParameter(const Integer id,
       throw SolarSystemException(noTwoBody);
    }
    // 2012.01/24 - wcs - two body propagation disallowed for now
-
-   //   if (id == TWO_BODY_DATE_FORMAT)
-//   {
-//      #ifdef DEBUG_TWO_BODY
-//         MessageInterface::ShowMessage(
-//         "In CB::SetString (TWO_BODY_DATE_FORMAT) with id = %d, and value = %s\n",
-//         id, value.c_str());
-//      #endif
-//      if (value != "TAIModJulian")
-//      {
-//         SolarSystemException sse;
-//         sse.SetDetails(errorMessageFormat.c_str(), value.c_str(),
-//                        PARAMETER_TEXT[TWO_BODY_DATE_FORMAT - SpacePointParamCount].c_str(),
-//                        "TAIModJulian");
-//         throw sse;
-//      }
-//      twoBodyFormat = value;
-//      return true;
-//   }
-//   if (id == TWO_BODY_STATE_TYPE)
-//   {
-//      #ifdef DEBUG_TWO_BODY
-//         MessageInterface::ShowMessage(
-//         "In CB::SetString (TWO_BODY_STATE_TYPE) with id = %d, and value = %s\n",
-//         id, value.c_str());
-//      #endif
-//      if (value != "Keplerian")
-//      {
-//         SolarSystemException sse;
-//         sse.SetDetails(errorMessageFormat.c_str(), value.c_str(),
-//                        PARAMETER_TEXT[TWO_BODY_STATE_TYPE - SpacePointParamCount].c_str(),
-//                        "Keplerian");
-//
-//         throw sse;
-//      }
-//      twoBodyStateType = value;
-//      return true;
-//   }
    
    if (id == ROTATION_DATA_SRC)
    {
-      // 2017.12.08 No longer allow the user to change this
-      if (value == "SPICE")
-      {
-         for (int i = 0; i < GmatSolarSystemDefaults::PLANET_NAMES->size(); i++)
+      if (GetName() == GmatSolarSystemDefaults::SUN_NAME)
+         throw SolarSystemException("Setting the RotationDataSource on body Sun not allowed.\n");
+
+      for (std::string planet_name : GmatSolarSystemDefaults::PLANET_NAMES)
+         if (GetName() == planet_name && planet_name != GmatSolarSystemDefaults::EARTH_NAME)
+            throw SolarSystemException("Setting the RotationDataSource on body " + GetName() + " not allowed.\n");
+
+      for (int i = 0; i < Gmat::RotationDataSource::RotationDataSrcCount; i++)
+         if (value == Gmat::ROTATION_DATA_SOURCE_STRINGS[i])
          {
-            if (GetName() == GmatSolarSystemDefaults::PLANET_NAMES[i] || GetName() == GmatSolarSystemDefaults::SUN_NAME)
-            {
-               throw SolarSystemException("Error: Setting the RotationDataSource to \"SPICE\" on a default planet or the Sun is not allowed. Found body: " + GetName() + "\n");
-            }
+            SetRotationDataSource((Gmat::RotationDataSource)i);
+            return true;
          }
-         SetRotationDataSource(Gmat::SPICE_KERNEL);
-      }
-      else
-      {
-         std::string noRotationSrc =
-            "*** WARNING *** \"RotationDataSource\" on Celestial Bodies is no "
-            "longer settable.  Please see the GMAT User's Guide for information "
-            "on the source selected for each body type.\n";
-         MessageInterface::ShowMessage(noRotationSrc.c_str());
-      }
-      
-//      if (value == Gmat::ROTATION_DATA_SOURCE_STRINGS[Gmat::DE_FILE])
-//         SetRotationDataSource(Gmat::DE_FILE);
-//      else if (value == Gmat::ROTATION_DATA_SOURCE_STRINGS[Gmat::IAU_2002])
-//         SetRotationDataSource(Gmat::IAU_2002);
-//      else if (value == Gmat::ROTATION_DATA_SOURCE_STRINGS[Gmat::FK5_IAU_1980])
-//         SetRotationDataSource(Gmat::FK5_IAU_1980);
-//      else if (value == Gmat::ROTATION_DATA_SOURCE_STRINGS[Gmat::IAU_SIMPLIFIED])
-//         SetRotationDataSource(Gmat::IAU_SIMPLIFIED);
-//      else
-//      {
-//         std::string errmsg = "Unrecognized Rotation Data Source \"";
-//         errmsg += value + "\" for body ";
-//         errmsg += instanceName + "\n";
-//         throw SolarSystemException(errmsg);
-//      }
-      return true;
+
+      throw SolarSystemException("Error: Unknown RotationDataSource on body " + GetName() + "\n");
    }
 
    if (id == ORIENTATION_DATE_FORMAT)
@@ -4458,29 +4379,6 @@ bool CelestialBody::SetStringParameter(const Integer id,
       }
       #endif
       
-      // if (!GmatFileUtil::DoesFileExist(textureMapFileName.c_str()))
-      // {
-      //    std::string oldTextureFile = textureMapFileName;
-      //    std::string textureLoc     = (FileManager::Instance())->GetFullPathname("TEXTURE_PATH");
-      //    textureMapFileName         = textureLoc + textureMapFileName;
-      //    if (oldTextureFile != "")
-      //    {
-      //       if (GmatFileUtil::DoesFileExist(textureMapFileName.c_str()))
-      //       {
-      //          MessageInterface::ShowMessage
-      //             ("*** WARNING *** The texture file '%s' does not exist, \n"
-      //              "    so using the texture file '%s' using the path specified in the startup file.\n",
-      //              oldTextureFile.c_str(), textureMapFileName.c_str(), instanceName.c_str());
-      //       }
-      //       else
-      //       {
-      //          std::string errmsg = "Texture map \"";
-      //          errmsg += oldTextureFile + "\" specified for body \"";
-      //          errmsg += instanceName + "\" cannot be found.\n";
-      //          throw SolarSystemException(errmsg);
-      //       }
-      //    }
-      // }
       return true;
    }
    
@@ -4557,7 +4455,39 @@ bool CelestialBody::SetStringParameter(const Integer id,
 bool CelestialBody::SetStringParameter(const Integer id, const std::string &value,
                                        const Integer index)
 {
-   return SpacePoint::SetStringParameter(id, value, index);
+   FileManager * fm = FileManager::Instance();
+   std::string kernel;
+   std::string full_kernel_path;
+
+   switch (id)
+   {
+   case ORIENTAION_SPICE_KERNEL_NAME:
+      if (index < 0 || index > OrientationSpiceKernelNames.size())
+         throw CommandException("Index of object name array out of bounds for CelestialBody command.\n");
+
+      kernel = ParseKernelName(value);
+      if (!GmatFileUtil::IsPathAbsolute(kernel))
+         full_kernel_path = fm->GetGmatWorkingDirectory() + kernel;
+      else
+         full_kernel_path = kernel;
+
+      if (!GmatFileUtil::DoesFileExist(full_kernel_path))
+         throw CommandException("Cannot find file " + full_kernel_path + "\n");
+
+#ifdef __USE_SPICE__
+      if (!SpiceInterface::IsValidKernel(full_kernel_path, "CK"))
+         throw CommandException("File " + full_kernel_path + " is not a valid CK kernel");
+#endif
+ 
+       if (index == OrientationSpiceKernelNames.size())
+         OrientationSpiceKernelNames.push_back(kernel);
+       else
+         OrientationSpiceKernelNames[index] = kernel;
+
+      return true;
+   default:
+      return SpacePoint::SetStringParameter(id, value, index);
+   }
 }
 
 
@@ -4743,9 +4673,15 @@ const Rvector& CelestialBody::SetRvectorParameter(const std::string &label,
 //------------------------------------------------------------------------------
 const StringArray& CelestialBody::GetStringArrayParameter(const Integer id) const
 {
-   if (id == DSN_DIRECTORY)
-      return DSNMediaFileDirectories;
-   return SpacePoint::GetStringArrayParameter(id);
+   switch (id)
+   {
+   case DSN_DIRECTORY:
+       return DSNMediaFileDirectories;
+   case ORIENTAION_SPICE_KERNEL_NAME:
+      return OrientationSpiceKernelNames;
+   default :
+      return SpacePoint::GetStringArrayParameter(id);
+   }
 }
 
 
@@ -4962,6 +4898,9 @@ bool CelestialBody::IsParameterReadOnly(const Integer id) const
 
    if (id == TEXTURE_MAP_FULL_PATH || id == VIEW_3D_MODEL_FILE_FULL_PATH)
       return true;
+
+   if (id == ORIENTAION_SPICE_KERNEL_NAME)
+      return false;
    
    return SpacePoint::IsParameterReadOnly(id);
 }
@@ -5098,6 +5037,8 @@ bool CelestialBody::IsParameterEqualToDefault(const Integer id) const
       return view3dModelScale == 10.0;
    if (id == DSN_DIRECTORY)
       return DSNMediaFileDirectories.size() == 0;
+   if (id == ORIENTAION_SPICE_KERNEL_NAME)
+      return OrientationSpiceKernelNames.size() == 0;
    
    return SpacePoint::IsParameterEqualToDefault(id);
 }
@@ -6007,6 +5948,19 @@ bool CelestialBody::IsSpiceSetUp()
 }
 
 //------------------------------------------------------------------------------
+//  bool SetOrientationSpiceKernelNames(StringArray OrientationSpiceKernelNames)
+//------------------------------------------------------------------------------
+/**
+ * Used to set OrientationSpiceKernelNames from the GUI
+ *
+ */
+ //------------------------------------------------------------------------------
+void CelestialBody::SetOrientationSpiceKernelNames(StringArray OrientationSpiceKernelNames)
+{
+   this->OrientationSpiceKernelNames = OrientationSpiceKernelNames;
+}
+
+//------------------------------------------------------------------------------
 //  bool NeedsOnlyMainSPK()
 //------------------------------------------------------------------------------
 /**
@@ -6256,7 +6210,7 @@ bool CelestialBody::Set3dModelFileName(const std::string &fileName, bool writeWa
 
 
 bool CelestialBody::LoadNeededKernels(bool orbit,  bool attitude,
-                                      bool frame,  bool scClock)
+                                      bool frame,  bool scClock, bool orientation)
 {
 #ifdef DEBUG_CB_SPICE
    MessageInterface::ShowMessage("   INLoadNeededKernels, size of attitudeSpiceKernelNames = %d\n",
@@ -6264,6 +6218,8 @@ bool CelestialBody::LoadNeededKernels(bool orbit,  bool attitude,
 #endif
 
 #ifdef __USE_SPICE__
+   FileManager* fm = FileManager::Instance();
+
    if (orbit)
    {
       for (unsigned int ii = 0; ii < orbitSpiceKernelNames.size(); ii++)
@@ -6531,14 +6487,37 @@ bool CelestialBody::LoadNeededKernels(bool orbit,  bool attitude,
          }
       }
    }
+
+   if (orientation)
+   {
+      for (std::string kernel : OrientationSpiceKernelNames)
+      {
+         std::string full_kernel_path;
+         if (!GmatFileUtil::IsPathAbsolute(kernel))
+            full_kernel_path = fm->GetGmatWorkingDirectory() + kernel;
+         else
+            full_kernel_path = kernel;
+
+         if (!(kernelReader->IsLoaded(full_kernel_path)))
+         {
+            kernelReader->LoadKernel(full_kernel_path);
+#ifdef DEBUG_CB_SPICE
+            MessageInterface::ShowMessage("   spice has loaded file %s\n", full_kernel_path.c_str());
+#endif
+         }
+      }
+   }
+
 #endif
    return true;
 }
 
 bool CelestialBody::UnloadKernels(bool orbit,  bool attitude,
-                                  bool frame,  bool scClock)
+                                  bool frame,  bool scClock, bool orientation)
 {
 #ifdef __USE_SPICE__
+   FileManager* fm = FileManager::Instance();
+
    if (kernelReader)
    {
       if (orbit)
@@ -6634,6 +6613,26 @@ bool CelestialBody::UnloadKernels(bool orbit,  bool attitude,
                      MessageInterface::ShowMessage("... the kernel %s successfully unloaded\n", (scClockSpiceKernelNames.at(kk)).c_str());
                   #endif
                }
+            }
+         }
+      }
+
+      if (orientation)
+      {
+         for (std::string kernel : OrientationSpiceKernelNames)
+         {
+            std::string full_kernel_path;
+            if (!GmatFileUtil::IsPathAbsolute(kernel))
+               full_kernel_path = fm->GetGmatWorkingDirectory() + kernel;
+            else
+               full_kernel_path = kernel;
+
+            if (kernelReader->IsLoaded(full_kernel_path))
+            {
+               kernelReader->UnloadKernel(full_kernel_path);
+#ifdef DEBUG_CB_SPICE
+               MessageInterface::ShowMessage("... the kernel %s successfully unloaded\n", full_kernel_path.c_str());
+#endif
             }
          }
       }

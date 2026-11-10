@@ -157,6 +157,7 @@ private:
    bool CheckIncomingAsymptote(Rvector6 &outState);
    bool CheckBrouwerMeanShort(Rvector6 &outState); 
    bool CheckBrouwerMeanLong(Rvector6 &outState);
+   bool CheckMeanEquinoctial(Rvector6 &outState);
    
    bool CheckAnomaly();
    bool ComputeTrueAnomaly(Rvector6 &inState, const std::string &stateType);

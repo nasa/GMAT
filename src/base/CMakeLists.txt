@@ -368,6 +368,7 @@ SET(BASE_SRCS
     math/Transpose.cpp
     math/EquationWrapper.cpp
     parameter/AlternateEquinoctialParameters.cpp
+    parameter/MeanEquinoctialParameters.cpp
     parameter/AngularParameters.cpp
     parameter/Array.cpp
     parameter/ArrayWrapper.cpp

@@ -541,6 +541,12 @@ protected:
       // Alternate Equinoctial by HYKim
       ALT_EQ_P,
       ALT_EQ_Q,
+      MEQ_SMA,
+      MEQ_H,
+      MEQ_K,
+      MEQ_P,
+      MEQ_Q,
+      MEQ_MLONG,
       // Delaunay; Modified by M.H.
       DEL_DELA_l,
       DEL_DELA_g,
@@ -608,6 +614,7 @@ protected:
       EQUINOCTIAL_ID,
       MODIFIED_EQUINOCTIAL_ID,   // Modified by M.H.
       ALTERNATE_EQUINOCTIAL_ID,  // Modified by HYKim
+      MEAN_EQUINOCTIAL_ID,
       DELAUNAY_ID,               // Modified by M.H.
       PLANETODETIC_ID,           // Modified by M.H.
       IN_ASYM_ID,                  // Mod by YK

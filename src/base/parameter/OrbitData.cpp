@@ -778,6 +778,28 @@ Rvector6 OrbitData::GetAltEquinState()
    return altEquinState;
 }
 
+//------------------------------------------------------------------------------
+// Rvector6 GetMeanEquinState()
+//------------------------------------------------------------------------------
+/**
+ * Retrieves Mean Equinoctial state
+ *
+ * @return The Mean Equinoctial state vector
+ */
+//------------------------------------------------------------------------------
+Rvector6 OrbitData::GetMeanEquinState()
+{
+   if (mSpacecraft == NULL || mSolarSystem == NULL)
+      InitializeRefObjects();
+   
+   Rvector6 state = GetCartState();
+   Rvector6 meanEquinState = StateConversionUtil::Convert(state, "Cartesian", "MeanEquinoctial",
+                                                          mGravConst, mFlattening, mEqRadius);
+   
+   return meanEquinState;
+}
+
+
 // Modified by M.H.
 //------------------------------------------------------------------------------
 // Rvector6 OrbitData::GetDelaState()
@@ -1616,6 +1638,70 @@ Real OrbitData::GetAltEquinReal(Integer item)
 }
 
 
+//------------------------------------------------------------------------------
+// Real GetMeanEquinReal(Integer item)
+//------------------------------------------------------------------------------
+/**
+ * Retrieves Mean Equinoctial element or element rate
+ *
+ * @param item The enumerated id of the requested element or rate
+ *
+ * @return The value of the requested element or rate
+ */
+//------------------------------------------------------------------------------
+Real OrbitData::GetMeanEquinReal(Integer item)
+{
+   #ifdef DEBUG_ORBITDATA_RUN
+   MessageInterface::ShowMessage("OrbitData::GetMeanEquinReal() item=%d\n", item);
+   #endif
+   
+   Rvector6 state = GetCartState();
+
+   if (mIsParamOriginDep && mOrigin->GetName() != "Earth")
+   {
+      state = state - mOrigin->GetMJ2000State(mCartEpoch);
+   }
+   
+   Rvector3 pos(state[0], state[1], state[2]);
+   Rvector3 vel(state[3], state[4], state[5]);
+   Real rMag = pos.GetMagnitude();
+   
+   if (rMag < GmatOrbitConstants::KEP_ZERO_TOL)
+      throw ParameterException
+         ("*** Error *** Cannot convert from Cartesian to MeanEquinoctial because position vector is a zero vector.");
+   
+   switch (item)
+   {
+   case MEQ_SMA:
+   case MEQ_H:
+   case MEQ_K:
+   case MEQ_P:
+   case MEQ_Q:
+   case MEQ_MLONG:
+   {
+      Rvector6 meqState = GetMeanEquinState();
+      return meqState[item - AltEquinCount];
+   }
+
+   case MEQ_SMA_DOT:
+   case MEQ_MM:
+   case MEQ_H_DOT:
+   case MEQ_K_DOT:
+   case MEQ_P_DOT:
+   case MEQ_Q_DOT:
+   {
+      Rvector6 meanKep = StateConversionUtil::CartesianToBrouwerMeanShort(mGravConst, state);
+      Rvector6 rates = StateConversionUtil::MeanEquinoctialElementRates(meanKep, mGravConst, mEqRadius);
+      return rates[item - MeanEquinCount];
+   }
+
+   default:
+      throw ParameterException("OrbitData::GetMeanEquinReal() Unknown parameter id: " +
+                               GmatRealUtil::ToString(item));
+   }
+}
+
+
 // Modified by M.H.
 //------------------------------------------------------------------------------
 // Real GetDelaReal(Integer item)
@@ -1655,7 +1741,7 @@ Real OrbitData::GetDelaReal(Integer item)
    case DEL_DELA_H:
       {
          Rvector6 delaState = GetDelaState();
-         return delaState[item - AltEquinCount];
+         return delaState[item - MeanEquinRateCount];
       }
       
    default:
@@ -2972,7 +3058,7 @@ Rvector6 OrbitData::GetCartStateInParameterCS(Integer item, Real rval)
       stateInParamCS =
          StateConversionUtil::Convert(cartStateInParamCS, "Cartesian", "Delaunay",
                                       mGravConst, mFlattening, mEqRadius);
-      stateInParamCS[item - AltEquinCount] = rval;
+      stateInParamCS[item - MeanEquinRateCount] = rval;
       cartStateInParamCS =
          StateConversionUtil::Convert(stateInParamCS, "Delaunay", "Cartesian",
                                       mGravConst, mFlattening, mEqRadius);
@@ -3555,6 +3641,25 @@ void OrbitData::SetRealParameters(Integer item, Real rval)
       break;
    case BLL_MA:
       mSpacecraft->SetRealParameter("BrouwerLongMA", rval);
+      break;
+
+   case MEQ_SMA:
+      mSpacecraft->SetRealParameter("MeanEquinoctialSMA", rval);
+      break;
+   case MEQ_H:
+      mSpacecraft->SetRealParameter("MeanEquinoctialH", rval);
+      break;
+   case MEQ_K:
+      mSpacecraft->SetRealParameter("MeanEquinoctialK", rval);
+      break;
+   case MEQ_P:
+      mSpacecraft->SetRealParameter("MeanEquinoctialP", rval);
+      break;
+   case MEQ_Q:
+      mSpacecraft->SetRealParameter("MeanEquinoctialQ", rval);
+      break;
+   case MEQ_MLONG:
+      mSpacecraft->SetRealParameter("MeanEquinoctialMLONG", rval);
       break;
       
    default:

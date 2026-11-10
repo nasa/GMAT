@@ -296,6 +296,30 @@ void EphemerisFilePanel::Create()
    grid2->Add(distanceUnitComboBox, 0, wxALIGN_LEFT|wxALL, bsize );
    grid2->Add(0, 0, wxALIGN_CENTER|wxALL, bsize );
    
+   id = mObject->GetParameterID("FormatVersion");
+   formatVersionStaticText =
+      new wxStaticText(this, ID_TEXT, wxString("Format Version"));
+   formatVersionComboBox = (wxComboBox*)BuildControl(this, id);
+   grid2->Add(formatVersionStaticText, 0, wxALIGN_LEFT | wxALL, bsize);
+   grid2->Add(formatVersionComboBox, 0, wxALIGN_LEFT | wxALL, bsize);
+   grid2->Add(0, 0, wxALIGN_CENTER | wxALL, bsize);
+
+   id = mObject->GetParameterID("IncludeCovariance");
+   includeCovarianceStaticText =
+      new wxStaticText(this, ID_TEXT, wxString("Include Covariance"));
+   includeCovarianceComboBox = (wxComboBox*)BuildControl(this, id);
+   grid2->Add(includeCovarianceStaticText, 0, wxALIGN_LEFT | wxALL, bsize);
+   grid2->Add(includeCovarianceComboBox, 0, wxALIGN_LEFT | wxALL, bsize);
+   grid2->Add(0, 0, wxALIGN_CENTER | wxALL, bsize);
+
+   id = mObject->GetParameterID("AccelerationModel");
+   accelerationModelStaticText =
+      new wxStaticText(this, ID_TEXT, wxString("Acceleration Model"));
+   accelerationModelComboBox = (wxComboBox*)BuildControl(this, id);
+   grid2->Add(accelerationModelStaticText, 0, wxALIGN_LEFT | wxALL, bsize);
+   grid2->Add(accelerationModelComboBox, 0, wxALIGN_LEFT | wxALL, bsize);
+   grid2->Add(0, 0, wxALIGN_CENTER | wxALL, bsize);
+
    //includeEventBoundaries
    id = mObject->GetParameterID("IncludeEventBoundaries");
    eventBoundariesCheckBox = (wxCheckBox*) BuildControl(this, id);
@@ -378,6 +402,9 @@ void EphemerisFilePanel::LoadData()
       LoadControl("FinalEpoch");
       LoadControl("DistanceUnit");
       LoadControl("IncludeEventBoundaries");
+      LoadControl("FormatVersion");
+      LoadControl("IncludeCovariance");
+      LoadControl("AccelerationModel");
       
       // Show all or only MJ2000Eq coordinate system
       ShowCoordSystems(fileFormat);
@@ -389,6 +416,62 @@ void EphemerisFilePanel::LoadData()
       ShowInterpolatorAndStepSize(fileFormat);
       
       outputFormat = outputFormatComboBox->GetValue();
+
+      if (fileFormat == "CCSDS-OEM")
+      {
+         formatVersionComboBox->Append("1.0");
+         formatVersionComboBox->Append("2.0");
+
+         if (formatVersion == "2.0")
+         {
+            includeCovarianceStaticText->Enable(true);
+            includeCovarianceComboBox->Enable(true);
+
+            wxString includeCovariance = includeCovarianceComboBox->GetValue();
+
+            includeCovarianceComboBox->Clear();
+            includeCovarianceComboBox->Append("None");
+            includeCovarianceComboBox->Append("PositionAndVelocity");
+
+            includeCovarianceComboBox->SetValue(includeCovariance);
+
+            accelerationModelStaticText->Enable(true);
+            accelerationModelComboBox->Enable(true);
+         }
+         else
+         {
+            includeCovarianceStaticText->Enable(false);
+            includeCovarianceComboBox->Enable(false);
+            accelerationModelStaticText->Enable(false);
+            accelerationModelComboBox->Enable(false);
+         }
+      }
+      else if (fileFormat == "STK-TimePosVel")
+      {
+         formatVersionStaticText->Enable(false);
+         formatVersionComboBox->Enable(false);
+
+         wxString includeCovariance = includeCovarianceComboBox->GetValue();
+
+         includeCovarianceComboBox->Clear();
+         includeCovarianceComboBox->Append("None");
+         includeCovarianceComboBox->Append("Position");
+         includeCovarianceComboBox->Append("PositionAndVelocity");
+
+         includeCovarianceComboBox->SetValue(includeCovariance);
+
+         accelerationModelStaticText->Enable(false);
+         accelerationModelComboBox->Enable(false);
+      }
+      else
+      {
+         formatVersionStaticText->Enable(false);
+         formatVersionComboBox->Enable(false);
+         includeCovarianceStaticText->Enable(false);
+         includeCovarianceComboBox->Enable(false);
+         accelerationModelStaticText->Enable(false);
+         accelerationModelComboBox->Enable(false);
+      }
    }
    catch (BaseException &e)
    {
@@ -441,6 +524,9 @@ void EphemerisFilePanel::SaveData()
       SaveControl("DistanceUnit");
       SaveControl("IncludeEventBoundaries");
       SaveControl("EpochFormat");
+      SaveControl("FormatVersion");
+      SaveControl("IncludeCovariance");
+      SaveControl("AccelerationModel");
       try
       {
          SaveControl("InitialEpoch");
@@ -583,6 +669,13 @@ wxControl *EphemerisFilePanel::BuildControl(wxWindow *parent, Integer index)
             #endif
             control = cbControl;
          }
+         else if (type == Gmat::ODE_MODEL)
+         {
+            wxComboBox* cbControl =
+               theGuiManager->GetODEModelComboBox(this, ID_COMBOBOX, wxSize(180, -1), true);
+
+            control = cbControl;
+         }
          else
          {
             // Check if enumeration strings available for owned object types
@@ -633,8 +726,16 @@ wxControl *EphemerisFilePanel::BuildControl(wxWindow *parent, Integer index)
       
    case Gmat::STRING_TYPE:
    default:
-      control = new wxTextCtrl(parent, ID_TEXTCTRL, 
-                               wxT(""), wxDefaultPosition, wxSize(180,-1));
+      if (mObject->GetParameterText(index) == "FormatVersion")
+      {
+         control = new wxComboBox(parent, ID_COMBOBOX, "", wxDefaultPosition,
+            wxSize(180, -1), 0, 0);
+      }
+      else
+      {
+         control = new wxTextCtrl(parent, ID_TEXTCTRL,
+            wxT(""), wxDefaultPosition, wxSize(180, -1));
+      }
       break;
    }
    
@@ -766,6 +867,37 @@ void EphemerisFilePanel::LoadControl(const std::string &label)
       valueString = wxString(mObject->GetStringParameter(label).c_str());
       distanceUnitComboBox->SetValue(valueString);
    }
+   else if (label == "FormatVersion")
+   {
+      valueString = mObject->GetStringParameter(label);
+
+      if (fileFormat == "CCSDS-OEM")
+      {
+         if (valueString == "")
+            valueString = "1.0"; // Default value
+      }
+
+      formatVersionComboBox->SetValue(valueString);
+      formatVersion = valueString;
+   }
+   else if (label == "IncludeCovariance")
+   {
+      valueString = mObject->GetStringParameter(label);
+
+      if (valueString == "")
+         valueString = "None"; // Default value
+
+      includeCovarianceComboBox->SetValue(valueString);
+   }
+   else if (label == "AccelerationModel")
+   {
+      valueString = mObject->GetStringParameter(label);
+
+      if (valueString != "")
+         accelerationModelComboBox->SetValue(valueString);
+      else
+         accelerationModelComboBox->SetValue("(none)");
+   }
    else if (label == "IncludeEventBoundaries")
    {
       valueBool = mObject->GetBooleanParameter(mObject->GetParameterID(label));
@@ -893,6 +1025,30 @@ void EphemerisFilePanel::SaveControl(const std::string &label)
       valueString = distanceUnitComboBox->GetValue();
       clonedObj->SetStringParameter(paramId, valueString);
    }
+   else if (label == "FormatVersion")
+   {
+      valueString = formatVersionComboBox->GetValue();
+      if (fileFormat == "CCSDS-OEM")
+         clonedObj->SetStringParameter(paramId, valueString);
+      else
+         clonedObj->SetStringParameter(paramId, "");
+   }
+   else if (label == "IncludeCovariance")
+   {
+      valueString = includeCovarianceComboBox->GetValue();
+      if ((fileFormat == "CCSDS-OEM" && formatVersion == "2.0") || fileFormat == "STK-TimePosVel")
+         clonedObj->SetStringParameter(paramId, valueString);
+      else
+         clonedObj->SetStringParameter(paramId, "None");
+   }
+   else if (label == "AccelerationModel")
+   {
+      valueString = accelerationModelComboBox->GetValue();
+      if (fileFormat == "CCSDS-OEM" && formatVersion == "2.0" && valueString != "None")
+         clonedObj->SetStringParameter(paramId, valueString);
+      else
+         clonedObj->SetStringParameter(paramId, "");
+   }
    else if (label == "IncludeEventBoundaries")
    {
       valueBool =  eventBoundariesCheckBox->GetValue();
@@ -930,6 +1086,7 @@ void EphemerisFilePanel::OnComboBoxChange(wxCommandEvent& event)
       #endif
       if (fileFormat != newFileFormat)
       {
+         wxString oldFileFormat = fileFormat;
          fileFormat = newFileFormat;
          
          // Show proper file extension
@@ -964,6 +1121,77 @@ void EphemerisFilePanel::OnComboBoxChange(wxCommandEvent& event)
             distanceUnitStaticText->Disable();
             distanceUnitComboBox->Disable();
             eventBoundariesCheckBox->Disable();
+         }
+
+         if (newFileFormat == "CCSDS-OEM")
+         {
+            formatVersionStaticText->Enable(true);
+            formatVersionComboBox->Enable(true);
+            formatVersionComboBox->Clear();
+            formatVersionComboBox->Append("1.0");
+            formatVersionComboBox->Append("2.0");
+
+            if (formatVersion == "")
+               formatVersion = "1.0";
+
+            formatVersionComboBox->SetValue(formatVersion);
+
+            if (formatVersion == "2.0")
+            {
+               wxString includeCovariance = includeCovarianceComboBox->GetValue();
+
+               includeCovarianceStaticText->Enable(true);
+               includeCovarianceComboBox->Enable(true);
+
+               includeCovarianceComboBox->Clear();
+               includeCovarianceComboBox->Append("None");
+               includeCovarianceComboBox->Append("PositionAndVelocity");
+
+               if (includeCovariance == "Position")
+                  includeCovariance = "None";
+
+               includeCovarianceComboBox->SetValue(includeCovariance);
+
+               accelerationModelStaticText->Enable(true);
+               accelerationModelComboBox->Enable(true);
+            }
+            else
+            {
+               includeCovarianceStaticText->Enable(false);
+               includeCovarianceComboBox->Enable(false);
+               accelerationModelStaticText->Enable(false);
+               accelerationModelComboBox->Enable(false);
+            }
+
+         }
+         else if (newFileFormat == "STK-TimePosVel")
+         {
+            formatVersionStaticText->Enable(false);
+            formatVersionComboBox->Enable(false);
+
+            includeCovarianceStaticText->Enable(true);
+            includeCovarianceComboBox->Enable(true);
+
+            wxString includeCovariance = includeCovarianceComboBox->GetValue();
+
+            includeCovarianceComboBox->Clear();
+            includeCovarianceComboBox->Append("None");
+            includeCovarianceComboBox->Append("Position");
+            includeCovarianceComboBox->Append("PositionAndVelocity");
+
+            includeCovarianceComboBox->SetValue(includeCovariance);
+
+            accelerationModelStaticText->Enable(false);
+            accelerationModelComboBox->Enable(false);
+         }
+         else
+         {
+            formatVersionStaticText->Enable(false);
+            formatVersionComboBox->Enable(false);
+            includeCovarianceStaticText->Enable(false);
+            includeCovarianceComboBox->Enable(false);
+            accelerationModelStaticText->Enable(false);
+            accelerationModelComboBox->Enable(false);
          }
 
          EnableUpdate(true);
@@ -1133,6 +1361,43 @@ void EphemerisFilePanel::OnComboBoxChange(wxCommandEvent& event)
          allCoordSystemComboBox->SetValue(onlyMj2000EqComboBox->GetValue());
       if (code500ComboBox->FindString(onlyMj2000EqComboBox->GetValue()) != wxNOT_FOUND)
          code500ComboBox->SetValue(onlyMj2000EqComboBox->GetValue());
+   }
+   else if (event.GetEventObject() == formatVersionComboBox)
+   {
+      wxString newFormatVersion = formatVersionComboBox->GetValue();
+      if (formatVersion != newFormatVersion)
+      {
+         wxString oldFileFormat = formatVersion;
+         formatVersion = newFormatVersion;
+
+         if (newFormatVersion == "2.0")
+         {
+            wxString includeCovariance = includeCovarianceComboBox->GetValue();
+
+            includeCovarianceStaticText->Enable(true);
+            includeCovarianceComboBox->Enable(true);
+
+            includeCovarianceComboBox->Clear();
+            includeCovarianceComboBox->Append("None");
+            includeCovarianceComboBox->Append("PositionAndVelocity");
+
+            if (includeCovariance == "Position")
+               includeCovariance = "None";
+
+            includeCovarianceComboBox->SetValue(includeCovariance);
+
+            accelerationModelStaticText->Enable(true);
+            accelerationModelComboBox->Enable(true);
+         }
+         else
+         {
+            includeCovarianceStaticText->Enable(false);
+            includeCovarianceComboBox->Enable(false);
+
+            accelerationModelStaticText->Enable(false);
+            accelerationModelComboBox->Enable(false);
+         }
+      }
    }
    
    //if (theApplyButton != NULL)

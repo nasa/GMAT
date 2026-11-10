@@ -101,7 +101,7 @@
 //#define DEBUG_ONLY_FOR_FUNCTION
 
 //#define DEBUG_INITIALIZE 1
-//#define DEBUG_FINALIZE 1
+//#define DEBUG_FINALIZE 2
 //#define DEBUG_INTERPRET 1
 //#define DEBUG_RUN 1
 //#define DEBUG_CREATE_OBJECT 1
@@ -504,29 +504,6 @@ void Moderator::Finalize()
    MessageInterface::ShowMessage("Moderator::Finalize() entered\n");
    #endif
    
-   #if DEBUG_FINALIZE > 1
-   //Notes: Do not use %s for command string, it may crash when it encounters
-   // comment with % in the scripts
-   GmatCommand *cmd = GetFirstCommand();
-   MessageInterface::ShowMessage(GmatCommandUtil::GetCommandSeqString(cmd));
-   MessageInterface::ShowMessage(GetScript());
-   #endif
-   
-   #if DEBUG_FINALIZE > 0
-   MessageInterface::ShowMessage
-      (".....Moderator::Finalize() deleting (%p)theFileManager\n", theFileManager);
-   MessageInterface::ShowMessage
-      (".....Moderator::Finalize() deleting (%p)theEopFile\n", theEopFile);
-   MessageInterface::ShowMessage
-      (".....Moderator::Finalize() deleting (%p)theItrfFile\n", theItrfFile);
-   MessageInterface::ShowMessage
-      (".....Moderator::Finalize() deleting (%p)theLeapSecsFile\n", theLeapSecsFile);
-   #endif
-   
-   delete theFileManager;
-   delete theEopFile;
-   delete theItrfFile;
-   delete theLeapSecsFile;
    if (theMatlabInterface != NULL)
    {
       #if DEBUG_FINALIZE > 0
@@ -536,12 +513,19 @@ void Moderator::Finalize()
       #endif
       delete theMatlabInterface;
       theMatlabInterface = NULL;
+      #if DEBUG_FINALIZE > 0
+            MessageInterface::ShowMessage
+            (".....Moderator::Finalize() deleted theMatlabInterface\n");
+      #endif
    }
-   
-   theFileManager = NULL;
-   theEopFile = NULL;
-   theItrfFile = NULL;
-   theLeapSecsFile = NULL;
+
+   #if DEBUG_FINALIZE > 1
+   //Notes: Do not use %s for command string, it may crash when it encounters
+   // comment with % in the scripts
+   GmatCommand *cmd = GetFirstCommand();
+   MessageInterface::ShowMessage(GmatCommandUtil::GetCommandSeqString(cmd));
+   MessageInterface::ShowMessage(GetScript());
+   #endif
    
    //clear resource and command sequence
    try
@@ -680,6 +664,27 @@ void Moderator::Finalize()
    {
       MessageInterface::PopupMessage(Gmat::ERROR_, e.GetFullMessage());
    }
+   
+   #if DEBUG_FINALIZE > 0
+   MessageInterface::ShowMessage
+      (".....Moderator::Finalize() deleting (%p)theFileManager\n", theFileManager);
+   MessageInterface::ShowMessage
+      (".....Moderator::Finalize() deleting (%p)theEopFile\n", theEopFile);
+   MessageInterface::ShowMessage
+      (".....Moderator::Finalize() deleting (%p)theItrfFile\n", theItrfFile);
+   MessageInterface::ShowMessage
+      (".....Moderator::Finalize() deleting (%p)theLeapSecsFile\n", theLeapSecsFile);
+   #endif
+
+   delete theFileManager;
+   delete theEopFile;
+   delete theItrfFile;
+   delete theLeapSecsFile;
+   
+   theFileManager = NULL;
+   theEopFile = NULL;
+   theItrfFile = NULL;
+   theLeapSecsFile = NULL;
    
    #ifdef DEBUG_MEMORY
    StringArray tracks = MemoryTracker::Instance()->GetTracks(true, false);
@@ -8865,6 +8870,25 @@ void Moderator::CreateDefaultParameters()
    MessageInterface::ShowMessage("-->default alternate equinoctial parameters created\n");
    #endif
    
+   CreateParameter("MeanEquinoctialSMA", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialSMA");
+   CreateParameter("MeanEquinoctialH", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialH");
+   CreateParameter("MeanEquinoctialK", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialK");
+   CreateParameter("MeanEquinoctialP", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialP");
+   CreateParameter("MeanEquinoctialQ", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialQ");
+   CreateParameter("MeanEquinoctialMLONG", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialMLONG");
+   #if DEBUG_DEFAULT_MISSION > 1
+   MessageInterface::ShowMessage("-->default mean equinoctial parameters created\n");
+   #endif
+
+   CreateParameter("MeanEquinoctialMM", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialMM");
+   CreateParameter("MeanEquinoctialHDot", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialHDot");
+   CreateParameter("MeanEquinoctialKDot", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialKDot");
+   CreateParameter("MeanEquinoctialPDot", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialPDot");
+   CreateParameter("MeanEquinoctialQDot", "DefaultSC.EarthMJ2000Eq.MeanEquinoctialQDot");
+   #if DEBUG_DEFAULT_MISSION > 1
+   MessageInterface::ShowMessage("-->default mean equinoctial rate parameters created\n");
+   #endif
+
    // Delaunay parameters by M.H.
    CreateParameter("Delaunayl", "DefaultSC.EarthMJ2000Eq.Delaunayl");
    CreateParameter("Delaunayg", "DefaultSC.EarthMJ2000Eq.Delaunayg");

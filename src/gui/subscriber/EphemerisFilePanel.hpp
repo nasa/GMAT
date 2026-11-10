@@ -86,6 +86,12 @@ protected:
    wxComboBox*     epochFormatComboBox;
    wxComboBox*     initialEpochComboBox;
    wxComboBox*     finalEpochComboBox;
+   wxStaticText*   formatVersionStaticText;
+   wxComboBox*     formatVersionComboBox;
+   wxStaticText*   includeCovarianceStaticText;
+   wxComboBox*     includeCovarianceComboBox;
+   wxStaticText*   accelerationModelStaticText;
+   wxComboBox*     accelerationModelComboBox;
    wxCheckBox*     eventBoundariesCheckBox;
    
    wxComboBox*     allCoordSystemComboBox;
@@ -115,6 +121,7 @@ protected:
    wxString        outputFormat;
    wxString        previousEpochFormat;
    wxString        distanceUnit;
+   wxString        formatVersion;
    
    wxFileDialog *fileDialog;
    

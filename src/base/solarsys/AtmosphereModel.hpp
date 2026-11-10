@@ -149,6 +149,12 @@ public:
    SolarFluxReader*     GetFluxReader();
    SolarFluxReader::FluxData GetFluxData(GmatEpoch epoch = -1.0);
 
+   virtual Real         GetCurrentF107();
+   virtual Real         GetCurrentF107A();
+   virtual Real         GetCurrentKp();
+   virtual Real         GetCurrentAp();
+   virtual Real         GetCurrentApAvg();
+
    DEFAULT_TO_NO_CLONES
    DEFAULT_TO_NO_REFOBJECTS
 
@@ -256,6 +262,12 @@ protected:
    Real                    f107a;
    /// Geomagnetic index (Ap, not Kp)
    Real                    ap[7];
+
+   Real                    currentF107;
+   Real                    currentF107A;
+   Real                    currentKp;
+   Real                    currentAp;
+   Real                    currentApAvg;
 
    /// Time converter singleton
    TimeSystemConverter     *theTimeConverter;
